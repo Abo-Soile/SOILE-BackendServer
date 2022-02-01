@@ -1,0 +1,123 @@
+{
+  "http_server": {
+    "port": 8081,
+    "host": "127.0.0.1",
+    "directory": "./static_files",
+    "template_folder":"templates/",
+    "debug":true,
+    "adminuser":"admin",
+    "adminpassword":"admin",
+    "externalport":8081,
+    "externalURI": false
+  },
+
+  "questionnaire_markup": {
+    "templates": "./templates/questionnaire_embedded.stg"
+  },
+
+  "dustjs":{
+    "engine":"dustjs-linkedin",
+    "version": "2.0.3"
+  },
+
+  "db": {      
+    "host": "127.0.0.1",
+    "port": 27022,
+    "db_name": "soile"
+  },
+  
+  "sessionFields" : {
+  	"userField" : "user",
+  	"maxTime" : 2592000000,
+  	"sessionID" : "sessionID",
+  	"sessionCookieID" : "soileSessionCookie",
+  	"userCookieID" : "soileUserCookie",
+  	"sessionIsValid" : "sessionIsValid"  	
+  },
+  
+  "communication_fields" : {
+     "Fields" : {
+     	"privateField" : "isPrivate",
+     	"permissionField" : "permissions",
+     	"ownerField" : "owner",
+     	"logonRequireField" : "logonRequired",
+     	"readRolesField" : "readRoles",
+     	"writeRolesField" : "writeRoles",
+     	"readPermissionsField" : "readPermissions",
+     	"changeTypeField" : "command",
+     	"userTypeField" : "type",
+  	 	"usernameField" : "username",
+  	 	"userEmailField" : "email",
+  	 	"userFullNameField" : "fullname",
+  	 	"userRolesField" : "userRoles"
+     	},
+    "Results" : { 
+     	"objectNotExistent" : "Not Existent"
+     } 
+  },
+  
+  "db_fields" : {
+     "ownerField" : "owner",
+     "logonRequireField" : "logonRequired",
+     "permissionField" : "permissions",
+     "privateField" : "isPrivate",
+	 "userTypeField" : "type",
+  	 "usernameField" : "username",
+  	 "userEmailField" : "email",
+  	 "userFullNameField" : "fullname",
+  	 "userRolesField" : "userRoles",
+  	 "userPermissionsField" : "userPermissions",
+  	 "usernameCredentialField" : "username",
+  	 "passwordField" : "password",
+   	 "passwordCredentialField" : "password",
+ 	 "storedSessions" : "storedSessions"
+  }, 
+  
+  
+  "UManagement" : {
+  "commandPrefix" : "umanager.",   
+  "participantType" : "participant",
+  "researcherType" : "user",
+  "hashingAlgorithm" : "pbkdf2",
+  "serverSalt" : "MySuperSecretSalt",
+  "commands" :  {
+		"addUser" : "adduser",
+  		"removeUser" : "removeuser",
+  		"permissionOrRoleChange" : "permissionOrRoleChange",
+  		"setUserFullNameAndEmail" :"setNameAndEmail",
+  		"getUserData" : "getUserData",
+  		"addSession" : "addUserSession",
+  		"checkUserSessionValid" : "isSessionValid"
+  		}  		  		  		 
+  	  
+   },     
+
+  
+  
+  "experiments": {
+     "IDField" : "experimentID",
+     "collectionName" : "experiments",
+     "commandPrefix" : "experiment.",
+  	 "commands" : {
+  	 	"getFilePermissions" : "requestFilePermission",
+  	 	"getDataPermissions" : "requestDataPermission",
+  	 	"getResultPermissions" : "requestResultPermission",  	 	
+  	 	"setOwner" : "setOwner",
+  	 	"setPrivate" : "setPrivate",
+  	 	"setCommand" : "set", 
+  	 	"addCommand" : "add",
+  	 	"removeCommand" : "remove"  	 	  	 	  	 	
+  	 }
+  },
+  
+  "participant_db": {
+  	"collectionName" : "participants"  	  
+  },
+  
+  "user_db": {
+  	"collectionName" : "user"
+  }
+  
+  
+  
+}
