@@ -26,16 +26,17 @@
     "db_name": "soile"
   },
   
-  "sessionFields" : {
+  "session" : {
   	"userField" : "user",
   	"maxTime" : 2592000000,
   	"sessionID" : "sessionID",
   	"sessionCookieID" : "soileSessionCookie",
   	"userCookieID" : "soileUserCookie",
-  	"sessionIsValid" : "sessionIsValid"  	
+  	"sessionIsValid" : "sessionIsValid",
+  	"sessionStoreSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m/fn6fx8uKJcKILHuS1ecZzBaS9cSX2thq60P/VwcsY"  	
   },
   
-  "communication_fields" : {
+  "communication" : {
      "Fields" : {
      	"privateField" : "isPrivate",
      	"permissionField" : "permissions",
