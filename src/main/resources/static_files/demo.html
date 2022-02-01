@@ -1,0 +1,89 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Demo</title>
+    <!-- http://stackoverflow.com/questions/2180391/why-should-i-use-googles-cdn-for-jquery -->
+    <script src="https://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://underscorejs.org/underscore-min.js"></script>
+    <script src="/javascript/soile2.js"></script>
+    <style type="text/css">
+      .hiddenelem {
+        display: none;
+        visibility: hidden;
+      }
+      #page {
+        width: 960px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      
+      #display {
+        border: thin solid black;
+        width: 720px;
+        height: 360px;
+        position: relative;
+      }
+      #message {
+        display: none;
+        position: absolute;
+        font-size: xx-large;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="page">
+      <div>
+        <textarea id="elcode" rows="20" cols="80">Code</textarea>
+        <div>
+          <p style="float: left; width: 300px;">
+            <button id="runbutton">Run</button>
+          </p>
+        </div>
+        <p style="clear: both;">
+        </p>
+      </div>
+      <div id="error_message" style="clear: both; margin-top: 1cm; display: none;">
+        <p id="error_message_text" style="border: medium dotted red; white-space: nowrap; overflow-x: auto">
+        </p>
+      </div>
+      <div id="display">
+        <p id="message">
+        </p>
+      </div>
+    </div>
+    
+  <script type="text/javascript">
+    $(document).ready(function() {
+      var width = Math.min($('#elcode').width(), $('#display').width());
+  
+      $('#elcode').width(width);
+      $('#display').width(width);
+      $('#error_message').width(width);
+      
+      $('#runbutton').click(function(event) {
+        $.post(  /* url */  '/test/run',  
+                 /* data */  $('#elcode').val(),
+                 /* success */  function(data, textStatus, jqXHR){
+          if (data.hasOwnProperty('errors')) {
+            $('#error_message').css('display', 'block');
+            $('#error_message_text').text(data['errors']);
+            $('#error_message_text').css('padding', '1em');
+          } 
+          else {
+            $('#error_message').css('display', 'none');
+            $('#error_message_text').text("");
+            $('#error_message_text').css('padding', '0em');
+            SOILE2.util.eval(data['code']);
+            setTimeout(function(){
+              SOILE2.rt.exec_pi();
+            }, 1500);
+          }
+        },  /* datatype */  'json');
+      });
+    });
+  </script>
+  </body>
+</html>

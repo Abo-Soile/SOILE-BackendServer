@@ -1,0 +1,61 @@
+<script type="text/javascript" src="/javascript/bower_components/angular-file-upload/dist/angular-file-upload.min.js"></script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.js"></script>
+
+<h1>CSVMERGE {{mergeString}}</h1>
+<div class="row csvMerge"> 
+  <div class="col-md-6">File1
+    <input ngf-select type="file" nv-file-select="" uploader="uploader1"/>
+    <div class="form-inline form-group">
+      <label for="exampleInputName2">Select which field to merge</label>
+      <select class="form-control" id="repeatSelect1" ng-model="mergeString1">
+        <option ng-repeat="option in mergeOptions1" value="{{option}}">{{option}}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="col-md-6">File2
+    <input ngf-select type="file" nv-file-select="" uploader="uploader2"/>
+    <div class="form-inline form-group">
+      <label for="exampleInputName2">Select the second field to merge on</label>
+      <select class="form-control" id="repeatSelect2" ng-model="mergeString2">
+        <option ng-repeat="option in mergeOptions2" value="{{option}}">{{option}}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="col-md-12">
+    <div class="form-inline input-group">
+      <label>
+        <input type="checkbox" ng-model="fuzzy" ng-true-value="true" ng-false-value="false">
+        Fuzzy merge
+      </label>
+      <div class="form-group">
+        <select placeholder="Select fuzzyness" class="form-control" ng-show="fuzzy" ng-model="fuzzyThreshold" ng-options="o as o for o in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]"></select>
+      </div>
+
+      <label>
+        <input type="checkbox" ng-model="ignoreCases" ng-true-value="true" ng-false-value="false">
+        Ignore cases
+      </label>
+
+      <label>
+        <input type="checkbox" ng-model="preserveAllFields" ng-true-value="true" ng-false-value="false">
+        Preserve all columns
+      </label>
+    </div>
+  </div>
+  <div class="col-md-12">
+    <span class="alert alert-success col-md-12" ng-show="downloadData">
+      <strong>Merge successfull!</strong> Scanned <b>{{totalRows}}</b> rows and found <b>{{mergedRows}}</b> matches 
+    </span>
+    
+  </div>
+  <div class="col-md-12">
+
+    <button class="btn btn-primary" ng-click="mergeData()">Merge</button>
+
+    <a id="dlLink" class="ng-hide" ng-show="downloadData"  href="{{fileUrl}}" download="mergeddata.csv">Download data</a>
+  </div>
+
+</div>

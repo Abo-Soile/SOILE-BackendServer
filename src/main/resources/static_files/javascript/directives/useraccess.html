@@ -1,0 +1,26 @@
+<div class='ng-useraccess'>
+    <h4>
+        <button class='btn btn-default btn-sm' ng:click='showhideuseraccess()'>
+            <i ng-show='showUserAccess' class='fa fa-angle-double-up ng-scope'></i>
+            <i ng-show='!showUserAccess' class='fa fa-angle-double-down ng-scope'></i>
+        </button>
+        <span>User Access</span>
+    </h4>
+    <div class='row' ng-show='showUserAccess'> 
+        <div class='col-md-4 form-group form-inline'>
+            <select style='width:80%;' class='form-inline form-control' ng-model='selectedUser' ng-options='userList.indexOf(u) as u.username for u in userList'></select>
+            <button class='btn btn-primary' ng-click='addUser(selectedUser)'>Add</button>
+        </div>
+        <div class='col-md-8'>
+            <div class="panel">
+                <table class="table table-striped">
+                    <tr ng-repeat='user in users'>
+                        <td>{{user}}</td>
+                        <td> <span ng-show="user != currentUserName" class='label label-danger' ng-click='removeUser(user)'>Remove</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

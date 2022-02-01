@@ -1,0 +1,52 @@
+{>header_nodojo /}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+
+<div id="main" class="container">
+  <div class="row">
+    <div id="expview" class="col-md-9">
+
+      <div class="row">
+        <div class="col-md-12">
+          <h1>{training.name}  </h1>
+          {?training.loggedInIntroVersion}
+            {?loggedIn}
+              <p> {training.introductionLoggedIn|s}</p>
+            {:else}
+              <p> {training.introduction|s}</p>
+            {/loggedIn}
+          {:else}
+            <p> {training.introduction|s}</p>
+          {/training.loggedInIntroVersion}
+        </div>
+      </div>
+      {?training.requireLogin}
+        {?loggedIn}
+          <div class="row">
+            <div class="col-md-12">
+              <form action="{URI}/participate?{URLQUERY}" method="post">
+                <button class="btn btn-primary"type="submit">Participate</button>
+              </form>
+
+            </div>
+          </div>
+        {:else}
+            <!-- <p><strong>You need to sign in to proceed with the training. Sign in or create an account below</strong></p> -->
+          {>loginformpost /}
+        {/loggedIn}
+      {:else}
+       <div class="row">
+        <div class="col-md-12">
+          <form action="{URI}/participate?{URLQUERY}" method="post">
+            <button class="btn btn-primary"type="submit">Participate</button>
+          </form>
+
+        </div>
+      </div>
+      {/training.requireLogin}
+
+    </div>
+  </div>
+</div>
+{>footer /}

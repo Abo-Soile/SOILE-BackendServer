@@ -1,0 +1,34 @@
+{>header /}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-offset-4 col-md-4">
+            <div class="panel">
+                <h4>Reset password</h4>
+
+                <div class="panel-body">
+                    {?success}
+                    <div class="alert alert-success">
+                        <p>Password email successfully sent to <b>{email}</b></p>
+                    </div>
+                    {:else}
+                     <p>Enter the email you signep up with to reset you password, instructions will be emailed to you.</p>
+                    <form class="form" role="form" action="/login/forgotten" method="post">
+                        <div class="form-group">
+                            <input class="form-control" type="text" name="username">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Reset password</button>
+
+                    </form>
+                    {/success}
+                   
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+{>footer /}

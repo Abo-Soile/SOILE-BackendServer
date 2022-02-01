@@ -1,0 +1,77 @@
+{>header /}
+<div id="main" class="container">
+	<div class="row">
+		<div id="expview" class="col-md-10">
+		{#user.admin}
+
+			<h1>{exp.name}   <a class="btn btn-default" href="{URI}/edit">Edit</a></h1>
+			<p> {exp.description|s}</p>
+			<ol class="componentlist fancyList">
+				{#exp.components uri=URI}
+				<li>
+					<a class="phaselistlink" href="{uri}/phase/{$idx}">phase {$idx} - {name}</a>
+					{@eq key=type value="test"}
+					<span class="label label-info">{type}</span>
+						<a href="{uri}/phase/{$idx}/rawdata" type="button" class="btn btn-default btn-xs">Raw data</a>
+						<a href="{uri}/phase/{$idx}/rawdata_pivot" type="button" class="btn btn-default btn-xs">Sorted data</a>
+					{:else}
+					  <span class="label label-default">{type}</span>
+					{/eq}
+				</li>
+				{/exp.components}
+			</ol>
+			<p>
+				<a role="button" class="btn btn-info" href="{URI}/data">Download form data</a>
+
+				<a role="button" class="btn btn-info" href="{URI}/testdata">Download test data</a>
+			</p>
+
+			<p> Confirmed: {exp.participants.confirmed} </p>
+			<p> Total:	{exp.participants.total}</p>
+
+		{:else}
+
+			<h1>{exp.name}  </h1>
+			<p> {exp.description|s}</p>
+
+			{?exp.active}
+
+				{?blockUa}
+				<p><b>Sorry, this experiment does not support smartphones or tablets</b></p>
+				{:else}
+					{?exp.loginrequired}
+	<!-- 					<p>LOGGED IN REQUIRED</p> -->
+						 {?loggedIn}
+						 	<a class="btn btn-primary btn-lg" href="{URI}/phase/0" role="button">Start experiment</a>
+						 {:else}
+						 	<p><strong>You need to sign in to participate in this test, <a href="/login">click here</a> to login or create an account</strong></p>
+						 {/loggedIn}
+					{:else}
+
+						{?exp.startexperimentlabel}
+						<a class="btn btn-primary btn-lg" href="{URI}/phase/0" role="button">{exp.startexperimentlabel}</a>
+						{:else}
+<!-- 						<p">NOT LOGGEN IN REQUIRED</p> -->
+						<a class="btn btn-primary btn-lg" href="{URI}/phase/0" role="button">Start experiment</a>
+						{/exp.startexperimentlabel}
+					{/exp.loginrequired}
+
+				{/blockUa}
+
+			{:else}
+				{?exp.startexperimentlabel}
+				<button class="btn btn-primary btn-lg" disabled="disabled" role="button">{exp.startexperimentlabel}</button>
+				{:else}
+				<button class="btn btn-primary btn-lg" disabled="disabled" role="button">Start experiment</button>
+				{/exp.startexperimentlabel}
+
+			<p> This experiment hasn't started yet</p>
+
+			{/exp.active}
+
+		{/user.admin}
+		</div>
+	</div>
+</div>
+
+{>footer /}

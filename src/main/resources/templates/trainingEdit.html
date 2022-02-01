@@ -1,0 +1,335 @@
+{>header_nodojo /}
+
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular-sanitize.js"></script>
+
+
+<link rel="stylesheet" href="/javascript/bower_components/angular-ui-tree/dist/angular-ui-tree.min.css">
+<script type="text/javascript" src="/javascript/bower_components/angular-ui-tree/dist/angular-ui-tree.js"></script>
+<script type="text/javascript" src="/javascript/bower_components/angular-ui-select/dist/select.js"></script>
+<script type="text/javascript" src="/javascript/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/javascript/bower_components/angular-ui-select/dist/select.css">
+
+<script type="text/javascript" src="/javascript/trainingedit.js"></script>
+<script type="text/javascript" src="/javascript/directives/userAccessDirective.js"></script>
+
+<div class="container training-edit" id="main" ng-app="trainingEdit" ng-controller="trainingController">
+  <div class="row">
+    <div class="col-md-12">
+      <label>Experiment name</label>
+      <input  class="form-control"  ng-model="training.name">
+
+      <div class="bigcheckbox">
+        <label>Introduction - Different message for logged in users</label>
+        <input type="checkbox" ng-model="training.loggedInIntroVersion" ng-true-value="true" ng-false-value="false">
+      </div>
+
+      <div ng-if="!training.loggedInIntroVersion">
+        <textarea class="form-control" ng-model="training.introduction"> </textarea>
+      </div>
+
+      <div ng-if="training.loggedInIntroVersion">
+        <div class="row">
+          <div class="col-md-6">
+            <label>When user <i>not</i> logged in</label>
+            <textarea rows="8" class="form-control" ng-model="training.introduction"> </textarea>
+          </div>
+
+          <div class="col-md-6">
+            <label>When is is logged in</label>
+            <textarea rows="8" class="form-control" ng-model="training.introductionLoggedIn"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <label>Description</label>
+      <textarea class="form-control" ng-model="training.description"> </textarea>
+
+      <label>End message</label>
+      <textarea class="form-control" ng-model="training.endmessage"> </textarea>
+
+      <label>End of training session message</label>
+      <textarea class="form-control" ng-model="training.completeSessionMessage"> </textarea>
+
+      <div class="row">
+        <div class="col-md-3">
+          <label>Start date</label>
+          <p class="input-group">
+            <input type="text" class="form-control" ng-model="training.startDate" ng-required:"true" is-open="opened" options="dateOptions" close-text="Close" datepicker-popup="[([format])]" />
+            <span class="input-group-btn">
+              <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+            </span>
+          </p>
+        </div>
+
+        <div class="col-md-3">
+          <label>End Date</label>
+          <p class="input-group">
+            <input type="text" class="form-control" ng-model="training.endDate" ng-required:"true" is-open="opened" min-date="training.startDate" options="dateOptions"  close-text="Close" datepicker-popup="[([format])]"/>
+            <span class="input-group-btn">
+              <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+            </span>
+          </p>
+        </div>
+
+        <div class="col-md-3">
+          <label>Short url <a ng-if="training.shortname" href="/t/[([training.shortname])]">http://soile.braintrain.fi/t/[([training.shortname])]</a> </label>
+          <input  class="form-control"  ng-model="training.shortname">
+        </div>
+
+        <div class="col-md-3">
+          <label>Submit button </label>
+          <input  class="form-control"  ng-model="training.submitbutton">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-3 ">
+          <label>Repeat training</label>
+          <input class="form-control" ng-model="training.repeatcount">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <div class="form-inline">
+            <label class="checkbox bigcheckbox">Pause between tries (h) - Advanced
+                <input type="checkbox"  ng-model="training.repeatpauseadvance" ng-true-value="true" ng-false-value="false">
+            </label>
+          </div>
+          <div ng-if="training.repeatpauseadvance">
+            <div class="col-md-3">
+              <label>Pause between training steps</label>
+              <input class="form-control" ng-model="training.repeatpause">
+            </div>
+
+            <div class="col-md-3">
+              <label>Pause pre-training</label>
+              <input class="form-control" ng-model="training.repeatpausepre">
+            </div>
+
+            <div class="col-md-3">
+              <label>Pause training-post</label>
+              <input class="form-control" ng-model="training.repeatpausepost">
+            </div>
+
+          </div>
+          <div ng-if="!training.repeatpauseadvance">
+            <input class="form-control" ng-model="training.repeatpause">
+          </div>
+
+
+        </div>
+      </div>
+
+      <div class="row">
+
+      <div class="col-md-12 form-inline">
+        <label class="checkbox bigcheckbox">
+          Control group
+          <input type="checkbox" ng-model="training.controlgroup" ng-true-value="true" ng-false-value="false" ng-click="toggleControlGroup($event)">
+        </label>
+
+        <label class="checkbox bigcheckbox">
+          Show historic score
+          <input type="checkbox" ng-model="training.showScore" ng-true-value="true" ng-false-value="false">
+        </label>
+
+        <label class="checkbox bigcheckbox">
+          Show score at end of training
+          <input type="checkbox" ng-model="training.showScoreEndTraining" ng-true-value="true" ng-false-value="false">
+        </label>
+
+        <label class="checkbox bigcheckbox">
+          Require Login
+          <input type="checkbox" ng-model="training.requireLogin" ng-true-value="true" ng-false-value="false">
+        </label>
+        </div>
+      </div>
+
+      <div class="row">
+
+        <div class="col-md-12">
+          <div class="form-inline">
+            <label class="checkbox bigcheckbox">
+              Enable reminder emails
+              <input type="checkbox" ng-model="training.reminderEmail" ng-true-value="true" ng-false-value="false">
+            </label>
+          </div>
+        </div>
+
+        <div ng-show="training.reminderEmail">
+          <div class="col-md-3">
+            <label>Reminder subject</label>
+            <input class="form-control" ng-model="training.reminderSubject">
+          </div>
+
+          <div class="col-md-3">
+            <label>Send reminder after(h)</label>
+            <input class="form-control" ng-model="training.maxpause">
+          </div>
+
+          <div class="col-md-12">
+            <label>Reminder email message, <span>the <i>{link}</i> tag will be replaced by a clickable link</span></label>
+            <textarea class="form-control" ng-model="training.reminderEmailMessage"> </textarea>
+          </div>
+        </div>
+
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="form-inline">
+            <label class="checkbox bigcheckbox">
+                PilotMode
+                <input type="checkbox" ng-model="training.pilotMode" ng-true-value="true" ng-false-value="false">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <div class="form-inline">
+            <label class="checkbox bigcheckbox">
+                Last phase finalizes training round
+                <input type="checkbox" ng-model="training.skipLastPhase" ng-true-value="true" ng-false-value="false">
+            </label>
+          </div>
+          <p ng-if="training.skipLastPhase">Ensure that the last phase training phase is a form, and that it doesn't collect any data, as none will be saved</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <div class="form-inline">
+            <label class="checkbox bigcheckbox">
+                Enable ID forwading
+                <input type="checkbox" ng-model="training.idForwarding" ng-true-value="true" ng-false-value="false">
+            </label>
+          </div>
+          <p ng-if="training.idForwarding">Soile will store ID's forwaded in the <i>externalid</i> query parameter e.g. <a href="#">soile.braintrain.fi/training/abc?externalid=id_that_is_stored</a></p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div ng-controller="componentController">
+    <div class="row">
+      <div class="col-md-12" >
+
+        <div class="panel panel-fancy" ng-repeat="(key, components) in training.components">
+          <h5>[([key])]</h5>
+          <div ui-tree>
+
+            <ul ui-tree-nodes="" ng-model="components" class="fancyList angularcomponentlist">
+              <li class=" " ng-repeat="(compindex, comp) in components" ui-tree-node>
+                <div class="dragHandle" ui-tree-handle><i class="fa fa-bars"></i></div>
+                 <div class="form-inline">
+
+                  <span ng-if="comp.type == 'test'">
+                    <input class="form-control compname" ng-model=comp.name readonly>
+
+                    <span class="checkbox">
+                      <label class="componentcheckbox">
+                        Randomize
+                        <input type="checkbox" ng-model="comp.random" ng-true-value="true" ng-false-value="false">
+                      </label>
+                    </span>
+
+                    <span ng-if="comp.random">
+                      <span>Group</span>
+                      <select class="form-control input-sm" name="Random group" ng-model="comp.randomgroup" ng-options="n for n in [] | range:1:10" ng-init="comp.randomgroup = comp.randomgroup || 1"></select>
+                    </span>
+                  </span>
+
+                  <span ng-if="comp.type == 'form'">
+                    <input class="compname form-control" ng-model=comp.name placeholder="Unnamed form">
+                    <a href="/questionnaire/mongo/[([comp.id])]" class="btn btn-warning" target="_blank">Edit</a>
+                  </span>
+
+                  <span ng-if="key == 'training'">
+                    <span class="checkbox">
+                      <label class="componentcheckbox">
+                        iteration control
+                        <input type="checkbox" ng-model="comp.iterationcontrol" ng-true-value="true" ng-false-value="false">
+                      </label>
+                    </span>
+                  </span>
+
+                  <span class="form">
+                    <button ng-click="delComponent(key, $index)" class="btn btn-danger pull-right " type="submit">Delete</button>
+                  </span>
+                    <span ng-if="comp.iterationcontrol">
+                    <!--<span ng-repeat="i in getRepeatCount() track by $index">
+                      <input type="checkbox" class="" ng-model="iterationcontrolarr[i]">
+                        <label>[([index])] iter</label>
+                      </input>
+                    </span>-->
+                     <selectboxes component=comp rep=training.repeatcount ></selectboxes>
+                    </span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-1">
+        <button class="btn btn-default" ng-click="addForm()">Add form</button>
+      </div>
+
+      <div class="col-md-10">
+        <div class="form-group">
+          <ui-select ng-model="test.selected"  theme="bootstrap" ng-disabled="disabled">
+            <ui-select-match placeholder="Select an experiment">[([$select.selected.findName])]</ui-select-match>
+            <ui-select-choices repeat="test in tests | filter:{findName:$select.search}">
+              <div ng-bind-html="test.findName | highlight: $select.search"></div>
+            </ui-select-choices>
+          </ui-select>
+          <button class="btn btn-default" ng-disabled="test.selected == null" ng-click="addTest()">Add test</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" ng-show="!training.linkParent">
+    <div class="col-md-3 form-inline">
+      <h4 class="pull-left bigcheckbox">Link experiments <input type="checkbox" ng-true-value="true" ng-false-value="false" ng-model="training.enableLink"></h4>
+    </div>
+    <div ng-show="!training.linked || training.linked.length == 0">
+        <!-- <div class="col-md-3">
+            <label>Main link</label>
+            <input type="checkbox" ng-true-value="true" ng-false-value="false" ng-model="training.reminderSubject">
+        </div> -->
+        <div ng-show="training.enableLink" class="col-md-8">
+            <label>Select links</label>
+            <ui-select multiple ng-model="training.links" theme="bootstrap">
+              <ui-select-match placeholder="Select an experiment">[([$item.name])]</ui-select-match>
+              <ui-select-choices repeat="t in availableTrainings | filter:{name:$select.search}">
+                <div ng-bind-html="t.name | highlight: $select.search"></div>
+              </ui-select-choices>
+            </ui-select>
+        </div>
+    </div>
+  </div>
+  <div ng-show="linkParent"><h4>Linked to <a href="/training/[([training.linkParent._id])]">[([training.linkParent.name])]</a></h4></div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <useraccess users="training.users" savefunction="null"></useraccess>
+    </div>
+    <div class="col-md-12">
+      <button class="btn btn-success"ng-click="saveTraining()">Save</button>
+      <a class="pull-right btn btn-warning" href="clone">Clone</a>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript" src="/javascript/trainingedit.js"></script>
+
+
+{>footer /}

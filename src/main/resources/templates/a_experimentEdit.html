@@ -1,0 +1,234 @@
+{>header_nodojo /}
+
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.13/angular.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.13/angular-sanitize.js"></script>
+
+<link rel="stylesheet" href="/javascript/bower_components/angular-ui-tree/dist/angular-ui-tree.min.css">
+<script type="text/javascript" src="/javascript/bower_components/angular-ui-tree/dist/angular-ui-tree.js"></script>
+<script type="text/javascript" src="/javascript/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+
+<script type="text/javascript" src="/javascript/bower_components/angular-ui-select/dist/select.js"></script>
+
+<script type="text/javascript" src="/javascript/bower_components/angular-elastic/elastic.js"></script>
+
+<link rel="stylesheet" type="text/css" href="
+/javascript/bower_components/angular-ui-select/dist/select.css">
+
+<script type="text/javascript" src="/javascript/a_experimentedit.js"></script>
+
+<link rel="stylesheet" href="/javascript/bower_components/ladda/dist/ladda-themeless.min.css">
+<script src="/javascript/bower_components/ladda/js/spin.js"></script>
+<script src="/javascript/bower_components/ladda/js/ladda.js"></script>
+<script src="/javascript/bower_components/angular-ladda/dist/angular-ladda.min.js"></script>
+<script type="text/javascript" src="/javascript/bower_components/angular-file-upload/dist/angular-file-upload.min.js"></script>
+
+
+<script type="text/javascript" src="/javascript/directives/userAccessDirective.js"></script>
+
+<div class="container experiment-edit" id="main" ng-app="experimentEdit" ng-controller="experimentController">
+  <div class="row">
+    <div class="col-md-12">
+        <label>Experiment name</label>
+        <input  class="form-control"  ng-model="experiment.name">
+
+        <label>Descriptive name (only shown to the testleader)</label>
+        <input class="form-control" ng-model="experiment.descriptiveName">
+
+        <label>Description</label>
+        <textarea class="form-control animate" msd-elastic ng-model="experiment.description"> </textarea>
+
+        <label>End message</label>
+        <textarea class="form-control animate" msd-elastic ng-model="experiment.endmessage"> </textarea>
+    </div>
+    <div class="col-md-12">
+      <br>
+    </div>
+
+    <div class="col-md-3">
+        <label>Start date</label>
+      <p class="input-group">
+        <input type="text" class="form-control" ng-model="startdate" ng-required:"true" is-open="opened" options="dateOptions" close-text="Close" datepicker-popup="[([format])]" />
+        <span class="input-group-btn">
+          <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+        </span>
+      </p>
+    </div>
+
+    <div class="col-md-3">
+        <label>End Date</label>
+      <p class="input-group">
+        <input type="text" class="form-control" ng-model="enddate" ng-required:"true" is-open="opened" min-date="startdate" options="dateOptions"  close-text="Close" datepicker-popup="[([format])]"/>
+        <span class="input-group-btn">
+          <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+        </span>
+      </p>
+    </div>
+
+    <div class="col-md-3">
+      <label>Short url <a ng-if="experiment.shortname" href="/e/[([experiment.shortname])]">http://soile.braintrain.fi/e/[([experiment.shortname])]</a> </label>
+      <input  class="form-control"  ng-model="experiment.shortname">
+    </div>
+
+    <div class="col-md-3">
+      <label>Submit button </label>
+      <input  class="form-control"  ng-model="experiment.submitbutton">
+    </div>
+    <div class="col-md-3">
+      <label>Start experiment label </label>
+      <input  class="form-control"  ng-model="experiment.startexperimentlabel">
+    </div>
+
+    <div class="col-md-12 form-inline">
+        <label class="checkbox bigcheckbox">
+          Require login
+          <input type="checkbox" ng-model="experiment.loginrequired" ng-true-value="true" ng-false-value="false">
+        </label>
+        <label class="checkbox bigcheckbox">
+          Hide login
+          <input type="checkbox" ng-model="experiment.hidelogin" ng-true-value="true" ng-false-value="false">
+        </label>
+        <label class="checkbox bigcheckbox">
+          Enable Mechanical Turk
+          <input type="checkbox" ng-model="experiment.mechanicalTurkEnabled" ng-true-value="true" ng-false-value="false">
+        </label>
+        <label class="checkbox bigcheckbox">
+          Allow mobile
+          <input type="checkbox" ng-model="experiment.allowMobile" ng-true-value="true" ng-false-value="false">
+        </label>
+    </div>
+
+    <div class="col-md-12">
+      <div class="panel panel-fancy" ng-controller="componentController">
+        <h5>Components</h5>
+        <div ui-tree>
+          <ul ui-tree-nodes="" ng-model="experiment.components" class="fancyList angularcomponentlist">
+
+            <li class="" ng-repeat="(idx, comp) in experiment.components" ui-tree-node>
+              <div class="dragHandle" ui-tree-handle><i class="fa fa-bars"></i></div>
+               <div class="form-inline">
+
+                <!-- IF TEST -->
+                <div ng-if="comp.type == 'test'" class="form-group">
+                  <input class="form-control compname" ng-model=comp.name readonly>
+
+                  <div class="form-group">
+                    <div class="checkbox">
+                      <label class="componentcheckbox">
+                        Randomize
+                        <input type="checkbox" ng-model="comp.random" ng-true-value="true" ng-false-value="false">
+                      </label>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                  <span ng-if="comp.random">
+                    <span>Group</span>
+                    <select class="form-control input-sm" name="Random group" ng-model="comp.randomgroup" ng-options="n for n in [] | range:1:10" ng-init="comp.randomgroup = comp.randomgroup || 1"></select>
+                  </span>
+                  </div>
+
+                </div>
+
+                <!--IF FORM -->
+                <span ng-if="comp.type == 'form'" class="form-group">
+                  <input class="form-control compname" ng-model=comp.name placeholder="Unnamed form">
+                  <a class="btn btn-warning" href="/questionnaire/mongo/[([comp.id])]" target="_blank">Edit</a>
+                </span>
+
+                <span ng-if="comp.type == 'video'" class="form-group">
+                  <input class="form-control compname" ng-model=comp.name placeholder="Unnamed form">
+                  <input class="form-control compname" ng-model=comp.videofile placeholder="noFile">
+                  <br>
+                  <div class="form-group">
+                    <label>
+                      Description
+                      <input name="recording-[([$index])]" type="text" ng-model="comp.description" ng-true-value="true"
+                        ng-false-value="false">
+                    </label>
+                    <label>
+                      Button
+                      <input name="recording-[([$index])]" type="text" ng-model="comp.button" ng-true-value="true" ng-false-value="false">
+                    </label>
+                  </div>
+                  <br>
+                  <div class="form-group form-inline">
+                    <div class="checkbox">
+                      <label>
+                        Record audio only
+                        <input name="recording-audio-[([$index])]" type="checkbox" ng-model="comp.recordAudioOnly" ng-true-value="true" ng-false-value="false">
+                      </label>
+                      <br>
+                      <label>
+                        Start recording on video start
+                        <input name="recording-[([$index])]" type="checkbox" ng-model="comp.recordingOnStart" ng-true-value="true" ng-false-value="false">
+                      </label>
+                      <br>
+                      <label>
+                        Start recording after video
+                        <input name="recording-[([$index])]" type="checkbox" ng-model="comp.recordingAfterVideo" ng-true-value="true" ng-false-value="false">
+                      </label>
+                      <br>
+                      <label ng-if="!comp.recordAudioOnly">
+                        Show video preview
+                        <input name="recording-[([$index])]" type="checkbox" ng-model="comp.showVideoPreview" ng-true-value="true" ng-false-value="false">
+                      </label>
+                    </div>
+                  </div>
+
+                </span>
+
+                <button ng-click="delComponent(key, $index)" class="btn btn-danger pull-right " type="submit">Delete</button>
+
+              </div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-1">
+      <button class="btn btn-default" ng-click="addForm()">Add form</button>
+    </div>
+    <div class="col-md-2">
+      <!-- <button class="btn btn-default" ng-click="addVideo()">Add video</button> -->
+      <label class="btn btn-default">
+        Add video
+        <input hidden class="form-control-file" type="file" name="file" onchange="angular.element(this).scope().uploadFile(this.files)">
+      <!-- <input class="form-control-file" type="file" name="file" onchange="angular.element(this).scope().uploadFile(this.files)"> -->
+        </label>
+      <!-- <input  type="file" nv-file-select uploader="uploader"/> -->
+    </div>
+    <div class="col-md-9">
+      <div class="form-group">
+        <ui-select ng-model="test.selected" theme="bootstrap" ng-disabled="disabled" >
+          <ui-select-match placeholder="Select an experiment">[([$select.selected.findName])]</ui-select-match>
+          <ui-select-choices repeat="test in tests | filter:{findName:$select.search}">
+            <div ng-bind-html="test.findName | highlight: $select.search"></div>
+          </ui-select-choices>
+        </ui-select>
+        <button class="btn btn-default" ng-disabled="test.selected == null" ng-click="addTest()">Add test</button>
+      </div>
+
+    </div>
+
+    <div class="col-md-12">
+      <useraccess users="experiment.users" savefunction="null">
+    </div>
+
+    <div class="col-md-12">
+      <button class="btn btn-success" ng-click="save()" ladda="loading">Save</button>
+      <a class="pull-right btn btn-warning" href="clone">Clone</a>
+    </div>
+  </div>
+
+</div>
+
+
+<style>
+[hidden] {
+  display: none !important;
+}
+</style>
+
+{>footer /}
