@@ -15,6 +15,7 @@ public class SoileConfigLoader {
 	public static String USERMANAGEMENTFIELDS = "UManagement";
 	public static String EXPERIMENTFIELDS = "experiments";
 	public static String COMMAND_PREFIX_FIELD = "commandPrefix";
+	public static String COMMANDS = "commands";
 
 	
 	public static ConfigRetriever getRetriever(Vertx vertx)
@@ -35,6 +36,6 @@ public class SoileConfigLoader {
 	
 	public static String getCommand(JsonObject config, String command)
 	{
-		return config.getString(COMMAND_PREFIX_FIELD) + config.getString(command); 
+		return config.getString(COMMAND_PREFIX_FIELD) + config.getJsonObject(COMMANDS).getString(command); 
 	}
 }

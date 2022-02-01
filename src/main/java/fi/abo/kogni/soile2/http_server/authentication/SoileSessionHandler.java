@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.http_server;
+package fi.abo.kogni.soile2.http_server.authentication;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
