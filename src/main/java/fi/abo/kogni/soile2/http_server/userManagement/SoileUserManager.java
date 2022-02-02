@@ -59,7 +59,7 @@ public class SoileUserManager implements MongoUserUtil{
 		this.client = client;
 		this.authnOptions = authnOptions;
 		this.authzOptions = authzOptions;
-		userManagerconfig = generalConfig.getJsonObject(SoileConfigLoader.USERMAGR_CFG);
+		userManagerconfig = generalConfig.getJsonObject(SoileConfigLoader.USERMGR_CFG);
 		dbConfig = generalConfig.getJsonObject(SoileConfigLoader.DB_FIELDS);
 		sessionConfig = generalConfig.getJsonObject(SoileConfigLoader.SESSION_CFG);
 		strategy = new SoileHashing(userManagerconfig.getString("serverSalt"));
