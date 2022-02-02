@@ -12,7 +12,7 @@ public class SoileConfigLoader {
 	public static String COMMUNICATION_FIELDS = "communication";
 	public static String DB_FIELDS = "db_fields";
 	public static String DB_CFG = "db";
-	public static String USERMAGR_CFG = "UManagement";
+	public static String USERMGR_CFG = "UManagement";
 	public static String EXPERIMENT_CFG = "experiments";
 	public static String COMMAND_PREFIX_FIELD = "commandPrefix";
 	public static String COMMANDS = "commands";
@@ -34,6 +34,16 @@ public class SoileConfigLoader {
 	}
 	
 	/**
+	 * Get the session config from a general config.
+	 * @param generalConfig
+	 * @return
+	 */
+	public static JsonObject getSessionConfig(JsonObject generalConfig)
+	{
+		return generalConfig.getJsonObject(SESSION_CFG);
+	}
+	
+	/**
 	 * Get the eventbus command (including the command prefix) for the given config and the given command string.
 	 * @param config the config that contains commands (and a command prefix)
 	 * @param command the command from the config to use.
@@ -41,9 +51,9 @@ public class SoileConfigLoader {
 	 */
 	public static String getEventBusCommand(JsonObject config, String command)
 	{
-		if(config.getJsonObject(COMMANDS) != null)
+		if(config.getString(COMMAND_PREFIX_FIELD) != null)
 		{
-			return config.getJsonObject(COMMANDS).getString(command); 
+			return config.getString(COMMAND_PREFIX_FIELD) + config.getJsonObject(COMMANDS).getString(command); 
 		}
 		else
 		{
@@ -59,9 +69,10 @@ public class SoileConfigLoader {
 	 */
 	public static String getCommand(JsonObject config, String command)
 	{
-		if(config.getString(COMMAND_PREFIX_FIELD) != null)
+
+		if(config.getJsonObject(COMMANDS) != null)
 		{
-			return config.getString(COMMAND_PREFIX_FIELD) + config.getJsonObject(COMMANDS).getString(command); 
+			return config.getJsonObject(COMMANDS).getString(command); 
 		}
 		else
 		{
