@@ -17,8 +17,9 @@ public class SoileAuthenticationOptions extends MongoAuthenticationOptions {
 		return userType;
 	}
 
-	public void setUserType(String userType) {
+	public SoileAuthenticationOptions setUserType(String userType) {
 		this.userType = userType;
+		return this;
 	}
 	
 }

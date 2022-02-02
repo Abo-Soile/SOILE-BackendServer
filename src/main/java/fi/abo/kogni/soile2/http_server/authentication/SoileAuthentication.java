@@ -32,11 +32,11 @@ public class SoileAuthentication implements MongoAuthentication{
 //	private final String userTypeField;
 	private final String userType;
 	
-	public SoileAuthentication(MongoClient client, SoileAuthenticationOptions authnOptions, JsonObject config, String userType)
+	public SoileAuthentication(MongoClient client, SoileAuthenticationOptions authnOptions, JsonObject config)
 	{
-		userconfig = config.getJsonObject(SoileConfigLoader.USERMAGR_CFG);
+		userconfig = config.getJsonObject(SoileConfigLoader.USERMGR_CFG);
 		sessionconfig = config.getJsonObject(SoileConfigLoader.SESSION_CFG);
-		this.userType = userconfig.getString(userType);
+		this.userType = authnOptions.getUserType();
 		this.authnOptions = authnOptions;
 		this.client = client;
 		strategy = new SoileHashing(userconfig.getString("serverSalt"));

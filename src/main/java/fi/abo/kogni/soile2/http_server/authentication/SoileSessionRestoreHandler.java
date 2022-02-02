@@ -28,7 +28,7 @@ public class SoileSessionRestoreHandler extends AuthenticationHandlerImpl<Authen
 	  
 	  public SoileSessionRestoreHandler(Vertx vertx, AuthenticationProvider authProvider, JsonObject config) {
 		  super (authProvider);
-		  userConfig = config.getJsonObject(SoileConfigLoader.USERMAGR_CFG);
+		  userConfig = config.getJsonObject(SoileConfigLoader.USERMGR_CFG);
 		  sessionConfig = config.getJsonObject(SoileConfigLoader.SESSION_CFG);
 		  communicationConfig = config.getJsonObject(SoileConfigLoader.SESSION_CFG);
 		  loginRedirectURL = sessionConfig.getString("loginURL");
