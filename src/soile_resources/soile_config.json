@@ -23,7 +23,7 @@
 	"db": {
 		"host": "127.0.0.1",
 		"port": 27022,
-		"db_name": "soile"
+		"db_name": "soile"		
 	},
 	
 	"db_fields": {
@@ -38,7 +38,7 @@
 		"passwordField" : "password",
 		"passwordCredentialField" : "password",
  		"storedSessions" : "storedSessions"	
-	},
+	},			
 	
 	"session" : {
 		"userField" : "user",
