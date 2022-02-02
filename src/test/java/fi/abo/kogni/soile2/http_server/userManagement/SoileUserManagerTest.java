@@ -21,10 +21,10 @@ public class SoileUserManagerTest extends MongoTestBase{
 	public void testUserAddition(TestContext context) {
 		final Async async = context.async();
 		SoileUserManager man = new SoileUserManager(MongoClient.create(vertx, config.getJsonObject("db")),
-				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
-				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
+				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
+				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
 				  config,
-				  SoileUserManagementVerticle.USER_CONFIG);		
+				  SoileUserManagementVerticle.USER_CFG);		
 		String username =  "testUser";
 		String password =  "testpw";
 		
@@ -57,10 +57,10 @@ public class SoileUserManagerTest extends MongoTestBase{
 	public void testSetUserNameAndPassword(TestContext context) {
 		final Async async = context.async();
 		SoileUserManager man = new SoileUserManager(MongoClient.create(vertx, config.getJsonObject("db")),
-				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
-				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
+				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
+				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
 				  config,
-				  SoileUserManagementVerticle.USER_CONFIG);		
+				  SoileUserManagementVerticle.USER_CFG);		
 		String username =  "testUser2";
 		String password =  "testpw";
 		String email = "test@test.blubb";
@@ -109,10 +109,10 @@ public class SoileUserManagerTest extends MongoTestBase{
 	public void testSessionValidity(TestContext context) {
 		final Async async = context.async();
 		SoileUserManager man = new SoileUserManager(MongoClient.create(vertx, config.getJsonObject("db")),
-				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
-				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
+				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
+				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
 				  config,
-				  SoileUserManagementVerticle.USER_CONFIG);		
+				  SoileUserManagementVerticle.USER_CFG);		
 		String username =  "testUser2";
 		String password =  "testpw";
 		String email = "test@test.blubb";
