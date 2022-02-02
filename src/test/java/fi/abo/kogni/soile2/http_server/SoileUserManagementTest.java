@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
@@ -40,21 +41,24 @@ public class SoileUserManagementTest extends MongoTestBase{
 	}
 
 	@Test
-	public void testUserAddition(TestContext context) {		
+	public void testUserAddition(TestContext context) {
+		System.out.println("Testing User Addition");
 		Async async = context.async();
 		try {
-			createUser("testUser", res -> {					
+			createSoileUser("testUser", res -> {					
 						if (res.succeeded())
 						{									
 							JsonObject obj = (JsonObject)res.result().body();					
-							context.assertEquals("Success",obj.getValue("Result"));
-							createUser("testUser",invRes ->
+							context.assertTrue(SoileCommUtils.isResultSuccessFull(obj));
+							System.out.println("Added User");
+							createSoileUser("testUser",invRes ->
 								{
 									if(invRes.succeeded())
 									{
 										JsonObject invobj = (JsonObject)invRes.result().body();
 										context.assertEquals("Error", invobj.getString("Result"));
 										context.assertEquals("User Exists", invobj.getString("Reason"));
+										System.out.println("Checked that no additional user could be added");
 										async.complete();
 									}
 									else
@@ -146,7 +150,7 @@ public class SoileUserManagementTest extends MongoTestBase{
 						}	
 						else
 						{
-							context.fail();
+							context.fail("Could not add user");
 							async.complete();
 						}
 
@@ -159,7 +163,7 @@ public class SoileUserManagementTest extends MongoTestBase{
 		}
 	} 
 
-	private Future<Message<Object>> createUser(String username, Handler<AsyncResult<Message<Object>>> handler)
+	private Future<Message<Object>> createSoileUser(String username, Handler<AsyncResult<Message<Object>>> handler)
 	{
 		JsonObject userObject = new JsonObject()
 				.put("username", username)

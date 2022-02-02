@@ -18,11 +18,11 @@ import de.flapdoodle.embed.mongo.config.ImmutableMongodConfig;
 import de.flapdoodle.embed.mongo.config.Net;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
+import fi.abo.kogni.soile2.http_server.authentication.SoileAuthenticationOptions;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
 import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.mongo.MongoAuthentication;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.unit.Async;
@@ -41,6 +41,11 @@ public abstract class MongoTestBase {
 	private SoileHashing hashStrat;	
 	private String hashinAlgo;
 	private SecureRandom random = new SecureRandom();
+
+	public SoileAuthenticationOptions participant_options;
+	public SoileAuthenticationOptions user_options;
+	public SoileAuthenticationOptions experiment_options;
+
 	@BeforeClass
 	public static void initialize() throws IOException {
 		MongodStarter starter = MongodStarter.getDefaultInstance();		
@@ -48,7 +53,6 @@ public abstract class MongoTestBase {
 				.version(Version.Main.PRODUCTION)
 				.net(new Net(MONGO_PORT, Network.localhostIsIPv6()))
 				.build();
-
 		MongodExecutable mongodExecutable = starter.prepare(mongodConfig);
 		MONGO = mongodExecutable.start();
 	}
@@ -64,25 +68,31 @@ public abstract class MongoTestBase {
 		final Async oasync = context.async();
 		vertx = Vertx.vertx();
 		config = new JsonObject(vertx.fileSystem().readFileBlocking("soile_config.json"));
-		hashStrat = new SoileHashing(config.getJsonObject(SoileConfigLoader.USERMAGR_CFG)
-									 .getString("serverSalt"));
-		hashinAlgo = config.getJsonObject(SoileConfigLoader.USERMAGR_CFG)
-				 .getString("hashingAlgorithm");
-		uconfig = config.getJsonObject(SoileConfigLoader.USERMAGR_CFG);
+		hashStrat = new SoileHashing(config.getJsonObject(SoileConfigLoader.USERMGR_CFG)
+				.getString("serverSalt"));
+		hashinAlgo = config.getJsonObject(SoileConfigLoader.USERMGR_CFG)
+				.getString("hashingAlgorithm");
+		uconfig = config.getJsonObject(SoileConfigLoader.USERMGR_CFG);
+		participant_options = new SoileAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.PARTICIPANT_CFG).mergeIn(config.getJsonObject(SoileConfigLoader.DB_CFG)))
+				.setUserType(uconfig.getString("participantType"));
+		user_options = new SoileAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG).mergeIn(config.getJsonObject(SoileConfigLoader.DB_CFG)))
+				.setUserType(uconfig.getString("researcherType"));
+		experiment_options = new SoileAuthenticationOptions(config.getJsonObject(SoileConfigLoader.EXPERIMENT_CFG).mergeIn(config.getJsonObject(SoileConfigLoader.DB_CFG)));
+
 		mongo_client = MongoClient.createShared(vertx, config.getJsonObject("db"));
 		//Clean the database of existing entries for tests to be working properly.
 		mongo_client.getCollections(cols ->{
 			if(cols.succeeded())
 			{
-			for(String col : cols.result())
-			{
-				final Async async = context.async();
-				mongo_client.dropCollection(col).onComplete(res ->
+				for(String col : cols.result())
 				{
-					async.complete();
-				});
-				
-			}			
+					final Async async = context.async();
+					mongo_client.dropCollection(col).onComplete(res ->
+					{
+						async.complete();
+					});
+
+				}			
 			}
 			else
 			{
@@ -98,26 +108,28 @@ public abstract class MongoTestBase {
 	 */
 	@After
 	public void tearDown(TestContext context) {
+		System.out.println("Shutting down Vertx");
 		vertx.close(context.asyncAssertSuccess());
-		
+
 	}
-	
+
 	public String createHash(String password)
 	{
-		 final byte[] salt = new byte[32];
-		 random.nextBytes(salt);
-		 
-		 return hashStrat.hash(hashinAlgo,
+		final byte[] salt = new byte[32];
+		random.nextBytes(salt);
+
+		return hashStrat.hash(hashinAlgo,
 				null,
 				base64Encode(salt),
 				password);
-		
+
 	}
-	
-	public void createUser(String username, String password, MongoAuthenticationOptions authnOptions,  TestContext context)
+
+	public void createUser(JsonObject userdata, MongoAuthenticationOptions authnOptions,  TestContext context)
 	{
 		Async async = context.async();
-		
+		String username = userdata.getString(config.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("usernameField"));
+		String password = userdata.getString(config.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("passwordField"));
 		String hash = createHash(password);
 		mongo_client.save(
 				authnOptions.getCollectionName(),
@@ -136,6 +148,6 @@ public abstract class MongoTestBase {
 				}				
 				);
 	}
-	
+
 
 }
