@@ -3,8 +3,9 @@ package fi.abo.kogni.soile2.http_server.authentication;
 import java.util.List;
 import java.util.Map;
 
-import fi.abo.kogni.soile2.http_server.UserManagementVerticle;
+import fi.abo.kogni.soile2.http_server.SoileUserManagementVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
+import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -23,15 +24,18 @@ import io.vertx.ext.mongo.MongoClient;
  */
 public class SoileAuthentication implements MongoAuthentication{
 
-	private final MongoAuthenticationOptions authnOptions;
+	private final SoileAuthenticationOptions authnOptions;
 	private final MongoClient client;
-	private final HashingStrategy strategy;	
-	private final String userTypeField;
+	private final HashingStrategy strategy;
+	private JsonObject userconfig;
+	private JsonObject sessionconfig;
+//	private final String userTypeField;
 	private final String userType;
 	
-	public SoileAuthentication(MongoClient client, MongoAuthenticationOptions authnOptions, JsonObject userconfig, String userType)
+	public SoileAuthentication(MongoClient client, SoileAuthenticationOptions authnOptions, JsonObject config, String userType)
 	{
-		userTypeField = userconfig.getString("userTypeField");
+		userconfig = config.getJsonObject(SoileConfigLoader.USERMAGR_CFG);
+		sessionconfig = config.getJsonObject(SoileConfigLoader.SESSION_CFG);
 		this.userType = userconfig.getString(userType);
 		this.authnOptions = authnOptions;
 		this.client = client;
@@ -92,7 +96,7 @@ public class SoileAuthentication implements MongoAuthentication{
 	    	JsonObject userJson = resultList.get(0);
 	    	System.out.println("Trying to retrieve user for username " + username);
 	    	User user = User.fromName(username);
-	    	user.principal().put(userTypeField, userType);
+	    	user.principal().put(sessionconfig.getString("userTypeField"), userType);
 	    	if(strategy.verify(userJson.getString(authnOptions.getPasswordCredentialField()), credentials.getString(authnOptions.getPasswordCredentialField())))
 	    	{
 	    		//User authenticated!!

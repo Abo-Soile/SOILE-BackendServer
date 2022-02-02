@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.http_server;
 
+import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonObject;
@@ -18,7 +19,6 @@ public class SoileEventVerticle extends AbstractVerticle {
 	private JsonObject communicationConfig;
 	private JsonObject dbConfig;
 	public final static String COMM_FIELD = "communication_fields";
-	public final static String DB_FIELD = "db_fields";
 	
 	/**
 	 * Set up the individual config for this verticle. The field refers to the field in the general config.  
@@ -29,26 +29,27 @@ public class SoileEventVerticle extends AbstractVerticle {
 		this.typeSpecificConfig = config().getJsonObject(field);
 		//commandPrefix = typeSpecificConfig.getString("commandPrefix");
 		communicationConfig = config().getJsonObject(COMM_FIELD);
-		dbConfig = config().getJsonObject(DB_FIELD);
+		dbConfig = config().getJsonObject(SoileConfigLoader.DB_FIELDS);
 	}
 	
 	/**
 	 * Get the command to be issued via the eventbus.
-	 * @param Command The command entry in the config for which to extract the command.
+	 * @param command The command entry in the config for which to extract the command.
 	 * @return The command string to be handled via the eventbus, or null if the command does not exist
 	 */
-	public String getEventbusCommandString(String Command)
+	public String getEventbusCommandString(String command)
 	{		
-		JsonObject commands = typeSpecificConfig.getJsonObject("commands");
-		if (commands instanceof JsonObject)
-		{
-			return SoileConfigLoader.getCommand(typeSpecificConfig, Command);
-		}
-		else
-		{
-			return null;
-		}
-			
+		return SoileConfigLoader.getEventBusCommand(typeSpecificConfig, command);
+	}
+	
+	/**
+	 * Get the command string for the given command.
+	 * @param command The command entry in the config for which to extract the command.
+	 * @return The command string 
+	 */
+	public String getCommandString(String command)
+	{
+		return SoileConfigLoader.getCommand(typeSpecificConfig, command);
 	}
 	
 	/**
@@ -58,7 +59,7 @@ public class SoileEventVerticle extends AbstractVerticle {
 	 */
 	public String getCommunicationResult(String result)
 	{
-		return communicationConfig.getJsonObject("Results").getString(result);		
+		return SoileCommUtils.getCommunicationResult(communicationConfig,result);		
 	}
 	
 	/**
@@ -68,26 +69,7 @@ public class SoileEventVerticle extends AbstractVerticle {
 	 */
 	public String getCommunicationField(String field)
 	{
-		return communicationConfig.getJsonObject("Fields").getString(field);	
-	}
-	
-	/**
-	 * Get the command to be issued via the eventbus.
-	 * @param Command The command entry in the config for which to extract the command.
-	 * @return The command string to be handled via the eventbus, or null if the command does not exist
-	 */
-	public String getCommandString(String Command)
-	{		
-		JsonObject commands = typeSpecificConfig.getJsonObject("commands");
-		if (commands instanceof JsonObject)
-		{
-			return typeSpecificConfig.getJsonObject("commands").getString(Command);
-		}
-		else
-		{
-			return null;
-		}
-			
+		return SoileCommUtils.getCommunicationField(communicationConfig, field);	
 	}
 	
 	/**

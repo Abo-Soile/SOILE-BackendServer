@@ -60,7 +60,7 @@ public class SoilePermissionVerticle extends SoileEventVerticle {
 		System.out.println("Starting SoilePermissionVerticle");
 		mongo = MongoClient.createShared(vertx, config().getJsonObject("db"));		
 		setupConfig(DBFIELD);
-		userConfig = config().getJsonObject(SoileConfigLoader.USERMANAGEMENTFIELDS);
+		userConfig = config().getJsonObject(SoileConfigLoader.USERMAGR_CFG);
 		setupEvents();
 		startPromise.complete();
 		System.out.println("Started successfully");

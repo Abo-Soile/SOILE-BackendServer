@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthentication;
+import fi.abo.kogni.soile2.http_server.authentication.SoileAuthenticationOptions;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
 import io.vertx.core.Promise;
@@ -75,9 +76,11 @@ public class SoileAuthenticationVerticle extends SoileEventVerticle{
 	
 	void setUpAuthentication()
 	{
-		MongoAuthenticationOptions partConf = new MongoAuthenticationOptions(config().getJsonObject(UserManagementVerticle.PARTICIPANT_CONFIG));
-		MongoAuthenticationOptions userConf = new MongoAuthenticationOptions(config().getJsonObject(UserManagementVerticle.USER_CONFIG));
-		JsonObject uManConf = config().getJsonObject(SoileConfigLoader.USERMANAGEMENTFIELDS);
+		SoileAuthenticationOptions partConf = new SoileAuthenticationOptions(config().getJsonObject(SoileUserManagementVerticle.PARTICIPANT_CONFIG));
+		SoileAuthenticationOptions userConf = new SoileAuthenticationOptions(config().getJsonObject(SoileUserManagementVerticle.USER_CONFIG));		
+		JsonObject uManConf = config().getJsonObject(SoileConfigLoader.USERMAGR_CFG);
+		partConf.setUserType(uManConf.getString("participantType"));
+		userConf.setUserType(uManConf.getString("researcherType"));
 		BasicAuthHandler parthandler = BasicAuthHandler.create(new SoileAuthentication(client, partConf, uManConf, uManConf.getString("participantType")));
 		BasicAuthHandler userhandler = BasicAuthHandler.create(new SoileAuthentication(client, userConf, uManConf, uManConf.getString("participantType")));
 		
@@ -89,8 +92,8 @@ public class SoileAuthenticationVerticle extends SoileEventVerticle{
 	void setupAuthorization()
 	{
 		// Create the authorization providers
-		MongoAuthorizationOptions partConf = new MongoAuthorizationOptions(config().getJsonObject(UserManagementVerticle.PARTICIPANT_CONFIG));
-		MongoAuthorizationOptions userConf = new MongoAuthorizationOptions(config().getJsonObject(UserManagementVerticle.USER_CONFIG));
+		MongoAuthorizationOptions partConf = new MongoAuthorizationOptions(config().getJsonObject(SoileUserManagementVerticle.PARTICIPANT_CONFIG));
+		MongoAuthorizationOptions userConf = new MongoAuthorizationOptions(config().getJsonObject(SoileUserManagementVerticle.USER_CONFIG));
 	
 		authZpart = new SoileAuthorization(client, partConf, "Participant_Auth");
 		authZuser = new SoileAuthorization(client, userConf, "User_Auth");

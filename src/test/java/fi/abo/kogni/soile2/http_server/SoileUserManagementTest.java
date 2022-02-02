@@ -18,7 +18,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
  * Unit tests for the User Management code (i.e. permission setting/removing, user addition etc pp)
  */
 @RunWith(VertxUnitRunner.class)
-public class UserManagementTest extends MongoTestBase{
+public class SoileUserManagementTest extends MongoTestBase{
 
 	String getCommand(String commandString)
 	{

@@ -6,7 +6,7 @@ import org.apache.commons.collections4.functors.InstanceofPredicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.http_server.userManagement.UserManager;
+import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
@@ -38,23 +38,23 @@ import io.vertx.ext.mongo.MongoClient;
  * @author thomas
  *
  */
-public class UserManagementVerticle extends SoileEventVerticle {
+public class SoileUserManagementVerticle extends SoileEventVerticle {
 
-	UserManager userManager;
-	UserManager participantManager;
+	SoileUserManager userManager;
+	SoileUserManager participantManager;
 	MongoClient mongo;
 	public static final String PARTICIPANT_CONFIG = "participant_db";
 	public static final String USER_CONFIG = "user_db";
-	private static final Logger LOGGER = LogManager.getLogger(UserManagementVerticle.class);
+	private static final Logger LOGGER = LogManager.getLogger(SoileUserManagementVerticle.class);
 	private JsonObject sessionFields;
 	
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
 		LOGGER.info("Starting UserManagementVerticle");
 		mongo = MongoClient.createShared(vertx, config().getJsonObject("db"));
-		setupConfig(SoileConfigLoader.USERMANAGEMENTFIELDS);
-		JsonObject partConfig = config().getJsonObject(PARTICIPANT_CONFIG).mergeIn(config().getJsonObject(SoileEventVerticle.DB_FIELD));
-		JsonObject userConfig = config().getJsonObject(USER_CONFIG).mergeIn(config().getJsonObject(SoileEventVerticle.DB_FIELD));		
+		setupConfig(SoileConfigLoader.USERMAGR_CFG);
+		JsonObject partConfig = config().getJsonObject(PARTICIPANT_CONFIG).mergeIn(config().getJsonObject(SoileConfigLoader.DB_FIELDS));
+		JsonObject userConfig = config().getJsonObject(USER_CONFIG).mergeIn(config().getJsonObject(SoileConfigLoader.DB_FIELDS));		
 		/* The JsonObject needs the following fields: 
 		* collectionName - required in our case for two different (default:user)
 		* permissionField - default:
@@ -64,13 +64,13 @@ public class UserManagementVerticle extends SoileEventVerticle {
 		* passwordField - default: password
 		* passwordCredentialField - default: same as passwordField 
 		*/
-		sessionFields = config().getJsonObject(SoileConfigLoader.SESSIONFIELDS);
+		sessionFields = config().getJsonObject(SoileConfigLoader.SESSION_CFG);
 		MongoAuthenticationOptions partAuthnOptions = new MongoAuthenticationOptions(partConfig);
 		MongoAuthorizationOptions partAuthzOptions = new MongoAuthorizationOptions(partConfig);
 		MongoAuthenticationOptions userAuthnOptions = new MongoAuthenticationOptions(userConfig);
 		MongoAuthorizationOptions userAuthzOptions = new MongoAuthorizationOptions(userConfig);
-		userManager = new UserManager(mongo,userAuthnOptions,userAuthzOptions, config(),USER_CONFIG);
-		participantManager = new UserManager(mongo,partAuthnOptions,partAuthzOptions, config(),PARTICIPANT_CONFIG);
+		userManager = new SoileUserManager(mongo,userAuthnOptions,userAuthzOptions, config(),USER_CONFIG);
+		participantManager = new SoileUserManager(mongo,partAuthnOptions,partAuthzOptions, config(),PARTICIPANT_CONFIG);
 		
 
 		setupChannels();
@@ -103,15 +103,15 @@ public class UserManagementVerticle extends SoileEventVerticle {
 	
 		
 	/**
-	 * Get the {@link UserManager} fitting to the supplied commands userTypeField.
+	 * Get the {@link SoileUserManager} fitting to the supplied commands userTypeField.
 	 * Two options are currently available, researchers, and participants. 
    	 * @param command a {@link JsonObject} containing at least the field "userTypeField" from the config. 
-	 * @return the appropriate {@link UserManager}
+	 * @return the appropriate {@link SoileUserManager}
 	 */
-	UserManager getFittingManager(JsonObject command)	
+	SoileUserManager getFittingManager(JsonObject command)	
 	{
 		
-		UserManager cman;
+		SoileUserManager cman;
 		if(command.getString(getDBField("userTypeField")).equals(getConfig("researcherType")))
 		{
 			cman = userManager;
@@ -150,7 +150,7 @@ public class UserManagementVerticle extends SoileEventVerticle {
 		if (msg.body() instanceof JsonObject)
 		{
 			JsonObject command = (JsonObject)msg.body();			
-			UserManager cman = getFittingManager(command);
+			SoileUserManager cman = getFittingManager(command);
 			if(cman == null)
 			{
 				msg.reply(SoileCommUtils.errorObject("Invalid UserType Field"));
@@ -206,7 +206,7 @@ public class UserManagementVerticle extends SoileEventVerticle {
 		if (msg.body() instanceof JsonObject)
 		{
 			JsonObject command = (JsonObject)msg.body();			
-			UserManager cman = getFittingManager(command);
+			SoileUserManager cman = getFittingManager(command);
 			if(cman == null)
 			{
 				msg.reply(SoileCommUtils.errorObject("Invalid UserType Field"));
@@ -256,7 +256,7 @@ public class UserManagementVerticle extends SoileEventVerticle {
 		if (msg.body() instanceof JsonObject)
 		{
 			JsonObject command = (JsonObject)msg.body();			
-			UserManager cman = getFittingManager(command);
+			SoileUserManager cman = getFittingManager(command);
 			if(cman == null)
 			{
 				msg.reply(SoileCommUtils.errorObject("Invalid UserType Field"));
@@ -302,7 +302,7 @@ public class UserManagementVerticle extends SoileEventVerticle {
 		if (msg.body() instanceof JsonObject)
 		{
 			JsonObject command = (JsonObject)msg.body();
-			UserManager cman = getFittingManager(command);
+			SoileUserManager cman = getFittingManager(command);
 			//System.out.println("Found fitting UserManager for type " + command.getString("type"));
 			
 			if(cman == null)
@@ -373,7 +373,7 @@ public class UserManagementVerticle extends SoileEventVerticle {
 		if (msg.body() instanceof JsonObject)
 		{
 			JsonObject command = (JsonObject)msg.body();
-			UserManager cman = getFittingManager(command);
+			SoileUserManager cman = getFittingManager(command);
 			if(cman == null)
 			{
 				msg.reply(SoileCommUtils.errorObject("Invalid UserType Field"));

@@ -5,14 +5,11 @@ import static io.vertx.ext.auth.impl.Codec.base64Encode;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.http_server.SoileEventVerticle;
-import fi.abo.kogni.soile2.http_server.UserManagementVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
@@ -38,9 +35,9 @@ import io.vertx.ext.mongo.MongoClientUpdateResult;
  * @author thomas
  *
  */
-public class UserManager implements MongoUserUtil{
+public class SoileUserManager implements MongoUserUtil{
 
-	private static Logger LOGGER = LogManager.getLogger(UserManager.class.getName()); 
+	private static Logger LOGGER = LogManager.getLogger(SoileUserManager.class.getName()); 
 	private final MongoClient client;
 	private final HashingStrategy strategy;	
 	private final SecureRandom random = new SecureRandom();
@@ -58,24 +55,24 @@ public class UserManager implements MongoUserUtil{
 	}
 
 	
-	public UserManager(MongoClient client, MongoAuthenticationOptions authnOptions, MongoAuthorizationOptions authzOptions, JsonObject generalConfig, String ID) {
+	public SoileUserManager(MongoClient client, MongoAuthenticationOptions authnOptions, MongoAuthorizationOptions authzOptions, JsonObject generalConfig, String ID) {
 		this.client = client;
 		this.authnOptions = authnOptions;
 		this.authzOptions = authzOptions;
-		userManagerconfig = generalConfig.getJsonObject(SoileConfigLoader.USERMANAGEMENTFIELDS);
-		dbConfig = generalConfig.getJsonObject(SoileEventVerticle.DB_FIELD);
-		sessionConfig = generalConfig.getJsonObject(SoileConfigLoader.SESSIONFIELDS);
+		userManagerconfig = generalConfig.getJsonObject(SoileConfigLoader.USERMAGR_CFG);
+		dbConfig = generalConfig.getJsonObject(SoileConfigLoader.DB_FIELDS);
+		sessionConfig = generalConfig.getJsonObject(SoileConfigLoader.SESSION_CFG);
 		strategy = new SoileHashing(userManagerconfig.getString("serverSalt"));
 		hashingAlgorithm = userManagerconfig.getString("hashingAlgorithm");
 		
 	}
 
-	public UserManager getUserList(int startpos)
+	public SoileUserManager getUserList(int startpos)
 	{
 		return this;
 	}
 
-	public UserManager removeUser(String username , Handler<AsyncResult<MongoClientDeleteResult>> resultHandler)
+	public SoileUserManager removeUser(String username , Handler<AsyncResult<MongoClientDeleteResult>> resultHandler)
 	{
 		client.removeDocument(authnOptions.getCollectionName(),
 				new JsonObject().put(authnOptions.getUsernameField(), username),
@@ -84,7 +81,7 @@ public class UserManager implements MongoUserUtil{
 	}
 
 
-	public UserManager setEmailAndFullName(String username, String email, String fullName, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
+	public SoileUserManager setEmailAndFullName(String username, String email, String fullName, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
 	{
 
 		JsonObject targetQuery = new JsonObject()						
@@ -140,7 +137,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public UserManager getUserData(String username, Handler<AsyncResult<JsonObject>> resultHandler)
+	public SoileUserManager getUserData(String username, Handler<AsyncResult<JsonObject>> resultHandler)
 	{
 		JsonObject query = new JsonObject().put(authnOptions.getUsernameField(), username);
 		
@@ -180,7 +177,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - the handler for the results.	 
 	 * @return this
 	 */
-	public UserManager changePermissionsOrRoles(String username, String roleOrPermissionField, List<String> rolesOrPermissions, PermissionChange alterationFlag, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager changePermissionsOrRoles(String username, String roleOrPermissionField, List<String> rolesOrPermissions, PermissionChange alterationFlag, Handler<AsyncResult<String>> resultHandler)
 	{
 		client.find(authzOptions.getCollectionName(),
 				new JsonObject()
@@ -248,7 +245,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public UserManager updatePermissions(String username, List<String> permissions, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager updatePermissions(String username, List<String> permissions, Handler<AsyncResult<String>> resultHandler)
 	{
 		return changePermissionsOrRoles(username, authzOptions.getPermissionField(), permissions,PermissionChange.Replace, resultHandler);		
 	}		 
@@ -261,7 +258,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public UserManager updateRoles(String username, List<String> roles, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager updateRoles(String username, List<String> roles, Handler<AsyncResult<String>> resultHandler)
 	{
 		return changePermissionsOrRoles(username, authzOptions.getRoleField(), roles, PermissionChange.Replace, resultHandler);		
 	}
@@ -273,7 +270,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public UserManager addPermission(String username, String permission, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager addPermission(String username, String permission, Handler<AsyncResult<String>> resultHandler)
 	{
 		addPermissions(username, Arrays.asList(permission), resultHandler);
 		return this;
@@ -286,7 +283,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public UserManager addPermissions(String username, List<String> permissions, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager addPermissions(String username, List<String> permissions, Handler<AsyncResult<String>> resultHandler)
 	{
 		return this.changePermissionsOrRoles(username, authzOptions.getPermissionField(), permissions, PermissionChange.Add, resultHandler);
 
@@ -299,7 +296,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public UserManager addRole(String username, String role, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager addRole(String username, String role, Handler<AsyncResult<String>> resultHandler)
 	{
 		addRoles(username, Arrays.asList(role), resultHandler);
 		return this;
@@ -312,7 +309,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public UserManager addRoles(String username, List<String> roles, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager addRoles(String username, List<String> roles, Handler<AsyncResult<String>> resultHandler)
 	{
 		return this.changePermissionsOrRoles(username, authzOptions.getRoleField(), roles, PermissionChange.Add, resultHandler);
 
@@ -327,7 +324,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public UserManager removePermission(String username, String permission, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager removePermission(String username, String permission, Handler<AsyncResult<String>> resultHandler)
 	{
 		removePermissions(username, Arrays.asList(permission), resultHandler);
 		return this;
@@ -340,7 +337,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public UserManager removePermissions(String username, List<String> permissions, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager removePermissions(String username, List<String> permissions, Handler<AsyncResult<String>> resultHandler)
 	{
 		return this.changePermissionsOrRoles(username, authzOptions.getPermissionField(), permissions, PermissionChange.Remove, resultHandler);
 
@@ -353,7 +350,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public UserManager removeRole(String username, String role, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager removeRole(String username, String role, Handler<AsyncResult<String>> resultHandler)
 	{
 		removeRoles(username, Arrays.asList(role), resultHandler);
 		return this;
@@ -366,14 +363,14 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public UserManager removeRoles(String username, List<String> roles, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager removeRoles(String username, List<String> roles, Handler<AsyncResult<String>> resultHandler)
 	{
 		return this.changePermissionsOrRoles(username, authzOptions.getRoleField(), roles, PermissionChange.Remove, resultHandler);
 
 	}
 
 	@Override
-	public UserManager createUser(String username, String password, Handler<AsyncResult<String>> resultHandler) {
+	public SoileUserManager createUser(String username, String password, Handler<AsyncResult<String>> resultHandler) {
 		if (username == null || password == null) {
 			resultHandler.handle(Future.failedFuture("username or password are null"));			
 			return this;
@@ -400,7 +397,7 @@ public class UserManager implements MongoUserUtil{
 	 * @param resultHandler
 	 * @return this {@link MongoUserUtil}
 	 */	
-	public UserManager deleteUser(String username, Handler<AsyncResult<MongoClientDeleteResult>> resultHandler)
+	public SoileUserManager deleteUser(String username, Handler<AsyncResult<MongoClientDeleteResult>> resultHandler)
 	{
 		client.removeDocument(
 				authnOptions.getCollectionName(),
@@ -411,7 +408,7 @@ public class UserManager implements MongoUserUtil{
 	}
 
 	@Override
-	public UserManager createHashedUser(String username, String hash, Handler<AsyncResult<String>> resultHandler) {
+	public SoileUserManager createHashedUser(String username, String hash, Handler<AsyncResult<String>> resultHandler) {
 		if (username == null || hash == null) {
 			resultHandler.handle(Future.failedFuture("username or password hash are null"));
 			return this;
@@ -451,7 +448,7 @@ public class UserManager implements MongoUserUtil{
 	}
 
 	@Override
-	public UserManager createUserRolesAndPermissions(String username, List<String> roles, List<String> permissions,
+	public SoileUserManager createUserRolesAndPermissions(String username, List<String> roles, List<String> permissions,
 			Handler<AsyncResult<String>> resultHandler) {
 
 		if (username == null) {
@@ -470,7 +467,7 @@ public class UserManager implements MongoUserUtil{
 		return this;
 	}
 	
-	public UserManager getUserSalt(String username, Handler<AsyncResult<String>> handler)
+	public SoileUserManager getUserSalt(String username, Handler<AsyncResult<String>> handler)
 	{
 		client.find(authzOptions.getCollectionName(),
 				new JsonObject()
@@ -500,7 +497,7 @@ public class UserManager implements MongoUserUtil{
 		return this;
 	}	
 	
-	public UserManager addUserSession(String username, String sessionID, Handler<AsyncResult<MongoClientUpdateResult>> handler)	
+	public SoileUserManager addUserSession(String username, String sessionID, Handler<AsyncResult<MongoClientUpdateResult>> handler)	
 	{
 		if (username == null  || sessionID == null) {
 			handler.handle(Future.failedFuture("Username or session not given"));
@@ -570,7 +567,7 @@ public class UserManager implements MongoUserUtil{
 		return this;
 	}
 	
-	public UserManager isSessionValid(String username, String sessionID, Handler<AsyncResult<Boolean>> handler)	
+	public SoileUserManager isSessionValid(String username, String sessionID, Handler<AsyncResult<Boolean>> handler)	
 	{
 		if (username == null  || sessionID == null) {
 			handler.handle(Future.failedFuture("Username or session not given"));

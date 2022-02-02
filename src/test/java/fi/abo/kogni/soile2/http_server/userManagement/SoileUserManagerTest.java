@@ -4,7 +4,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import fi.abo.kogni.soile2.http_server.MongoTestBase;
-import fi.abo.kogni.soile2.http_server.UserManagementVerticle;
+import fi.abo.kogni.soile2.http_server.SoileUserManagementVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
@@ -15,16 +15,16 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 
 @RunWith(VertxUnitRunner.class)
-public class UserManagerTest extends MongoTestBase{
+public class SoileUserManagerTest extends MongoTestBase{
 	
 	@Test
 	public void testUserAddition(TestContext context) {
 		final Async async = context.async();
-		UserManager man = new UserManager(MongoClient.create(vertx, config.getJsonObject("db")),
-				  new MongoAuthenticationOptions(config.getJsonObject(UserManagementVerticle.USER_CONFIG)),
-				  new MongoAuthorizationOptions(config.getJsonObject(UserManagementVerticle.USER_CONFIG)),
+		SoileUserManager man = new SoileUserManager(MongoClient.create(vertx, config.getJsonObject("db")),
+				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
+				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
 				  config,
-				  UserManagementVerticle.USER_CONFIG);		
+				  SoileUserManagementVerticle.USER_CONFIG);		
 		String username =  "testUser";
 		String password =  "testpw";
 		
@@ -56,11 +56,11 @@ public class UserManagerTest extends MongoTestBase{
 	@Test
 	public void testSetUserNameAndPassword(TestContext context) {
 		final Async async = context.async();
-		UserManager man = new UserManager(MongoClient.create(vertx, config.getJsonObject("db")),
-				  new MongoAuthenticationOptions(config.getJsonObject(UserManagementVerticle.USER_CONFIG)),
-				  new MongoAuthorizationOptions(config.getJsonObject(UserManagementVerticle.USER_CONFIG)),
+		SoileUserManager man = new SoileUserManager(MongoClient.create(vertx, config.getJsonObject("db")),
+				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
+				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
 				  config,
-				  UserManagementVerticle.USER_CONFIG);		
+				  SoileUserManagementVerticle.USER_CONFIG);		
 		String username =  "testUser2";
 		String password =  "testpw";
 		String email = "test@test.blubb";
@@ -103,4 +103,55 @@ public class UserManagerTest extends MongoTestBase{
 				
 	}
 	
+	
+	
+	@Test
+	public void testSessionValidity(TestContext context) {
+		final Async async = context.async();
+		SoileUserManager man = new SoileUserManager(MongoClient.create(vertx, config.getJsonObject("db")),
+				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
+				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CONFIG)),
+				  config,
+				  SoileUserManagementVerticle.USER_CONFIG);		
+		String username =  "testUser2";
+		String password =  "testpw";
+		String email = "test@test.blubb";
+		String fullname = "Test User";
+		man.createUser(username, password).onComplete(id -> {
+			if (id.succeeded()){
+				man.setEmailAndFullName(username,email,fullname, res ->{
+					if(res.succeeded())
+					{		
+						man.getUserData(username, uData -> {
+							if(uData.succeeded())
+							{
+								context.assertEquals(username,uData.result().getString("username"));
+								context.assertEquals(email,uData.result().getString("email"));
+								context.assertEquals(fullname,uData.result().getString("fullname"));
+								async.complete();		
+								}
+							else
+							{								
+								context.fail("Could not retrieve data for user");
+								async.complete();		
+							}
+							
+						});
+						
+					}
+					else
+					{
+						context.fail("Could not set email address and full name for user.(" + res.cause().getMessage() + ")");
+						async.complete();
+					}
+				});
+			}
+				else
+				{
+					context.fail("Could not create user. (" + id.cause().getMessage() + ")");
+					async.complete();
+				}			
+		});				
+				
+	}
 }
