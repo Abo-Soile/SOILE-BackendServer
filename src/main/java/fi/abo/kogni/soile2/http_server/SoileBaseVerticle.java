@@ -12,7 +12,7 @@ import io.vertx.core.json.JsonObject;
  * @author thomas
  *
  */
-public class SoileEventVerticle extends AbstractVerticle {
+public class SoileBaseVerticle extends AbstractVerticle {
 	
 //	private String commandPrefix;
 	private JsonObject typeSpecificConfig; 	
@@ -91,5 +91,13 @@ public class SoileEventVerticle extends AbstractVerticle {
 	public String getConfig(String entry)
 	{
 		return typeSpecificConfig.getString(entry);
+	}
+	
+	/**
+	 * Convenience method to get the session Config in a Soile verticle
+	 */
+	public JsonObject getSessionConfig()
+	{
+		return SoileConfigLoader.getSessionConfig(config());
 	}
 }

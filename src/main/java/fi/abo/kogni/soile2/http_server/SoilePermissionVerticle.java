@@ -35,7 +35,7 @@ import io.vertx.ext.mongo.MongoClient;
  * @author Thomas Pfau
  *
  */
-public class SoilePermissionVerticle extends SoileEventVerticle {
+public class SoilePermissionVerticle extends SoileBaseVerticle {
 
 	static final Logger LOGGER = LogManager.getLogger(SoilePermissionVerticle.class);
 	final String DBFIELD;
@@ -60,7 +60,7 @@ public class SoilePermissionVerticle extends SoileEventVerticle {
 		System.out.println("Starting SoilePermissionVerticle");
 		mongo = MongoClient.createShared(vertx, config().getJsonObject("db"));		
 		setupConfig(DBFIELD);
-		userConfig = config().getJsonObject(SoileConfigLoader.USERMAGR_CFG);
+		userConfig = config().getJsonObject(SoileConfigLoader.USERMGR_CFG);
 		setupEvents();
 		startPromise.complete();
 		System.out.println("Started successfully");
@@ -90,11 +90,11 @@ public class SoilePermissionVerticle extends SoileEventVerticle {
 	
 	void setupEvents()
 	{
-		vertx.eventBus().consumer(getEventbusCommandString("getFilePermission"), this::getFilePermissions);
-		vertx.eventBus().consumer(getEventbusCommandString("getDataPermission"), this::getDataPermissions);
-		vertx.eventBus().consumer(getEventbusCommandString("getResultPermission"), this::getResultPermissions);
+		vertx.eventBus().consumer(getEventbusCommandString("getFilePermissions"), this::getFilePermissions);
+		vertx.eventBus().consumer(getEventbusCommandString("getDataPermissions"), this::getDataPermissions);
+		vertx.eventBus().consumer(getEventbusCommandString("getResultPermissions"), this::getResultPermissions);
 		vertx.eventBus().consumer(getEventbusCommandString("setOwner"), this::setOwner);
-		vertx.eventBus().consumer(getEventbusCommandString("getPrivate"), this::setPrivate);
+		vertx.eventBus().consumer(getEventbusCommandString("setPrivate"), this::setPrivate);
 	}
 		
 	

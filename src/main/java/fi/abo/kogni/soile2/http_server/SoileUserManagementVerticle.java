@@ -1,8 +1,5 @@
 package fi.abo.kogni.soile2.http_server;
 
-import java.util.Random;
-
-import org.apache.commons.collections4.functors.InstanceofPredicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -10,14 +7,9 @@ import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
 import io.vertx.ext.mongo.MongoClient;
@@ -38,13 +30,13 @@ import io.vertx.ext.mongo.MongoClient;
  * @author thomas
  *
  */
-public class SoileUserManagementVerticle extends SoileEventVerticle {
+public class SoileUserManagementVerticle extends SoileBaseVerticle {
 
 	SoileUserManager userManager;
 	SoileUserManager participantManager;
 	MongoClient mongo;
-	public static final String PARTICIPANT_CONFIG = "participant_db";
-	public static final String USER_CONFIG = "user_db";
+	public static final String PARTICIPANT_CFG = "participant_db";
+	public static final String USER_CFG = "user_db";
 	private static final Logger LOGGER = LogManager.getLogger(SoileUserManagementVerticle.class);
 	private JsonObject sessionFields;
 	
@@ -52,9 +44,9 @@ public class SoileUserManagementVerticle extends SoileEventVerticle {
 	public void start(Promise<Void> startPromise) throws Exception {
 		LOGGER.info("Starting UserManagementVerticle");
 		mongo = MongoClient.createShared(vertx, config().getJsonObject("db"));
-		setupConfig(SoileConfigLoader.USERMAGR_CFG);
-		JsonObject partConfig = config().getJsonObject(PARTICIPANT_CONFIG).mergeIn(config().getJsonObject(SoileConfigLoader.DB_FIELDS));
-		JsonObject userConfig = config().getJsonObject(USER_CONFIG).mergeIn(config().getJsonObject(SoileConfigLoader.DB_FIELDS));		
+		setupConfig(SoileConfigLoader.USERMGR_CFG);
+		JsonObject partConfig = config().getJsonObject(PARTICIPANT_CFG).mergeIn(config().getJsonObject(SoileConfigLoader.DB_FIELDS));
+		JsonObject userConfig = config().getJsonObject(USER_CFG).mergeIn(config().getJsonObject(SoileConfigLoader.DB_FIELDS));		
 		/* The JsonObject needs the following fields: 
 		* collectionName - required in our case for two different (default:user)
 		* permissionField - default:
@@ -69,8 +61,8 @@ public class SoileUserManagementVerticle extends SoileEventVerticle {
 		MongoAuthorizationOptions partAuthzOptions = new MongoAuthorizationOptions(partConfig);
 		MongoAuthenticationOptions userAuthnOptions = new MongoAuthenticationOptions(userConfig);
 		MongoAuthorizationOptions userAuthzOptions = new MongoAuthorizationOptions(userConfig);
-		userManager = new SoileUserManager(mongo,userAuthnOptions,userAuthzOptions, config(),USER_CONFIG);
-		participantManager = new SoileUserManager(mongo,partAuthnOptions,partAuthzOptions, config(),PARTICIPANT_CONFIG);
+		userManager = new SoileUserManager(mongo,userAuthnOptions,userAuthzOptions, config(),USER_CFG);
+		participantManager = new SoileUserManager(mongo,partAuthnOptions,partAuthzOptions, config(),PARTICIPANT_CFG);
 		
 
 		setupChannels();
@@ -84,13 +76,8 @@ public class SoileUserManagementVerticle extends SoileEventVerticle {
 	 */
 	void setupChannels()
 	{				
-		//System.out.println("Registering consumer for " +  UManagement_prefix + uManConfig.getJsonObject("commands").getString("addUser"));
-		System.out.println("Adding he following handlers: \n" + getEventbusCommandString("addUser") + "\n" 
-				+ getEventbusCommandString("removeUser") + "\n"
-				+ getEventbusCommandString("permissionOrRoleChange") + "\n"
-				+ getEventbusCommandString("setUserFullNameAndEmail") + "\n"
-				+ getEventbusCommandString("getUserData") + "\n"
-			);
+		System.out.println("Setting up channels");
+		System.out.println("Adding channel: " + getEventbusCommandString("addUser"));
 		vertx.eventBus().consumer(getEventbusCommandString("addUser"), this::addUser);
 		vertx.eventBus().consumer(getEventbusCommandString("removeUser"), this::removeUser);
 		vertx.eventBus().consumer(getEventbusCommandString("permissionOrRoleChange"), this::permissionOrRoleChange);

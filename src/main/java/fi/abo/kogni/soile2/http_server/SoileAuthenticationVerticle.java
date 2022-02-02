@@ -7,6 +7,7 @@ package fi.abo.kogni.soile2.http_server;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.http_server.authentication.SoileAccessHandler;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthentication;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthenticationOptions;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthorization;
@@ -18,19 +19,17 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authorization.OrAuthorization;
 import io.vertx.ext.auth.authorization.PermissionBasedAuthorization;
 import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
-import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthorizationHandler;
-import io.vertx.ext.web.handler.BasicAuthHandler;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.sstore.SessionStore;
 
-public class SoileAuthenticationVerticle extends SoileEventVerticle{
+public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	
 	MongoClient client;
 	Router router;
@@ -76,13 +75,13 @@ public class SoileAuthenticationVerticle extends SoileEventVerticle{
 	
 	void setUpAuthentication()
 	{
-		SoileAuthenticationOptions partConf = new SoileAuthenticationOptions(config().getJsonObject(SoileUserManagementVerticle.PARTICIPANT_CONFIG));
-		SoileAuthenticationOptions userConf = new SoileAuthenticationOptions(config().getJsonObject(SoileUserManagementVerticle.USER_CONFIG));		
-		JsonObject uManConf = config().getJsonObject(SoileConfigLoader.USERMAGR_CFG);
+		SoileAuthenticationOptions partConf = new SoileAuthenticationOptions(config().getJsonObject(SoileUserManagementVerticle.PARTICIPANT_CFG));
+		SoileAuthenticationOptions userConf = new SoileAuthenticationOptions(config().getJsonObject(SoileUserManagementVerticle.USER_CFG));		
+		JsonObject uManConf = config().getJsonObject(SoileConfigLoader.USERMGR_CFG);
 		partConf.setUserType(uManConf.getString("participantType"));
 		userConf.setUserType(uManConf.getString("researcherType"));
-		BasicAuthHandler parthandler = BasicAuthHandler.create(new SoileAuthentication(client, partConf, uManConf, uManConf.getString("participantType")));
-		BasicAuthHandler userhandler = BasicAuthHandler.create(new SoileAuthentication(client, userConf, uManConf, uManConf.getString("participantType")));
+		SoileAccessHandler parthandler = new SoileAccessHandler(vertx, new SoileAuthentication(client, partConf, config()),uManConf,getSessionConfig());
+		SoileAccessHandler userhandler = new SoileAccessHandler(vertx, new SoileAuthentication(client, userConf, config()),uManConf,getSessionConfig());
 		
 		// This will only handle the login request send to this address.
 		router.post("/services/user/auth").handler(userhandler);
@@ -92,8 +91,8 @@ public class SoileAuthenticationVerticle extends SoileEventVerticle{
 	void setupAuthorization()
 	{
 		// Create the authorization providers
-		MongoAuthorizationOptions partConf = new MongoAuthorizationOptions(config().getJsonObject(SoileUserManagementVerticle.PARTICIPANT_CONFIG));
-		MongoAuthorizationOptions userConf = new MongoAuthorizationOptions(config().getJsonObject(SoileUserManagementVerticle.USER_CONFIG));
+		MongoAuthorizationOptions partConf = new MongoAuthorizationOptions(config().getJsonObject(SoileUserManagementVerticle.PARTICIPANT_CFG));
+		MongoAuthorizationOptions userConf = new MongoAuthorizationOptions(config().getJsonObject(SoileUserManagementVerticle.USER_CFG));
 	
 		authZpart = new SoileAuthorization(client, partConf, "Participant_Auth");
 		authZuser = new SoileAuthorization(client, userConf, "User_Auth");
