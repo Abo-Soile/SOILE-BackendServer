@@ -55,7 +55,7 @@ public class SoileUserManager implements MongoUserUtil{
 	}
 
 	
-	public SoileUserManager(MongoClient client, MongoAuthenticationOptions authnOptions, MongoAuthorizationOptions authzOptions, JsonObject generalConfig, String ID) {
+	public SoileUserManager(MongoClient client, MongoAuthenticationOptions authnOptions, MongoAuthorizationOptions authzOptions, JsonObject generalConfig) {
 		this.client = client;
 		this.authnOptions = authnOptions;
 		this.authzOptions = authzOptions;
@@ -422,19 +422,17 @@ public class SoileUserManager implements MongoUserUtil{
 					{
 						if(res.result().size() > 0)
 						{
-							System.out.println("User already exists");
 							resultHandler.handle(Future.failedFuture(new UserAlreadyExistingException(username)));
 							return;
 						}
 						else {
-							System.out.println("Creating User with name " + username);
 							client.save(
 									authnOptions.getCollectionName(),
 									new JsonObject()
 									.put(authnOptions.getUsernameField(), username)
 									.put(authnOptions.getPasswordField(), hash),
 									resultHandler
-									);
+									);							
 						}
 					}
 					else

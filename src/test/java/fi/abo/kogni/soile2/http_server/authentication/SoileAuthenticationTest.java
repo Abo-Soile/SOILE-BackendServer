@@ -17,32 +17,38 @@ public class SoileAuthenticationTest extends MongoTestBase{
 	@Test	
 	public void testAuthentication(TestContext context) {
 		// create a user, that we want to authenticate later on.
-		String usernameField = config.getJsonObject(SoileConfigLoader.DB_FIELDS)
+		String usernameField = cfg.getJsonObject(SoileConfigLoader.DB_FIELDS)
 				  .getString("usernameField");
+		String userTypeField = cfg.getJsonObject(SoileConfigLoader.DB_FIELDS)
+				  .getString("userTypeField");
+		String passwordField = cfg.getJsonObject(SoileConfigLoader.DB_FIELDS)
+				  .getString("passwordField");
 		JsonObject participant1 = new JsonObject().put(usernameField, "participant")
-										   .put(config.getJsonObject(SoileConfigLoader.DB_FIELDS)
-													  .getString("passwordField"), "password");
+										   .put(passwordField, "password")
+										   .put(userTypeField, "participant");
 		JsonObject user1 = new JsonObject().put(usernameField, "participant")
-										   .put(config.getJsonObject(SoileConfigLoader.DB_FIELDS)
-												   	  .getString("passwordField"), "password2");
+										   .put(passwordField, "password")
+										   .put(userTypeField, "user");
 		
 		JsonObject user2 = new JsonObject().put(usernameField, "user2")
-											.put(config.getJsonObject(SoileConfigLoader.DB_FIELDS)
-													   .getString("passwordField"), "password");
-		
-		
+										   .put(passwordField, "password2")
+										   .put(userTypeField, "user");
+		Async overall = context.async();
 		//we crate the same user in both participant and user databases, along with a 
-		createUser(participant1, participant_options, context);
-		createUser(user1, user_options, context);
+		createUser(participant1, authOptions, context).onComplete(x1 -> 
+		{
+		createUser(user2, authOptions, context)
+		.onComplete(x2 -> 
+		{
+						
 		
-		
-		SoileAuthentication pauth = new SoileAuthentication(mongo_client, participant_options, config);		
-		SoileAuthentication uauth = new SoileAuthentication(mongo_client, user_options, config);
+		SoileAuthentication auth = new SoileAuthentication(mongo_client, authOptions, cfg);		
 		final Async async = context.async();
 		//test auth against the correct database
-		pauth.authenticate(participant1).onComplete( user -> {
+		auth.authenticate(participant1).onComplete( user -> {
 			if(user.succeeded())
 			{
+				System.out.println("Auth participant Success Tested");
 				context.assertEquals(participant1.getString(usernameField), user.result().principal().getString(usernameField));
 				async.complete();
 			}			
@@ -53,31 +59,36 @@ public class SoileAuthenticationTest extends MongoTestBase{
 			}
 		});
 		final Async invalidAuth = context.async();
-		uauth.authenticate(participant1).onComplete( user -> {
+		auth.authenticate(user1).onComplete( user -> {
 			if(user.succeeded())
-			{
+			{				
 				context.fail("Invalid authentication succeeded");
 				invalidAuth.complete();
 			}
 			else
 			{
-				context.assertEquals("Invalid user or wrong password for user participant", user.cause().getMessage());
+				System.out.println("Invalid auth Tested");
+				context.assertEquals("Invalid user or wrong password for participant", user.cause().getMessage());
 				invalidAuth.complete();
 			}
 		});
 		final Async invalidAuth2 = context.async();
-		uauth.authenticate(user2).onComplete( user -> {
+		auth.authenticate(user2).onComplete( user -> {
 			if(user.succeeded())
 			{
-				context.fail("Invalid authentication succeeded");
+				System.out.println("Valid user auth tested");
+				context.assertEquals(user2.getString(usernameField), user.result().principal().getString(usernameField));
 				invalidAuth2.complete();
 			}
 			else
 			{
-				context.assertEquals("Invalid user or wrong password for user user2", user.cause().getMessage());
+				context.fail("Could not authenticate");
 				invalidAuth2.complete();
 			}
+			
 		});
-		
+		overall.complete();
+		});
+		});
 	}
 }

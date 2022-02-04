@@ -6,6 +6,7 @@ import org.junit.runner.RunWith;
 import fi.abo.kogni.soile2.http_server.MongoTestBase;
 import fi.abo.kogni.soile2.http_server.SoileUserManagementVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
+import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
 import io.vertx.ext.mongo.MongoClient;
@@ -20,11 +21,7 @@ public class SoileUserManagerTest extends MongoTestBase{
 	@Test
 	public void testUserAddition(TestContext context) {
 		final Async async = context.async();
-		SoileUserManager man = new SoileUserManager(MongoClient.create(vertx, config.getJsonObject("db")),
-				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
-				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
-				  config,
-				  SoileUserManagementVerticle.USER_CFG);		
+		SoileUserManager man = createManager("user"); 		
 		String username =  "testUser";
 		String password =  "testpw";
 		
@@ -56,11 +53,7 @@ public class SoileUserManagerTest extends MongoTestBase{
 	@Test
 	public void testSetUserNameAndPassword(TestContext context) {
 		final Async async = context.async();
-		SoileUserManager man = new SoileUserManager(MongoClient.create(vertx, config.getJsonObject("db")),
-				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
-				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
-				  config,
-				  SoileUserManagementVerticle.USER_CFG);		
+		SoileUserManager man = createManager("user");		
 		String username =  "testUser2";
 		String password =  "testpw";
 		String email = "test@test.blubb";
@@ -108,11 +101,7 @@ public class SoileUserManagerTest extends MongoTestBase{
 	@Test
 	public void testSessionValidity(TestContext context) {
 		final Async async = context.async();
-		SoileUserManager man = new SoileUserManager(MongoClient.create(vertx, config.getJsonObject("db")),
-				  new MongoAuthenticationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
-				  new MongoAuthorizationOptions(config.getJsonObject(SoileUserManagementVerticle.USER_CFG)),
-				  config,
-				  SoileUserManagementVerticle.USER_CFG);		
+		SoileUserManager man = createManager("user");		
 		String username =  "testUser2";
 		String password =  "testpw";
 		String email = "test@test.blubb";
@@ -153,5 +142,13 @@ public class SoileUserManagerTest extends MongoTestBase{
 				}			
 		});				
 				
+	}
+	
+	public SoileUserManager createManager(String userOrParticipant)
+	{
+		return new SoileUserManager(MongoClient.create(vertx, cfg.getJsonObject("db")),
+				  new MongoAuthenticationOptions().setCollectionName(cfg.getJsonObject(SoileConfigLoader.USERCOLLECTIONS).getString(userOrParticipant)),
+				  new MongoAuthorizationOptions().setCollectionName(cfg.getJsonObject(SoileConfigLoader.USERCOLLECTIONS).getString(userOrParticipant)),
+				  cfg);
 	}
 }

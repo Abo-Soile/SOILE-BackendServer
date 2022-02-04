@@ -46,7 +46,7 @@ public class SoileSessionRestoreHandler extends AuthenticationHandlerImpl<Authen
 				String username = data[1];
 				String userType = data[2];
 				vertx.eventBus()
-				.request(SoileConfigLoader.getEventBusCommand(userConfig, "checkUserSessionValid"),
+				.request(SoileCommUtils.getEventBusCommand(userConfig, "checkUserSessionValid"),
 						  new JsonObject().put(SoileCommUtils.getCommunicationField(communicationConfig,"usernameField"), username)
 						  				  .put(SoileCommUtils.getCommunicationField(communicationConfig,"userTypeField"), userType)
 										  .put(sessionConfig.getString("sessionID"), token),

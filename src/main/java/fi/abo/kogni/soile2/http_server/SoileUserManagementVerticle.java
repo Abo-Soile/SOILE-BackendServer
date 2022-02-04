@@ -1,10 +1,13 @@
 package fi.abo.kogni.soile2.http_server;
 
+import java.net.HttpURLConnection;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
+import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
 import io.vertx.core.Promise;
@@ -13,6 +16,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.MongoClientDeleteResult;
 /**
  * This class provides functionality for the user management of a soile project. it processes messages addressed to 
  * the {UserManagement_prefix} and a command suffix.
@@ -35,8 +39,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	SoileUserManager userManager;
 	SoileUserManager participantManager;
 	MongoClient mongo;
-	public static final String PARTICIPANT_CFG = "participant_db";
-	public static final String USER_CFG = "user_db";
 	private static final Logger LOGGER = LogManager.getLogger(SoileUserManagementVerticle.class);
 	private JsonObject sessionFields;
 	
@@ -45,24 +47,16 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		LOGGER.info("Starting UserManagementVerticle");
 		mongo = MongoClient.createShared(vertx, config().getJsonObject("db"));
 		setupConfig(SoileConfigLoader.USERMGR_CFG);
-		JsonObject partConfig = config().getJsonObject(PARTICIPANT_CFG).mergeIn(config().getJsonObject(SoileConfigLoader.DB_FIELDS));
-		JsonObject userConfig = config().getJsonObject(USER_CFG).mergeIn(config().getJsonObject(SoileConfigLoader.DB_FIELDS));		
-		/* The JsonObject needs the following fields: 
-		* collectionName - required in our case for two different (default:user)
-		* permissionField - default:
-		* roleField - default:  
-		* usernameField - default: username
-		* usernameCredentialField - default: same as usernameField 
-		* passwordField - default: password
-		* passwordCredentialField - default: same as passwordField 
-		*/
+		String partCollection = SoileConfigLoader.getCollectionName(config(), "participant");
+		String userCollection = SoileConfigLoader.getCollectionName(config(), "user");
+		
 		sessionFields = config().getJsonObject(SoileConfigLoader.SESSION_CFG);
-		MongoAuthenticationOptions partAuthnOptions = new MongoAuthenticationOptions(partConfig);
-		MongoAuthorizationOptions partAuthzOptions = new MongoAuthorizationOptions(partConfig);
-		MongoAuthenticationOptions userAuthnOptions = new MongoAuthenticationOptions(userConfig);
-		MongoAuthorizationOptions userAuthzOptions = new MongoAuthorizationOptions(userConfig);
-		userManager = new SoileUserManager(mongo,userAuthnOptions,userAuthzOptions, config(),USER_CFG);
-		participantManager = new SoileUserManager(mongo,partAuthnOptions,partAuthzOptions, config(),PARTICIPANT_CFG);
+		MongoAuthenticationOptions partAuthnOptions = createMongoAuthNOptions(partCollection);
+		MongoAuthorizationOptions partAuthzOptions = createMongoAuthZOptions(partCollection);
+		MongoAuthenticationOptions userAuthnOptions = createMongoAuthNOptions(userCollection);
+		MongoAuthorizationOptions userAuthzOptions = createMongoAuthZOptions(userCollection);;
+		userManager = new SoileUserManager(mongo,userAuthnOptions,userAuthzOptions, config());
+		participantManager = new SoileUserManager(mongo,partAuthnOptions,partAuthzOptions, config());
 		
 
 		setupChannels();
@@ -71,6 +65,26 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		startPromise.complete();
 	}
 
+	private MongoAuthenticationOptions createMongoAuthNOptions(String collection)
+	{
+		MongoAuthenticationOptions res = new MongoAuthenticationOptions();
+		res.setCollectionName(collection);
+		res.setPasswordCredentialField(getDBField("passwordCredentialField"));
+		res.setPasswordField(getDBField("passwordField"));
+		res.setUsernameCredentialField(getDBField("usernameCredentialField"));
+		res.setUsernameField(getDBField("usernameField"));				
+		return res;
+	}
+	
+	private MongoAuthorizationOptions createMongoAuthZOptions(String collection)
+	{
+		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
+		res.setCollectionName(collection);
+		res.setPermissionField(getDBField("userPermissionsField"));
+		res.setRoleField(getDBField("userRolesField"));
+		res.setUsernameField(getDBField("usernameField"));				
+		return res;
+	}
 	/**
 	 * Set up the channels this Manager is listening to.
 	 */
@@ -99,11 +113,11 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	{
 		
 		SoileUserManager cman;
-		if(command.getString(getDBField("userTypeField")).equals(getConfig("researcherType")))
+		if(command.getString(getCommunicationField("userTypeField")).equals(getConfig("researcherType")))
 		{
 			cman = userManager;
 		}
-		else if(command.getString(getDBField("userTypeField")).equals(getConfig("participantType")))
+		else if(command.getString(getCommunicationField("userTypeField")).equals(getConfig("participantType")))
 		{
 			cman = participantManager;
 		}
@@ -140,11 +154,11 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			SoileUserManager cman = getFittingManager(command);
 			if(cman == null)
 			{
-				msg.reply(SoileCommUtils.errorObject("Invalid UserType Field"));
+				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
 				return;
 			}
 			cman.addUserSession(command.getString(getCommunicationField("usernameField"))
-												  ,getCommunicationField("userTypeField")
+												  ,sessionFields.getString("sessionID")
 												  ,res ->
 			{
 				if(res.succeeded())
@@ -153,13 +167,13 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 				}
 				else
 				{
-					msg.reply(SoileCommUtils.errorObject(res.cause().getMessage()));
+					msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, res.cause().getMessage());						
 				}
 			});
 		}	
 		else
 		{
-			msg.reply(SoileCommUtils.errorObject( "Invalid Request"));
+			msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid Request");
 		}
 	}
 	
@@ -196,7 +210,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			SoileUserManager cman = getFittingManager(command);
 			if(cman == null)
 			{
-				msg.reply(SoileCommUtils.errorObject("Invalid UserType Field"));
+				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
 				return;
 			}
 			cman.isSessionValid(command.getString(getCommunicationField("usernameField"))
@@ -206,23 +220,24 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 				if(res.succeeded())
 				{
 					if(res.result())
-					{
+					{						
 						msg.reply(SoileCommUtils.successObject().put(sessionFields.getString("sessionIsValid"), true));
 					}
 					else
 					{
-						msg.reply(SoileCommUtils.successObject().put(sessionFields.getString("sessionIsValid"), false));
+						msg.fail(HttpURLConnection.HTTP_UNAUTHORIZED, "Session not valid");
 					}
 				}
 				else
 				{
-					msg.reply(SoileCommUtils.errorObject(res.cause().getMessage()));
+					msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, "Session could not be validated " +  res.cause().getMessage());						
 				}
 			});
 		}	
 		else
 		{
-			msg.reply(SoileCommUtils.errorObject( "Invalid Request"));
+			
+			msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, "Request Invalid" );
 		}
 	}
 	
@@ -246,7 +261,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			SoileUserManager cman = getFittingManager(command);
 			if(cman == null)
 			{
-				msg.reply(SoileCommUtils.errorObject("Invalid UserType Field"));
+				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
 				return;
 			}
 			cman.getUserData(command.getString(getDBField("usernameField")), userRes ->{
@@ -257,15 +272,14 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 				}
 				else
 				{
-					msg.reply(SoileCommUtils.errorObject(userRes.cause().getMessage()));
-					return;
+					msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, "User could not be fetched: " +  userRes.cause().getMessage());					return;
 				}
 					
 			});
 		}	
 		else
 		{
-			msg.reply(SoileCommUtils.errorObject("Invalid Request"));
+			msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, "Request Invalid" );
 		}
 	}
 	
@@ -294,61 +308,44 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			
 			if(cman == null)
 			{
-				msg.reply(SoileCommUtils.errorObject("Invalid UserType Field"));
+				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
 				return;
 			}	
 			//System.out.println("Verticle: Creating user");
-			cman.createUser(command.getString(getDBField("usernameField")),
-					command.getString(getDBField("passwordField"))).onComplete(
+			cman.createUser(command.getString(getCommunicationField("usernameField")),
+					command.getString(getCommunicationField("passwordField"))).onComplete(
 					id -> {
 						// do this only if the user was created Successfully
 						if(id.succeeded()) {
 							System.out.println("User created successfully");
-
-							//System.out.println("Verticle: Set Email and Full Name from data");
-							cman.setEmailAndFullName(command.getString(getDBField("usernameField")), 
-									command.getString(getDBField("userEmailField")), 
-									command.getString(getDBField("userFullNameField")), 
-									result -> {
-										if(result.succeeded())
-										{
-											msg.reply(SoileCommUtils.successObject()); 			    					
-										}
-										else
-										{
-											cman.deleteUser(command.getString(getDBField("usernameField")), res -> {
-
-												if(res.succeeded())
-												{
-													msg.reply(SoileCommUtils.errorObject("Something went wrong when setting email and full name"));			    							
-												}
-												else
-												{			    							
-													msg.reply(SoileCommUtils.errorObject("User created, but Full name and email not set properly").put("Error",res.cause().getMessage()));
-													LOGGER.error("User " + command.getString(getDBField("usernameField")) + " created, but could not set name + email");
-												}			    							
-											});
-										}
-									});
+							System.out.println("Username: " + command.getString(getDBField("usernameField"))
+												+ " password: " + command.getString(getCommunicationField("passwordField"))
+												+ " type: " + command.getString(getCommunicationField("userTypeField")));
+							msg.reply(SoileCommUtils.successObject()); 			    					
 						}
 						else
 						{
-							// Most likely the user existed already. 
 							if(id.cause() instanceof UserAlreadyExistingException)
 							{
-								msg.reply(SoileCommUtils.errorObject("User Exists"));	
+								msg.fail(HttpURLConnection.HTTP_CONFLICT, "User Exists");	
 								return;
 							}
-							msg.reply(SoileCommUtils.errorObject(id.cause().getMessage()));
-						}
-					});
+							else
+							{
 
+								msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR,id.cause().getMessage());							
+							}
+						}
+						});
 		}	
 		else
 		{
-			msg.reply(SoileCommUtils.errorObject("Invalid Request"));
+			msg.fail(HttpURLConnection.HTTP_BAD_REQUEST,"Invalid Request");
 		}
 	}
+	
+	
+	
 	/**
 	 * Remove a user. The message body must contain the 
 	 * @param msg
@@ -363,23 +360,30 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			SoileUserManager cman = getFittingManager(command);
 			if(cman == null)
 			{
-				msg.reply(SoileCommUtils.errorObject("Invalid UserType Field"));
+				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST,"Invalid UserType Field");
 				return;
 			}			
 			cman.deleteUser(command.getString(getDBField("usernameField")), res -> {
 				if(res.succeeded())
 				{
-					msg.reply(SoileCommUtils.successObject());
+					MongoClientDeleteResult delRes = res.result();
+					if( delRes.getRemovedCount() >= 1)
+					{
+						msg.reply(SoileCommUtils.successObject());	
+					}
+					else
+					{
+						msg.fail(UserDoesNotExistException.ERRORCODE, "User does not exist");
+					}
 				}
 				else
 				{
-					msg.reply(SoileCommUtils.errorObject(res.cause().getMessage()));	
-				}
+					msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR,res.cause().getMessage());				}
 			});						    							
 		}	
 		else
 		{
-			msg.reply(SoileCommUtils.errorObject("Invalid Request"));
+			msg.fail(HttpURLConnection.HTTP_BAD_REQUEST,"Invalid Request");
 		}
 	}
 	
@@ -398,7 +402,32 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		//make sure we actually get the right thing
 		if (msg.body() instanceof JsonObject)
 		{
-			
+				JsonObject command = (JsonObject)msg.body();
+				SoileUserManager cman = getFittingManager(command);
+				//System.out.println("Found fitting UserManager for type " + command.getString("type"));
+				
+				if(cman == null)
+				{
+					msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
+					return;
+				}	
+				//System.out.println("Verticle: Set Email and Full Name from data");
+				cman.setEmailAndFullName(command.getString(getDBField("usernameField")), 
+						command.getString(getDBField("userEmailField")), 
+						command.getString(getDBField("userFullNameField")), 
+						res -> {
+							if(res.succeeded())
+							{
+								msg.reply(SoileCommUtils.successObject()); 			    					
+							}
+							else
+							{
+
+
+								msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, "Something went wrong when setting username and email: " +  res.cause().getMessage());
+							}
+						
+						});
 		}
 	}	
 	

@@ -18,7 +18,6 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	private JsonObject typeSpecificConfig; 	
 	private JsonObject communicationConfig;
 	private JsonObject dbConfig;
-	public final static String COMM_FIELD = "communication_fields";
 	
 	/**
 	 * Set up the individual config for this verticle. The field refers to the field in the general config.  
@@ -28,7 +27,7 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	{
 		this.typeSpecificConfig = config().getJsonObject(field);
 		//commandPrefix = typeSpecificConfig.getString("commandPrefix");
-		communicationConfig = config().getJsonObject(COMM_FIELD);
+		communicationConfig = config().getJsonObject(SoileConfigLoader.COMMUNICATION_CFG);
 		dbConfig = config().getJsonObject(SoileConfigLoader.DB_FIELDS);
 	}
 	
@@ -39,7 +38,7 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	 */
 	public String getEventbusCommandString(String command)
 	{		
-		return SoileConfigLoader.getEventBusCommand(typeSpecificConfig, command);
+		return SoileCommUtils.getEventBusCommand(typeSpecificConfig, command);
 	}
 	
 	/**
@@ -51,6 +50,7 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	{
 		return SoileConfigLoader.getCommand(typeSpecificConfig, command);
 	}
+	
 	
 	/**
 	 * Get the string representing a specific result.
@@ -99,5 +99,14 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	public JsonObject getSessionConfig()
 	{
 		return SoileConfigLoader.getSessionConfig(config());
+	}
+
+	/**
+	 * Convenience function to obtain the communications config.
+	 * @return
+	 */
+	public JsonObject getCommunicationConfig()
+	{
+		return communicationConfig;
 	}
 }

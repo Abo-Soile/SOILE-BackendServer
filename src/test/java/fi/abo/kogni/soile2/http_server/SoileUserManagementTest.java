@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.http_server;
 
+import java.net.HttpURLConnection;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,6 +12,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -23,7 +26,7 @@ public class SoileUserManagementTest extends MongoTestBase{
 
 	String getCommand(String commandString)
 	{
-		return uconfig.getString("commandPrefix") + uconfig.getJsonObject("commands").getString(commandString);
+		return uCfg.getString("commandPrefix") + uCfg.getJsonObject("commands").getString(commandString);
 	}
 	/**
 	 * Before executing our test, let's deploy our verticle.
@@ -55,17 +58,18 @@ public class SoileUserManagementTest extends MongoTestBase{
 								{
 									if(invRes.succeeded())
 									{
-										JsonObject invobj = (JsonObject)invRes.result().body();
-										context.assertEquals("Error", invobj.getString("Result"));
-										context.assertEquals("User Exists", invobj.getString("Reason"));
-										System.out.println("Checked that no additional user could be added");
+										context.fail("Could create user twice");
 										async.complete();
 									}
 									else
-										{							
-										context.fail("Invalid user errored unexpectedly: " + invRes.cause().getMessage());
-										async.complete();
-										}
+									{							
+										;
+										ReplyException ex = (ReplyException)invRes.cause();
+										context.assertEquals(HttpURLConnection.HTTP_CONFLICT,ex.failureCode());
+										context.assertEquals("User Exists", invRes.cause().getMessage());
+										//System.out.println("Checked that no additional user could be added");
+										async.complete();																			
+									}
 								});													
 
 						}					
@@ -84,51 +88,6 @@ public class SoileUserManagementTest extends MongoTestBase{
 		}
 	}
 
-
-	@Test
-	public void testAuthentication(TestContext context) {
-		Async async = context.async();
-		try {
-			JsonObject userObject = new JsonObject()
-					.put("username", "testUser")
-					.put("password", "testpw")
-					.put("email", "This@that.com")
-					.put("type", "participant")
-					.put("fullname","Test User");
-			vertx.eventBus().request(getCommand("addUser"), 
-					userObject).onComplete(res -> {
-							async.complete();
-					});
-		}
-		catch(Exception e)
-		{
-			context.fail();
-			async.complete();
-		}
-	} 
-
-	@Test
-	public void testInvalidAuthentication(TestContext context) {
-		Async async = context.async();
-		try {
-			JsonObject userObject = new JsonObject()
-					.put("username", "testUser")
-					.put("password", "testpw")
-					.put("email", "This@that.com")
-					.put("type", "participant")
-					.put("fullname","Test User");
-			vertx.eventBus().request(getCommand("addUser"), 
-					userObject).onComplete(res -> {
-						async.complete();
-					});
-		}
-		catch(Exception e)
-		{
-			context.fail();
-			async.complete();
-		}
-	} 
-
 	@Test
 	public void testRemoveUser(TestContext context) {
 		Async async = context.async();
@@ -146,11 +105,49 @@ public class SoileUserManagementTest extends MongoTestBase{
 							JsonObject obj = (JsonObject)res.result().body();					
 							context.assertEquals("Success",obj.getValue("Result"));
 							System.out.println("User Creation Test Successfull");
-							async.complete();
+							vertx.eventBus().request(SoileCommUtils.getEventBusCommand(uCfg, "removeUser"), userObject, remres ->
+							{
+								if(remres.succeeded())
+								{
+									Async iasync = context.async();
+									//lets try to remove it again;
+									vertx.eventBus().request(SoileCommUtils.getEventBusCommand(uCfg, "removeUser"), userObject, rrres ->
+									{
+										if(rrres.succeeded())
+										{
+											context.fail("Successfully removed already deleted user.");
+											iasync.complete();
+										}
+										else
+										{
+											iasync.complete();	
+										}
+									});
+									//Otherwise handle this.
+									JsonObject resobj = (JsonObject) remres.result().body();
+									{
+										if(!SoileCommUtils.isResultSuccessFull(resobj)) {
+											context.fail();
+											async.complete();
+										}
+										else
+										{
+											async.complete();
+										}
+									}
+								}
+								else
+								{									
+									context.fail("Could not delete user");
+									async.complete();
+								}
+							});
+							
+							
 						}	
 						else
 						{
-							context.fail("Could not add user");
+							context.fail("Could not re-add user");
 							async.complete();
 						}
 

@@ -12,8 +12,11 @@ import fi.abo.kogni.soile2.http_server.authentication.SoileAuthentication;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthenticationOptions;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authorization.OrAuthorization;
@@ -25,7 +28,9 @@ import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthorizationHandler;
+import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.HttpException;
+import io.vertx.ext.web.handler.RedirectAuthHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.sstore.SessionStore;
 
@@ -36,6 +41,7 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	SessionStore store;
 	MongoAuthorization authZuser;
 	MongoAuthorization authZpart;
+	
 	static final Logger LOGGER = LogManager.getLogger(SoileAuthenticationVerticle.class);
 	static enum AccessType
 	{
@@ -44,7 +50,12 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 		ResultAccess
 	}
 	
-	
+	/**
+	 * Build a authentication vehicle which will add authentication mechanisms to the individual routes.
+	 * Should be started before other routing handlers.
+	 * @param router The {@link Router} that will be user
+	 * @param store the {@link SessionStore} that will be used.
+	 */
 	public SoileAuthenticationVerticle(Router router, SessionStore store)
 	{
 		this.store = store;
@@ -75,24 +86,20 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	
 	void setUpAuthentication()
 	{
-		SoileAuthenticationOptions partConf = new SoileAuthenticationOptions(config().getJsonObject(SoileUserManagementVerticle.PARTICIPANT_CFG));
-		SoileAuthenticationOptions userConf = new SoileAuthenticationOptions(config().getJsonObject(SoileUserManagementVerticle.USER_CFG));		
+		SoileAuthenticationOptions  authOpts = new SoileAuthenticationOptions(config());			
 		JsonObject uManConf = config().getJsonObject(SoileConfigLoader.USERMGR_CFG);
-		partConf.setUserType(uManConf.getString("participantType"));
-		userConf.setUserType(uManConf.getString("researcherType"));
-		SoileAccessHandler parthandler = new SoileAccessHandler(vertx, new SoileAuthentication(client, partConf, config()),uManConf,getSessionConfig());
-		SoileAccessHandler userhandler = new SoileAccessHandler(vertx, new SoileAuthentication(client, userConf, config()),uManConf,getSessionConfig());
+		SoileAuthentication soileAuth = new SoileAuthentication(client, authOpts, config());
+		SoileAccessHandler accessHandler = new SoileAccessHandler(vertx, soileAuth, config());
 		
 		// This will only handle the login request send to this address.
-		router.post("/services/user/auth").handler(userhandler);
-		router.post("/services/part/auth").handler(parthandler);		
+		router.post("/services/auth").handler(BodyHandler.create()).handler(accessHandler);				
 	}
 	
 	void setupAuthorization()
 	{
 		// Create the authorization providers
-		MongoAuthorizationOptions partConf = new MongoAuthorizationOptions(config().getJsonObject(SoileUserManagementVerticle.PARTICIPANT_CFG));
-		MongoAuthorizationOptions userConf = new MongoAuthorizationOptions(config().getJsonObject(SoileUserManagementVerticle.USER_CFG));
+		MongoAuthorizationOptions partConf = new MongoAuthorizationOptions().setCollectionName(config().getJsonObject(SoileConfigLoader.USERCOLLECTIONS).getString("participant"));
+		MongoAuthorizationOptions userConf = new MongoAuthorizationOptions().setCollectionName(config().getJsonObject(SoileConfigLoader.USERCOLLECTIONS).getString("user"));
 	
 		authZpart = new SoileAuthorization(client, partConf, "Participant_Auth");
 		authZuser = new SoileAuthorization(client, userConf, "User_Auth");
@@ -103,7 +110,8 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	
 	void setupUserRoutes()
 	{		
-		router.route(HttpMethod.GET,"/experiment/:id/resources/*").handler( this::handleFileReadAccess);		
+		router.route(HttpMethod.GET,"/experiment/:id/resources/*").handler( this::handleFileReadAccess);
+		router.route("/experiment/:id/resources/*").handler(RedirectAuthHandler.create(null));
 		//router.route(HttpMethod.POST,"/experiment/:id/resources/*").handler( this::handleRestrictiveAccess);
 	}
 	
@@ -167,5 +175,24 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 								
 				});	
 	}
-	
+
+	private class RedirectUnauthorizedHandler implements Handler<RoutingContext>
+	{
+
+		@Override
+		public void handle(RoutingContext ctx) {
+			if(ctx.failed())
+			{
+				if(HttpResponseStatus.valueOf(ctx.statusCode()) == HttpResponseStatus.UNAUTHORIZED)
+				{
+					//we came here because the context was unauthorized.
+					//redirect it to the login page
+					ctx.redirect("/login");
+				}
+			}
+			
+			
+		}
+		
+	}
 }

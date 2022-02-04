@@ -12,6 +12,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.sstore.ClusteredSessionStore;
+import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
 
 public class SoileServerVerticle extends AbstractVerticle {
@@ -65,7 +66,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 	}
 	Future<Void> setUpRouting(Void unused)
 	{
-		store = ClusteredSessionStore.create(vertx);
+		store = LocalSessionStore.create(vertx);
 		SessionHandler shandler = SessionHandler.create(store);
 		router = Router.router(vertx);
 		return Future.<Void>succeededFuture();

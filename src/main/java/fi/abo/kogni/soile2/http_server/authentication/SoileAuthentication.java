@@ -1,45 +1,42 @@
 package fi.abo.kogni.soile2.http_server.authentication;
 
 import java.util.List;
-import java.util.Map;
 
-import fi.abo.kogni.soile2.http_server.SoileUserManagementVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
+import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.HashingStrategy;
 import io.vertx.ext.auth.User;
-import io.vertx.ext.auth.mongo.MongoAuthentication;
-import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
+import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.HttpException;
 
 /**
  * This Verticle will handle User Authentication 
  * @author thomas
  *
  */
-public class SoileAuthentication implements MongoAuthentication{
+public class SoileAuthentication implements AuthenticationProvider{
 
 	private final SoileAuthenticationOptions authnOptions;
 	private final MongoClient client;
 	private final HashingStrategy strategy;
-	private JsonObject userconfig;
-	private JsonObject sessionconfig;
-//	private final String userTypeField;
-	private final String userType;
+	private JsonObject userCf;
+	private JsonObject commConfig;
 	
 	public SoileAuthentication(MongoClient client, SoileAuthenticationOptions authnOptions, JsonObject config)
 	{
-		userconfig = config.getJsonObject(SoileConfigLoader.USERMGR_CFG);
-		sessionconfig = config.getJsonObject(SoileConfigLoader.SESSION_CFG);
-		this.userType = authnOptions.getUserType();
-		this.authnOptions = authnOptions;
+		userCf = config.getJsonObject(SoileConfigLoader.USERMGR_CFG);
+		commConfig = config.getJsonObject(SoileConfigLoader.COMMUNICATION_CFG);
+		this.authnOptions =  authnOptions;
 		this.client = client;
-		strategy = new SoileHashing(userconfig.getString("serverSalt"));
+		strategy = new SoileHashing(userCf.getString("serverSalt"));
 	}
 	
 	
@@ -48,35 +45,40 @@ public class SoileAuthentication implements MongoAuthentication{
 	public void authenticate(JsonObject credentials, Handler<AsyncResult<User>> resultHandler) 
 	{
 		   try {
-			   	  String unameField = authnOptions.getUsernameCredentialField();
+			   	  String unameField = authnOptions.getUsernameField();
 			      //no credentials provided
 			      if (credentials == null || credentials.getString(unameField) == null ) {
 			    	
 			        resultHandler.handle((Future.failedFuture("Invalid Credentials.")));
 			        return;
 			      }
-			      if (credentials.getString(authnOptions.getPasswordCredentialField()) == null ||credentials.getString(authnOptions.getPasswordCredentialField()).isEmpty())
+			      if (credentials.getString(authnOptions.getPasswordField()) == null 
+			    	  ||credentials.getString(authnOptions.getPasswordField()).isEmpty())
+			    	  
 			      {
 			    	  resultHandler.handle((Future.failedFuture("Invalid Password.")));
 				      return;  
 			      }
 
-			      JsonObject query = new JsonObject().put(unameField, credentials.getString(unameField));
-			      client.find(authnOptions.getCollectionName(), query, res -> {
+			      JsonObject query = new JsonObject().put(unameField, credentials.getString(authnOptions.getUsernameField()));
+			      String userType = credentials.getString(SoileCommUtils.getCommunicationField(commConfig, "userTypeField"));
+			      client.find(authnOptions.getCollectionForType(userType), query, res -> {
 			        try {
 			          if (res.succeeded()) {			        	  
 			            User user = getUser(res.result(), credentials);
-			            System.out.println("User found and authenticated");
+			            user.principal().put(SoileCommUtils.getCommunicationField(commConfig, "userTypeField"), userType);
+			            //System.out.println("User found and authenticated");
 			            resultHandler.handle(Future.succeededFuture(user));			            
 			            return;
 			          } else {
-			        	System.out.println("Could not find user in DB");
+			        	//System.out.println("Could not find user in DB");
 			            resultHandler.handle(Future.failedFuture(res.cause()));
 			            return;
 			          }
 			        } catch (Exception e) {
-			          System.out.println(e);
-			          e.printStackTrace(System.out);
+			          //System.out.println(e);
+			          //e.printStackTrace(System.out);
+			          System.out.println(resultHandler.getClass());
 			          resultHandler.handle(Future.failedFuture(e));
 			          return;
 			        }
@@ -90,14 +92,15 @@ public class SoileAuthentication implements MongoAuthentication{
 
 	public User getUser(List<JsonObject> resultList, JsonObject credentials)
 		      throws Exception {
-    	String username = credentials.getString(authnOptions.getUsernameCredentialField());
+    	String username = credentials.getString(authnOptions.getUsernameField());
 		if(resultList.size() == 1)
 	    {
 	    	JsonObject userJson = resultList.get(0);
 	    	System.out.println("Trying to retrieve user for username " + username);
 	    	User user = User.fromName(username);
-	    	user.principal().put(sessionconfig.getString("userTypeField"), userType);
-	    	if(strategy.verify(userJson.getString(authnOptions.getPasswordCredentialField()), credentials.getString(authnOptions.getPasswordCredentialField())))
+	    	//user.principal().put(sessionCfg.getString("userTypeField"), userType);
+	    	if(strategy.verify(userJson.getString(authnOptions.getPasswordField()),
+	    			credentials.getString(authnOptions.getPasswordField())))
 	    	{
 	    		//User authenticated!!
 	    		return user;
@@ -113,15 +116,12 @@ public class SoileAuthentication implements MongoAuthentication{
 	    }
 	    else
 	    {
-	    	throw new Exception("Invalid user or wrong password for user " + username);
+	    	throw new Exception("Invalid user or wrong password for " + username);
 	    }
 
 	}
-	@Override
-	public String hash(String id, Map<String, String> params, String salt, String password) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+
+
 
 	
 	

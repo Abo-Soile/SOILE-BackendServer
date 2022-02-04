@@ -1,25 +1,44 @@
 package fi.abo.kogni.soile2.http_server.authentication;
 
+import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 
-public class SoileAuthenticationOptions extends MongoAuthenticationOptions {
+public class SoileAuthenticationOptions{
 
-	private String userType;
-
+	private JsonObject collections;
+    private String usernameField;
+	private String passwordField;
+    private String collectionsField;
+    
+	public SoileAuthenticationOptions() {
+	    usernameField = "username";
+	    passwordField = "password";
+	  }
+	
 	public SoileAuthenticationOptions(JsonObject config)
 	{
-		super(config);
-		userType = config.getString("authUserType");
+		this();		
+		collections = config.getJsonObject("userCollections");
+		usernameField = config.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("usernameField");
+		passwordField = config.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("passwordField");
+		collectionsField = config.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("userTypeField");
 	}
 	
-	public String getUserType() {
-		return userType;
-	}
+	public String getCollectionForType(String type) {
+		return collections.getString(type);
+	}	
 
-	public SoileAuthenticationOptions setUserType(String userType) {
-		this.userType = userType;
-		return this;
-	}
-	
+
+	  public String getUsernameField() {
+	    return usernameField;
+	  }
+
+
+	  public String getPasswordField() {
+	    return passwordField;
+	  }
+	  
+	  public String getCollectionsField() {
+		    return collectionsField;
+		  }
 }

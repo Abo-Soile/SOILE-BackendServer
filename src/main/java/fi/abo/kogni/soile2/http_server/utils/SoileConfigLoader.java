@@ -9,13 +9,15 @@ import io.vertx.core.json.JsonObject;
 public class SoileConfigLoader {
 	
 	public static String SESSION_CFG = "session";
-	public static String COMMUNICATION_FIELDS = "communication";
+	public static String COMMUNICATION_CFG = "communication";
 	public static String DB_FIELDS = "db_fields";
 	public static String DB_CFG = "db";
 	public static String USERMGR_CFG = "UManagement";
 	public static String EXPERIMENT_CFG = "experiments";
 	public static String COMMAND_PREFIX_FIELD = "commandPrefix";
 	public static String COMMANDS = "commands";
+	public static String USERCOLLECTIONS = "userCollections";
+	public static String COLLECTIONNAME_FIELD = "collectionName";
 
 	
 	public static ConfigRetriever getRetriever(Vertx vertx)
@@ -43,23 +45,6 @@ public class SoileConfigLoader {
 		return generalConfig.getJsonObject(SESSION_CFG);
 	}
 	
-	/**
-	 * Get the eventbus command (including the command prefix) for the given config and the given command string.
-	 * @param config the config that contains commands (and a command prefix)
-	 * @param command the command from the config to use.
-	 * @return the combination of prefix and command string
-	 */
-	public static String getEventBusCommand(JsonObject config, String command)
-	{
-		if(config.getString(COMMAND_PREFIX_FIELD) != null)
-		{
-			return config.getString(COMMAND_PREFIX_FIELD) + config.getJsonObject(COMMANDS).getString(command); 
-		}
-		else
-		{
-			return null;
-		}
-	}
 
 	/**
 	 * Get the command representing the sring for the given config
@@ -79,4 +64,23 @@ public class SoileConfigLoader {
 			return null;
 		}
 	}
+	/**
+	 * Get the Collection name from the config for a specific user type.
+	 * @param config the config that contains the usercollections data
+	 * @param collection the collection name to fetch
+	 * @return The collection name
+	 */
+	public static String getCollectionName(JsonObject config, String collection)
+	{
+
+		if(config.getJsonObject(USERCOLLECTIONS) != null)
+		{
+			return config.getJsonObject(USERCOLLECTIONS).getString(collection); 
+		}
+		else
+		{
+			return null;
+		}
+	}	
+	
 }

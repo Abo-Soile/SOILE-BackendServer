@@ -37,10 +37,33 @@ public class SoileCommUtils {
 		return communicationConfig.getJsonObject(FIELDID).getString(fieldName);		
 	}
 	
+	/**
+	 * Get the results object for a specific result field.
+	 * @param communicationConfig the communication config object
+	 * @param result the result field to obtain
+	 * @return the String indicating the result field
+	 */
 	public static String getCommunicationResult(JsonObject communicationConfig, String result)
 	{
-		return communicationConfig.getJsonObject("Results").getString(result);	
+		return communicationConfig.getJsonObject(RESULTID).getString(result);	
 	}
-		
+	
+	/**
+	 * Get the eventbus command (including the command prefix) for the given config and the given command string.
+	 * @param config the config that contains commands (and a command prefix)
+	 * @param command the command from the config to use.
+	 * @return the combination of prefix and command string
+	 */
+	public static String getEventBusCommand(JsonObject config, String command)
+	{
+		if(config.getString(SoileConfigLoader.COMMAND_PREFIX_FIELD) != null)
+		{
+			return config.getString(SoileConfigLoader.COMMAND_PREFIX_FIELD) + config.getJsonObject(SoileConfigLoader.COMMANDS).getString(command); 
+		}
+		else
+		{
+			return null;
+		}
+	}
 	
 }
