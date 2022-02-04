@@ -67,6 +67,7 @@
 			"usernameField" : "username",
 			"userEmailField" : "email",
 			"userFullNameField" : "fullname",
+			"passwordField" : "password",
 			"userRolesField" : "userRoles"
 			},
 		"Results" : { 
@@ -110,12 +111,9 @@
 			"removeCommand" : "remove"
 		}
 	},
-
-	"participant_db": {
-		"collectionName" : "participants"			
-	},
-
-	"user_db": {
-		"collectionName" : "user"
+	
+	"userCollections" : {
+		"participant" : "participants",			
+		"user" : "user"
 	}
 }
