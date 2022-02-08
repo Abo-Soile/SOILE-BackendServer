@@ -40,6 +40,9 @@ public abstract class MongoTestBase {
 	public JsonObject cfg;
 	public JsonObject uCfg;
 	public JsonObject commCfg;
+	public JsonObject serverCfg;
+	public JsonObject sessionCfg;
+
 	static MongodProcess MONGO;
 	static int MONGO_PORT = 27022;
 	private SoileHashing hashStrat;	
@@ -76,6 +79,8 @@ public abstract class MongoTestBase {
 				.getString("hashingAlgorithm");
 		uCfg = cfg.getJsonObject(SoileConfigLoader.USERMGR_CFG);
 		commCfg = cfg.getJsonObject(SoileConfigLoader.COMMUNICATION_CFG);
+		serverCfg = cfg.getJsonObject(SoileConfigLoader.HTTP_SERVER_CFG);
+		sessionCfg = cfg.getJsonObject(SoileConfigLoader.SESSION_CFG);
 		authOptions = new SoileAuthenticationOptions(cfg);
 				
 		mongo_client = MongoClient.createShared(vertx, cfg.getJsonObject("db"));

@@ -12,6 +12,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.Cookie;
+import io.vertx.core.http.CookieSameSite;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
@@ -30,6 +31,8 @@ public class SoileAccessHandler extends AuthenticationHandlerImpl<Authentication
 	private final JsonObject sessionConfig;
 	private final JsonObject commConfig;
 	private final JsonObject dbFields;
+	private final JsonObject serverConfig;
+
 	private final Vertx vertx;
 	private final SecureRandom random = new SecureRandom();
 
@@ -41,6 +44,7 @@ public class SoileAccessHandler extends AuthenticationHandlerImpl<Authentication
 		this.sessionConfig = config.getJsonObject(SoileConfigLoader.SESSION_CFG);
 		this.commConfig = config.getJsonObject(SoileConfigLoader.COMMUNICATION_CFG);
 		this.dbFields = config.getJsonObject(SoileConfigLoader.DB_FIELDS);
+		this.serverConfig = config.getJsonObject(SoileConfigLoader.HTTP_SERVER_CFG);
 		this.vertx = vertx;
 	}
 
@@ -138,8 +142,13 @@ public class SoileAccessHandler extends AuthenticationHandlerImpl<Authentication
 		String cookiecontent = token + ":" 
 							   + ctx.user().principal().getString(sessionConfig.getString("usernameField")) + ":" 
 							   + ctx.user().principal().getString(sessionConfig.getString("userTypeField")); 
-		Cookie cookie = Cookie.cookie(sessionConfig.getString("sessionCookieID"),cookiecontent);
-		ctx.response().addCookie(cookie);
+		Cookie cookie = Cookie.cookie(sessionConfig.getString("sessionCookieID"),cookiecontent)
+							  .setDomain(serverConfig.getString("domain"))
+							  .setSecure(true)
+							  .setPath(sessionConfig.getString("cookiePath"))
+							  .setMaxAge(sessionConfig.getLong("maxTime")/1000); //Maxtime in seconds
+							 													 //TODO: Check whether SameSite needs to be set.
+		ctx.response().addCookie(cookie);		
 	}
 	
 	@Override

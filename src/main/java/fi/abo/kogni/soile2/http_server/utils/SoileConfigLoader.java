@@ -18,7 +18,7 @@ public class SoileConfigLoader {
 	public static String COMMANDS = "commands";
 	public static String USERCOLLECTIONS = "userCollections";
 	public static String COLLECTIONNAME_FIELD = "collectionName";
-
+	public static String HTTP_SERVER_CFG = "http_server";
 	
 	public static ConfigRetriever getRetriever(Vertx vertx)
 	{

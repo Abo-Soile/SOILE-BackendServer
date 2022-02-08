@@ -1,32 +1,49 @@
 package fi.abo.kogni.soile2.http_server;
 
-import java.net.HttpURLConnection;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
+import io.netty.handler.codec.http.cookie.Cookie;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientSession;
+
 
 @RunWith(VertxUnitRunner.class)
 public class SoileAuthenticationVerticleTest extends MongoTestBase{
 
 	private WebClient webclient;
+	private HttpClient httpClient;
 	private int port;
 	@Before
 	public void setUp(TestContext context){
 		super.setUp(context);
 		// We pass the options as the second parameter of the deployVerticle method.
-		webclient = WebClient.create(vertx);
-		vertx.deployVerticle(SoileServerVerticle.class.getName(), new DeploymentOptions(), context.asyncAssertSuccess());
+		 //PemKeyCertOptions keyOptions = new PemKeyCertOptions();
+		 //   keyOptions.setKeyPath("keypk8.pem");
+		  //  keyOptions.setCertPath("cert.pem");	
+		//HttpClientOptions opts = new HttpClientOptions().setSsl(true).setVerifyHost(false).setPemKeyCertOptions(keyOptions);
 		port = cfg.getJsonObject("http_server").getInteger("port");
+
+		HttpClientOptions copts = new HttpClientOptions()
+								      .setDefaultHost("localhost")
+								      .setDefaultPort(port)
+								      .setSsl(true)
+								      .setTrustOptions(new JksOptions().setPath("server-keystore.jks").setPassword("secret"));
+		httpClient = vertx.createHttpClient(copts);
+		webclient = WebClient.wrap(httpClient);		
+		vertx.deployVerticle(SoileServerVerticle.class.getName(), new DeploymentOptions(), context.asyncAssertSuccess());
 	}
 	
 	
@@ -42,6 +59,7 @@ public class SoileAuthenticationVerticleTest extends MongoTestBase{
 					.put("type", "participant")
 					.put("fullname","Test User")
 					.put("remember","1");
+			WebClientSession session = WebClientSession.create(webclient);			
 			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(uCfg,"addUser"), 
 					userObject,res -> {
 							if(res.succeeded())
@@ -49,13 +67,25 @@ public class SoileAuthenticationVerticleTest extends MongoTestBase{
 								//Now lets see if we can authenticate this.
 								//This is a participant user, so we need to auth against the participant API
 								MultiMap map = createFormFromJson(userObject);
-								final Async sucAsync = context.async();
-								webclient.post(port,"localhost","/services/auth").sendForm(map).onSuccess(authed ->
+								final Async sucAsync = context.async();		
+								System.out.println("Posting to https://localhost/services/auth");
+								session.post(port,"localhost","/services/auth").sendForm(map).onSuccess(authed ->
 								{
+									boolean foundSessionCookie = false;
+									for(Cookie current : session.cookieStore().get(true, serverCfg.getString("domain"), sessionCfg.getString("cookiePath")))
+									{
+										System.out.println("Found Cookie: " + current.toString());
+										if(current.name().equals(sessionCfg.getString("sessionCookieID")))
+										{
+											foundSessionCookie = true;
+										}
+									}
 									System.out.println("Valid Auth: " + authed.body().toString());
-									context.assertTrue(authed.body().toString().contains("Login successful"));
+									context.assertTrue(foundSessionCookie);
+									context.assertTrue(authed.body().toString().contains("Login successful"));									
 									sucAsync.complete();	
 								});
+								
 								final Async unsucAsync = context.async();
 								userObject.put("type", "user");
 								map = createFormFromJson(userObject);
@@ -71,6 +101,7 @@ public class SoileAuthenticationVerticleTest extends MongoTestBase{
 							else
 							{
 								context.fail("Couldn't create user");
+								async.complete();
 							}
 							
 						});

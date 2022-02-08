@@ -8,10 +8,12 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.SessionHandler;
-import io.vertx.ext.web.sstore.ClusteredSessionStore;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
 
@@ -75,8 +77,17 @@ public class SoileServerVerticle extends AbstractVerticle {
 	
 	Future<Void> startHttpServer(Void unused)
 	{
+		 JksOptions keyOptions = new JksOptions()
+		    .setPath("server-keystore.jks")
+		    .setPassword("secret");		    
+
+		    
 		JsonObject http_config = soileConfig.getJsonObject("http_server");
-		HttpServer server = vertx.createHttpServer().requestHandler(router);
+		HttpServerOptions opts = new HttpServerOptions()
+									 .setLogActivity(true) 
+									 .setSsl(true)
+									 .setKeyStoreOptions(keyOptions);
+		HttpServer server = vertx.createHttpServer(opts).requestHandler(router);
 		int httpPort = http_config.getInteger("port", 8080);
 				
 		return Future.<HttpServer>future(promise -> server.listen(httpPort,promise)).mapEmpty();	
