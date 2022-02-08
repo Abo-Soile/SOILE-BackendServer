@@ -520,16 +520,22 @@ public class SoileUserManager implements MongoUserUtil{
 							JsonObject validSessions = res.result()
 																.get(0)
 																.getJsonObject(dbConfig.getString("storedSessions"));
-							
-							//check for sessions that are too old;
-							for(String session : validSessions.fieldNames())
-							{								
-								Long ctime = validSessions.getLong(session);
-								//if this session is still valid keep it.
-								if(System.currentTimeMillis() - ctime > sessionConfig.getLong("maxTime"))
-								{
-									validSessions.remove(session);
+							if(validSessions != null)
+							{	//if it's not initialized.
+								//check for sessions that are too old;
+								for(String session : validSessions.fieldNames())
+								{								
+									Long ctime = validSessions.getLong(session);
+									//if this session is still valid keep it.
+									if(System.currentTimeMillis() - ctime > sessionConfig.getLong("maxTime"))
+									{
+										validSessions.remove(session);
+									}
 								}
+							}
+							else
+							{
+								validSessions = new JsonObject();
 							}
 							validSessions.put(hashedSessionID, System.currentTimeMillis());
 							client.updateCollection(authnOptions.getCollectionName(),

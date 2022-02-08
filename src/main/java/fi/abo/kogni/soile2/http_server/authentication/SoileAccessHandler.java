@@ -71,7 +71,8 @@ public class SoileAccessHandler extends AuthenticationHandlerImpl<Authentication
 				String username = formAttribs.get(SoileCommUtils.getCommunicationField(commConfig, "usernameField"));
 				String password = formAttribs.get(SoileCommUtils.getCommunicationField(commConfig, "passwordField"));
 				String userType = formAttribs.get(SoileCommUtils.getCommunicationField(commConfig, "userTypeField"));
-				boolean remember = formAttribs.get("remember") == null ? false : formAttribs.get("remember") == "1";			
+//				System.out.println(formAttribs.get("remember").equals("1"));
+				boolean remember = ( formAttribs.get("remember") == null ? false : formAttribs.get("remember").equals("1"));			
 				context.session().put("remember", remember);
 				if (username == null || password == null) {
 					handler.handle(Future.failedFuture(new HttpException(405)));
@@ -105,7 +106,9 @@ public class SoileAccessHandler extends AuthenticationHandlerImpl<Authentication
 	@Override
 	public void postAuthentication(RoutingContext ctx) {
 		// if this has now an assigned user, we will store this user.
-			
+		System.out.println("Handling Post-Authentication");	
+		System.out.println(ctx.user());
+		System.out.println(ctx.session().get("remember").toString());
 		if(ctx.session().<Boolean>remove("remember") && ctx.user() != null)
 		{
 			// store this session
@@ -131,23 +134,28 @@ public class SoileAccessHandler extends AuthenticationHandlerImpl<Authentication
 	
 	public void storeSessionCookie(RoutingContext ctx)
 	{
+		System.out.println("Adding Cookie");
 		final byte[] rand = new byte[64];
 	    random.nextBytes(rand);
 	    String token = base64Encode(rand);
 	    // we don't need any reply here.
+	    JsonObject cuser = ctx.user().principal();
 		vertx.eventBus()
 			 .send(SoileCommUtils.getEventBusCommand(userConfig, "addSession")
-				   ,new JsonObject().put(sessionConfig.getString("sessionID"),token));
+				   ,new JsonObject().put(sessionConfig.getString("sessionID"),token)
+					 				.put(SoileCommUtils.getCommunicationField(commConfig, "usernameField"),cuser.getString(dbFields.getString("usernameField")))
+					 				.put(SoileCommUtils.getCommunicationField(commConfig, "userTypeField"), cuser.getString(dbFields.getString("userTypeField"))));
 		// now build the cookie to store on the remote system. 		
 		String cookiecontent = token + ":" 
-							   + ctx.user().principal().getString(sessionConfig.getString("usernameField")) + ":" 
-							   + ctx.user().principal().getString(sessionConfig.getString("userTypeField")); 
+							   + cuser.getString(SoileCommUtils.getCommunicationField(commConfig, "usernameField")) + ":" 
+							   + cuser.getString(SoileCommUtils.getCommunicationField(commConfig, "userTypeField")); 
 		Cookie cookie = Cookie.cookie(sessionConfig.getString("sessionCookieID"),cookiecontent)
 							  .setDomain(serverConfig.getString("domain"))
 							  .setSecure(true)
 							  .setPath(sessionConfig.getString("cookiePath"))
 							  .setMaxAge(sessionConfig.getLong("maxTime")/1000); //Maxtime in seconds
 							 													 //TODO: Check whether SameSite needs to be set.
+		System.out.println("Adding Cookie: " + cookie.getName() + " / " +  cookie.getDomain() + " / " +  cookie.getValue() + " / " +  cookie.isSecure() );
 		ctx.response().addCookie(cookie);		
 	}
 	

@@ -2,7 +2,11 @@ package fi.abo.kogni.soile2.http_server.authentication;
 
 import java.util.List;
 
+import org.apache.commons.collections4.functors.InstanceofPredicate;
+
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
+import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
+import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidLoginException;
 import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
@@ -77,9 +81,17 @@ public class SoileAuthentication implements AuthenticationProvider{
 			          }
 			        } catch (Exception e) {
 			          //System.out.println(e);
-			          //e.printStackTrace(System.out);
+			          e.printStackTrace(System.out);
 			          System.out.println(resultHandler.getClass());
-			          resultHandler.handle(Future.failedFuture(e));
+			          if(e instanceof InvalidLoginException)
+			          {
+			        	  resultHandler.handle(Future.failedFuture(new HttpException(302,"/login", e)));
+			          }
+			          else
+			          {
+			        	  //this is an internal server Error...
+			        	  resultHandler.handle(Future.failedFuture(e));  
+			          }			          
 			          return;
 			        }
 
@@ -107,16 +119,16 @@ public class SoileAuthentication implements AuthenticationProvider{
 	    	}
 	    	else
 	    	{
-	    		throw new Exception("Invalid user or wrong password for " + username);
+	    		throw new InvalidLoginException(username);
 	    	}
 	    }
 	    else if(resultList.size() > 1)
 	    {
-	    	throw new Exception("More than one user with username " + username + " in database! Usernames must be unique");	
+	    	throw new DuplicateUserEntryInDBException(username);	
 	    }
 	    else
 	    {
-	    	throw new Exception("Invalid user or wrong password for " + username);
+	    	throw new InvalidLoginException(username);
 	    }
 
 	}
