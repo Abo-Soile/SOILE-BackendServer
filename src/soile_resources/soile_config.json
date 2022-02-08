@@ -8,7 +8,9 @@
 		"adminuser":"admin",
 		"adminpassword":"admin",
 		"externalport":8081,
-		"externalURI": false
+		"externalURI": false,
+		"domain" : "soile.org",
+		"serverSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m"
 	},
 
 	"questionnaire_markup": {
@@ -50,7 +52,8 @@
 		"sessionIsValid" : "sessionIsValid",
 		"returnURLParam" : "returnURL",
 		"loginURL" : "/services/auth",
-		"sessionStoreSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m/fn6fx8uKJcKILHuS1ecZzBaS9cSX2thq60P/VwcsY"
+		"sessionStoreSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m/fn6fx8uKJcKILHuS1ecZzBaS9cSX2thq60P/VwcsY",
+		"cookiePath" : "soile/session"
 	},
 
 	"communication" : {
