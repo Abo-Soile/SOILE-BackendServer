@@ -6,7 +6,7 @@ import org.junit.runner.RunWith;
 import fi.abo.kogni.soile2.http_server.MongoTestBase;
 import fi.abo.kogni.soile2.http_server.SoileUserManagementVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
-import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
 import io.vertx.ext.mongo.MongoClient;
