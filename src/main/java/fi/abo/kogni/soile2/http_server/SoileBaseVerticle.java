@@ -1,7 +1,7 @@
 package fi.abo.kogni.soile2.http_server;
 
-import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
-import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.json.JsonObject;
 
@@ -50,18 +50,7 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	{
 		return SoileConfigLoader.getCommand(typeSpecificConfig, command);
 	}
-	
-	
-	/**
-	 * Get the string representing a specific result.
-	 * @param result
-	 * @return the requested result string
-	 */
-	public String getCommunicationResult(String result)
-	{
-		return SoileCommUtils.getCommunicationResult(communicationConfig,result);		
-	}
-	
+		
 	/**
 	 * Request the communication command.
 	 * @param field The requested field name
@@ -69,7 +58,7 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	 */
 	public String getCommunicationField(String field)
 	{
-		return SoileCommUtils.getCommunicationField(communicationConfig, field);	
+		return SoileConfigLoader.getCommunicationField(field);	
 	}
 	
 	/**
@@ -93,14 +82,6 @@ public class SoileBaseVerticle extends AbstractVerticle {
 		return typeSpecificConfig.getString(entry);
 	}
 	
-	/**
-	 * Convenience method to get the session Config in a Soile verticle
-	 */
-	public JsonObject getSessionConfig()
-	{
-		return SoileConfigLoader.getSessionConfig(config());
-	}
-
 	/**
 	 * Convenience function to obtain the communications config.
 	 * @return

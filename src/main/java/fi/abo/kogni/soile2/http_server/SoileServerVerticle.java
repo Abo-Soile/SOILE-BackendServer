@@ -1,6 +1,9 @@
 package fi.abo.kogni.soile2.http_server;
 
-import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
+import java.util.LinkedList;
+import java.util.List;
+
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
@@ -11,7 +14,6 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.sstore.LocalSessionStore;
@@ -48,22 +50,23 @@ public class SoileServerVerticle extends AbstractVerticle {
 	Future<Void> deployVerticles(Void unused)
 	{
 		DeploymentOptions opts = new DeploymentOptions().setConfig(soileConfig);
-		//	List<Future> results = new LinkedList<>();
-		Future<String> UManRes = Future.future(promise -> vertx.deployVerticle(new SoileUserManagementVerticle(), opts, promise));
-		Future<String> PermRes = Future.future(promise -> vertx.deployVerticle(new SoilePermissionVerticle("experiments"), opts, promise));				
-		Future<String> authRes = Future.future(promise -> vertx.deployVerticle(new SoileAuthenticationVerticle(router,store), opts, promise));		
-		return CompositeFuture.all(UManRes,PermRes,authRes).mapEmpty();
+		List<Future> deploymentFutures = new LinkedList();
+		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileUserManagementVerticle(), opts, promise)));
+		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoilePermissionVerticle("experiments"), opts, promise)));				
+		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileAuthenticationVerticle(router,store), opts, promise)));
+		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:helloVert.js", opts, promise)));
+		return CompositeFuture.all(deploymentFutures).mapEmpty();
 	}
 	
 	Future<Void> storeConfig(JsonObject configLoadResult)
 	{
 		soileConfig.mergeIn(configLoadResult);
-		return Future.<Void>succeededFuture();
+		return SoileConfigLoader.setConfigs(configLoadResult);		
 	}
 	
 	Future<JsonObject> getConfig()
 	{
-		ConfigRetriever cfgRetriever = SoileConfigLoader.getRetriever(vertx);
+		ConfigRetriever cfgRetriever = SoileConfigLoader.getRetriever(vertx);		
 		return Future.future( promise -> cfgRetriever.getConfig(promise));
 	}
 	Future<Void> setUpRouting(Void unused)

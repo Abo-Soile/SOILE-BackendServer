@@ -3,7 +3,7 @@ package fi.abo.kogni.soile2.http_server;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;

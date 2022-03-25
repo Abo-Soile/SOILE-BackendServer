@@ -4,8 +4,8 @@ import static io.vertx.ext.auth.impl.Codec.base64Encode;
 
 import java.security.SecureRandom;
 
-import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
-import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -19,32 +19,22 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
+import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.handler.impl.AuthenticationHandlerImpl;
 import io.vertx.ext.web.impl.RoutingContextInternal;
 
-public class SoileAccessHandler extends AuthenticationHandlerImpl<AuthenticationProvider> implements Handler<RoutingContext>{
-
-	private final JsonObject userConfig;
-	private final JsonObject sessionConfig;
-	private final JsonObject commConfig;
-	private final JsonObject dbFields;
-	private final JsonObject serverConfig;
+public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<AuthenticationProvider> implements Handler<RoutingContext>{
 
 	private final Vertx vertx;
 	private final SecureRandom random = new SecureRandom();
 
 
-	public SoileAccessHandler(Vertx vertx, SoileAuthentication mAuthen, JsonObject config)
+	public SoileCookieAuthHandler(Vertx vertx, SoileAuthentication mAuthen)
 	{		
 		super(mAuthen);
-		this.userConfig = config.getJsonObject(SoileConfigLoader.USERMGR_CFG);
-		this.sessionConfig = config.getJsonObject(SoileConfigLoader.SESSION_CFG);
-		this.commConfig = config.getJsonObject(SoileConfigLoader.COMMUNICATION_CFG);
-		this.dbFields = config.getJsonObject(SoileConfigLoader.DB_FIELDS);
-		this.serverConfig = config.getJsonObject(SoileConfigLoader.HTTP_SERVER_CFG);
 		this.vertx = vertx;
 	}
 
@@ -53,7 +43,8 @@ public class SoileAccessHandler extends AuthenticationHandlerImpl<Authentication
 	public void authenticate(RoutingContext context, Handler<AsyncResult<User>> handler) {
 
 		System.out.println(handler.getClass().toString());
-		HttpServerRequest req = context.request();		
+		HttpServerRequest req = context.request();
+		
 		//first, we will look into whether this user is already logged in. 
 		if (req.method() != HttpMethod.POST) {
 			handler.handle(Future.failedFuture(new HttpException(405))); // Must be a POST
@@ -68,17 +59,16 @@ public class SoileAccessHandler extends AuthenticationHandlerImpl<Authentication
 					handler.handle(Future.failedFuture(new HttpException(405)));
 				}
 				//TODO: Make these settings, also in the dustjs/js code! 
-				String username = formAttribs.get(SoileCommUtils.getCommunicationField(commConfig, "usernameField"));
-				String password = formAttribs.get(SoileCommUtils.getCommunicationField(commConfig, "passwordField"));
-				String userType = formAttribs.get(SoileCommUtils.getCommunicationField(commConfig, "userTypeField"));
+				String username = formAttribs.get(SoileCommUtils.getCommunicationField("usernameField"));
+				String password = formAttribs.get(SoileCommUtils.getCommunicationField("passwordField"));
 //				System.out.println(formAttribs.get("remember").equals("1"));
 				boolean remember = ( formAttribs.get("remember") == null ? false : formAttribs.get("remember").equals("1"));			
 				context.session().put("remember", remember);
 				if (username == null || password == null) {
 					handler.handle(Future.failedFuture(new HttpException(405)));
 				} else {					
-					System.out.println("Trying to auth user " + username +" with password " + password + " and type " + userType );
-					authProvider.authenticate(new SoileCredentials(username, password, userType, dbFields), authn -> {
+					System.out.println("Trying to auth user " + username +" with password " + password);
+					authProvider.authenticate(new UsernamePasswordCredentials(username, password), authn -> {
 						if (authn.failed()) {
 							System.out.println("Handling invalid auth: ");
 							//authn.cause().printStackTrace(System.out);
@@ -141,19 +131,19 @@ public class SoileAccessHandler extends AuthenticationHandlerImpl<Authentication
 	    // we don't need any reply here.
 	    JsonObject cuser = ctx.user().principal();
 		vertx.eventBus()
-			 .send(SoileCommUtils.getEventBusCommand(userConfig, "addSession")
-				   ,new JsonObject().put(sessionConfig.getString("sessionID"),token)
-					 				.put(SoileCommUtils.getCommunicationField(commConfig, "usernameField"),cuser.getString(dbFields.getString("usernameField")))
-					 				.put(SoileCommUtils.getCommunicationField(commConfig, "userTypeField"), cuser.getString(dbFields.getString("userTypeField"))));
+			 .send(SoileCommUtils.getUserEventBusCommand("addSession")
+				   ,new JsonObject().put(SoileConfigLoader.getSessionProperty("sessionID"),token)
+					 				.put(SoileCommUtils.getCommunicationField("usernameField"),cuser.getString(SoileConfigLoader.getdbField("usernameField")))
+					 				.put(SoileCommUtils.getCommunicationField("userTypeField"), cuser.getString(SoileConfigLoader.getdbField("userTypeField"))));
 		// now build the cookie to store on the remote system. 		
 		String cookiecontent = token + ":" 
-							   + cuser.getString(SoileCommUtils.getCommunicationField(commConfig, "usernameField")) + ":" 
-							   + cuser.getString(SoileCommUtils.getCommunicationField(commConfig, "userTypeField")); 
-		Cookie cookie = Cookie.cookie(sessionConfig.getString("sessionCookieID"),cookiecontent)
-							  .setDomain(serverConfig.getString("domain"))
+							   + cuser.getString(SoileCommUtils.getCommunicationField("usernameField")) + ":" 
+							   + cuser.getString(SoileCommUtils.getCommunicationField("userTypeField")); 
+		Cookie cookie = Cookie.cookie(SoileConfigLoader.getSessionProperty("sessionCookieID"),cookiecontent)
+							  .setDomain(SoileConfigLoader.getServerProperty(("domain")))
 							  .setSecure(true)
-							  .setPath(sessionConfig.getString("cookiePath"))
-							  .setMaxAge(sessionConfig.getLong("maxTime")/1000); //Maxtime in seconds
+							  .setPath(SoileConfigLoader.getSessionProperty("cookiePath"))
+							  .setMaxAge(SoileConfigLoader.getSessionLongProperty("maxTime")/1000); //Maxtime in seconds
 							 													 //TODO: Check whether SameSite needs to be set.
 		System.out.println("Adding Cookie: " + cookie.getName() + " / " +  cookie.getDomain() + " / " +  cookie.getValue() + " / " +  cookie.isSecure() );
 		ctx.response().addCookie(cookie);		

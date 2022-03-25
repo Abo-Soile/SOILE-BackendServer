@@ -8,8 +8,8 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
-import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
-import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
@@ -47,17 +47,12 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		LOGGER.info("Starting UserManagementVerticle");
 		mongo = MongoClient.createShared(vertx, config().getJsonObject("db"));
 		setupConfig(SoileConfigLoader.USERMGR_CFG);
-		String partCollection = SoileConfigLoader.getCollectionName(config(), "participant");
-		String userCollection = SoileConfigLoader.getCollectionName(config(), "user");
+		String userCollection = SoileConfigLoader.getdbProperty("userCollection");
 		
 		sessionFields = config().getJsonObject(SoileConfigLoader.SESSION_CFG);
-		MongoAuthenticationOptions partAuthnOptions = createMongoAuthNOptions(partCollection);
-		MongoAuthorizationOptions partAuthzOptions = createMongoAuthZOptions(partCollection);
 		MongoAuthenticationOptions userAuthnOptions = createMongoAuthNOptions(userCollection);
 		MongoAuthorizationOptions userAuthzOptions = createMongoAuthZOptions(userCollection);;
-		userManager = new SoileUserManager(mongo,userAuthnOptions,userAuthzOptions, config());
-		participantManager = new SoileUserManager(mongo,partAuthnOptions,partAuthzOptions, config());
-		
+		userManager = new SoileUserManager(mongo,userAuthnOptions,userAuthzOptions, config());		
 
 		setupChannels();
 		LOGGER.info("User Management Verticle Started");
@@ -99,6 +94,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		vertx.eventBus().consumer(getEventbusCommandString("getUserData"), this::getUserData);
 		vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid);
 		vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession);
+		vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession);
 
 	}	
 	
@@ -109,30 +105,16 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
    	 * @param command a {@link JsonObject} containing at least the field "userTypeField" from the config. 
 	 * @return the appropriate {@link SoileUserManager}
 	 */
-	SoileUserManager getFittingManager(JsonObject command)	
+	SoileUserManager getFittingManager()	
 	{
 		
-		SoileUserManager cman;
-		if(command.getString(getCommunicationField("userTypeField")).equals(getConfig("researcherType")))
-		{
-			cman = userManager;
-		}
-		else if(command.getString(getCommunicationField("userTypeField")).equals(getConfig("participantType")))
-		{
-			cman = participantManager;
-		}
-		else
-		{					
-			return null;
-		}
-		return cman;
+		return userManager;
 	}
 	
 	/**
 	 * Add a session to a user
 	 * {
 	 *  <usernameField> : username,
-	 *  <userTypeField> : userType,
 	 *  <sessionID> : sessionID,
 	 *  }
 	 *  If the session was successfully added    
@@ -151,7 +133,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		if (msg.body() instanceof JsonObject)
 		{
 			JsonObject command = (JsonObject)msg.body();			
-			SoileUserManager cman = getFittingManager(command);
+			SoileUserManager cman = getFittingManager();
 			if(cman == null)
 			{
 				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
@@ -177,6 +159,53 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		}
 	}
 	
+	/**
+	 * Remove a session from a user
+	 * {
+	 *  <usernameField> : username,
+	 *  <sessionID> : sessionID,
+	 *  }
+	 *  If the session was successfully added    
+	 *  {
+	 *  "Result" : "Success", 
+	 *  }
+	 *  and if there was an Error, the result will be:
+	 *  {
+	 *  "Result" : "Error",
+	 *  "Reason" : "Explanation"
+	 *  }
+	 * @param msg
+	 */
+	void invalidateSession(Message<Object> msg)
+	{
+		if (msg.body() instanceof JsonObject)
+		{
+			JsonObject command = (JsonObject)msg.body();
+			SoileUserManager cman = getFittingManager();
+			if(cman == null)
+			{
+				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
+				return;
+			}
+			cman.removeUserSession(command.getString(getCommunicationField("usernameField"))
+												  ,sessionFields.getString("sessionID")
+												  ,res ->
+			{
+				if(res.succeeded())
+				{
+					msg.reply(SoileCommUtils.successObject());
+				}
+				else
+				{
+					msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, res.cause().getMessage());						
+				}
+			});
+		}	
+		else
+		{
+			msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid Request");
+		}
+	}
 	
 	/**
 	 * Test whether a given session is still valid for a given user.

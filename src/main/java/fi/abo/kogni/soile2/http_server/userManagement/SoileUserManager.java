@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
-import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -80,7 +80,14 @@ public class SoileUserManager implements MongoUserUtil{
 		return this;
 	}
 
-
+	/**
+	 * Set Full name and Email address of a user.
+	 * @param username username of the user
+	 * @param email email address of the user
+	 * @param fullName full name of the user
+	 * @param resultHandler handler to handle the resulting MongoClientUpdateResult
+	 * @return this
+	 */
 	public SoileUserManager setEmailAndFullName(String username, String email, String fullName, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
 	{
 
@@ -494,6 +501,86 @@ public class SoileUserManager implements MongoUserUtil{
 				});				
 		return this;
 	}	
+	
+	public SoileUserManager removeUserSession(String username, String sessionID, Handler<AsyncResult<MongoClientUpdateResult>> handler)	
+	{
+		if (username == null  || sessionID == null) {
+			handler.handle(Future.failedFuture("Username or session not given"));
+			return this;
+		}
+		// We hash this vs timing attacks.
+		String hashedSessionID = strategy.hash(hashingAlgorithm,
+											   null,
+											   sessionConfig.getString("sessionStoreSecret"),
+											   sessionID); 
+		JsonObject query = new JsonObject()
+				.put(authnOptions.getUsernameField(), username); 
+		client.find(
+				authnOptions.getCollectionName(),
+				query,
+				res -> {
+					if(res.succeeded())
+					{
+						if(res.result().size() == 1)
+						{
+							// Adding the current session ID as valid session for the user.
+							JsonObject validSessions = res.result()
+																.get(0)
+																.getJsonObject(dbConfig.getString("storedSessions"));
+							if(validSessions != null)
+							{	//if it's not initialized.
+								//check for sessions that are too old;
+								for(String session : validSessions.fieldNames())
+								{								
+									Long ctime = validSessions.getLong(session);
+									//if this session is still valid keep it.
+									if(System.currentTimeMillis() - ctime > sessionConfig.getLong("maxTime"))
+									{
+										validSessions.remove(session);
+									}
+									if(session.equals(hashedSessionID))
+									{
+										validSessions.remove(session);
+									}
+								}
+							}
+							else
+							{
+								validSessions = new JsonObject();
+							}
+							client.updateCollection(authnOptions.getCollectionName(),
+									query,
+									new JsonObject()
+									.put("$set", new JsonObject()
+											.put(authnOptions.getUsernameField(), username)
+											.put(dbConfig.getString("storedSessions"), validSessions)),
+									handler);							
+							return;
+						}
+						else {		
+							if(res.result().size() == 0)
+							{
+								handler.handle(Future.failedFuture(new UserDoesNotExistException(username)));	
+							}
+							else
+							{
+								handler.handle(Future.failedFuture(new DuplicateUserEntryInDBException(username)));
+							}
+							return;	
+						}
+						
+						
+						
+					}
+					else
+					{
+						handler.handle(Future.failedFuture(new Exception("Unable to access user database")));
+						return;
+					}
+				});
+		return this;
+	}
+	
 	
 	public SoileUserManager addUserSession(String username, String sessionID, Handler<AsyncResult<MongoClientUpdateResult>> handler)	
 	{
