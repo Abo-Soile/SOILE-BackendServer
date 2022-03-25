@@ -9,23 +9,15 @@
 		"adminpassword":"admin",
 		"externalport":8081,
 		"externalURI": false,
-		"domain" : "soile.org",
+		"domain" : "localhost",
 		"serverSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m"
-	},
-
-	"questionnaire_markup": {
-		"templates": "./templates/questionnaire_embedded.stg"
-	},
-
-	"dustjs":{
-		"engine":"dustjs-linkedin",
-		"version": "2.0.3"
 	},
 
 	"db": {
 		"host": "127.0.0.1",
 		"port": 27022,
-		"db_name": "soile"		
+		"db_name": "soile",
+		"userCollection" : "users"		
 	},
 	
 	"db_fields": {
@@ -53,7 +45,8 @@
 		"returnURLParam" : "returnURL",
 		"loginURL" : "/services/auth",
 		"sessionStoreSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m/fn6fx8uKJcKILHuS1ecZzBaS9cSX2thq60P/VwcsY",
-		"cookiePath" : "soile/session"
+		"cookiePath" : "soile/session",
+		"validSessionCookies" : "validSessionCookies" 
 	},
 
 	"communication" : {
@@ -71,11 +64,9 @@
 			"userEmailField" : "email",
 			"userFullNameField" : "fullname",
 			"passwordField" : "password",
-			"userRolesField" : "userRoles"
-			},
-		"Results" : { 
-			"objectNotExistent" : "Not Existent"
-			} 
+			"userRolesField" : "userRoles",
+			"rememberLoginField" : "remember"
+			}		
 	},
 
 
@@ -114,9 +105,79 @@
 			"removeCommand" : "remove"
 		}
 	},
+		
+	"deploy": [
+		{
+			"module": "fi.abo.kogni.soile~experiment-lang~1.0",
+			"config": "experiment_language",
+			"instances": 1
+		},
+		{
+			"module": "fi.abo.kogni.soile~questionnaire-render~1.0",
+			"config": "questionnaire_markup",
+			"instances": 1
+		},
+		{
+			"module": "fi.abo.kogni.soile~http-server~1.1",
+			"config": "http_server",
+			"instances": 1
+		},
+		{
+			"module": "fi.abo.kogni.soile~vertx-mod-template-engines~1.0",
+			"config": "dustjs",
+			"instances": 1
+		},
+		{
+			"module": "io.vertx~mod-mongo-persistor~2.1.0",
+			"config": "mongo",
+			"instances": 1
+		},
+		{
+			"module": "io.vertx~mod-mailer~2.0.0-final",
+			"config": "mailer",
+			"instances": 1
+		}
+	],
 	
-	"userCollections" : {
-		"participant" : "participants",			
-		"user" : "user"
+	"shared": {
+		"directories": {
+			"/": "/home/danno/SoileIDEA/soile2/prod",
+			"questionnaires": "./generated/questionnaire"
+		},
+			"addresses": {
+			"experiment_language": "soile.experiment.lang",
+			"questionnaire_render": "soile.workbench.questionnaire.render"
+		}
+	},
+	
+	"experiment_language": {
+		"code-gen-template": "./templates/elang.stg"
+	},
+	
+	"questionnaire_markup": {
+		"templates": "./templates/questionnaire_embedded.stg"
+		},
+
+	"dustjs":{
+		"engine":"dustjs-linkedin",
+		"version": "2.0.3"
+	},
+	
+		"mongo": {
+		"address": "vertx.mongo-persistor",
+		"host": "127.0.0.1",
+		"port": 27017,
+		"db_name": "soiletest"
+	},
+	"mailer": {
+		"address": "soile.my_mailer",
+		"host": "smtp.sendgrid.net",
+		"port": 465,
+		"auth": true,
+		"ssl": true,
+		"username": "soile",
+		"password": "soilesendgridpassword"
 	}
+	
+	
 }
