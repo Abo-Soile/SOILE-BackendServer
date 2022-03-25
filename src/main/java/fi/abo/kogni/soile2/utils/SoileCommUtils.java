@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.http_server.utils;
+package fi.abo.kogni.soile2.utils;
 
 import io.vertx.core.json.JsonObject;
 
@@ -28,26 +28,24 @@ public class SoileCommUtils {
 	
 	/**
 	 * Helper function to retrieve Communication Fields.
-	 * @param communicationConfig JsonObject representing the communication config
 	 * @param fieldName the name of the field in the communication config to retrieve
 	 * @return
 	 */
-	public static String getCommunicationField(JsonObject communicationConfig, String fieldName)
+	public static String getCommunicationField(String fieldName)
 	{
-		return communicationConfig.getJsonObject(FIELDID).getString(fieldName);		
+		return SoileConfigLoader.getCommunicationField(fieldName);		
 	}
 	
 	/**
 	 * Get the results object for a specific result field.
-	 * @param communicationConfig the communication config object
 	 * @param result the result field to obtain
 	 * @return the String indicating the result field
 	 */
-	public static String getCommunicationResult(JsonObject communicationConfig, String result)
+	public static String getCommunicationResult(String result)
 	{
-		return communicationConfig.getJsonObject(RESULTID).getString(result);	
+		return SoileConfigLoader.getCommunicationResult(result);	
 	}
-	
+			
 	/**
 	 * Get the eventbus command (including the command prefix) for the given config and the given command string.
 	 * @param config the config that contains commands (and a command prefix)
@@ -65,5 +63,21 @@ public class SoileCommUtils {
 			return null;
 		}
 	}
-	
+
+	/**
+	 * Get an event bus command for a the user manager
+	 * @param command the command for which to get an eventbus command string
+	 * @return the command string.
+	 */
+	public static String getUserEventBusCommand(String command)
+	{
+		if(SoileConfigLoader.getUserProperty(SoileConfigLoader.COMMAND_PREFIX_FIELD) != null)
+		{
+			return SoileConfigLoader.getUserProperty(SoileConfigLoader.COMMAND_PREFIX_FIELD) + SoileConfigLoader.getUserCommand(command); 
+		}
+		else
+		{
+			return null;
+		}
+	}	
 }
