@@ -18,10 +18,11 @@ import de.flapdoodle.embed.mongo.config.ImmutableMongodConfig;
 import de.flapdoodle.embed.mongo.config.Net;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
+import fi.abo.kogni.soile2.SoileTest;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthenticationOptions;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
-import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
-import fi.abo.kogni.soile2.http_server.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
@@ -33,7 +34,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 @RunWith(VertxUnitRunner.class)
-public abstract class MongoTestBase {
+public abstract class MongoTestBase extends SoileTest{
 
 	public Vertx vertx;
 	public MongoClient mongo_client;
@@ -135,7 +136,8 @@ public abstract class MongoTestBase {
 		String password = userdata.getString(cfg.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("passwordField"));
 		String userType = userdata.getString(cfg.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("userTypeField"));
 		String hash = createHash(password);
-		String collection = authnOptions.getCollectionForType(userType); 
+		String collection = authnOptions.getCollectionForType(userType);
+		System.out.println("Creating user: " + username + " Type: " + userType);
 		return mongo_client.save(
 				collection,
 				new JsonObject()

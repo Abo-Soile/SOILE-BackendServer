@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import fi.abo.kogni.soile2.http_server.utils.SoileCommUtils;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
