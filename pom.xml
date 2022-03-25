@@ -16,11 +16,11 @@
 		<maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
 		<exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
 
-		<vertx.version>4.2.3</vertx.version>
-		<junit-jupiter.version>5.7.0</junit-jupiter.version>
-
-		<main.verticle>fi.abo.kogni.soile2.http_server.SoileServerVerticle</main.verticle>
+		<vertx.version>4.2.4</vertx.version>
+		<!-- <main.verticle>fi.abo.kogni.soile2.http_server.SoileServerVerticle</main.verticle> -->
+		<vertx.verticle>fi.abo.kogni.soile2.http_server.SoileServerVerticle</vertx.verticle>
 		<launcher.class>io.vertx.core.Launcher</launcher.class>
+		<vertx-maven-plugin.version>1.0.27</vertx-maven-plugin.version>
 	</properties>
 
 	<dependencyManagement>
@@ -60,6 +60,52 @@
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-auth-jdbc</artifactId>
 		</dependency>
+		<!-- Js dependencies -->
+		<!-- https://mvnrepository.com/artifact/io.reactiverse/es4x -->
+<!--		<dependency>
+			<groupId>io.reactiverse</groupId>
+			<artifactId>es4x</artifactId>
+			<version>0.17.0</version>
+		</dependency>-->
+		<dependency>
+			<groupId>org.webjars.bower</groupId>
+			<artifactId>dustjs-linkedin</artifactId>
+			<version>2.7.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.webjars.npm</groupId>
+			<artifactId>vertx__eventbus-bridge-client.js</artifactId>
+			<version>1.0.0-1</version>
+		</dependency>
+
+
+		<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>1.70</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk15on -->
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk15on</artifactId>
+			<version>1.70</version>
+		</dependency>
+
+		<!-- Logging -->
+		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.17.1</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-jdk14</artifactId>
+			<version>1.7.36</version>
+		</dependency>
+
 
 		<!-- Testing dependencies -->
 		<dependency>
@@ -69,7 +115,7 @@
 		</dependency>
 		<dependency>
 			<groupId>io.vertx</groupId>
-			<artifactId>vertx-web-client</artifactId>			
+			<artifactId>vertx-web-client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -89,35 +135,21 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk15on</artifactId>
-			<version>1.70</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk15on -->
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcpkix-jdk15on</artifactId>
-			<version>1.70</version>
-		</dependency>
-
-
-		<!-- Logging -->
-		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>2.17.1</version>
-		</dependency>
 
 	</dependencies>
 
 	<build>
 		<resources>
 			<resource>
+				<directory>config</directory>
+			</resource>
+			<resource>
 				<directory>src/soile_resources</directory>
 			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+
 		</resources>
 		<plugins>
 			<plugin>
@@ -154,9 +186,37 @@
 					</execution>
 				</executions>
 			</plugin>
+
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin.version}</version>
+			</plugin>
+			<plugin>
+				<groupId>io.reactiverse</groupId>
+				<artifactId>vertx-maven-plugin</artifactId>
+				<version>${vertx-maven-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>vmp</id>
+						<goals>
+							<goal>initialize</goal>
+							<goal>package</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<redeploy>true</redeploy>
+					<unpackWebJar>true</unpackWebJar>
+					<archive>
+						<files>
+							<file>
+								<source>src/soile_resources/soile_config.json</source>
+								<outputDirectory>config</outputDirectory>
+								<destName>soile_config.json</destName>
+							</file>
+						</files>
+					</archive>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
