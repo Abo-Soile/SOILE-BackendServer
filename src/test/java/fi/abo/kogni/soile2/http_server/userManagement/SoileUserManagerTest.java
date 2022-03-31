@@ -4,7 +4,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import fi.abo.kogni.soile2.http_server.MongoTestBase;
-import fi.abo.kogni.soile2.http_server.SoileUserManagementVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
@@ -21,7 +20,7 @@ public class SoileUserManagerTest extends MongoTestBase{
 	@Test
 	public void testUserAddition(TestContext context) {
 		final Async async = context.async();
-		SoileUserManager man = createManager("user"); 		
+		SoileUserManager man = createManager(); 		
 		String username =  "testUser";
 		String password =  "testpw";
 		
@@ -30,7 +29,7 @@ public class SoileUserManagerTest extends MongoTestBase{
 				man.createUser(username, password).onComplete(user -> {
 					if(user.succeeded())
 					{
-						context.fail("Could not authenticate created user (" + user.cause().getMessage() + ")");
+						context.fail("User Already existed but was still created!");
 						async.complete();
 					}
 					else
@@ -53,19 +52,23 @@ public class SoileUserManagerTest extends MongoTestBase{
 	@Test
 	public void testSetUserNameAndPassword(TestContext context) {
 		final Async async = context.async();
-		SoileUserManager man = createManager("user");		
+		SoileUserManager man = createManager();		
 		String username =  "testUser2";
 		String password =  "testpw";
 		String email = "test@test.blubb";
 		String fullname = "Test User";
+		System.out.println("Set up test");
 		man.createUser(username, password).onComplete(id -> {
 			if (id.succeeded()){
+				System.out.println("Created user");
 				man.setEmailAndFullName(username,email,fullname, res ->{
 					if(res.succeeded())
-					{		
+					{
+						System.out.println("Set Email");
 						man.getUserData(username, uData -> {
 							if(uData.succeeded())
 							{
+								System.out.println("Got Data");
 								context.assertEquals(username,uData.result().getString("username"));
 								context.assertEquals(email,uData.result().getString("email"));
 								context.assertEquals(fullname,uData.result().getString("fullname"));
@@ -96,12 +99,30 @@ public class SoileUserManagerTest extends MongoTestBase{
 				
 	}
 	
-	
+	@Test
+	public void testInvalidUserName(TestContext context) {
+		final Async async = context.async();
+		SoileUserManager man = createManager();		
+		String username =  "test@User2";
+		String password =  "testpw";
+		man.createUser(username, password).onComplete(id -> {
+			if (id.succeeded())
+			{
+					context.fail("Should not allow this username!");
+					async.complete();		
+			}
+			else
+			{
+					async.complete();
+			}			
+		});				
+				
+	}
 	
 	@Test
 	public void testSessionValidity(TestContext context) {
 		final Async async = context.async();
-		SoileUserManager man = createManager("user");		
+		SoileUserManager man = createManager();		
 		String username =  "testUser2";
 		String password =  "testpw";
 		String email = "test@test.blubb";
@@ -143,12 +164,5 @@ public class SoileUserManagerTest extends MongoTestBase{
 		});				
 				
 	}
-	
-	public SoileUserManager createManager(String userOrParticipant)
-	{
-		return new SoileUserManager(MongoClient.create(vertx, cfg.getJsonObject("db")),
-				  new MongoAuthenticationOptions().setCollectionName(cfg.getJsonObject(SoileConfigLoader.USERCOLLECTIONS).getString(userOrParticipant)),
-				  new MongoAuthorizationOptions().setCollectionName(cfg.getJsonObject(SoileConfigLoader.USERCOLLECTIONS).getString(userOrParticipant)),
-				  cfg);
-	}
+		
 }

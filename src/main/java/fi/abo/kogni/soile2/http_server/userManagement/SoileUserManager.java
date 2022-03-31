@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
+import fi.abo.kogni.soile2.http_server.userManagement.exceptions.EmailAlreadyInUseException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -81,6 +82,23 @@ public class SoileUserManager implements MongoUserUtil{
 	}
 
 	/**
+	 * Check whether the Email listed is present in the email list of the database.
+	 * The handler needs to handle the AsyncResult that is the number of entries with that email.
+	 * @param email The email address to check
+	 * @param handler
+	 * @return
+	 */
+	public SoileUserManager checkEmailPresent(String email, Handler<AsyncResult<Long>> handler)
+	{
+		JsonObject emailQuery = new JsonObject()		
+				.put(dbConfig.getString("userEmailField"), email.toLowerCase());
+		client.count(authzOptions.getCollectionName(), emailQuery, handler);
+		
+		return this;
+	}
+	
+	
+	/**
 	 * Set Full name and Email address of a user.
 	 * @param username username of the user
 	 * @param email email address of the user
@@ -96,44 +114,61 @@ public class SoileUserManager implements MongoUserUtil{
 		
 		JsonObject update = new JsonObject()						
 				.put("$set", new JsonObject()
-				.put(dbConfig.getString("userEmailField"),email)
+				.put(dbConfig.getString("userEmailField"),email.toLowerCase())
 				.put(dbConfig.getString("userFullNameField"),fullName));						
 
-				
 		
-		// Otherwise there is  no user with that username, so don't just add it!				
-		client.updateCollection(
-				authzOptions.getCollectionName(),
-				targetQuery,
-				update,										
-				ares -> {
-					if(ares.succeeded())
-					{
-						long docsMatched = ares.result().getDocMatched(); 
-						if(docsMatched == 1L)
-						{
-							resultHandler.handle(ares);
-						}
-						else
-						{
-							if(docsMatched == 0L)
+		
+		checkEmailPresent(email, emailPresent ->
+		{
+			// if the email is not yet set, we can use it. 
+			if(emailPresent.succeeded() && emailPresent.result() == 0L)
+			{
+				// Otherwise there is  no user with that username, so don't just add it!				
+				client.updateCollection(
+						authzOptions.getCollectionName(),
+						targetQuery,
+						update,										
+						ares -> {
+							if(ares.succeeded())
 							{
-							    //the requested username was not in the database
-								resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture(new UserDoesNotExistException(username)));
+								long docsMatched = ares.result().getDocMatched(); 
+								if(docsMatched == 1L)
+								{
+									resultHandler.handle(ares);
+								}
+								else
+								{
+									if(docsMatched == 0L)
+									{
+										//the requested username was not in the database
+										resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture(new UserDoesNotExistException(username)));
+									}
+									else
+									{
+										resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture("Multiple users with the same username in the database!!"));
+									}
+								}
+
 							}
 							else
 							{
-								resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture("Multiple users with the same username in the database!!"));
+								resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture(ares.cause()));
 							}
-						}
-						
-					}
-					else
-					{
-						resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture(ares.cause()));
-					}
-				});															
-
+						});		
+			}
+			else
+			{
+				if(emailPresent.failed())
+				{
+					resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture(emailPresent.cause()));
+				}
+				else
+				{
+					resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture(new EmailAlreadyInUseException(email)));	
+				}
+			}
+		});
 		return this;
 	}
 
@@ -386,7 +421,7 @@ public class SoileUserManager implements MongoUserUtil{
     // we have all required data to insert a user
     final byte[] salt = new byte[32];
     random.nextBytes(salt);
-    //System.out.println("Creating hashed user");
+    System.out.println("Creating hashed user");
     return createHashedUser(
     		username,
     		strategy.hash(hashingAlgorithm,
@@ -419,6 +454,10 @@ public class SoileUserManager implements MongoUserUtil{
 		if (username == null || hash == null) {
 			resultHandler.handle(Future.failedFuture("username or password hash are null"));
 			return this;
+		}
+		if (username.contains("@"))
+		{
+			resultHandler.handle(Future.failedFuture("@ not allowed in usernames"));	
 		}
 		client.find(
 				authnOptions.getCollectionName(),
