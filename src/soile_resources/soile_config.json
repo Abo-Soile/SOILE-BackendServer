@@ -35,8 +35,8 @@
 	},			
 	
 	"session" : {
-		"userField" : "user",
 		"userTypeField" : "userType",
+		"passwordField" : "password",
 		"maxTime" : 2592000000,
 		"sessionID" : "sessionID",
 		"sessionCookieID" : "soileSessionCookie",
@@ -65,7 +65,8 @@
 			"userFullNameField" : "fullname",
 			"passwordField" : "password",
 			"userRolesField" : "userRoles",
-			"rememberLoginField" : "remember"
+			"rememberLoginField" : "remember",
+			"sessionID" : "sessionID"			
 			}		
 	},
 
@@ -83,7 +84,8 @@
 			"setUserFullNameAndEmail" :"setNameAndEmail",
 			"getUserData" : "getUserData",
 			"addSession" : "addUserSession",
-			"checkUserSessionValid" : "isSessionValid"
+			"checkUserSessionValid" : "isSessionValid",
+			"invalidateUserSession" : "invalidateSession"
 			}
 	},
 
