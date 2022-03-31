@@ -54,7 +54,6 @@ public class SoileServerVerticle extends AbstractVerticle {
 		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileUserManagementVerticle(), opts, promise)));
 		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoilePermissionVerticle("experiments"), opts, promise)));				
 		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileAuthenticationVerticle(router,store), opts, promise)));
-		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:helloVert.js", opts, promise)));
 		return CompositeFuture.all(deploymentFutures).mapEmpty();
 	}
 	

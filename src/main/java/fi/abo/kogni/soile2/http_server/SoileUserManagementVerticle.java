@@ -88,7 +88,8 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		System.out.println("Setting up channels");
 		System.out.println("Adding channel: " + getEventbusCommandString("addUser"));
 		vertx.eventBus().consumer(getEventbusCommandString("addUser"), this::addUser);
-		vertx.eventBus().consumer(getEventbusCommandString("removeUser"), this::removeUser);
+		vertx.eventBus().consumer(getEventbusCommandString("addUserWithEmail"), this::addUserWithEmail);
+		vertx.eventBus().consumer(getEventbusCommandString("removeUser"), this::removeUser);		
 		vertx.eventBus().consumer(getEventbusCommandString("permissionOrRoleChange"), this::permissionOrRoleChange);
 		vertx.eventBus().consumer(getEventbusCommandString("setUserFullNameAndEmail"), this::setUserFullNameAndEmail);
 		vertx.eventBus().consumer(getEventbusCommandString("getUserData"), this::getUserData);
@@ -97,20 +98,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession);
 
 	}	
-	
 		
-	/**
-	 * Get the {@link SoileUserManager} fitting to the supplied commands userTypeField.
-	 * Two options are currently available, researchers, and participants. 
-   	 * @param command a {@link JsonObject} containing at least the field "userTypeField" from the config. 
-	 * @return the appropriate {@link SoileUserManager}
-	 */
-	SoileUserManager getFittingManager()	
-	{
-		
-		return userManager;
-	}
-	
 	/**
 	 * Add a session to a user
 	 * {
@@ -133,13 +121,9 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		if (msg.body() instanceof JsonObject)
 		{
 			JsonObject command = (JsonObject)msg.body();			
-			SoileUserManager cman = getFittingManager();
-			if(cman == null)
-			{
-				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
-				return;
-			}
-			cman.addUserSession(command.getString(getCommunicationField("usernameField"))
+
+			
+			userManager.addUserSession(command.getString(getCommunicationField("usernameField"))
 												  ,sessionFields.getString("sessionID")
 												  ,res ->
 			{
@@ -180,14 +164,9 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	{
 		if (msg.body() instanceof JsonObject)
 		{
-			JsonObject command = (JsonObject)msg.body();
-			SoileUserManager cman = getFittingManager();
-			if(cman == null)
-			{
-				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
-				return;
-			}
-			cman.removeUserSession(command.getString(getCommunicationField("usernameField"))
+			JsonObject command = (JsonObject)msg.body();			
+			
+			userManager.removeUserSession(command.getString(getCommunicationField("usernameField"))
 												  ,sessionFields.getString("sessionID")
 												  ,res ->
 			{
@@ -235,14 +214,9 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	{
 		if (msg.body() instanceof JsonObject)
 		{
-			JsonObject command = (JsonObject)msg.body();			
-			SoileUserManager cman = getFittingManager(command);
-			if(cman == null)
-			{
-				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
-				return;
-			}
-			cman.isSessionValid(command.getString(getCommunicationField("usernameField"))
+			JsonObject command = (JsonObject)msg.body();						
+			
+			userManager.isSessionValid(command.getString(getCommunicationField("usernameField"))
 												  ,getCommunicationField("userTypeField")
 												  ,res ->
 			{
@@ -286,14 +260,9 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		
 		if (msg.body() instanceof JsonObject)
 		{
-			JsonObject command = (JsonObject)msg.body();			
-			SoileUserManager cman = getFittingManager(command);
-			if(cman == null)
-			{
-				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
-				return;
-			}
-			cman.getUserData(command.getString(getDBField("usernameField")), userRes ->{
+			JsonObject command = (JsonObject)msg.body();						
+			
+			userManager.getUserData(command.getString(getDBField("usernameField")), userRes ->{
 				if(userRes.succeeded())
 				{
 					msg.reply(SoileCommUtils.successObject().put("Data", userRes.result()));
@@ -314,6 +283,21 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	
 	
 	
+	void addUserWithEmail(Message<Object> msg)
+	{
+		if (msg.body() instanceof JsonObject)
+		{
+			JsonObject command = (JsonObject)msg.body();			
+			
+			//System.out.println("Verticle: Creating user");
+			userManager.createUser(command.getString(getCommunicationField("usernameField")),
+					command.getString(getCommunicationField("passwordField"))).onSuccess(id ->
+				{
+
+				});
+		}
+	}
+	
 	/**
 	 * Add a User to the database. he message body must be a jsonObject with at least the following fields:
 	 * {
@@ -331,17 +315,10 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		//make sure we actually get the right thing
 		if (msg.body() instanceof JsonObject)
 		{
-			JsonObject command = (JsonObject)msg.body();
-			SoileUserManager cman = getFittingManager(command);
-			//System.out.println("Found fitting UserManager for type " + command.getString("type"));
+			JsonObject command = (JsonObject)msg.body();			
 			
-			if(cman == null)
-			{
-				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
-				return;
-			}	
 			//System.out.println("Verticle: Creating user");
-			cman.createUser(command.getString(getCommunicationField("usernameField")),
+			userManager.createUser(command.getString(getCommunicationField("usernameField")),
 					command.getString(getCommunicationField("passwordField"))).onComplete(
 					id -> {
 						// do this only if the user was created Successfully
@@ -385,14 +362,9 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		JsonObject answer = new JsonObject();
 		if (msg.body() instanceof JsonObject)
 		{
-			JsonObject command = (JsonObject)msg.body();
-			SoileUserManager cman = getFittingManager(command);
-			if(cman == null)
-			{
-				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST,"Invalid UserType Field");
-				return;
-			}			
-			cman.deleteUser(command.getString(getDBField("usernameField")), res -> {
+			JsonObject command = (JsonObject)msg.body();			
+				
+			userManager.deleteUser(command.getString(getDBField("usernameField")), res -> {
 				if(res.succeeded())
 				{
 					MongoClientDeleteResult delRes = res.result();
@@ -432,16 +404,12 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		if (msg.body() instanceof JsonObject)
 		{
 				JsonObject command = (JsonObject)msg.body();
-				SoileUserManager cman = getFittingManager(command);
+
 				//System.out.println("Found fitting UserManager for type " + command.getString("type"));
 				
-				if(cman == null)
-				{
-					msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid UserType Field");
-					return;
-				}	
+			
 				//System.out.println("Verticle: Set Email and Full Name from data");
-				cman.setEmailAndFullName(command.getString(getDBField("usernameField")), 
+				userManager.setEmailAndFullName(command.getString(getDBField("usernameField")), 
 						command.getString(getDBField("userEmailField")), 
 						command.getString(getDBField("userFullNameField")), 
 						res -> {

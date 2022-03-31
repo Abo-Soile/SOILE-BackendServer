@@ -91,10 +91,10 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	
 	void setupHandlers()
 	{
-		SoileAuthenticationOptions  authOpts = new SoileAuthenticationOptions(config());			
+//		SoileAuthenticationOptions  authOpts = new SoileAuthenticationOptions(config());			
 		soileAuth = new SoileAuthentication(client);
 		accessHandler = new SoileCookieAuthHandler(vertx, soileAuth);
-		restoreHandler = new SoileCookieRestoreHandler(vertx, soileAuth, config());
+		restoreHandler = new SoileCookieRestoreHandler(vertx, config());
 
 	}
 	void setupBasicRoutes()
