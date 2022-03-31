@@ -52,7 +52,7 @@ public class SoileCookieRestoreHandler implements Handler<RoutingContext> {
 					log.debug("Submitting request to eventbus");
 					log.debug(SoileCommUtils.getUserEventBusCommand("checkUserSessionValid"));
 					JsonObject command = new JsonObject().put(SoileCommUtils.getCommunicationField("usernameField"), username)
-							.put(SoileConfigLoader.getSessionProperty("sessionID"), token);
+							.put(SoileCommUtils.getCommunicationField("sessionID"), token);
 
 					log.debug("Trying to validate token:\n" + command.encodePrettily());
 					vertx.eventBus()
@@ -61,10 +61,12 @@ public class SoileCookieRestoreHandler implements Handler<RoutingContext> {
 					{									
 						if(res.succeeded())
 						{
+							// User token verified, create User and add it to session.
 							JsonObject result = (JsonObject)res.result();
 							if(SoileCommUtils.isResultSuccessFull(result)) 
 							{
-								JsonObject query = new JsonObject().put(SoileConfigLoader.getdbField("usernameField"), username);
+								JsonObject query = new JsonObject()
+										.put(SoileConfigLoader.getdbField("usernameField"), username);
 								client.find(SoileConfigLoader.getdbProperty("userCollection"), query, dbRes -> 
 								{
 									//only resume the request, if we have finished loading everything here.							
@@ -74,7 +76,7 @@ public class SoileCookieRestoreHandler implements Handler<RoutingContext> {
 										//retrieve the user from the database entry.
 										try
 										{
-											User user = UserUtils.buildUserFromDBEntry(dbRes.result(), username);
+											User user = UserUtils.buildUserFromDBResult(dbRes.result(), username);
 											user.principal().put("refreshCookie", true);
 											context.setUser(user);
 											Session session = context.session();

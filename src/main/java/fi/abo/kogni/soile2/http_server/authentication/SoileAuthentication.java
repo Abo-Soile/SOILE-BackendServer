@@ -2,6 +2,10 @@ package fi.abo.kogni.soile2.http_server.authentication;
 
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import fi.abo.kogni.soile2.http_server.SoilePermissionVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidLoginException;
@@ -26,6 +30,7 @@ public class SoileAuthentication implements AuthenticationProvider{
 	private final MongoClient client;
 	private final HashingStrategy strategy;
 	
+	static final Logger LOGGER = LogManager.getLogger(SoileAuthentication.class);
 	public SoileAuthentication(MongoClient client)
 	{		
 		this.client = client;
@@ -39,9 +44,8 @@ public class SoileAuthentication implements AuthenticationProvider{
 	{
 		System.out.println("Trying to authenticate");
 		   try {
-			   	  String unameField = SoileConfigLoader.getdbField("usernameField");
 			      //no credentials provided
-			      if (credentials == null || credentials.getString(unameField) == null ) {
+			      if (credentials == null || credentials.getString("username") == null ) {
 			    	
 			        resultHandler.handle((Future.failedFuture("Invalid Credentials.")));
 			        return;
@@ -53,48 +57,56 @@ public class SoileAuthentication implements AuthenticationProvider{
 			    	  resultHandler.handle((Future.failedFuture("Invalid Password.")));
 				      return;  
 			      }
-
-			      JsonObject query = new JsonObject().put(unameField, credentials.getString(unameField));
-			      client.find(SoileConfigLoader.getdbProperty("userCollection"), query, res -> {
-			        try {
-			          if (res.succeeded()) {			        	  
-			            User user = getUser(res.result(), credentials);
-			            //System.out.println("User found and authenticated");
-			            resultHandler.handle(Future.succeededFuture(user));			            
-			            return;
-			          } else {
-			        	//System.out.println("Could not find user in DB");
-			            resultHandler.handle(Future.failedFuture(res.cause()));
-			            return;
-			          }
-			        } catch (Exception e) {
-			          //System.out.println(e);
-			          //e.printStackTrace(System.out);
-			          //System.out.println(resultHandler.getClass());
-		        	  resultHandler.handle(Future.failedFuture(e));  
-			          return;
-			        }
-
+			      LOGGER.debug("requesting user entry from database");
+			      String username = credentials.getString("username");
+			      UserUtils.getUserDataFromCollection(client, username , res ->
+			      {
+			    	if(res.succeeded())
+			    	{
+			    		try
+			    		{
+			    			User user = getUser(res.result(),credentials);
+			    			resultHandler.handle(Future.succeededFuture(user));
+			    		}
+			    		catch(InvalidLoginException e)
+			    		{
+			    			resultHandler.handle(Future.failedFuture(e));
+			    		}
+			    	}			    	
+			    	else
+			    	{
+			    		if(res.cause() instanceof DuplicateUserEntryInDBException)
+			    		{
+			    			LOGGER.error("Found a duplicate user in database: " + username);
+			    			resultHandler.handle(Future.failedFuture("Internal Server Error"));
+			    		}
+			    		else
+			    		{
+			    			resultHandler.handle(Future.failedFuture(res.cause()));	
+			    		}
+			    	}
 			      });
+			      			      
 			    } catch (RuntimeException e) {
 			      resultHandler.handle(Future.failedFuture(e));
 			      return;
 			    }	
 	}
 
-	public User getUser(List<JsonObject> resultList, JsonObject credentials)
-		      throws Exception {
+	public User getUser(JsonObject dbEntry, JsonObject credentials)
+		      throws InvalidLoginException {
     	String username = credentials.getString(SoileConfigLoader.getdbField("usernameField"));
-		User user = UserUtils.buildUserFromDBEntry(resultList,username);
-	    //user.principal().put(sessionCfg.getString("userTypeField"), userType);
-	    if(strategy.verify(credentials.getString(SoileConfigLoader.getdbField("passwordField")),
-	    	credentials.getString(SoileConfigLoader.getdbField("passwordField"))))
+		User user = UserUtils.buildUserForDBEntry(dbEntry,username);		
+	    if(strategy.verify(dbEntry.getString(SoileConfigLoader.getdbField("passwordField")),
+	    		credentials.getString(SoileConfigLoader.getSessionProperty("passwordField"))))
 	    {
 	    	//User authenticated!!
+	    	LOGGER.debug("Successfully validated the user");
 	    	return user;
 	    }
 	    else
 	    {
+	    	LOGGER.debug("Could not validate user with the following Credentials:\n " + credentials.encodePrettily());
 	    	throw new InvalidLoginException(username);
 	    }
 

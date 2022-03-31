@@ -132,7 +132,7 @@ public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<Authentica
 	    JsonObject cuser = ctx.user().principal();
 		vertx.eventBus()
 			 .send(SoileCommUtils.getUserEventBusCommand("addSession")
-				   ,new JsonObject().put(SoileConfigLoader.getSessionProperty("sessionID"),token)
+				   ,new JsonObject().put(SoileCommUtils.getCommunicationField("sessionID"),token)
 					 				.put(SoileCommUtils.getCommunicationField("usernameField"),cuser.getString(SoileConfigLoader.getdbField("usernameField")))
 					 				.put(SoileCommUtils.getCommunicationField("userTypeField"), cuser.getString(SoileConfigLoader.getdbField("userTypeField"))));
 		// now build the cookie to store on the remote system. 		

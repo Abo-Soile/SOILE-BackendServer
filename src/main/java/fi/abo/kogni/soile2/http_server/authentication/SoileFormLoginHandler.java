@@ -1,16 +1,12 @@
 package fi.abo.kogni.soile2.http_server.authentication;
 
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.impl.FormLoginHandlerImpl;
-import io.vertx.ext.web.impl.RoutingContextInternal;
 
 public class SoileFormLoginHandler extends FormLoginHandlerImpl{
 

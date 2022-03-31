@@ -50,9 +50,9 @@ public class SoileCookieCreationHandler extends AbstractVerticle implements Hand
 		String token = CookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
 		String username = CookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());
 		vertx.eventBus()
-		 .send(SoileCommUtils.getUserEventBusCommand("addSession")
-			   ,new JsonObject().put(SoileConfigLoader.getSessionProperty("sessionID"),token)
-				 				.put(SoileCommUtils.getCommunicationField("usernameField"),cuser.getString(SoileConfigLoader.getdbField("usernameField"))));		
+		 .send(SoileCommUtils.getUserEventBusCommand("invalidateUserSession")
+			   ,new JsonObject().put(SoileCommUtils.getCommunicationField("sessionID"),token)
+				 				.put(SoileCommUtils.getCommunicationField("usernameField"),username));		
 		
 	}
 	
@@ -66,7 +66,7 @@ public class SoileCookieCreationHandler extends AbstractVerticle implements Hand
 	    JsonObject cuser = ctx.user().principal();
 		vertx.eventBus()
 			 .send(SoileCommUtils.getUserEventBusCommand("addSession")
-				   ,new JsonObject().put(SoileConfigLoader.getSessionProperty("sessionID"),token)
+				   ,new JsonObject().put(SoileCommUtils.getCommunicationField("sessionID"),token)
 					 				.put(SoileCommUtils.getCommunicationField("usernameField"),cuser.getString(SoileConfigLoader.getdbField("usernameField"))));
 		// now build the cookie to store on the remote system. 		
 		String cookiecontent = CookieStrategy.buildCookieContent(cuser.getString(SoileCommUtils.getCommunicationField("usernameField")),token);
