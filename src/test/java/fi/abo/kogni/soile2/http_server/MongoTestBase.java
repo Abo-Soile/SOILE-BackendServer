@@ -21,6 +21,7 @@ import de.flapdoodle.embed.process.runtime.Network;
 import fi.abo.kogni.soile2.SoileTest;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthenticationOptions;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
+import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
@@ -28,6 +29,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
+import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -49,7 +51,7 @@ public abstract class MongoTestBase extends SoileTest{
 	private SoileHashing hashStrat;	
 	private String hashinAlgo;
 	private SecureRandom random = new SecureRandom();
-
+	private SoileUserManager uManager;
 	public SoileAuthenticationOptions authOptions;		
 
 	@BeforeClass
@@ -60,7 +62,7 @@ public abstract class MongoTestBase extends SoileTest{
 				.net(new Net(MONGO_PORT, Network.localhostIsIPv6()))
 				.build();
 		MongodExecutable mongodExecutable = starter.prepare(mongodConfig);
-		MONGO = mongodExecutable.start();
+		MONGO = mongodExecutable.start();		
 	}
 
 	@AfterClass
@@ -82,7 +84,7 @@ public abstract class MongoTestBase extends SoileTest{
 		commCfg = cfg.getJsonObject(SoileConfigLoader.COMMUNICATION_CFG);
 		serverCfg = cfg.getJsonObject(SoileConfigLoader.HTTP_SERVER_CFG);
 		sessionCfg = cfg.getJsonObject(SoileConfigLoader.SESSION_CFG);
-		authOptions = new SoileAuthenticationOptions(cfg);
+		//authOptions = new SoileAuthenticationOptions(cfg);
 				
 		mongo_client = MongoClient.createShared(vertx, cfg.getJsonObject("db"));
 		//Clean the database of existing entries for tests to be working properly.
@@ -105,6 +107,7 @@ public abstract class MongoTestBase extends SoileTest{
 			}
 			oasync.complete();
 		});
+		uManager = createManager();
 	}
 	/**
 	 * This method, called after our test, just cleanup everything by closing the vert.x instance
@@ -130,20 +133,12 @@ public abstract class MongoTestBase extends SoileTest{
 
 	}
 
-	public Future<String> createUser(JsonObject userdata, SoileAuthenticationOptions authnOptions,  TestContext context)
-	{
+	public Future<String> createUser(JsonObject userdata, TestContext context)
+	{			
 		String username = userdata.getString(cfg.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("usernameField"));
 		String password = userdata.getString(cfg.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("passwordField"));
-		String userType = userdata.getString(cfg.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("userTypeField"));
-		String hash = createHash(password);
-		String collection = authnOptions.getCollectionForType(userType);
-		System.out.println("Creating user: " + username + " Type: " + userType);
-		return mongo_client.save(
-				collection,
-				new JsonObject()
-				.put(authnOptions.getUsernameField(), username)
-				.put(authnOptions.getPasswordField(), hash)							
-				);
+		System.out.println("Creating user with name " + username + " and password " + password);
+		return uManager.createUser(username, password);
 	}
 
 	public MultiMap createFormFromJson(JsonObject json)
@@ -155,5 +150,12 @@ public abstract class MongoTestBase extends SoileTest{
 		}
 		return result;
 	}
-
+	
+	public SoileUserManager createManager()
+	{
+		return new SoileUserManager(MongoClient.create(vertx, cfg.getJsonObject("db")),
+				  new MongoAuthenticationOptions().setCollectionName(cfg.getJsonObject(SoileConfigLoader.DB_CFG).getString("userCollection")),
+				  new MongoAuthorizationOptions().setCollectionName(cfg.getJsonObject(SoileConfigLoader.DB_CFG).getString("userCollection")),
+				  cfg);
+	}
 }

@@ -49,7 +49,7 @@ public class SoileAuthenticationVerticleTest extends MongoTestBase{
 	
 	
 	@Test
-	public void testAuthentication(TestContext context) {
+	public void testValidAuthentication(TestContext context) {
 		Async async = context.async();
 		try {
 			JsonObject userObject = new JsonObject()
@@ -92,7 +92,7 @@ public class SoileAuthenticationVerticleTest extends MongoTestBase{
 								});
 								
 								final Async unsucAsync = context.async();
-								userObject.put("type", "user");
+								userObject.put("password", "user");
 								map = createFormFromJson(userObject);
 								webclient.post(port,"localhost","/auth").sendForm(map).onSuccess(authed ->
 								{
