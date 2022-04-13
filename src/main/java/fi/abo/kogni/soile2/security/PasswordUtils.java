@@ -13,10 +13,16 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class PasswordUtils {
 
-	
+	/**
+	 * Not implemented yet
+	 * TODO: Implement encryption/decryption of data based on a given password 
+	 * @param key
+	 * @param encrypted
+	 * @return
+	 */
 	public static String decrypt(String key, String encrypted)
 	{
-		
+		return null;
 	}
 	
 	public static SecretKey getKeyFromPassword(String password)

@@ -1,11 +1,15 @@
 package fi.abo.kogni.soile2.http_server;
 
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.tsp.ers.SortedHashList;
 
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
+import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
@@ -46,13 +50,9 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	public void start(Promise<Void> startPromise) throws Exception {
 		LOGGER.info("Starting UserManagementVerticle");
 		mongo = MongoClient.createShared(vertx, config().getJsonObject("db"));
-		setupConfig(SoileConfigLoader.USERMGR_CFG);
-		String userCollection = SoileConfigLoader.getdbProperty("userCollection");
-		
+		setupConfig(SoileConfigLoader.USERMGR_CFG);		
 		sessionFields = config().getJsonObject(SoileConfigLoader.SESSION_CFG);
-		MongoAuthenticationOptions userAuthnOptions = createMongoAuthNOptions(userCollection);
-		MongoAuthorizationOptions userAuthzOptions = createMongoAuthZOptions(userCollection);;
-		userManager = new SoileUserManager(mongo,userAuthnOptions,userAuthzOptions, config());		
+		userManager = new SoileUserManager(mongo);		
 
 		setupChannels();
 		LOGGER.info("User Management Verticle Started");
@@ -60,26 +60,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		startPromise.complete();
 	}
 
-	private MongoAuthenticationOptions createMongoAuthNOptions(String collection)
-	{
-		MongoAuthenticationOptions res = new MongoAuthenticationOptions();
-		res.setCollectionName(collection);
-		res.setPasswordCredentialField(getDBField("passwordCredentialField"));
-		res.setPasswordField(getDBField("passwordField"));
-		res.setUsernameCredentialField(getDBField("usernameCredentialField"));
-		res.setUsernameField(getDBField("usernameField"));				
-		return res;
-	}
-	
-	private MongoAuthorizationOptions createMongoAuthZOptions(String collection)
-	{
-		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
-		res.setCollectionName(collection);
-		res.setPermissionField(getDBField("userPermissionsField"));
-		res.setRoleField(getDBField("userRolesField"));
-		res.setUsernameField(getDBField("usernameField"));				
-		return res;
-	}
 	/**
 	 * Set up the channels this Manager is listening to.
 	 */
@@ -90,7 +70,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		vertx.eventBus().consumer(getEventbusCommandString("addUser"), this::addUser);
 		vertx.eventBus().consumer(getEventbusCommandString("addUserWithEmail"), this::addUserWithEmail);
 		vertx.eventBus().consumer(getEventbusCommandString("removeUser"), this::removeUser);		
-		vertx.eventBus().consumer(getEventbusCommandString("permissionOrRoleChange"), this::permissionOrRoleChange);
+		vertx.eventBus().consumer(getEventbusCommandString("permissionOrRoleChange"), this::permissionOrRoleChange);		
 		vertx.eventBus().consumer(getEventbusCommandString("setUserFullNameAndEmail"), this::setUserFullNameAndEmail);
 		vertx.eventBus().consumer(getEventbusCommandString("getUserData"), this::getUserData);
 		vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid);
@@ -387,16 +367,85 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			msg.fail(HttpURLConnection.HTTP_BAD_REQUEST,"Invalid Request");
 		}
 	}
-	
+	/**
+	 * Change the permissions of a user. The command needs to have the following structure:
+	 * {
+	 * 		"<usernameField>" : "UserName",
+	 * 		"<changeTypeField>" : "<addCommand>"/"<setCommand>"/"<removeCommand>"
+	 * 		"<experimentID>" : ID,
+	 *      "<roleChanged>" : Owner/Participant/Collaborator
+	 *      
+	 * @param msg
+	 */
 	void permissionOrRoleChange(Message<JsonObject> msg)
 	{
 		//make sure we actually get the right thing
 		if (msg.body() instanceof JsonObject)
 		{
+			//first get the data from the body
+			JsonObject command = (JsonObject) msg.body();
+			String userName = command.getString(SoileConfigLoader.getCommunicationField("usernameField"));
+			String changeType = command.getString(SoileConfigLoader.getCommunicationField("changeTypeField"));
+			String expID = command.getString(SoileConfigLoader.getCommunicationField("experimentID"));
+			String changedRole = command.getString(SoileConfigLoader.getCommunicationField("roleChanged"));
+			List<String> ExpList = new ArrayList<String>();
+			ExpList.add(expID);
+			userManager.changePermissionsOrRoles(userName, getDBFieldForRoleType(changedRole), ExpList, getChange(changeType), 
+					res ->
+			{
+				if(res.succeeded())
+				{
+					msg.reply(new JsonObject().put(SoileCommUtils.RESULTFIELD, SoileCommUtils.SUCCESS));
+				}
+				else
+				{
+					LOGGER.error("Could not update permissions for request:\n" + command.encodePrettily() );
+					LOGGER.error("Error was:\n" + res.cause().getMessage());
+					msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, res.cause().getMessage());	
+				}					
+			});
 			
+		}
+		else
+		{
+			msg.fail(HttpURLConnection.HTTP_BAD_REQUEST,"Invalid Request");
 		}
 	}
 
+	private PermissionChange getChange(String change)
+	{
+		if(change.equals(SoileConfigLoader.getStringProperty(SoileConfigLoader.COMMUNICATION_CFG, "setCommand")))
+		{
+			return PermissionChange.Replace;
+		}
+		if(change.equals(SoileConfigLoader.getStringProperty(SoileConfigLoader.COMMUNICATION_CFG, "addCommand")))
+		{
+			return PermissionChange.Add;
+		}
+		if(change.equals(SoileConfigLoader.getStringProperty(SoileConfigLoader.COMMUNICATION_CFG, "removeCommand")))
+		{
+			return PermissionChange.Remove;
+		}
+		return null;
+	}
+	
+	private String getDBFieldForRoleType(String role)
+	{
+		if(role.equals(SoileConfigLoader.Owner))
+		{
+			return SoileConfigLoader.getdbField("ownerField");
+		}
+		if(role.equals(SoileConfigLoader.Participant))
+		{
+			return SoileConfigLoader.getdbField("participantField");
+		}
+		if(role.equals(SoileConfigLoader.Collaborator))
+		{
+			return SoileConfigLoader.getdbField("collaboraorField");
+		}
+		return null;
+	}
+	
 	
 	void setUserFullNameAndEmail(Message<JsonObject> msg)
 	{

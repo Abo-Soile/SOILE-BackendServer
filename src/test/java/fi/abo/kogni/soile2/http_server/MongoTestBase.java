@@ -70,9 +70,11 @@ public abstract class MongoTestBase extends SoileTest{
 		MONGO.stop();
 	}
 
+	@Override
 	@Before
 	public void setUp(TestContext context)
 	{		
+		super.setUp(context);
 		final Async oasync = context.async();
 		vertx = Vertx.vertx();
 		cfg = new JsonObject(vertx.fileSystem().readFileBlocking("soile_config.json"));
@@ -153,9 +155,6 @@ public abstract class MongoTestBase extends SoileTest{
 	
 	public SoileUserManager createManager()
 	{
-		return new SoileUserManager(MongoClient.create(vertx, cfg.getJsonObject("db")),
-				  new MongoAuthenticationOptions().setCollectionName(cfg.getJsonObject(SoileConfigLoader.DB_CFG).getString("userCollection")),
-				  new MongoAuthorizationOptions().setCollectionName(cfg.getJsonObject(SoileConfigLoader.DB_CFG).getString("userCollection")),
-				  cfg);
+		return new SoileUserManager(MongoClient.create(vertx, cfg.getJsonObject("db")));
 	}
 }

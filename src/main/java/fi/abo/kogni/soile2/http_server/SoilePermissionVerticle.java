@@ -1,18 +1,26 @@
 package fi.abo.kogni.soile2.http_server;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.impl.future.SucceededFuture;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
 
 /**
- * Permissions for Experiments are save in the form of JsonArrays containing strings. 
+ * Permissions for Experiments are saved in the form of JsonArrays containing strings. 
  * The following Permissions rules are followed:
  * Static Data/Running the experiment (e.g. images etc): 
  *    if private, 
@@ -31,14 +39,13 @@ import io.vertx.ext.mongo.MongoClient;
  *      - Non-owners have read access (can create a copy for their use) 
  *      - Owners have full access
  * Result data :
- *    - Always only accessible to owners.		   
+ *    - Always only accessible to owners/collaborators.		   
  * @author Thomas Pfau
  *
  */
-public class SoilePermissionVerticle extends SoileBaseVerticle {
+public class SoilePermissionVerticle extends SoileBaseVerticle{
 
 	static final Logger LOGGER = LogManager.getLogger(SoilePermissionVerticle.class);
-	final String DBFIELD;
 	MongoClient mongo;	
 	JsonObject userConfig;
 	static enum RequestType
@@ -50,17 +57,12 @@ public class SoilePermissionVerticle extends SoileBaseVerticle {
 		PrivateChange
 	}
 	
-	public SoilePermissionVerticle(String target)
-	{
-		DBFIELD = target;
-	}
-	
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {		
 		System.out.println("Starting SoilePermissionVerticle");
-		mongo = MongoClient.createShared(vertx, config().getJsonObject("db"));		
-		setupConfig(DBFIELD);
-		userConfig = config().getJsonObject(SoileConfigLoader.USERMGR_CFG);
+		mongo = MongoClient.createShared(vertx, config().getJsonObject("db"));
+		setupConfig(SoileConfigLoader.EXPERIMENT_CFG);
+		userConfig = config().getJsonObject(SoileConfigLoader.USERMGR_CFG);		
 		setupEvents();
 		startPromise.complete();
 		System.out.println("Started successfully");
@@ -75,12 +77,11 @@ public class SoilePermissionVerticle extends SoileBaseVerticle {
 	 * }
 	 * Setting permissions Commands contain the structure:
 	 * {
-	 *  "<IDField>" : "ObjectID"
-	 *  "<changeTypeField>" : "<addCommand>"/"<setCommand>"/"<removeCommand>"
+	 *  "<IDField>" : "ObjectID",
+	 *  "<changeTypeField>" : "<addCommand>"/"<setCommand>"/"<removeCommand>",
 	 *  "<ownerField>" : [ "ChangedOwner1", "ChangedOwner2"...]
 	 * }
 	 * Setting the private flag is done by:
-	 * Setting permissions Commands contain the structure:
 	 * {
 	 *  "<IDField>" : "ObjectID"
 	 *  "<logonRequiredField"> : true/false
@@ -90,11 +91,11 @@ public class SoilePermissionVerticle extends SoileBaseVerticle {
 	
 	void setupEvents()
 	{
-		vertx.eventBus().consumer(getEventbusCommandString("getFilePermissions"), this::getFilePermissions);
-		vertx.eventBus().consumer(getEventbusCommandString("getDataPermissions"), this::getDataPermissions);
-		vertx.eventBus().consumer(getEventbusCommandString("getResultPermissions"), this::getResultPermissions);
-		vertx.eventBus().consumer(getEventbusCommandString("setOwner"), this::setOwner);
-		vertx.eventBus().consumer(getEventbusCommandString("setPrivate"), this::setPrivate);
+		vertx.eventBus().consumer(SoileCommUtils.getEventBusCommand(SoileConfigLoader.EXPERIMENT_CFG,"getFilePermissions"), this::getFilePermissions);
+		vertx.eventBus().consumer(SoileCommUtils.getEventBusCommand(SoileConfigLoader.EXPERIMENT_CFG,"getDataPermissions"), this::getDataPermissions);
+		vertx.eventBus().consumer(SoileCommUtils.getEventBusCommand(SoileConfigLoader.EXPERIMENT_CFG,"getResultPermissions"), this::getResultPermissions);
+		vertx.eventBus().consumer(SoileCommUtils.getEventBusCommand(SoileConfigLoader.EXPERIMENT_CFG,"changeOwner"), this::setOwner);
+		vertx.eventBus().consumer(SoileCommUtils.getEventBusCommand(SoileConfigLoader.EXPERIMENT_CFG,"changePrivate"), this::setPrivate);
 	}
 		
 	
@@ -142,7 +143,7 @@ public class SoilePermissionVerticle extends SoileBaseVerticle {
 			JsonObject command = (JsonObject)msg.body();
 			String expID = command.getString(getConfig("IDField"));
 			JsonObject query = new JsonObject().put(getConfig("IDField"), expID);
-			mongo.find(DBFIELD, query).onSuccess(dbResponse -> {
+			mongo.find(SoileConfigLoader.getCollectionName("experimentCollection"), query).onSuccess(dbResponse -> {
 				//This has to be a unique ID!!
 				if(dbResponse.size() == 1)
 				{
@@ -209,9 +210,26 @@ public class SoilePermissionVerticle extends SoileBaseVerticle {
 	private void changeOwner(Message<Object> msg, String command, JsonArray changedOwners, JsonObject originalData)	
 	{
 		JsonArray originalOwners = originalData.getJsonArray(getConfig("ownerField"));
+		JsonArray ownersToRemove = new JsonArray();
+		JsonArray ownersToAdd = new JsonArray();
 		if(command.equals(getCommandString("setCommand")))
 		{
+			for(Object o : originalOwners)
+			{
+				if(!changedOwners.contains(o))
+				{
+					ownersToRemove.add(o);					
+				}
+			}
+			for(Object o : changedOwners)
+			{
+				if(!originalOwners.contains(o))
+				{
+					ownersToAdd.add(o);					
+				}
+			}
 			originalOwners = changedOwners;
+			
 		}
 		else if(command.equals(getCommandString("addCommand")))
 		{
@@ -220,6 +238,7 @@ public class SoilePermissionVerticle extends SoileBaseVerticle {
 				// Add all owners not yet in the owner List
 				if(!originalOwners.contains(o))
 				{
+					ownersToAdd.add(o);
 					originalOwners.add(o);
 				}
 			}
@@ -229,8 +248,10 @@ public class SoilePermissionVerticle extends SoileBaseVerticle {
 			// remove all owners from the current list
 			for(Object o : changedOwners)
 			{
+				ownersToRemove.add(o);
 				originalOwners.remove(o);
-			}	
+			}
+			
 		}
 		else
 		{
@@ -243,6 +264,31 @@ public class SoilePermissionVerticle extends SoileBaseVerticle {
 		mongo.updateCollection(getConfig("collectionName"), query, update, res -> {
 			if(res.succeeded())
 			{
+				//Now, we also need to update the users.
+				List<Future> addedUsers = new LinkedList();			
+				for(Object o : ownersToAdd)
+				{
+					JsonObject userCommand = new JsonObject()
+											 .put(SoileConfigLoader.getCommunicationField("usernameField"),o)
+											 .put(SoileConfigLoader.getCommunicationField("changeTypeField"),SoileCommUtils.getCommunicationField("addCommand"))
+											 .put(SoileConfigLoader.getCommunicationField("experimentID"),originalData.getString(getConfig("IDField")))
+											 .put(SoileConfigLoader.getCommunicationField("roleChanged"), SoileConfigLoader.Owner);
+					
+					
+					addedUsers.add(Future.<AsyncResult<Message>>future(promise -> 
+					vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), userCommand, messageHandled ->
+							{
+								if(messageHandled.succeeded())
+								{
+									promise.complete();
+								}
+								else
+								{
+									promise.fail(res.cause().getMessage());
+								}
+							}))
+					);
+				}
 				msg.reply(new JsonObject().put("Result", "Success"));	
 			}
 			else
@@ -251,7 +297,10 @@ public class SoilePermissionVerticle extends SoileBaseVerticle {
 			}
 		});
 	}
-	
+	public Future<Void> requestUserPermissionChange(JsonObject userCommand)
+	{
+		vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), userCommand);
+	}
 	/**
 	 * Handle a permissions request. The request fails if the Id of the request is not available. 
 	 * The reply will contain a jsonObject with the following fields:
@@ -275,7 +324,7 @@ public class SoilePermissionVerticle extends SoileBaseVerticle {
 			JsonObject command = (JsonObject)msg.body();
 			String expID = command.getString(getConfig("IDField"));
 			JsonObject query = new JsonObject().put(getConfig("IDField"), expID);
-			mongo.find(DBFIELD, query).onSuccess(dbResponse -> {
+			mongo.find(SoileConfigLoader.getCollectionName("experimentCollection"), query).onSuccess(dbResponse -> {
 				//This has to be a unique ID!!
 				if(dbResponse.size() == 1)
 				{

@@ -9,10 +9,11 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
+import io.vertx.ext.auth.authorization.AuthorizationProvider;
 import io.vertx.ext.mongo.MongoClient;
 
 public class UserUtils {
-
+			
 	/**
 	 * Build a user from the database result adding several properties.
 	 * This fails if multiple or no entry were returned.
@@ -39,7 +40,7 @@ public class UserUtils {
 	
 	/**
 	 * Build a user from an individual database entry.
-	 * @param userJson the Json representing the data for the user (essentially the 
+	 * @param userJson the Json representing the data for the user ( 
 	 * @return the generated user with all necessary properties set.
 	 */
 	public static User buildUserForDBEntry(JsonObject userJson, String username)
@@ -47,7 +48,8 @@ public class UserUtils {
 	    	User user = User.fromName(userJson.getString(SoileConfigLoader.getdbField("usernameField")));
 	    	// set properties of the user that are needed for session handling
 	    	user.principal().put(SoileConfigLoader.getSessionProperty("userTypeField"), userJson.getValue(SoileConfigLoader.getdbField("userTypeField")));
-	    	user.principal().put(SoileConfigLoader.getSessionProperty("validSessionCookies"), userJson.getValue(SoileConfigLoader.getdbField("storedSessions")));	    
+	    	user.principal().put(SoileConfigLoader.getSessionProperty("validSessionCookies"), userJson.getValue(SoileConfigLoader.getdbField("storedSessions")));
+	    	AuthorizationProvider prov = AuthorizationProvider.create("this", null);	    	
 	    	return user;					
 	}
 	
@@ -79,13 +81,7 @@ public class UserUtils {
 	    		  if(dbResultList.size() == 1)
 	    		    {	 
 	    			    //successfully found a single entry, pass it back to the handler.
-	    			    resultHandler.handle(Future.succeededFuture(dbResultList.get(0)));
-	    		    	/*JsonObject userJson = dbResultList.get(0);	    		    		    	 
-	    		    	User user = User.fromName(userJson.getString(SoileConfigLoader.getdbField("usernameField")));
-	    		    	// set properties of the user that are needed for session handling
-	    		    	user.principal().put(SoileConfigLoader.getSessionProperty("userTypeField"), userJson.getValue(SoileConfigLoader.getdbField("userTypeField")));
-	    		    	user.principal().put(SoileConfigLoader.getSessionProperty("validSessionCookies"), userJson.getValue(SoileConfigLoader.getdbField("storedSessions")));
-	    		    	resultHandler.handle(Future.succeededFuture(user));*/	    		    	
+	    			    resultHandler.handle(Future.succeededFuture(dbResultList.get(0)));	    		    		    		    
 	    		    }
 	    		    else if(dbResultList.size() > 1)
 	    		    {

@@ -14,10 +14,8 @@ import io.vertx.core.json.JsonObject;
  */
 public class SoileBaseVerticle extends AbstractVerticle {
 	
-//	private String commandPrefix;
+	private String mainField;
 	private JsonObject typeSpecificConfig; 	
-	private JsonObject communicationConfig;
-	private JsonObject dbConfig;
 	
 	/**
 	 * Set up the individual config for this verticle. The field refers to the field in the general config.  
@@ -25,10 +23,7 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	 */
 	public void setupConfig(String field)
 	{
-		this.typeSpecificConfig = config().getJsonObject(field);
-		//commandPrefix = typeSpecificConfig.getString("commandPrefix");
-		communicationConfig = config().getJsonObject(SoileConfigLoader.COMMUNICATION_CFG);
-		dbConfig = config().getJsonObject(SoileConfigLoader.DB_FIELDS);
+		mainField = field;		
 	}
 	
 	/**
@@ -38,7 +33,7 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	 */
 	public String getEventbusCommandString(String command)
 	{		
-		return SoileCommUtils.getEventBusCommand(typeSpecificConfig, command);
+		return SoileCommUtils.getEventBusCommand(mainField, command);
 	}
 	
 	/**
@@ -48,7 +43,7 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	 */
 	public String getCommandString(String command)
 	{
-		return SoileConfigLoader.getCommand(typeSpecificConfig, command);
+		return SoileConfigLoader.getCommand(mainField, command);
 	}
 		
 	/**
@@ -68,7 +63,7 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	 */
 	public String getDBField(String entry)
 	{
-		return dbConfig.getString(entry);
+		return SoileConfigLoader.getdbField(entry);
 	}
 	
 	
@@ -77,9 +72,19 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	 * @param entry The element to extract
 	 * @return The extracted element
 	 */
+	public String getConfig(String target, String entry)
+	{
+		return SoileConfigLoader.getStringProperty(target,entry);
+	}
+	
+	/**
+	 * Get the configuration element for this configuration entry.
+	 * @param entry The element to extract
+	 * @return The extracted element
+	 */
 	public String getConfig(String entry)
 	{
-		return typeSpecificConfig.getString(entry);
+		return getConfig(mainField,entry);
 	}
 	
 	/**
@@ -88,6 +93,6 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	 */
 	public JsonObject getCommunicationConfig()
 	{
-		return communicationConfig;
+		return SoileConfigLoader.getConfig(SoileConfigLoader.COMMUNICATION_CFG);
 	}
 }

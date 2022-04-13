@@ -46,6 +46,7 @@ public class SoileCommUtils {
 		return SoileConfigLoader.getCommunicationResult(result);	
 	}
 			
+	
 	/**
 	 * Get the eventbus command (including the command prefix) for the given config and the given command string.
 	 * @param config the config that contains commands (and a command prefix)
@@ -69,15 +70,34 @@ public class SoileCommUtils {
 	 * @param command the command for which to get an eventbus command string
 	 * @return the command string.
 	 */
-	public static String getUserEventBusCommand(String command)
+	public static String getEventBusCommand(String target, String command)
 	{
-		if(SoileConfigLoader.getUserProperty(SoileConfigLoader.COMMAND_PREFIX_FIELD) != null)
+		
+		if(SoileConfigLoader.getStringProperty(target,SoileConfigLoader.COMMAND_PREFIX_FIELD) != null)
 		{
-			return SoileConfigLoader.getUserProperty(SoileConfigLoader.COMMAND_PREFIX_FIELD) + SoileConfigLoader.getUserCommand(command); 
+			return SoileConfigLoader.getStringProperty(target,SoileConfigLoader.COMMAND_PREFIX_FIELD) + SoileConfigLoader.getCommand(target, command); 
 		}
 		else
 		{
 			return null;
 		}
 	}	
+	
+	/**
+	 * Get an event bus command for a the user manager
+	 * @param command the command for which to get an eventbus command string
+	 * @return the command string.
+	 */
+	public static String getUserEventBusCommand(String command)
+	{
+		if(SoileConfigLoader.getUserProperty(SoileConfigLoader.COMMAND_PREFIX_FIELD) != null)
+		{
+			return SoileConfigLoader.getUserProperty(SoileConfigLoader.COMMAND_PREFIX_FIELD) + SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, command); 
+		}
+		else
+		{
+			return null;
+		}
+	}	
+	
 }

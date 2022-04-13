@@ -56,7 +56,7 @@ public class SoileCookieCreationHandler extends AbstractVerticle implements Hand
 		
 	}
 	
-	public void storeSessionCookie(RoutingContext ctx)
+	private void storeSessionCookie(RoutingContext ctx)
 	{
 		System.out.println("Adding Cookie");
 		final byte[] rand = new byte[64];

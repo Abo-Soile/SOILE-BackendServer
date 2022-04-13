@@ -46,25 +46,21 @@ public class SoileUserManager implements MongoUserUtil{
 	private final MongoAuthorizationOptions authzOptions;
 	private final String hashingAlgorithm;
 	private JsonObject userManagerconfig;
-	private JsonObject dbConfig;	
-	private JsonObject sessionConfig;
 	// We only keep a session valid for at most 30 days before a new logon is required.
 	public static enum PermissionChange{
 		Remove,
 		Add,
 		Replace
 	}
+	
 
 	
-	public SoileUserManager(MongoClient client, MongoAuthenticationOptions authnOptions, MongoAuthorizationOptions authzOptions, JsonObject generalConfig) {
+	public SoileUserManager(MongoClient client) {
 		this.client = client;
-		this.authnOptions = authnOptions;
-		this.authzOptions = authzOptions;
-		userManagerconfig = generalConfig.getJsonObject(SoileConfigLoader.USERMGR_CFG);
-		dbConfig = generalConfig.getJsonObject(SoileConfigLoader.DB_FIELDS);
-		sessionConfig = generalConfig.getJsonObject(SoileConfigLoader.SESSION_CFG);
-		strategy = new SoileHashing(userManagerconfig.getString("serverSalt"));
-		hashingAlgorithm = userManagerconfig.getString("hashingAlgorithm");
+		this.authnOptions = SoileConfigLoader.getMongoAuthNOptions();
+		this.authzOptions = SoileConfigLoader.getMongoAuthZOptions();		
+		strategy = new SoileHashing(SoileConfigLoader.getUserProperty("serverSalt"));
+		hashingAlgorithm = SoileConfigLoader.getUserProperty("hashingAlgorithm");
 		
 	}
 
@@ -91,7 +87,7 @@ public class SoileUserManager implements MongoUserUtil{
 	public SoileUserManager checkEmailPresent(String email, Handler<AsyncResult<Long>> handler)
 	{
 		JsonObject emailQuery = new JsonObject()		
-				.put(dbConfig.getString("userEmailField"), email.toLowerCase());
+				.put(SoileConfigLoader.getdbField("userEmailField"), email.toLowerCase());
 		client.count(authzOptions.getCollectionName(), emailQuery, handler);
 		
 		return this;
@@ -114,8 +110,8 @@ public class SoileUserManager implements MongoUserUtil{
 		
 		JsonObject update = new JsonObject()						
 				.put("$set", new JsonObject()
-				.put(dbConfig.getString("userEmailField"),email.toLowerCase())
-				.put(dbConfig.getString("userFullNameField"),fullName));						
+				.put(SoileConfigLoader.getdbField("userEmailField"),email.toLowerCase())
+				.put(SoileConfigLoader.getdbField("userFullNameField"),fullName));						
 
 		
 		
@@ -214,7 +210,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * Change roles or permissions indicating the correct field of the database. 
 	 * @param username - the id to add the roles/permissions for.
 	 * @param roleOrPermissionField - the roles or permissions database field
-	 * @param rolesOrPermissions - the list of roles or permissions to add
+	 * @param rolesOrPermissions - the list of roles or permissions to change
 	 * @param alterationFlag - Whether to add, remove or replace the indicated permissions. 
 	 * @param resultHandler - the handler for the results.	 
 	 * @return this
@@ -550,7 +546,7 @@ public class SoileUserManager implements MongoUserUtil{
 		// We hash this vs timing attacks.
 		String hashedSessionID = strategy.hash(hashingAlgorithm,
 											   null,
-											   sessionConfig.getString("sessionStoreSecret"),
+											   SoileConfigLoader.getSessionProperty("sessionStoreSecret"),
 											   sessionID); 
 		JsonObject query = new JsonObject()
 				.put(authnOptions.getUsernameField(), username); 
@@ -565,7 +561,7 @@ public class SoileUserManager implements MongoUserUtil{
 							// Adding the current session ID as valid session for the user.
 							JsonObject validSessions = res.result()
 																.get(0)
-																.getJsonObject(dbConfig.getString("storedSessions"));
+																.getJsonObject(SoileConfigLoader.getdbField("storedSessions"));
 							if(validSessions != null)
 							{	//if it's not initialized.
 								//check for sessions that are too old;
@@ -573,7 +569,7 @@ public class SoileUserManager implements MongoUserUtil{
 								{								
 									Long ctime = validSessions.getLong(session);
 									//if this session is still valid keep it.
-									if(System.currentTimeMillis() - ctime > sessionConfig.getLong("maxTime"))
+									if(System.currentTimeMillis() - ctime >SoileConfigLoader.getSessionLongProperty("maxTime"))
 									{
 										validSessions.remove(session);
 									}
@@ -592,7 +588,7 @@ public class SoileUserManager implements MongoUserUtil{
 									new JsonObject()
 									.put("$set", new JsonObject()
 											.put(authnOptions.getUsernameField(), username)
-											.put(dbConfig.getString("storedSessions"), validSessions)),
+											.put(SoileConfigLoader.getdbField("storedSessions"), validSessions)),
 									handler);							
 							return;
 						}
@@ -630,7 +626,7 @@ public class SoileUserManager implements MongoUserUtil{
 		// We hash this vs timing attacks.
 		String hashedSessionID = strategy.hash(hashingAlgorithm,
 											   null,
-											   sessionConfig.getString("sessionStoreSecret"),
+											   SoileConfigLoader.getSessionProperty("sessionStoreSecret"),
 											   sessionID); 
 		JsonObject query = new JsonObject()
 				.put(authnOptions.getUsernameField(), username); 
@@ -645,7 +641,7 @@ public class SoileUserManager implements MongoUserUtil{
 							// Adding the current session ID as valid session for the user.
 							JsonObject validSessions = res.result()
 																.get(0)
-																.getJsonObject(dbConfig.getString("storedSessions"));
+																.getJsonObject(SoileConfigLoader.getdbField("storedSessions"));
 							if(validSessions != null)
 							{	//if it's not initialized.
 								//check for sessions that are too old;
@@ -653,7 +649,7 @@ public class SoileUserManager implements MongoUserUtil{
 								{								
 									Long ctime = validSessions.getLong(session);
 									//if this session is still valid keep it.
-									if(System.currentTimeMillis() - ctime > sessionConfig.getLong("maxTime"))
+									if(System.currentTimeMillis() - ctime > SoileConfigLoader.getSessionLongProperty("maxTime"))
 									{
 										validSessions.remove(session);
 									}
@@ -669,7 +665,7 @@ public class SoileUserManager implements MongoUserUtil{
 									new JsonObject()
 									.put("$set", new JsonObject()
 											.put(authnOptions.getUsernameField(), username)
-											.put(dbConfig.getString("storedSessions"), validSessions)),
+											.put(SoileConfigLoader.getdbField("storedSessions"), validSessions)),
 									handler);							
 							return;
 						}
@@ -705,7 +701,7 @@ public class SoileUserManager implements MongoUserUtil{
 		}
 		String hashedSessionID = strategy.hash(hashingAlgorithm,
 				   null,
-				   sessionConfig.getString("sessionStoreSecret"),
+				   SoileConfigLoader.getSessionProperty("sessionStoreSecret"),
 				   sessionID);
 		
 		JsonObject query = new JsonObject()
@@ -721,10 +717,10 @@ public class SoileUserManager implements MongoUserUtil{
 							// Adding the current session ID as valid session for the user.
 							JsonObject storedSessions = res.result()
 																.get(0)
-																.getJsonObject(dbConfig.getString("storedSessions"));
+																.getJsonObject(SoileConfigLoader.getdbField("storedSessions"));
 							Long startTime = storedSessions.getLong(hashedSessionID);
 							// if this is not present, then (i.e. the result is null, then it's not a stored ID.							
-							if(startTime != null && System.currentTimeMillis() - startTime> sessionConfig.getLong("maxTime"))
+							if(startTime != null && System.currentTimeMillis() - startTime> SoileConfigLoader.getSessionLongProperty("maxTime"))
 							{
 								handler.handle(Future.succeededFuture(true));
 							}							

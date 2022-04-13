@@ -10,8 +10,9 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.http_server.authentication.SoileCookieAuthHandler;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthentication;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthenticationOptions;
-import fi.abo.kogni.soile2.http_server.authentication.SoileAuthorization;
+import fi.abo.kogni.soile2.http_server.authentication.SoileAuthorizationProvider;
 import fi.abo.kogni.soile2.http_server.authentication.SoileCookieRestoreHandler;
+import fi.abo.kogni.soile2.http_server.authentication.SoileFormLoginHandler;
 import fi.abo.kogni.soile2.utils.DebugRouter;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -30,6 +31,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthorizationHandler;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.FormLoginHandler;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.handler.RedirectAuthHandler;
@@ -41,12 +43,11 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	MongoClient client;
 	Router router;
 	SessionStore store;
-	MongoAuthorization authZuser;
-	MongoAuthorization authZpart;
+	SoileAuthorizationProvider authZuser;
 	SoileAuthentication soileAuth;
 	SoileCookieAuthHandler accessHandler;
 	SoileCookieRestoreHandler restoreHandler;
-	
+	RedirectAuthHandler auth;
 	static final Logger LOGGER = LogManager.getLogger(SoileAuthenticationVerticle.class);
 	static enum AccessType
 	{
@@ -74,9 +75,12 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 		try
 		{
 		setupConfig("experiments");
-		client = MongoClient.createShared(vertx, config().getJsonObject("db"));
+		client = MongoClient.createShared(vertx, SoileConfigLoader.getDbCfg());
 		setupHandlers();
-		setupBasicRoutes();
+		setupRouteInit();
+		setupAuthenticationHandlers();
+		//setupPostAuthHandlers();	
+		//setupBasicRoutes();
 		setUpAuthentication();		
 		}
 		catch(Exception e)
@@ -88,51 +92,60 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 		System.out.println("SoileAuthVerticle started successfully");
 		
 	}
-	
+	/**
+	 * Set up initial Handlers used for routing
+	 */
 	void setupHandlers()
 	{
 //		SoileAuthenticationOptions  authOpts = new SoileAuthenticationOptions(config());			
 		soileAuth = new SoileAuthentication(client);
 		accessHandler = new SoileCookieAuthHandler(vertx, soileAuth);
 		restoreHandler = new SoileCookieRestoreHandler(vertx, config());
-
+		auth = RedirectAuthHandler.create(soileAuth,"/static/login.html");		
 	}
-	void setupBasicRoutes()
+	/**
+	 * These handlers should be present in all routes and handle things like Logging, Sessions or similar. 
+	 */
+	void setupRouteInit()
 	{
 		router.route().handler(new DebugRouter());
 		router.route().handler(LoggerHandler.create());
 		router.route().handler(SessionHandler.create(store));		
-		//router.route().handler(CorsHandler.create("localhost"));
-		//router.route().handler(CSRFHandler.create(vertx, config().getJsonObject(SoileConfigLoader.HTTP_SERVER_CFG).getString("serverSecret")));
-		router.route().handler(restoreHandler);
+		router.route().handler(restoreHandler);		
 	}
+	
+	/**
+	 * These handlers handle authentication on restricted resources, i.e. they are set up for all restricted 
+	 * areas of the Server. 
+	 */
+	void setupAuthenticationHandlers()
+	{
+	}
+	
 	void setUpAuthentication()
 	{
 		System.out.println("Adding handler to POST: /auth");		
 		// This will only handle the login request send to this address. handler(BodyHandler.create()).
 		router.post("/auth").handler(BodyHandler.create());
-		router.post("/auth").handler(accessHandler);				
+		router.post("/auth").handler(new SoileFormLoginHandler(soileAuth, "username", "password",
+									 RedirectAuthHandler.DEFAULT_RETURN_URL_PARAM, "/"));		
 	}
 	
 	void setupAuthorization()
 	{
+		
 		// Create the authorization providers
-		MongoAuthorizationOptions partConf = new MongoAuthorizationOptions().setCollectionName(config().getJsonObject(SoileConfigLoader.USERCOLLECTIONS).getString("participant"));
-		MongoAuthorizationOptions userConf = new MongoAuthorizationOptions().setCollectionName(config().getJsonObject(SoileConfigLoader.USERCOLLECTIONS).getString("user"));
-		
-		authZpart = new SoileAuthorization(client, partConf, "Participant_Auth");
-		authZuser = new SoileAuthorization(client, userConf, "User_Auth");
-		
+		MongoAuthorizationOptions userConf = SoileConfigLoader.getMongoAuthZOptions();	
+		authZuser = new SoileAuthorizationProvider(client);		
 		// define necessary messages 
 		setupUserRoutes();	
 	}
 	
 	void setupUserRoutes()
 	{		
-		//set up SessionRestoreHandler
+		
 		router.route(HttpMethod.GET,"/experiment/:id/resources/*").handler( this::handleFileReadAccess);
 		router.route("/experiment/:id/resources/*").handler(RedirectAuthHandler.create(null));
-		//router.route(HttpMethod.POST,"/experiment/:id/resources/*").handler( this::handleRestrictiveAccess);
 	}
 	
 	
@@ -141,6 +154,10 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 		handlePermissiveReadAccess(ctx, AccessType.FileAccess);
 	}
 	
+	void setupRestrictedRoute(String route)
+	{
+		
+	}
 	
 	void handlePermissiveReadAccess(RoutingContext ctx, AccessType access)
 	{
@@ -174,7 +191,6 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 						orAuth.addAuthorization(PermissionBasedAuthorization.create(expID));
 						AuthorizationHandler.create(orAuth)																		
 						// where to lookup the authorizations for the user
-						.addAuthorizationProvider(authZpart)
 						.addAuthorizationProvider(authZuser)
 						.handle(ctx);							
 						}
@@ -182,7 +198,7 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 						{
 							if(response.getString("Reason").equals(getConfig("objectNotExistent")))
 							{
-								
+								ctx.fail(404, new HttpException(404));
 							}
 						}
 					}
