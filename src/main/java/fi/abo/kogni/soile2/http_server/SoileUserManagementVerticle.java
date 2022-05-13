@@ -56,7 +56,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 
 		setupChannels();
 		LOGGER.info("User Management Verticle Started");
-		//System.out.println("\n\nUser Management Verticle Started\n\n");
+		//LOGGER.debug("\n\nUser Management Verticle Started\n\n");
 		startPromise.complete();
 	}
 
@@ -65,8 +65,8 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 */
 	void setupChannels()
 	{				
-		System.out.println("Setting up channels");
-		System.out.println("Adding channel: " + getEventbusCommandString("addUser"));
+		LOGGER.debug("Setting up channels");
+		LOGGER.debug("Adding channel: " + getEventbusCommandString("addUser"));
 		vertx.eventBus().consumer(getEventbusCommandString("addUser"), this::addUser);
 		vertx.eventBus().consumer(getEventbusCommandString("addUserWithEmail"), this::addUserWithEmail);
 		vertx.eventBus().consumer(getEventbusCommandString("removeUser"), this::removeUser);		
@@ -269,7 +269,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		{
 			JsonObject command = (JsonObject)msg.body();			
 			
-			//System.out.println("Verticle: Creating user");
+			//LOGGER.debug("Verticle: Creating user");
 			userManager.createUser(command.getString(getCommunicationField("usernameField")),
 					command.getString(getCommunicationField("passwordField"))).onSuccess(id ->
 				{
@@ -291,20 +291,20 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 */
 	void addUser(Message<Object> msg)
 	{		
-		//System.out.println("Getting a user Creation request");
+		//LOGGER.debug("Getting a user Creation request");
 		//make sure we actually get the right thing
 		if (msg.body() instanceof JsonObject)
 		{
 			JsonObject command = (JsonObject)msg.body();			
 			
-			//System.out.println("Verticle: Creating user");
+			//LOGGER.debug("Verticle: Creating user");
 			userManager.createUser(command.getString(getCommunicationField("usernameField")),
 					command.getString(getCommunicationField("passwordField"))).onComplete(
 					id -> {
 						// do this only if the user was created Successfully
 						if(id.succeeded()) {
-							System.out.println("User created successfully");
-							System.out.println("Username: " + command.getString(getDBField("usernameField"))
+							LOGGER.debug("User created successfully");
+							LOGGER.debug("Username: " + command.getString(getDBField("usernameField"))
 												+ " password: " + command.getString(getCommunicationField("passwordField"))
 												+ " type: " + command.getString(getCommunicationField("userTypeField")));
 							msg.reply(SoileCommUtils.successObject()); 			    					
@@ -454,10 +454,10 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		{
 				JsonObject command = (JsonObject)msg.body();
 
-				//System.out.println("Found fitting UserManager for type " + command.getString("type"));
+				//LOGGER.debug("Found fitting UserManager for type " + command.getString("type"));
 				
 			
-				//System.out.println("Verticle: Set Email and Full Name from data");
+				//LOGGER.debug("Verticle: Set Email and Full Name from data");
 				userManager.setEmailAndFullName(command.getString(getDBField("usernameField")), 
 						command.getString(getDBField("userEmailField")), 
 						command.getString(getDBField("userFullNameField")), 

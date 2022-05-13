@@ -2,6 +2,8 @@ package fi.abo.kogni.soile2.http_server.authentication;
 
 import java.util.function.BiConsumer;
 
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Vertx;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.auth.authorization.AuthorizationContext;
@@ -29,7 +31,8 @@ public class SoileExperimentAuthorizationHandler implements AuthorizationHandler
 		// We will first get the configuration of the experiment from the RoutingContext, 
 		// and then pass over to the auth-handler.
 		String ExperimentID = ctx.pathParams().get("id");
-		vertx.eventBus().request(ExperimentID, ExperimentID)
+		//TODO: Obtain the Privacy of the experiment and add the information to the context. 
+		//vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.EXPERIMENT_CFG, SoileConfigLoader.get), ExperimentID)
 		
 		
 		
@@ -39,14 +42,14 @@ public class SoileExperimentAuthorizationHandler implements AuthorizationHandler
 
 	@Override
 	public AuthorizationHandler addAuthorizationProvider(AuthorizationProvider authorizationProvider) {
-		// TODO Auto-generated method stub
-		return null;
+		authHandler.addAuthorizationProvider(authorizationProvider);
+		return this;
 	}
 
 	@Override
 	public AuthorizationHandler variableConsumer(BiConsumer<RoutingContext, AuthorizationContext> handler) {
-		// TODO Auto-generated method stub
-		return null;
+		authHandler.variableConsumer(handler);
+		return this;
 	}
 
 }

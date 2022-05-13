@@ -181,8 +181,6 @@ public class SoileUserManager implements MongoUserUtil{
 		
 		client.find(authzOptions.getCollectionName(),query, res ->
 		{
-			//System.out.println("Submitted find request to " + authzOptions.getCollectionName());
-			//System.out.println(query.encodePrettily());
 			if(res.succeeded())
 			{
 				if(res.result().size() == 1)
@@ -198,7 +196,6 @@ public class SoileUserManager implements MongoUserUtil{
 			}
 			else
 			{
-				//System.out.println("Request failed");				
 				resultHandler.handle(Future.failedFuture(res.cause()));	
 			}
 		});
@@ -417,7 +414,6 @@ public class SoileUserManager implements MongoUserUtil{
     // we have all required data to insert a user
     final byte[] salt = new byte[32];
     random.nextBytes(salt);
-    System.out.println("Creating hashed user");
     return createHashedUser(
     		username,
     		strategy.hash(hashingAlgorithm,

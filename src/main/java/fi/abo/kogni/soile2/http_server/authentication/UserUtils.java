@@ -49,7 +49,7 @@ public class UserUtils {
 	    	// set properties of the user that are needed for session handling
 	    	user.principal().put(SoileConfigLoader.getSessionProperty("userTypeField"), userJson.getValue(SoileConfigLoader.getdbField("userTypeField")));
 	    	user.principal().put(SoileConfigLoader.getSessionProperty("validSessionCookies"), userJson.getValue(SoileConfigLoader.getdbField("storedSessions")));
-	    	AuthorizationProvider prov = AuthorizationProvider.create("this", null);	    	
+	    	//AuthorizationProvider prov = AuthorizationProvider.create("this", null);	    	
 	    	return user;					
 	}
 	

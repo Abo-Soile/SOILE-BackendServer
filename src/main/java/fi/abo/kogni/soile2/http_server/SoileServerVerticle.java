@@ -18,15 +18,16 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 public class SoileServerVerticle extends AbstractVerticle {
-	
+
+	static final Logger LOGGER = LogManager.getLogger(SoileExperimentPermissionVerticle.class);
 	private JsonObject soileConfig = new JsonObject();
 	private Router router;
 	private SessionStore store;
 	@Override
-	public void start(Promise<Void> startPromise) throws Exception {
-	
+	public void start(Promise<Void> startPromise) throws Exception {		
 		getConfig()
 		.compose(this::storeConfig)
 		.compose(this::setUpRouting)		
@@ -35,12 +36,12 @@ public class SoileServerVerticle extends AbstractVerticle {
 		{
 			if(res.succeeded())
 			{
-				System.out.println("Server started successfully");
+				LOGGER.debug("Server started successfully");
 				startPromise.complete();
 			}
 			else
 			{
-				System.out.println("Error starting server " + res.cause().getMessage());
+				LOGGER.debug("Error starting server " + res.cause().getMessage());
 				res.cause().printStackTrace(System.out);
 				startPromise.fail(res.cause().getMessage());
 			}
@@ -52,8 +53,9 @@ public class SoileServerVerticle extends AbstractVerticle {
 		DeploymentOptions opts = new DeploymentOptions().setConfig(soileConfig);
 		List<Future> deploymentFutures = new LinkedList();
 		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileUserManagementVerticle(), opts, promise)));
-		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoilePermissionVerticle(), opts, promise)));				
+		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileExperimentPermissionVerticle(), opts, promise)));				
 		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileAuthenticationVerticle(router,store), opts, promise)));
+		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
 		return CompositeFuture.all(deploymentFutures).mapEmpty();
 	}
 	

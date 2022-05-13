@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.authentication.SoileCookieAuthHandler;
+import fi.abo.kogni.soile2.http_server.authentication.SoileCookieCreationHandler;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthentication;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthenticationOptions;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthorizationProvider;
@@ -47,6 +48,7 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	SoileAuthentication soileAuth;
 	SoileCookieAuthHandler accessHandler;
 	SoileCookieRestoreHandler restoreHandler;
+	SoileCookieCreationHandler cookieCreationHandler;
 	RedirectAuthHandler auth;
 	static final Logger LOGGER = LogManager.getLogger(SoileAuthenticationVerticle.class);
 	static enum AccessType
@@ -71,17 +73,17 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception
 	{
-		System.out.println("Starting SoileAuthVerticle");
+		LOGGER.debug("Starting SoileAuthVerticle");
 		try
 		{
 		setupConfig("experiments");
 		client = MongoClient.createShared(vertx, SoileConfigLoader.getDbCfg());
 		setupHandlers();
 		setupRouteInit();
-		setupAuthenticationHandlers();
-		//setupPostAuthHandlers();	
+		setupAuthenticationHandlers();	
 		//setupBasicRoutes();
-		setUpAuthentication();		
+		setUpAuthentication();
+		setupPostAuthHandlers();
 		}
 		catch(Exception e)
 		{
@@ -89,7 +91,7 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 			e.printStackTrace(System.out);			
 		}
 		startPromise.complete();
-		System.out.println("SoileAuthVerticle started successfully");
+		LOGGER.debug("SoileAuthVerticle started successfully");
 		
 	}
 	/**
@@ -101,7 +103,8 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 		soileAuth = new SoileAuthentication(client);
 		accessHandler = new SoileCookieAuthHandler(vertx, soileAuth);
 		restoreHandler = new SoileCookieRestoreHandler(vertx, config());
-		auth = RedirectAuthHandler.create(soileAuth,"/static/login.html");		
+		auth = RedirectAuthHandler.create(soileAuth,"/static/login.html");
+		cookieCreationHandler = new SoileCookieCreationHandler(vertx.eventBus());
 	}
 	/**
 	 * These handlers should be present in all routes and handle things like Logging, Sessions or similar. 
@@ -124,11 +127,11 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	
 	void setUpAuthentication()
 	{
-		System.out.println("Adding handler to POST: /auth");		
+		LOGGER.debug("Adding handler to POST: /auth");		
 		// This will only handle the login request send to this address. handler(BodyHandler.create()).
 		router.post("/auth").handler(BodyHandler.create());
 		router.post("/auth").handler(new SoileFormLoginHandler(soileAuth, "username", "password",
-									 RedirectAuthHandler.DEFAULT_RETURN_URL_PARAM, "/"));		
+									 RedirectAuthHandler.DEFAULT_RETURN_URL_PARAM, "/", cookieCreationHandler));		
 	}
 	
 	void setupAuthorization()
@@ -140,7 +143,10 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 		// define necessary messages 
 		setupUserRoutes();	
 	}
-	
+	void setupPostAuthHandlers()
+	{
+		router.route().handler(cookieCreationHandler);
+	}
 	void setupUserRoutes()
 	{		
 		

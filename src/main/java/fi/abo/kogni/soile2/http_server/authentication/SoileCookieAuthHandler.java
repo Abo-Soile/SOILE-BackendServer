@@ -4,6 +4,9 @@ import static io.vertx.ext.auth.impl.Codec.base64Encode;
 
 import java.security.SecureRandom;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
@@ -29,6 +32,7 @@ public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<Authentica
 
 	private final Vertx vertx;
 	private final SecureRandom random = new SecureRandom();
+	static final Logger LOGGER = LogManager.getLogger(SoileCookieAuthHandler.class);
 
 
 	public SoileCookieAuthHandler(Vertx vertx, SoileAuthentication mAuthen)
@@ -41,7 +45,7 @@ public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<Authentica
 	@Override
 	public void authenticate(RoutingContext context, Handler<AsyncResult<User>> handler) {
 
-		System.out.println(handler.getClass().toString());
+		LOGGER.debug(handler.getClass().toString());
 		HttpServerRequest req = context.request();
 		
 		//first, we will look into whether this user is already logged in. 
@@ -60,20 +64,21 @@ public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<Authentica
 				//TODO: Make these settings, also in the dustjs/js code! 
 				String username = formAttribs.get(SoileCommUtils.getCommunicationField("usernameField"));
 				String password = formAttribs.get(SoileCommUtils.getCommunicationField("passwordField"));
-//				System.out.println(formAttribs.get("remember").equals("1"));
-				boolean remember = ( formAttribs.get("remember") == null ? false : formAttribs.get("remember").equals("1"));			
+				LOGGER.debug("Request to store cookie: " + formAttribs.get("remember").equals("1"));
+				boolean remember = ( formAttribs.get("remember") == null ? false : formAttribs.get("remember").equals("1"));
+				
 				context.session().put("remember", remember);
 				if (username == null || password == null) {
 					handler.handle(Future.failedFuture(new HttpException(405)));
 				} else {					
-					System.out.println("Trying to auth user " + username +" with password " + password);
+					LOGGER.debug("Trying to auth user " + username +" with password " + password);
 					authProvider.authenticate(new UsernamePasswordCredentials(username, password), authn -> {
 						if (authn.failed()) {
-							System.out.println("Handling invalid auth: ");
+							LOGGER.debug("Handling invalid auth: ");
 							//authn.cause().printStackTrace(System.out);
-							System.out.println(handler.getClass());
+							LOGGER.debug(handler.getClass());
 							handler.handle(Future.failedFuture(new HttpException(401, authn.cause())));
-							System.out.println("Handling finished");
+							LOGGER.debug("Handling finished");
 						} else {
 							if(context.user() != null)
 							{
@@ -95,9 +100,9 @@ public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<Authentica
 	@Override
 	public void postAuthentication(RoutingContext ctx) {
 		// if this has now an assigned user, we will store this user.
-		System.out.println("Handling Post-Authentication");	
-		System.out.println(ctx.user());
-		System.out.println(ctx.session().get("remember").toString());
+		LOGGER.debug("Handling Post-Authentication");	
+		LOGGER.debug(ctx.user());
+		LOGGER.debug(ctx.session().get("remember").toString());
 		if(ctx.session().<Boolean>remove("remember") && ctx.user() != null)
 		{
 			// store this session
@@ -123,7 +128,7 @@ public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<Authentica
 	
 	public void storeSessionCookie(RoutingContext ctx)
 	{
-		System.out.println("Adding Cookie");
+		LOGGER.debug("Adding Cookie");
 		final byte[] rand = new byte[64];
 	    random.nextBytes(rand);
 	    String token = base64Encode(rand);
@@ -144,7 +149,7 @@ public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<Authentica
 							  .setPath(SoileConfigLoader.getSessionProperty("cookiePath"))
 							  .setMaxAge(SoileConfigLoader.getSessionLongProperty("maxTime")/1000); //Maxtime in seconds
 							 													 //TODO: Check whether SameSite needs to be set.
-		System.out.println("Adding Cookie: " + cookie.getName() + " / " +  cookie.getDomain() + " / " +  cookie.getValue() + " / " +  cookie.isSecure() );
+		LOGGER.debug("Adding Cookie: " + cookie.getName() + " / " +  cookie.getDomain() + " / " +  cookie.getValue() + " / " +  cookie.isSecure() );
 		ctx.response().addCookie(cookie);		
 	}
 	

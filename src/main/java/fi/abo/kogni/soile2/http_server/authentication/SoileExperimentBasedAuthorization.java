@@ -45,17 +45,16 @@ public class SoileExperimentBasedAuthorization implements Authorization, BiConsu
 	    User user = context.user();
 	    if (user != null) {
 	      
-	      Authorization resolvedAuthorization = getResolvedAuthorization(context);
-	      for (String providerId: user.authorizations().getProviderIds()) {
-	        for (Authorization authorization : user.authorizations().get(providerId)) {
-	          if (authorization.verify(resolvedAuthorization)) {
-	            return true;
-	          }
-	        }
-	      }
+//	      Authorization resolvedAuthorization = getResolvedAuthorization(context);
+//	      for (String providerId: user.authorizations().getProviderIds()) {
+//	        for (Authorization authorization : user.authorizations().get(providerId)) {
+//	          if (authorization.verify(resolvedAuthorization)) {
+//	            return true;
+//	          }
+//	        }
+//	      }
 	    }
 	    return false;
-		return false;
 	}
 
 	@Override
@@ -70,7 +69,7 @@ public class SoileExperimentBasedAuthorization implements Authorization, BiConsu
 		// TODO Auto-generated method stub
 		auc.variables().add(SoileConfigLoader.getExperimentProperty("IDField"),ctx.pathParam("id"));
 		//ctx.request().
-		MongoAuthorizationImpl
+		
 		
 	}
 	
@@ -81,13 +80,13 @@ public class SoileExperimentBasedAuthorization implements Authorization, BiConsu
 			switch(target)
 			{
 				case STATIC_DATA:
-					return 
+					//return 
 			}
 		}
 		
+		return null;
 		
 	}
 
-	public Authorization getAuthorizationForRoles(String[] )
 	
 }

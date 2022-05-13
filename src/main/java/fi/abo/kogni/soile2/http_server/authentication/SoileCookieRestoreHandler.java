@@ -29,13 +29,13 @@ public class SoileCookieRestoreHandler implements Handler<RoutingContext> {
 	}
 
 	public void authenticate(RoutingContext context) {
-		System.out.println("Checking session cookies");
+		log.debug("Checking session cookies");
 
 		HttpServerRequest request = context.request();		  
 
 		if(context.user() == null)
 		{ 
-			System.out.println(" No user found Checking Cookie");
+			log.debug(" No user found Checking Cookie");
 			Cookie sessionCookie = context.request().getCookie(SoileConfigLoader.getSessionProperty("sessionCookieID"));
 			if(sessionCookie != null)
 			{

@@ -38,7 +38,7 @@ public class SoileAuthentication implements AuthenticationProvider{
 	@Override
 	public void authenticate(JsonObject credentials, Handler<AsyncResult<User>> resultHandler) 
 	{
-		System.out.println("Trying to authenticate");
+		LOGGER.debug("Trying to authenticate");
 		   try {
 			      //no credentials provided
 			      if (credentials == null || credentials.getString("username") == null ) {
@@ -61,19 +61,21 @@ public class SoileAuthentication implements AuthenticationProvider{
 			    	{
 			    		try
 			    		{
+			    			LOGGER.error("Found user " + username + " , requesting handling");			    			
 			    			User user = getUser(res.result(),credentials);
 			    			resultHandler.handle(Future.succeededFuture(user));
 			    		}
 			    		catch(InvalidLoginException e)
 			    		{
+			    			LOGGER.error("Got an error while handling: " +e.getMessage());
+			    			LOGGER.debug(resultHandler);			    			
 			    			resultHandler.handle(Future.failedFuture(e));
 			    		}
 			    	}			    	
 			    	else
 			    	{
 			    		if(res.cause() instanceof DuplicateUserEntryInDBException)
-			    		{
-			    			LOGGER.error("Found a duplicate user in database: " + username);
+			    		{			    			
 			    			resultHandler.handle(Future.failedFuture("Internal Server Error"));
 			    		}
 			    		else
@@ -84,12 +86,13 @@ public class SoileAuthentication implements AuthenticationProvider{
 			      });
 			      			      
 			    } catch (RuntimeException e) {
+			      LOGGER.error("Got an error while handling: " +e.getMessage());
 			      resultHandler.handle(Future.failedFuture(e));
 			      return;
 			    }	
 	}
 
-	public User getUser(JsonObject dbEntry, JsonObject credentials)
+	private User getUser(JsonObject dbEntry, JsonObject credentials)
 		      throws InvalidLoginException {
     	String username = credentials.getString(SoileConfigLoader.getdbField("usernameField"));
 		User user = UserUtils.buildUserForDBEntry(dbEntry,username);		
