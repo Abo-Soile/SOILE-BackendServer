@@ -1,11 +1,15 @@
 package fi.abo.kogni.soile2;
 
-import org.junit.Before;
+import java.io.IOException;
+
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.config.ConfigRetriever;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -15,17 +19,29 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 public abstract class SoileTest {
 
 	public Vertx vertx;
-	
-	@Before
-	public void buildConfig(TestContext context)
-	{		
-		final Async oasync = context.async();
-		vertx = Vertx.vertx();
-		ConfigRetriever ret = SoileConfigLoader.getRetriever(vertx);
-		ret.getConfig().onComplete(res -> {
-			SoileConfigLoader.setConfigs(res.result());
-			oasync.complete();
+	@BeforeClass
+	public static void init(TestContext context)
+	{
+		Vertx vertx = Vertx.vertx();
+		ConfigRetriever retriever = SoileConfigLoader.getRetriever(vertx);
+		final Async CFGAsync = context.async();
+		retriever.getConfig().onComplete(res -> 
+		{
+			if(res.succeeded())
+			{
+				SoileTest.storeConfig(res.result());
+			}
+			else {
+				System.out.println("Error loading Config");
+				System.out.println(res.cause());
+			}
+			CFGAsync.complete();	
 		});
 	}
-
+	
+	static Future<Void> storeConfig(JsonObject configLoadResult)
+	{	
+		return SoileConfigLoader.setConfigs(configLoadResult);		
+	}	
+	
 }

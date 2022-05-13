@@ -5,10 +5,6 @@ import org.junit.runner.RunWith;
 
 import fi.abo.kogni.soile2.http_server.MongoTestBase;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
-import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
-import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
-import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;

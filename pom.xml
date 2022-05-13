@@ -16,7 +16,7 @@
 		<maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
 		<exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
 
-		<vertx.version>4.2.4</vertx.version>
+		<vertx.version>4.2.6</vertx.version>
 		<!-- <main.verticle>fi.abo.kogni.soile2.http_server.SoileServerVerticle</main.verticle> -->
 		<vertx.verticle>fi.abo.kogni.soile2.http_server.SoileServerVerticle</vertx.verticle>
 		<launcher.class>io.vertx.core.Launcher</launcher.class>
@@ -60,13 +60,7 @@
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-auth-jdbc</artifactId>
 		</dependency>
-		<!-- Js dependencies -->
-		<!-- https://mvnrepository.com/artifact/io.reactiverse/es4x -->
-<!--		<dependency>
-			<groupId>io.reactiverse</groupId>
-			<artifactId>es4x</artifactId>
-			<version>0.17.0</version>
-		</dependency>-->
+
 		<dependency>
 			<groupId>org.webjars.bower</groupId>
 			<artifactId>dustjs-linkedin</artifactId>
@@ -135,6 +129,22 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Js dependencies -->
+	    <dependency>
+			<groupId>io.reactiverse</groupId>
+			<artifactId>es4x</artifactId>
+			<version>0.17.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.graalvm.sdk</groupId>
+			<artifactId>graal-sdk</artifactId>
+			<version>22.0.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.graalvm.js</groupId>
+			<artifactId>js</artifactId>
+			<version>22.0.0.2</version>
+		</dependency>
 
 	</dependencies>
 
@@ -230,6 +240,25 @@
 					</arguments>
 				</configuration>
 			</plugin>
+			<!--  es4x Plugin -->  
+			<plugin>
+				<groupId>io.reactiverse</groupId>
+				<artifactId>vertx-maven-plugin</artifactId>
+				<version>1.0.27</version>
+				<executions>
+					<execution>
+						<id>vmp</id>
+						<goals>
+							<goal>initialize</goal>
+							<goal>package</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<redeploy>true</redeploy>
+				</configuration>
+			</plugin>
+
 		</plugins>
 	</build>
 

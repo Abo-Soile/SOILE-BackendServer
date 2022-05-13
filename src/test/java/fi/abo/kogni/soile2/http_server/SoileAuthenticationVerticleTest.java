@@ -77,6 +77,8 @@ public class SoileAuthenticationVerticleTest extends MongoTestBase{
 									for(Cookie current : session.cookieStore().get(true, serverCfg.getString("domain"), sessionCfg.getString("cookiePath")))
 									{
 										System.out.println("Found Cookie: " + current.toString());
+										System.out.println(current.name());
+										System.out.println(sessionCfg.getString("sessionCookieID"));
 										if(current.name().equals(sessionCfg.getString("sessionCookieID")))
 										{		
 											//add the cookie to the other session.
@@ -86,7 +88,7 @@ public class SoileAuthenticationVerticleTest extends MongoTestBase{
 									}
 									System.out.println("Valid Auth: " + authed.body().toString());
 									context.assertTrue(foundSessionCookie);
-									context.assertTrue(authed.body().toString().contains("Login successful"));																		
+									context.assertTrue(authed.body().toString().contains("Redirecting to"));																		
 									
 									sucAsync.complete();	
 								});
@@ -97,8 +99,8 @@ public class SoileAuthenticationVerticleTest extends MongoTestBase{
 								webclient.post(port,"localhost","/auth").sendForm(map).onSuccess(authed ->
 								{
 									System.out.println("Invalid Auth: " +  authed.body().toString());
-									context.assertTrue(authed.body().toString().contains("Redirecting to /login"));
-									context.assertEquals(302,authed.statusCode());
+									context.assertTrue(authed.body().toString().contains("Unauthorized"));
+									context.assertEquals(401,authed.statusCode());
 									unsucAsync.complete();	
 								});
 								async.complete();

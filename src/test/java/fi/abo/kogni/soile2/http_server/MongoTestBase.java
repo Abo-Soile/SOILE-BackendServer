@@ -24,6 +24,7 @@ import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.vertx.config.ConfigRetriever;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
@@ -70,13 +71,12 @@ public abstract class MongoTestBase extends SoileTest{
 		MONGO.stop();
 	}
 
-	@Override
 	@Before
 	public void setUp(TestContext context)
-	{		
-		super.setUp(context);
-		final Async oasync = context.async();
+	{			
 		vertx = Vertx.vertx();
+		super.init(context);
+		final Async oasync = context.async();				
 		cfg = new JsonObject(vertx.fileSystem().readFileBlocking("soile_config.json"));
 		hashStrat = new SoileHashing(cfg.getJsonObject(SoileConfigLoader.USERMGR_CFG)
 				.getString("serverSalt"));
@@ -157,4 +157,6 @@ public abstract class MongoTestBase extends SoileTest{
 	{
 		return new SoileUserManager(MongoClient.create(vertx, cfg.getJsonObject("db")));
 	}
+	
+	
 }
