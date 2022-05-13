@@ -7,7 +7,7 @@
 		"debug":true,
 		"adminuser":"admin",
 		"adminpassword":"admin",
-		"externalport":8081,
+		"externalport":8080,
 		"externalURI": false,
 		"domain" : "localhost",
 		"serverSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m"
@@ -17,21 +17,26 @@
 		"host": "127.0.0.1",
 		"port": 27022,
 		"db_name": "soile",
-		"userCollection" : "users"		
+		"userCollection" : "users",
+		"experimentCollection" : "experiments"
 	},
 	
-	"db_fields": {
+	
+	"db_user_fields": {
 		"permissionField" : "permissions",
 		"userTypeField" : "type",
 		"usernameField" : "username",
 		"userEmailField" : "email",
 		"userFullNameField" : "fullname",
-		"userRolesField" : "userRoles",
+		"ownerField" : "ownedExperiments",
+		"collaboratorField" : "collaboratedExperiments",
+		"participantField" : "participantIn",
 		"userPermissionsField" : "userPermissions",
 		"usernameCredentialField" : "username",
 		"passwordField" : "password",
 		"passwordCredentialField" : "password",
- 		"storedSessions" : "storedSessions"	
+ 		"storedSessions" : "storedSessions"
+ 			
 	},			
 	
 	"session" : {
@@ -50,15 +55,18 @@
 	},
 
 	"communication" : {
+		"setCommand" : "set", 
+	    "addCommand" : "add",
+		"removeCommand" : "remove",	
 		"Fields" : {
 			"privateField" : "isPrivate",
 			"permissionField" : "permissions",
-			"ownerField" : "owner",
+			"userListField" : "userList",
 			"logonRequireField" : "logonRequired",
 			"readRolesField" : "readRoles",
 			"writeRolesField" : "writeRoles",
 			"readPermissionsField" : "readPermissions",
-			"changeTypeField" : "command",
+			"operationField" : "command",
 			"userTypeField" : "type",
 			"usernameField" : "username",
 			"userEmailField" : "email",
@@ -66,17 +74,22 @@
 			"passwordField" : "password",
 			"userRolesField" : "userRoles",
 			"rememberLoginField" : "remember",
-			"sessionID" : "sessionID"			
+			"sessionID" : "sessionID",
+			"experimentID" : "experimentID",			
+			"roleChanged" : "roleChanged",	
+			"ownerField" : "owners",
+		    "collaboratorField" : "collaborators",
+		    "participantField" : "participants"
+					 						
 			}		
-	},
-
+	},	
 
 	"UManagement" : {
 		"commandPrefix" : "umanager.",	
 		"participantType" : "participant",
 		"researcherType" : "user",
 		"hashingAlgorithm" : "pbkdf2",
-		"serverSalt" : "MySuperSecretSalt",
+		"serverSalt" : "MySuperSecretSalt",		
 		"commands" : {
 			"addUser" : "adduser",
 			"removeUser" : "removeuser",
@@ -90,21 +103,28 @@
 	},
 
 	"experiments": {
+	    "nameField" : "experimentName",
 		"IDField" : "experimentID",
-		"collectionName" : "experiments",
 		"commandPrefix" : "experiment.",
-		"ownerField" : "owner",
 		"privateField" : "isPrivate",
 		"logonRequireField" : "logonRequired",
+		"ownerField" : "owners",
+		"collaboratorField" : "collaborators",
+		"participantField" : "participants",			
 		"commands" : {
 			"getFilePermissions" : "requestFilePermission",
 			"getDataPermissions" : "requestDataPermission",
 			"getResultPermissions" : "requestResultPermission",
-			"setOwner" : "setOwner",
-			"setPrivate" : "setPrivate",
-			"setCommand" : "set", 
-			"addCommand" : "add",
-			"removeCommand" : "remove"
+			"changeOwner" : "setOwner",
+			"changeParticipants" : "setParticipants",
+			"changeCollaborators" : "setCollaborators",
+			"changePrivate" : "setPrivate",
+			"getAllAccess" : "getAll",
+			"getOwner" : "getOwner",
+			"getParticipants" : "getParticipants",
+			"getCollaborators" : "getCollaborators",
+			"getPrivate" : "getPrivate",
+			"getAllPrivate" : "getPrivateExperiments"
 		}
 	},
 		
@@ -179,7 +199,9 @@
 		"ssl": true,
 		"username": "soile",
 		"password": "soilesendgridpassword"
-	}
-	
+	},
+	"accessPatterns": {
+		
+	}	
 	
 }
