@@ -1,0 +1,397 @@
+# Elang Documentation
+
+This document contains documentation for the experiment language.
+
+## Structure
+
+The following structure is enforced on programs:
+
+-  Val and gvar definiton block
+-  Function definiton block
+-  Phase definition block
+-  Transition block
+	
+**Example**
+
+	#Val and gvar definition block"
+	gvar g1 <- "global var"
+	gvar g2 <- 56
+	val a <- "a"
+	.
+	.
+	.
+	#end of block
+ 
+ 	#Function definition block 
+	function test()
+	  helptext("test")
+	end
+
+	function helloworld()
+	  showmsg("Hello world")
+	 end
+	 .
+	 .
+	 .
+	#end of function block
+
+	#Phase definitions
+	intermezzo-phase phase1
+	  showmsg("In phase1")
+	  wait(5000)
+	end
+
+	information-phase phase2
+	  showmsg("In phase2")
+	  wait(5000)
+	end
+
+	intermezzo-phase phase3
+  	  showmsg("In phase3")
+	  wait(5000)
+	end
+	#End of phase definitionsd
+
+
+	#Transition definations
+	transition
+	  start(phase1)
+	  phase1 -> phase2
+	  phase2 -> phase3
+	  final(phase3)
+	end
+
+	##End of program
+
+
+## Variables
+
+Variables are containers that can store a value. A variable is created by using the approperiate keyword and assigning a value to it. "val a <- "abc" creates a variable named a that contains the value "abc". The value can then be used by using the variables name. Variable definitions should be in the beginning of a function.
+	
+	var a <- "abc"
+	showmsg(a)  # Displays abc on the screen
+
+A existing variable can be given a new value by using the assignment operator <-. 
+	
+	var a <- 41  # a contains the number 41
+	a <- 66 	 # 66 is assign to a, the old value(41) is forgotten
+
+There are three different types of variables; 
+
+-  **gvar** Global variable, useable everywhere
+-  **val** static global value, cannot be modified after definition
+-  **var** Normal variable, usable only inside the function/phase where it's defined.
+
+.
+
+	gvar a <- 55
+
+	information-phase Phase1
+	  var b <- "Variable b" 
+	  #Both  a and b are visible here
+	end
+
+	information-phse Phase2
+	  # A is visible but b isn't
+	end
+	
+## Values
+
+
+## Phases and transitions
+
+Program flow is contolled with phases and phase trasnsitions. There are two types of phases; intermezzo-phases and interaction phases. The intermezzo phase is more simple and is just run from the beginning to the end while the interaction phase has more support for repeating actions. Phases are defined with the correscponding keyword followed a name, and the phases is anded with the **end** command.
+
+    #Simple intermezzo phase definition
+    intermezzo-phase FirstPhase
+      # Doing stuff
+      # Moar stuff
+      # Even moar stuff
+    end
+    
+The interaction phase as some mandatory extra control structures, **enterphase**, **leavephase**, **beforeiteration**, **afteriteration** and **iteration**. Commands inside enterphase are run once when the phase starts and leavephase behaves in the same way when the phase ends.
+
+A set of stimuli should be defined in each iterationphase, usually in enterphase using the setstimuli() function. The set stimuli function accepts an array (e.g. [5 3 4]) with stimuliobjects and iteration is run once for each object. Before and afteriteration are run before/after each iteration and can be used for example to store data and clean up after an iteration/ prepare for the next iteration. See the stimuli topic for more information.
+    
+    interaction-phase MainPhase
+        enterphase
+            showmsg("Entering phase")
+            # Setting two stimuli, 1 and 2
+            setstimuli([1 2)])  
+        end
+        
+        leavephase
+            showmsg("Leaving phase")
+        end
+        
+        beforeiteration
+            showmsg("Start iteration")
+        end
+        
+        afteriteration
+            showmsg("End iteration")
+        end
+        
+        iteration
+            # Stimulus returns the current stimuli, 1 in the first iteration
+            # and 2 in the second one.
+            showmsg(append("Stimulus nr " stimulus()))
+        end
+    end
+    
+    # Output:
+    # Entering phase
+    # Start iteration
+    # Stimulus nr 1
+    # End iteration
+    # Start iteration
+    # Stimulus nr 2
+    # End iteration
+    # Leaving phase
+    
+
+The order in which phases are run is defined in the transition block that should be placed after all phase definitions in the code. A very simple tranition definition could look like this:
+
+    transition
+      start(firstPhase),
+      firstPhase -> secondPhase,
+      secondPhase -> lastPhase,
+      final(lastPhase)
+    end
+
+The transition definition starts with the keyword **transition**, followed by a list of phase tranistion separated by a commas (**,**). The starting phase is defined first using the **start**(_phaseName_) command and the last phase is lastly defined in the same way with the **final**(_phaseName_) command. These phases (start, final) should **only** be reachable once, ie at the beginning end of the program.
+
+Phases transition are  defined in any order using the _fromPhase_ **->** _toPhase_ command, until all phases have been visited atleast once.
+
+It's also possible to include a conditional transition by adding **if** _boolean expression_ after the transition, e.g. phase1 -> phase2 if(_boolean expression_). This transition will only occure if the boolean expression returns true, making it possible to choose how a program should progress. 
+
+In the example below the phase *add_a* is repeated as long as a is less than 5, and add_a transitions into lastPhase when a is greater than 4, i.e. when it reaches 5.
+
+        gvar a <- 0
+
+        intermezzo-phase first
+          a <- 0
+        end
+
+        intermezzo-phase add_a
+            helptext(a)
+            a <- plus(a 1)
+        end
+
+        intermezzo-phase lastPhase
+            helptext("Reached lastphase")
+        end
+
+        transition
+          start(first),
+          first -> increment_a,
+          add_a -> add_a if(lt(a 5)),
+          add_a -> lastPhase if(gt(a 4)),
+          final(lastPhase)
+        end
+
+        Result:
+        0
+        1
+        2
+        3
+        4
+        Reached lastphae
+
+        Tranisitions
+        first->add_a->add_a->add_a->add_a->add_a->lastPhase
+
+**Warning:** It's up to the user to make sure that test don't end up in a so calle infinite loop, where it never reaches the final tranisiton and just repeats something _ad infinum_.
+    
+## Functions
+
+
+## Builtin functions
+
+Builtin functions are functions that are called and executed from a experiment by the user. 
+
+### Display
+
+Display positions are defined as the number of pixels from the top-left corner of the display. Positions are defined as a json object with two variables; top and left, .e.g. the position {top:50 left:100} is located 100 pixels to the right and 50 pixels below the topleft corner. 
+
+**show(displayobject position)**
+Displays an object at the specified position.
+
+**hide(displayobject)**
+Hides the specified object.
+
+
+#### DisplayObjects
+
+All displayobjects share the same functionality regarding showing and hidning them. And they must be defined and assigned to a varriable before being used. 
+
+**msgbox(message, fontsize=20)**
+Displayobject for displaying text at any location. Fontsize is an optional argument and it defaults to 20
+
+**imagefile(imageurl)**
+Object containing a image specified by the url, so images can either be uploaded to the testeditor or fetched from the internet. Note that images on the net can disappear or change at any time.  The image is displayed without any scaling so make sure that the image is the right size. 
+
+**rectangle(width height borderwidth=2)**
+Displays a rectangle with the given width height and borderwidth. Borderwidth is an optional argument and defaults to 2. 
+
+
+It's also possible to display simple text messages using showmsg(message) and hidemsg() without any further specifications. This just shows/hides a message at location {top:50 left:50}
+
+**showmsg(message)**
+Displays a message at the standard message location in the top right corner
+
+**hidemsg()**
+Hides the standard message.
+
+### Input
+
+
+
+#### Mouse
+
+**onmouseclick(imagefile, {action: function, inputid: number, resettimer: bool})**
+
+Creates a mouseclick listener for the object/image, which will be triggered when the image is clicked. The function specified in "action" is executed on each click. 
+
+**onmouseclick(imagefile, false)**
+
+Removes all mouseclick functions bound to the specified object.
+
+####Keyboard
+
+**onkeypress(key, func)**
+Binds the specified key to a function so that the function is run every time when the key is pressed.
+
+**onkeypress(key)**
+Removes all actionss bound to the specified key.
+
+	function leftclick()
+		showmsg("left was clicked")
+	end
+
+	onkeypress("left", leftclick)
+Example: the function leftclick is run each time when the left arrow is clicked on the keyboard.
+
+**onanykey(func ignore=[])**
+Runs the specified function on all keypresses.
+
+**onanykey(func ignore="")**
+Executes the specified function when any keyboeard key except keys specified ignore are pressed. Ignored keys should be sent as an array of individual keynames, for example ["a" "enter"] ignores the keys **a** and **enter**, see the keycode table for the correct key names. 
+
+
+Ignore can also accept a special command "onlyletters" which ignores everything but a-z.
+	onanykey(resume() "onlyletters").
+
+**onanykey()**
+Removes all actions bound with __onanykey__
+
+**resumeonkey(keycode)**
+Runs resume() once when the specified key is clicked. 
+
+**resumeonkey()**
+Runs resume() on any keypress once. 
+
+**getlastkey()**
+Returns the most recent keypress as a string. 
+
+### Arithmetic
+
+#### Basic
+**plus(number1 number2)** number1 + number2
+
+**minus(number1 number2)** number1 - number2
+
+**multiply(number1 number2)** number1 * number2
+
+**divide(number1 number2)** number1 / number2
+
+#### Logic
+**not(boolean)**
+
+**and(bool1 bool2)**
+
+**or(bool1 bool2)**
+
+**lessthan(number1 number2 _or_ lt(number1 number2))** number1 < number2
+
+**greaterthan(number1 number2) _or_ gt(number1 number2)** number1 > number2
+
+**equal(number1 number2) _or_ eq(number1 number2)** number1 == number2
+
+
+### Functions
+
+**append(string1 string2)**
+Appends two strings
+
+**lenght(object)**
+Returns the number of elements/letters in a array or string
+
+**elementatindex(object, index)**
+Returns the element at the specified index in the object/string, starting from zero.
+
+
+
+#### Random numbers
+
+**randominteger(min, max)**
+returns a pseudorandom non decimal number within the range.
+
+**randomnumber(min, max)**
+Returns a pseudorandom number value within the range
+
+**seedrandom(seed)**
+Seeds the random generator with  a value. A certain seed will always produce the same sequence of random values. 
+
+#### Time and timers
+
+**recordts()**
+Returns a timestamp with the current time with m,illisecond precision. Timestamps can easily be compared with basic arithmetic operations.
+
+**starttimer()**
+Starts the timer.
+
+**elapsedtime()**
+Returns time elapsed, in ms, since the last call top starttimer. Returns 0 if no timer has been started. 
+
+#### Result storage
+
+Results are stored in two tables, raw data and aggregated data. The aggregated data will only produce one row per user while any number of rows can be used for raw data. 
+
+**storeSingle(field data)**
+
+Stores a single value with the specified fieldname in the aggregated datatable. 
+
+**storeRow(string field data)**
+
+Stores a value with the given fieldname in the current raw datarow. 
+
+**newRow()**
+Creates a new empty row to write raw data to.
+
+
+##### Data processing and aggregation
+
+Raw data can be processed to something more usable. An aggregation function loops through the whole raw data table and performs the specified function on every field that it finds. Rows that don't have any value in the specific field are simply omitted. Results are stored in the processed data table in the fi
+
+**count(field)**
+
+Counts how many rows contain the specific field.
+
+**count(field, value)**
+
+Counts how many rows contain a specific field with a specific value.
+
+**average(field)**
+
+Computes the average value from all rows containing this field.
+
+	Not implemented yet
+	median(field)
+	sum(field)
+
+
+
+## RT - Runtime functions
+
+Rt functions operate within the vm and should not be called by users. They are only used to manage and run the vm.

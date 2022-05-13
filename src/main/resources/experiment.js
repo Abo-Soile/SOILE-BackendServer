@@ -1,14 +1,15 @@
 var vertx = require("vertx");
-var container = require('vertx/container');
-var console = require('vertx/console');
+
+import { ConfigRetriever } from '@vertx/config';
+ 
+var retriever = ConfigRetriever.create(vertx);
+var config = await retriever.getConfig();
+
+
 
 var utils = require("utils");
 
 var csvUtils = require("csvUtils");
-
-var CustomMatcher = require('router');
-var router = new CustomMatcher();
-
 var templateManager = require('templateManager');
 
 var experimentModel = require("models/Models").Experiment;
@@ -27,13 +28,12 @@ var requireEditor = require('middleware').requireEditor;
 
 var Promise = require("mPromise");
 
-var bowser = require("node_modules/bowser/bowser");
+var uaParser = require("ua-parser-js");
 //var lodash = require("node_modules/lodash");
 
-var container = require('vertx/container');
-var logger = container.logger
+//var container = require('vertx/container');
+var logger = console
 
-var config = container.config;
 var externalPort = config.externalport;
 
 var babyparser = require("libs/babyparse");
@@ -131,8 +131,8 @@ router.get('/experiment/:id', function(request){
         }
       }
 
-      var res = bowser._detect(userAgent);
-      var blockUa = res.tablet||res.mobile;
+      var res = uaParser(userAgent).getDevice();
+      var blockUa = res.tablet || res.mobile;
 
       if (experiment.allowMobile) {
         blockUa = false;

@@ -1,0 +1,75 @@
+{>header /}
+    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.10.0/dojo/dojo.js" data-dojo-config="async: true, parseOnLoad: true"></script>
+
+    <script src="https://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+
+
+    <script src="/javascript/soile2.js"></script>
+    <!--<script type="text/javascript" src="/javascript/bower_components/fast-levenshtein/levenshtein.js"></script>
+-->
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+
+    <div class="container main">
+        <div class="row">
+
+             <div class="col-md-12">
+                <div id="display">
+                    <div id="loadAnim" class="hidden">
+                        <div class="sk-wave">
+                            <div class="sk-rect sk-rect1"></div>
+                            <div class="sk-rect sk-rect2"></div>
+                            <div class="sk-rect sk-rect3"></div>
+                            <div class="sk-rect sk-rect4"></div>
+                            <div class="sk-rect sk-rect5"></div>
+                            <p>Loading</p>
+                        </div>
+                    </div>
+                    <p id="message"></p>
+                </div>
+
+            </div>
+
+            <div class="col-md-9">
+                 <!-- <button data-dojo-type="dijit/form/Button" type="button" id="submitButton"> Next</button> --> -->
+            </div>
+
+            <div class="col-md-6 col-md-offset-3">
+                <div class="progress">
+                    <div class="progress-bar progress-bar-success" role="progressvar" aria-valuenow="{completed}" aria-valuemin="0" aria-valuemax="100" style="width:{completed}%">
+                        {phasesLeft}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    {?test.js}
+    <script type="text/javascript">
+        window.testJs = {test.js|s|js};
+    </script>
+    {/test.js}
+
+    {?persistantData}
+    <script type="text/javascript">
+        window.persistantData = {persistantData|s|js};
+    </script>
+    {/persistantData}
+
+    {?testConfig}
+    <script type="text/javascript">
+        window.testConfig = {testConfig|s|js};
+    </script>
+    {/testConfig}
+
+    {?noSubmit}
+    <script type="text/javascript">
+        window.noSubmit = true;
+    </script>
+    {/noSubmit}
+
+
+    </div>
+
+    <script type="text/javascript" src="/javascript/testphase.js"></script>
+
+{>footer /}

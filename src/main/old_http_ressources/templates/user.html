@@ -1,0 +1,104 @@
+{>header /}
+<div id="main" class="container">
+	
+	<div class="row">
+		<div id="userheader" class="col-md-12">
+			<h4>Welcome back {user.username}</h4>
+		</div>
+		<div class="col-md-4 col-sm-6 pull-left">
+			<div class="panel">
+				<h4> Incompleted experiments </h4>
+				<ul class="list-group">
+					{#incomplete}
+					<li class="list-group-item">{name} <a href="experiment/{_id}">Continue</a></li>
+					{/incomplete}
+					
+				</ul>
+				
+			</div>
+		</div>
+
+		<div class="col-md-4 col-sm-6 pull-left">
+			<div class="panel">
+				<h4>Open experiments</h4>
+				<ul>
+					{#newExps}
+					<li>{name} <a href="experiment/{_id}">Participate</a> </li>
+					{/newExps}
+				</ul>
+			</div>
+		</div>
+
+<!-- 		</div>
+ --><!-- 	</div>
+	<div class="row"> -->
+		<div class="col-md-4 col-sm-6 pull-right">
+			<div class="panel">
+				<h4>Personal details</h4>
+				<div id="userdetails">
+					<span class="help-block margin5">Your personal details will never be associated with the test results</span>
+
+					<form class="form margin5" id="userform" action="/user" role="form" method="post">
+						<!-- 
+						<div class="form-group">
+							<label for="email">Email address</label>
+							<input type="email" class="form-control" id="email" placeholder="Enter email" disabled>
+						</div> -->
+
+						<div class="row form-group">
+							<div class="col-sm-12">
+								<label for="name">Name</label>
+							</div>
+							<div class="col-md-6"> 
+								<input type="text" class="form-control" value="{u.firstname}" name="firstname" placeholder="First Name">
+							</div>
+
+							<div class="col-sm-6">
+								<input type="text" class="form-control" value="{u.lastname}" name="lastname" placeholder="Last Name">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="name">Address</label>
+							<input type="text" class="form-control" value="{u.address1}" name="address1" placeholder="Address line 1">
+						</div>
+<!-- 						<div class="form-group">
+							<input type="text" class="form-control" value="{u.address2}"name="address2" placeholder="Address line 2">
+						</div> -->
+						
+						<div class="form-group row">
+							<div class="col-sm-5">
+								<input type="text" class="form-control" value="{u.postalcode}" name="postalcode" placeholder="Postal Code">
+							</div>
+							<div class="col-sm-7">
+								<input type="text" class="form-control" value="{u.city}" name="city" placeholder="City">
+							</div>
+						</div>
+
+						<div class="form-group">
+							
+						</div>
+						<div class="form-group">
+							<input type="text" class="form-control" name="country" placeholder="Country" value='{u.country}'>
+						</div>
+						<button type="submit" class="btn btn-success">Save</button>
+					</form>
+				</div>
+ 			</div>
+		</div>
+
+		<div class="col-md-4 col-sm-6 pull-left">
+			<div class="panel">
+				<h4> Completed Experiments </h4>
+				</ul>
+				{#complete}
+					<li>{name}</li>
+				{/complete}
+				</ul>
+			</div>
+		</div>
+
+	</div>
+</div>
+
+{>footer /}

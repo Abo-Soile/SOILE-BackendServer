@@ -1,0 +1,86 @@
+{>header /}
+<div id="main" class="container customDojo">
+	<div class="row">
+		<div class="col-md-9">
+			<div data-dojo-type="dijit/form/Form" id="expForm" data-dojo-id="expForm" action="" method="post">  
+				<label for="firstname">Experiment Name</label>
+				<br>
+				<input value="{exp.name}" type="text" name="firstname" value="" data-dojo-type="dijit/form/ValidationTextBox" data-dojo-props="trim:true, propercase:true" id="name" required="true"/>
+				<br>
+
+				<!--<input value="{exp.name}" type="text" name="firstname" value="" data-dojo-type="dijit/form/ValidationTextBox" data-dojo-props="trim:true, propercase:true" id="name" required="true"/>-->
+
+				<label for="firstname">Experiment description</label><br>
+				<textarea type="text" name="description" data-dojo-type="dijit/form/Textarea" value="{exp.description}" id="description" rows="4"></textarea>
+
+				<label for="firstname">Message at end</label><br>
+				<textarea type="text" name="endmsg" data-dojo-type="dijit/form/Textarea" value="{exp.endmessage}" id="endmsg" rows="4"></textarea>
+
+				<label for="startDate">Start Date</label><!--<br>-->
+				&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
+				<label for="endDate">EndDate</label> <br>
+
+				<input type="text" name="startDate" id="startDate" data-dojo-type="dijit/form/DateTextBox" value="{exp.startDate}" required="true"/> <!--<br>-->
+				<i class="fa fa-arrow-right"></i>
+				<input type="text" name="endDate" id="endDate" data-dojo-type="dijit/form/DateTextBox" value="{exp.endDate}" required="true"/>
+
+				<br>
+
+				<label for="loginrequired">Require Login</label>
+				<input type="text" name="loginrequired" id="loginrequired" data-dojo-type="dijit/form/CheckBox" 
+				 {#exp.loginrequired}
+				 	data-dojo-props="checked: true"
+				 {:else}
+				 	data-dojo-props="checked: false"
+				 {/exp.loginrequired}
+				 />
+
+				<label for="hidelogin">Hide Login</label>
+				<input type="text" name="hidelogin" id="hidelogin" data-dojo-type="dijit/form/CheckBox" 
+				 {#exp.hidelogin}
+				 	data-dojo-props="checked: true"
+				 {:else}
+				 	data-dojo-props="checked: false"
+				 {/exp.hidelogin}
+				 />
+
+ 				<label for="mechanicalTurkEnabled">Mechanical Turk</label>
+				<input type="text" name="mechanicalTurkEnabled" id="mechanicalTurkEnabled" data-dojo-type="dijit/form/CheckBox" 
+				 {#exp.mechanicalTurkEnabled}
+				 	data-dojo-props="checked: true"
+				 {:else}
+				 	data-dojo-props="checked: false"
+				 {/exp.mechanicalTurkEnabled}
+				 />
+
+				<br>
+				<div id="components">
+					<ul id="componentlist" class="fancyList">
+					</ul>
+
+					<input id="testSelector">
+					<button data-dojo-type="dijit/form/Button" name="newtest" value="New Test" id="newtest"><span class="glyphicon glyphicon-plus"></span>Add Test</button><br>
+
+					<button data-dojo-type="dijit/form/Button" name="newform" value="New Form" id="newform"><span class="glyphicon glyphicon-plus"></span>New Form</button>
+					
+				</div>
+
+				<div id="contentpane">
+
+				</div>
+
+
+				<br>
+
+				<button data-dojo-type="dijit/form/Button" name="submitButton" value="Submit" id="submit" class="btn btn-info">Save Experiment</button>
+			</div>			
+		</div>
+	</div>
+</div>
+
+<script src="//ajax.googleapis.com/ajax/libs/dojo/1.10.0/dojo/dojo.js" data-dojo-config="async: true, parseOnLoad: true"></script>
+<script type="text/javascript" src="/javascript/editexperiment.js"></script>
+
+
+
+{>footer /}

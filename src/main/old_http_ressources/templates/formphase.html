@@ -1,0 +1,46 @@
+{>header /}
+    <script src="https://code.jquery.com/jquery-1.10.1.min.js"></script>
+
+    <script src="//ajax.googleapis.com/ajax/libs/dojo/1.10.0/dojo/dojo.js" data-dojo-config="async: true, parseOnLoad: true"></script>
+
+    <div class="container main">
+        <div class="row">
+            <div id="formcol" class="col-md-12" data-dojo-type="dijit/form/Form" data-dojo-id="formcol">
+
+
+                {form|s}
+
+
+            </div>
+
+            {?noSubmit}
+            <div class="col-md-12">
+                <a class="btn btn-success" href="./">Submit</a>
+            </div>
+            {:else}
+            <div class="col-md-12">
+                {?submitbutton}
+                <button data-dojo-type="dijit/form/Button" type="button" id="submitButton">{submitbutton}</button>
+                {:else}
+                <button data-dojo-type="dijit/form/Button" type="button" id="submitButton"> Submit</button>
+                {/submitbutton}
+            </div>
+            {/noSubmit}
+
+            <div class="col-md-6 col-md-offset-3">
+                <div class="progress">
+                    <div class="progress-bar progress-bar-success" role="progressvar" aria-valuenow="{completed}" aria-valuemin="0" aria-valuemax="100" style="width:{completed}%">
+                        {phasesLeft}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        window.userID = "{userID}";
+    </script>
+
+    <script type="text/javascript" src="/javascript/formphase.js"></script>
+
+{>footer /}

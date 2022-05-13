@@ -1,13 +1,20 @@
-var vertx = require('vertx');
-var console = require('vertx/console');
-var container = require('vertx/container');
+import { ConfigRetriever } from '@vertx/config';
+var retriever = ConfigRetriever.create(vertx);
+var config = undefined;
+try {
+  let cload = retriever.getConfig();
+  config = await cload;
+  console.log('Config Ready!');
+} catch (err) {
+  console.log('Loading Config failed!')
+}
 
-var config = container.config;
-var logger = container.logger;
+console.log(config)
+
 
 var port = config.port;
 var host = config.host;
-var externalPort = config.externalport;
+var externalPort = config.http_server.externalport;
 
 function swapUrlPort(url, newPort) {
   var uriRegex = /([a-zA-Z+.\-]+):\/\/([^\/]+):([0-9]+)\//;
@@ -18,30 +25,38 @@ function swapUrlPort(url, newPort) {
 var templateManager = (function() {
   var templates = [];
   var isLoaded = false;
-  var eb = vertx.eventBus;
   var i, sp;
 
-  var debug = container.config.debug;
-  var folder = container.config.template_folder;
+  var debug = config.http_server.debug;
+  var folder = config.http_server.template_folder;
 
   console.log("TEMPLATEFOLDER: " + folder + "DEBUG MODE: " + debug);
-  vertx.fileSystem.readDir(folder, function(err, res) {
-    for (i = 0; i < res.length; i++) {
-      sp = res[i].lastIndexOf("/") + 1;
-      //console.log(res[i].slice(sp).replace(".html",""));
+  var files = undefined
+  try {
 
-      if(err) {
-        console.log("Error in templatemanager: " + err);
-      }
-
-      templates.push(res[i].slice(sp).replace(".html", ""));
+    let cfiles = vertx.fileSystem.readDir(folder)
+    files = await cfiles
+    console.log('Successfully read files!');
+  } catch (err) {
+    console.log('Failed reading Templates!')
+  }
+  
+  
+  for (i = 0; i < files.length; i++) {
+    sp = res[i].lastIndexOf("/") + 1;
+    if(err) {
+      console.log("Error in templatemanager: " + err);
     }
-    console.log(JSON.stringify(templates));
 
-  });
+    templates.push(res[i].slice(sp).replace(".html", ""));
+  }
+  console.log(JSON.stringify(templates));
+
+
 
   return {
-    'load_template': function(templateName) {
+    'load_template': function(msg) {
+      let templateName = msg.body().templateName
       console.log("Loading template " + templateName);
       vertx.fileSystem.readFile(folder + templateName + ".html", function(err, res) {
         if (!err) {
@@ -54,23 +69,14 @@ var templateManager = (function() {
         }
       });
     },
-    'render_template': function(templateName, data, request) {
-
-      data.URI = String(request.absoluteExternalURI());
+    'render_template': function(msg) {
+      let templateName = msg.body().templateName;
+      let data = msg.body().data;      
+      data.URI = String(msg.body().ExternalURI);
       data.URI = data.URI.split("?")[0]
       data.URI = swapUrlPort(data.URI, externalPort);
 
       data.URLQUERY = request.query()
-
-      //data.URI = String(request.path());
-      data.token = request.session.getPersonToken();
-      if(request.session.loggedIn()) {
-        data.loggedIn = true;
-        data.user = request.session.loggedIn();
-      }
-      else {
-        data.loggedIn = false;
-      }
 
       //console.log(JSON.stringify(data));
       // Reloading templates adds about 500ms to pageload and should be avoided in production
@@ -101,5 +107,12 @@ var templateManager = (function() {
 
 });
 
+var manager = templateManager();
 
-module.exports = templateManager();
+eb = vertx.eventBus;
+
+eb.consumer('template.loadAll').handler(manager.loadAll);
+eb.consumer('template.render_template').handler(manager.render_template);
+eb.consumer('template.load_template').handler(manager.load_template);
+
+

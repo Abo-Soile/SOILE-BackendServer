@@ -1,0 +1,1029 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <title>Questionnaire Markup Language Guide</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style type="text/css" media="all">
+		#navigationbar {
+			width: 200px;
+			position: fixed;
+			top: 1em;
+			left: 10px;
+			font-size: smaller;
+		}
+		#navigationbar p {
+			font-weight: bold;
+		}
+		#navigationbar * a {
+			color: inherit;
+			text-decoration: none;
+		}
+		#navigationbar * a:hover {
+			text-decoration: underline;
+		}
+		#navigationbar ul {
+			list-style-type: none;
+			padding: 0;
+		}
+		#navigationbar ul li {
+			padding-left: 5px;
+			padding-bottom: 2px;
+		}
+		#page {
+			position: absolute;
+			top: 1em;
+			left: 240px;
+			width: 720px;
+		}
+		#pagetitle {
+			width: 100%;
+		}
+		#pagetitle p {
+			text-align: center;
+			font-size: small;
+		}
+		#pagecontent {
+			width: 100%;
+			clear: both;
+		}
+		#pagecontent .command {
+			font-family: "Courier New", Courier, monospace;
+			background-color: #f2f2f2;
+			padding: 1px;
+			font-size: smaller;
+		}
+		#pagecontent .command > a {
+			text-decoration: none;
+		}
+		#pagecontent .command > a:hover {
+			text-decoration: underline;
+		}
+		#pagecontent .commanddemo {
+			margin-left: auto;
+			margin-right: auto;
+			width: 80%;
+			font-size: smaller;
+			border: thin dotted black;
+			font-family: "Courier New", Courier, monospace;
+			background-color: #f2f2f2;
+		}
+    #pagecontent > .commandspec {
+      margin-left: 2em;
+      width: 70%;
+      font-size: smaller;
+      border: thin inset black;
+      font-family: "Courier New", Courier, monospace;
+      background-color: #f2f2f2;
+    }
+		#pagecontent > .textstyledemo {
+			padding-left: 5px;
+			padding-right: 5px;
+		}
+		#pagecontent > hr {
+			width: 90%;
+			text-align: center;
+			margin-top: 1cm;
+		}
+		#tablestackdemo {
+			border-collapse: collapse;
+			width: 700px;
+		}
+		table#tablestackdemo > tr {
+			border-bottom: thin dotted black;
+		}
+		#tablestackdemo > th {
+			padding: 5px;
+		}
+		#tablestackdemo > td {
+			padding: 5px;
+		}
+		body {
+			font-family: "Times New Roman", Times, serif;
+			font-size: larger;
+			line-height: 1.5;
+		}
+		h1 {
+			text-align: center;
+		}
+		p {
+			margin-top: 1em;
+		}
+    </style>
+  </head>
+  <body>
+
+    <!-- http://www.w3schools.com/css/css_navbar.asp -->
+    <div id="navigationbar">
+      <p>
+        <a href="#plaintext">Plain text</a>
+      </p>
+      <ul>
+        <li title="Block Style">
+          <a href="#cmd_bs">/bs</a>
+        </li>
+        <li title="Linebreak">
+          <a href="#cmd_lb">/lb</a>
+        </li>
+        <li title="Hyperlink">
+          <a href="#cmd_link">/link</a>
+        </li>
+        <li title="Paragraph">
+          <a href="#cmd_p">/p</a>
+        </li>
+        <li title="Page Title (Main Title)">
+          <a href="#cmd_pagetitle">/pagetitle</a>
+        </li>
+        <li title="Paragraph Break">
+          <a href="#cmd_pb">/pb</a>
+        </li>
+        <li title="Subtitle">
+          <a href="#cmd_subtitle">/subtitle</a>
+        </li>
+        <li title="Title">
+          <a href="#cmd_title">/title</a>
+        </li>
+        <li title="Text Style">
+          <a href="#cmd_ts">/ts</a>
+        </li>
+      </ul>
+      <p>
+        <a href="#widgets">Widgets</a>
+      </p>
+      <ul>
+        <li title="dropdownmenu">
+          <a href="#cmd_dropdownmenu">/dropdownmenu</a>
+        </li>
+        <li title="multiselect">
+          <a href="#cmd_multiselect">/multiselect</a>
+        </li>
+        <li title="multiselect">
+          <a href="#cmd_numberfield">/numberfield</a>
+        </li>
+        <li title="singleselect">
+          <a href="#cmd_singleselect">/singleselect</a>
+        </li>
+        <li title="slider">
+          <a href="#cmd_slider">/slider</a>
+        </li>
+        <li title="textarea">
+          <a href="#cmd_textarea">/textarea</a>
+        </li>
+        <li title="textbox">
+          <a href="#cmd_textbox">/textbox</a>
+        </li>
+      </ul>
+      <p>
+        <a href="#top">Back to top</a>
+      </p>
+    </div>
+
+    <div id="page">
+      <div id="pagetitle">
+        <h1><a name="top">Questionnaire</a> Markup Language Guide </h1>
+        <p>
+          <strong>Last updated</strong>: <span id="lastupdated">2013-07-08</span>
+        </p>
+      </div>
+
+      <div id="pagecontent">
+        <h2><a name="plaintext">Plain text</a></h2>
+
+        <p>
+          There are several commands available to format plain text. They are the subject
+          of this section.
+        </p>
+
+        <h3><a name="nextlinearguments">Next-line arguments</a></h3>
+
+        <p>
+          When we say that a command accepts a &ldquo;next-line argument,&rdquo;
+          we mean that the argument to the command is on the next line of the markup.
+        </p>
+
+        <p>
+          To demonstrate, the following command could be used to produce the
+          title of this section. (<span class="command"><a href="#cmd_title">/title</a></span>
+          requires a next-line argument.)
+        </p>
+
+        <div class="commanddemo">
+          <pre>
+  /title
+  Next-line arguments
+          </pre>
+        </div>
+
+        <h3><a name="stackarguments">Stack arguments</a></h3>
+
+        <p>
+          Two commands &mdash;
+          <span class="command"><a href="#cmd_ts">/ts</a></span> and <span class="command"><a href="#cmd_bs">/bs</a></span> &mdash; operate
+          on
+          <a href="http://en.wikipedia.org/wiki/Stack_(abstract_data_type)"
+          title="Stack data structure">stacks</a>. They differ in their scope.
+          The scope of <span class="command"><a href="#cmd_ts">/ts</a></span> is always
+          a <em>single</em> paragraph, whereas the scope of <span class="command"><a href="#cmd_bs">/bs</a></span> may be several
+          paragraphs. As it has a more restricted scope,
+          <span class="command"><a href="#cmd_ts">/ts</a></span> has
+          a higher precedence than
+          <span class="command"><a href="#cmd_bs">/bs</a></span> when they conflict
+          with each other.
+        </p>
+
+        <p>
+          There are three fundamental stack operations &mdash; <em>push</em>, <em>pop</em>, and <em>empty</em>.
+          All of these operations involve <a href="#textstyles">text styles</a>.
+        </p>
+
+        <p>
+          <em>push</em> places a style on top of the stack. <em>push</em> can be abbreviated as &ldquo;+&rdquo;.
+        </p>
+        <p>
+          <em>pop</em> removes the style off of the stack, which was
+          inserted (i.e. pushed) last.
+          <em>pop</em> can be abbreviated as &ldquo;-&rdquo;.
+        </p>
+        <p>
+          <em>empty</em> clears the whole stack; i.e., it basically
+          calls <em>pop</em> repeatedly, until there is nothing more
+          to <em>pop</em>. <em>empty</em> can be abbreviated as &ldquo;!&rdquo;.
+        </p>
+
+        <p>
+          In the example to follow, &lsquo;[]&rsquo; denotes an empty stack.
+          (Do not mistake it for an array, however.) The leftmost element is considered
+          the top of the stack.
+        </p>
+
+        <table id="tablestackdemo">
+          <colgroup>
+            <col width="30%" />
+            <col width="60%" />
+            <col width="10%" />
+          </colgroup>
+          <thead style="text-align: left;">
+            <tr>
+              <th>Command</th>
+              <th>Stack</th>
+              <th>Rendering</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td> &nbsp; </td>
+              <td>[]</td>
+              <td><span>Text</span></td>
+            </tr>
+            <tr>
+              <td>push "blue"</td>
+              <td>["blue"]</td>
+              <td><span style="color: blue;">Text</span></td>
+            </tr>
+            <tr>
+              <td>push "large"</td>
+              <td>["large", "blue"]</td>
+              <td><span style="color: blue;font-size: x-large;">Text</span></td>
+            </tr>
+            <tr>
+              <td>pop</td>
+              <td>["blue"]</td>
+              <td><span style="color: blue;">Text</span></td>
+            </tr>
+            <tr>
+              <td>push "uppercase"</td>
+              <td>["uppercase", "blue"]</td>
+              <td><span style="color: blue;text-transform: uppercase;">Text</span></td>
+            </tr>
+            <tr>
+              <td>push "underline"</td>
+              <td>["underline", "uppercase", "blue"]</td>
+              <td><span style="color: blue;text-transform: uppercase;text-decoration: underline;">Text</span></td>
+            </tr>
+            <tr>
+              <td>empty</td>
+              <td>[]</td>
+              <td><span>Text</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3><a name="textstyles">Text styles</a></h3>
+
+        <p>
+          Below, the text style command name displays its formatting effect.
+          For instance, &lsquo;monospace&rsquo; has been formatted in a
+          <a href="http://en.wikipedia.org/wiki/Monospaced_font"
+          title="Wikipedia article on monospaced fonts.">monospace font</a>;
+          &lsquo;large&rsquo; has been displayed in a large font size; and so on.
+          It is noteworthy, too, that text style names are always in 
+          lower case regardless how they have been rendered below.
+        </p>
+
+        <div style="width: 80%; margin-left: auto; margin-right: auto">
+          <div style="float: left; width: 50%;">
+            <ul>
+              <li>
+                <span style="font-family: monospace;"><span class="textstyledemo">monospace</span></span>
+              </li>
+              <li>
+                <span style="font-family: sans-serif;"><span class="textstyledemo">sansserif</span></span>
+              </li>
+              <li>
+                <span style="font-family: serif;"><span class="textstyledemo">serif</span></span>
+              </li>
+              <li>
+                <span style="font-weight:bold;"><span class="textstyledemo">bold</span></span>
+              </li>
+              <li>
+                <span style="font-style:italic;"><span class="textstyledemo">italic</span></span>
+              </li>
+              <li>
+                <span style="text-decoration:underline;"><span class="textstyledemo">underline</span></span>
+              </li>
+              <li>
+                <span style="text-decoration:line-through;"><span class="textstyledemo">linethrough</span></span>
+              </li>
+              <li>
+                <span style="text-decoration:overline;"><span class="textstyledemo">overline</span></span>
+              </li>
+              <li>
+                <span style="text-transform: uppercase;"><span class="textstyledemo">uppercase</span></span>
+              </li>
+              <li>
+                <span style="text-transform: lowercase;"><span class="textstyledemo">lowercase</span></span>
+              </li>
+              <li>
+                <span style="text-transform: capitalize;"><span class="textstyledemo">capitalize</span></span>
+              </li>
+              <li>
+                <span style="font-size: smaller;"><span class="textstyledemo">small</span></span>
+              </li>
+              <li>
+                <span style="font-size: x-large;"><span class="textstyledemo">large</span></span>
+              </li>
+              <li>
+                <span style="color: aqua;"><span class="textstyledemo">aqua</span></span>
+              </li>
+            </ul>
+          </div>
+          <div style="float: right; width: 50%;">
+            <ul>
+              <li>
+                <span style="color: black;"><span class="textstyledemo">black</span></span>
+              </li>
+              <li>
+                <span style="color: blue;"><span class="textstyledemo">blue</span></span>
+              </li>
+              <li>
+                <span style="color: fuchsia;"><span class="textstyledemo">fuchsia</span></span>
+              </li>
+              <li>
+                <span style="color: gray;"><span class="textstyledemo">gray</span></span>
+              </li>
+              <li>
+                <span style="color: green;"><span class="textstyledemo">green</span></span>
+              </li>
+              <li>
+                <span style="color: lime;"><span class="textstyledemo">lime</span></span>
+              </li>
+              <li>
+                <span style="color: maroon;"><span class="textstyledemo">maroon</span></span>
+              </li>
+              <li>
+                <span style="color: navy;"><span class="textstyledemo">navy</span></span>
+              </li>
+              <li>
+                <span style="color: olive;"><span class="textstyledemo">olive</span></span>
+              </li>
+              <li>
+                <span style="color: orange;"><span class="textstyledemo">orange</span></span>
+              </li>
+              <li>
+                <span style="color: purple;"><span class="textstyledemo">purple</span></span>
+              </li>
+              <li>
+                <span style="color: red;"><span class="textstyledemo">red</span></span>
+              </li>
+              <li>
+                <span style="color: silver;"><span class="textstyledemo">silver</span></span>
+              </li>
+              <li>
+                <span style="color: teal;"><span class="textstyledemo">teal</span></span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <p style="clear: both;"> </p>
+
+        <hr />
+
+        <h3><a name="cmd_bs">/bs</a></h3>
+
+        <p>
+          This command accepts <a href="#stackarguments">stack arguments</a>.
+        </p>
+
+        <p>
+          <strong>Mnemonic</strong>:
+          &ldquo;bs&rdquo; stands for <em>block style</em>.
+        </p>
+
+        <hr />
+
+        <h3><a name="cmd_lb">/lb</a></h3>
+
+        <p>
+          Inserts a linebreak into a paragraph.
+        </p>
+
+        <p>
+          This command does not accept any arguments.
+        </p>
+
+        <hr />
+
+        <h3><a name="cmd_p">/p</a></h3>
+
+        <p>
+          Opens a new paragraph, and if necessary closes the previous paragraph.
+        </p>
+
+        <p>
+          This command does not accept any arguments.
+        </p>
+
+        <p>
+          This command implicitly calls the commands
+          <span class="command"><a href="#cmd_ts">/ts empty</a></span>,
+          and
+          <span class="command"><a href="#cmd_pb">/pb</a></span>.
+        </p>
+
+        <hr />
+
+        <h3><a name="cmd_pagetitle">/pagetitle</a></h3>
+
+        <p>
+          Sets the title of the questionnaire.
+        </p>
+
+        <p>
+          This command requires a
+          &ldquo;<a href="#nextlinearguments">next-line argument</a>&rdquo;.
+        </p>
+
+        <hr />
+
+        <h3><a name="cmd_title">/title</a></h3>
+
+        <p>
+          Creates a title.
+        </p>
+
+        <p>
+          This command requires a
+          &ldquo;<a href="#nextlinearguments">next-line argument</a>&rdquo;.
+        </p>
+
+        <hr />
+
+        <h3><a name="cmd_subtitle">/subtitle</a></h3>
+
+        <p>
+          Creates a subtitle.
+        </p>
+
+        <p>
+          Titles created with this command are logically on a lower level than
+          those created with This command
+          <span class="command"><a href="#cmd_title">/title</a></span>.
+        </p>
+
+        <p>
+          This command requires a
+          &ldquo;<a href="#nextlinearguments">next-line argument</a>&rdquo;.
+        </p>
+
+        <hr />
+
+        <h3><a name="cmd_pb">/pb</a></h3>
+
+        <p>
+          Closes the currently open paragraph explicitly.
+        </p>
+
+        <p>
+          Note that <span class="command"><a href="#cmd_p">/p</a></span> closes the currently open
+          paragraph implicitly.
+        </p>
+
+        <p>
+          This command does not accept any arguments.
+        </p>
+
+        <p>
+          <strong>Mnemonic</strong>:
+          &ldquo;pb&rdquo; stands for <em>paragraph break</em>.
+        </p>
+
+        <hr />
+
+        <h3><a name="cmd_ts">/ts</a></h3>
+
+        <p>
+          This command accepts <a href="#stackarguments">stack arguments</a>.
+        </p>
+
+        <p>
+          <strong>Mnemonic</strong>:
+          &ldquo;ts&rdquo; stands for <em>text style</em>.
+        </p>
+
+        <hr />
+
+        <h3><a name="cmd_link">/link</a></h3>
+
+        <p>
+          This command creates a
+          <a href="https://en.wikipedia.org/wiki/Hyperlink">hyperlink</a>.
+        </p>
+
+        <p>
+          This command is unique in that it requires <strong>two</strong>
+          arguments: one argument given next to the command (the URL), and a
+          &ldquo;<a href="#nextlinearguments">next-line argument</a>&rdquo;
+          (the link text).
+        </p>
+
+        <p>
+          This is how a link to the Åbo Akademi homepage would be created.
+        </p>
+
+        <div class="commanddemo">
+          <pre>
+  /link http://www.abo.fi/
+  Åbo Akademi
+          </pre>
+        </div>
+
+        <p>
+          This would produce
+          <br />
+          <a href="http://www.abo.fi/">Åbo Akademi</a>.
+        </p>
+
+        <hr />
+
+        <h2><a name="widgets">Widgets</a></h2>
+        
+        <p>
+          The purpose of widget elements is to <strong>accept and receive input</strong> 
+          from readers of a questionnaire.
+        </p>
+
+        <h3> Object arguments </h3>
+
+        <p>
+          Every &ldquo;widget command&rdquo; requires an <em>object argument</em>.
+          It is fully deliberate that the object arguments resemble the
+          <a href="http://en.wikipedia.org/wiki/JSON"><abbr title="JavaScript Object Notation">JSON</abbr></a>
+          data interchange format. (The only difference, again fully deliberate, is that
+          in our object argument notation fewer double quote characters are required. The 
+          purpose is to improve user-friendliness.)
+        </p>
+
+        <p>
+          To understand <em>object arguments</em>, or <em>objects</em> for short,
+          one needs to understand <em>simple</em> value types first. (Simple value
+          types can be called <em>atomic</em> value types, too.) There are three kinds
+          of simple value types:
+          <a href="http://en.wikipedia.org/wiki/String_(computer_science)">strings</a>,
+          integers, and
+          <a href="http://en.wikipedia.org/wiki/Boolean_data_type">booleans</a>.
+        </p>
+
+        <p>
+          Basically, a string consists of characters enclosed in double quote (") characters
+          (e.g., "this is a string").
+          A boolean value is either <em>true</em> or <em>false</em>. Integers are just numbers
+          (e.g., 1234, and 543).
+        </p>
+
+        <p>
+          <a href="http://en.wikipedia.org/wiki/Array_data_type">Arrays</a> and objects
+          are <em>compound values</em>. An array is a collection of zero or more elements, 
+          which can  be either simple values, or compound values. Objects are a 
+          collection of one or more &lsquo;properties&rsquo;, which are 
+          name-value pairs. Names are strings (with the possibility of omitting
+          double quote characters, if the string does not contain any whitespace
+          characters), and values are either simple values, or compound values.
+        </p>
+
+        <p>
+          An example of a basic array (by &lsquo;basic&rsquo; we mean that the 
+          elements of the array are simple values):
+        </p>
+
+        <div class="commanddemo">
+          <pre>
+  ["a string", true, 123, false, "another string"]
+          </pre>
+        </div>
+
+        <p>
+          An example of a basic object which has three properties&mdash;&lsquo;title&rsquo;, 
+          &lsquo;published&rsquo;, and &lsquo;copyrighted&rsquo;.
+        </p>
+
+        <div class="commanddemo">
+          <pre>
+  {title: "Javascript", published: 2011, copyrighted: true}
+          </pre>
+        </div>
+
+        <p>
+          An example of a more complicated object:
+        </p>
+
+        <div class="commanddemo">
+          <pre>
+  {
+    books: [
+      {
+        title: "Psychology vol. I",
+        year: 1890
+      },
+      {
+        title: "Psychology vol. II",
+        year: 1895
+      }
+    ],
+    author: {
+      firstname: "John",
+      lastname: "Doe",
+      pennames: ["jdoe", "johnd"]
+    },
+    pages: 1500,
+    bestseller: false
+  }
+          </pre>
+        </div>
+        
+        <h3> Specifying object types </h3>
+
+        <p>
+          Suppose we specify an argument to a command as follows:
+        </p>
+
+        <div class="commandspec">
+          <pre>
+  {
+      <strong>title</strong>: <em>String</em>,
+      <strong>year</strong>: <em>Integer</em>,
+      <strong>paperback</strong>: <em>Boolean</em>,
+      <strong>reviews</strong>: 
+        [
+          {
+            <strong>user</strong>: <em>String</em>, 
+            <strong>rating</strong>: <em>Integer</em>,
+            <strong>review</strong>: <em>String</em>
+          }
+        ]
+  }
+            </pre>
+        </div>
+        
+        <p>
+          This is interpreted as follows. 
+          <ul>
+            <li>
+              The argument itself is an object.
+            </li>
+            <li>
+              The object has a property &lsquo;title&rsquo;, which must be a string.
+            </li>
+            <li>
+              The object has a property &lsquo;year&rsquo;, which must be an integer.
+            </li>
+            <li>
+              The object has a property &lsquo;paperback&rsquo;, which must be a boolean.
+            </li>
+            <li>
+              The object has a property &lsquo;reviews&rsquo;, which must be an array.
+            </li>
+            <li>
+              The elements of the &lsquo;reviews&rsquo; array must be objects with 
+              three properties: the property &lsquo;user&rsquo; must be a string,
+              the property &lsquo;rating&rsquo; must be an integer, and 
+              the property &lsquo;review&rsquo; must be a string.
+            </li>
+          </ul>
+        </p>
+        
+        <p>
+          The following object is valid with respect to the above specification.
+        </p>
+        
+        <div class="commanddemo">
+          <pre>
+  {
+      title: "Cooking",
+      year: 2013,
+      paperback: true,
+      reviews: 
+        [
+          {
+            user: "reader1", 
+            rating: 5,
+            review: "Love this book!"
+          },
+          {
+            user: "reader2", 
+            rating: 1,
+            review: "Hate this book!"
+          }
+        ]
+  }
+            </pre>
+        </div>
+
+        <hr />
+
+        <h3><a name="cmd_dropdownmenu">/dropdownmenu</a></h3>
+
+        <div class="commandspec">
+          <pre>
+  {
+      <strong>dbcolumn</strong>: <em>String</em>,
+      <strong>numeric</strong>: <em>true</em>,
+      <strong>label</strong>: <em>String</em>,
+      <strong>options</strong>: 
+        [
+          {
+            <strong>dbvalue</strong>: <em>String</em>, 
+            <strong>text</strong>: <em>String</em>
+          }
+        ]
+  }
+          </pre>
+        </div>
+        <p> Example: </p>
+        <div class="commandspec">
+          <pre>
+  /dropdownmenu {
+   dbcolumn: "continent",
+   label: "Select Continent",
+   options: [{dbvalue: "EU", text: "Europe"},
+             {dbvalue: "AM", text: "America"},
+             {dbvalue: "AS", text: "Asia"},
+             {dbvalue: "AU", text: "Australia"},
+             {dbvalue: "AF", text: "Africa"}
+             ]
+  }
+          </pre>
+        </div>
+
+        <hr />
+
+        <h3><a name="cmd_multiselect">/multiselect</a></h3>
+
+        <div class="commandspec">
+          <pre>
+  {
+      <strong>numeric</strong>: <em>true</em>,
+      <strong>default_value</strong>: <em>String</em>
+      <strong>options</strong>: 
+        [ 
+          [ 
+            {
+              <strong>dbcolumn</strong>: <em>String</em>,
+              <strong>dbvalue</strong>: <em>String</em>, 
+              <strong>text</strong>: <em>String</em>, 
+              <strong>checked</strong>: <em>Boolean</em>
+            }
+          ] 
+        ]
+  }
+          </pre>
+        </div>
+
+        <p> Example: </p>
+        <div class="commandspec">
+          <pre>
+  /multiselect {
+      default_value: "no",
+      dbcolumn: "vehicle",
+      options: [ [ 
+            {
+              dbcolumn: "Bike",
+              dbvalue: "yes", 
+              text: "Bike", 
+              checked: true
+            },
+              {
+              dbcolumn: "Car",
+              dbvalue: "yes", 
+              text: "Car", 
+              checked: false
+            },
+            {
+              dbcolumn: "Motorbike",
+              dbvalue: "yes", 
+              text: "Motorbike", 
+              checked: false
+            }] ]
+  }
+          </pre>
+        </div>
+
+        <hr />
+        
+        <h3><a name="cmd_numberfield">/numberfield</a></h3>
+
+        <div class="commandspec">
+          <pre>
+  {
+      <strong>dbcolumn</strong>: <em>String</em>,
+      <strong>numeric</strong>: <em>true</em>,
+      <strong>label</strong>: <em>String</em>,
+      <strong>value</strong>: <em>Integer</em>,
+      <strong>minimum</strong>: <em>Integer</em>,
+      <strong>maximum</strong>: <em>Integer</em>,
+      <strong>increment</strong>: <em>Integer</em> or <em>"Decimal value"</em>
+  }
+          </pre>
+        </div>
+
+
+        <p>
+          Increment can be either an integer(5) or a decimal value(3.6).Note that decimal values must be surrounded by quotes("5.5"). If not it's interpreted as an integer.
+       </p>
+
+        <p> Example: </p>
+        <div class="commandspec">
+          <pre>
+  /numberfield {
+      dbcolumn: "age",
+      label: "Enter your age",
+      value: 0,
+      minimum: 0,
+      maximum: 100,
+      increment: 1
+  }
+          </pre>
+        </div>
+
+        <hr />
+
+        <h3><a name="cmd_singleselect">/singleselect</a></h3>
+
+        <div class="commandspec">
+          <pre>
+  {
+      <strong>numeric</strong>: <em>true</em>,
+      <strong>default_value</strong>: <em>String</em>
+      <strong>options</strong>: 
+        [ 
+          [ 
+            {
+              <strong>dbcolumn</strong>: <em>String</em>,
+              <strong>dbvalue</strong>: <em>String</em>, 
+              <strong>text</strong>: <em>String</em>, 
+              <strong>checked</strong>: <em>Boolean</em>
+            }
+          ] 
+        ]
+  }
+          </pre>
+        </div>
+
+        <p> Example: </p>
+        <div class="commandspec">
+          <pre>
+  /singleselect {
+     default_value: "-1",
+     dbcolumn: "Yes/No/maybe",
+     options: [[{dbvalue: "yes", text: "Yes", checked: true},
+               {dbvalue: "no", text: "No"},
+               {dbvalue: "maybe", text: "Maybe"}]]
+  }
+          </pre>
+        </div>
+
+        <hr />
+
+        <h3><a name="cmd_slider">/slider</a></h3>
+
+        <div class="commandspec">
+          <pre>
+  {
+      <strong>dbcolumn</strong>: <em>String</em>,
+      <strong>numeric</strong>: <em>true</em>,
+      <strong>labels</strong>: 
+        [
+          <em>Integer</em>
+        ],
+      <strong>minimum</strong>: <em>Integer</em>,
+      <strong>maximum</strong>: <em>Integer</em>,
+      <strong>increment</strong>: <em>Integer</em>,
+      <strong>select</strong>: <em>Integer</em>                                            
+  }
+          </pre>
+        </div>
+
+        <p> Example: </p>
+        <div class="commandspec">
+          <pre>
+  /slider {
+     dbcolumn: "Slider 0-6",
+     numeric: true,
+     dbtype: "int",
+     labels: [0,1,2,3,4,5,6],
+     minimum: 0,
+     maximum: 6,
+     increment: 1,
+     select: 0
+  }
+          </pre>
+        </div>
+
+        <hr />
+
+        <h3><a name="cmd_textarea">/textarea</a></h3>
+
+        <div class="commandspec">
+          <pre>
+  {
+      <strong>dbcolumn</strong>: <em>String</em>,
+      <strong>rows</strong>: <em>Integer</em>,
+      <strong>columns</strong>: <em>Integer</em>,
+      <strong>label</strong>: <em>String</em>,
+      <strong>text</strong>: <em>String</em>
+      <strong>optional</strong>: <em>Boolean</em> (default=true)
+  }
+          </pre>
+
+        </div>
+        
+        <p>The <strong>Optional</strong> field is not required and can be left out, the default value for it is false</p>
+
+        <p> Example: </p>
+        <div class="commandspec">
+          <pre>
+  /textarea {
+     dbcolumn: "story",
+     rows: 3,
+     length: 150,
+     label: "Tell us a story",
+     text: "Enter your story here."
+  }
+          </pre>
+        </div>
+        <hr />
+
+        <h3><a name="cmd_textbox">/textbox</a></h3>
+
+        <div class="commandspec">
+          <pre>
+  {
+      <strong>dbcolumn</strong>: <em>String</em>,
+      <strong>label</strong>: <em>String</em>,
+      <strong>linebreak</strong>: <em>Boolean</em>,
+      <strong>length</strong>: <em>Integer</em>,
+      <strong>text</strong>: <em>String</em>
+      <strong>optional</strong>: <em>Boolean</em> (default=true)
+  }
+          </pre>
+        </div>
+          
+        <p>The <strong>Optional</strong> field is not required and can be left out, the default value for it is false </p>
+
+        <p> Example: </p>
+        <div class="commandspec">
+          <pre>
+  /textbox {
+     dbcolumn: "name",
+     label: "Enter you name",
+     linebreak: true,
+     length: 40,
+     text: "Enter your name here"
+  }
+          </pre>
+        </div>
+
+        <hr />
+
+        <h2><a name="comments">Comments</a></h2>
+
+        <p>
+          If the first non-white character on a line is &lsquo;#&rsquo;, that line
+          is regarded as a comment. Thus it has no effect on the resulting markup.
+        </p>
+
+      </div>
+    </div>
+
+  </body>
+</html>

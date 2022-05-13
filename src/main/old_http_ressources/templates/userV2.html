@@ -1,0 +1,25 @@
+{>header_nodojo /}
+<div id="main" class="container">
+  <div class="row">
+    <div id="userheader" class="col-md-12">
+      <h4>Welcome back {user.username}</h4>
+    </div>
+    <div class="col-md-12">
+        <h3 class="uheading">Ongoing training</h3>
+        <ul class="list-group userTrainingList">
+          {#training}
+          <li class="list-group-item">
+            <span><b>{name}</b></span>
+            <a class="pull-right btn btn-success" href="training/{trainingId}">To training</a>
+
+            <!-- <span>Next task <label>Now</label></span> -->
+          </li>
+          {/training}
+
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+{>footer /}

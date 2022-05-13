@@ -1,5 +1,4 @@
 var vertx = require('vertx');
-var console = require('vertx/console');
 
 var babyparser = require("libs/babyparse"); 
 

@@ -1,0 +1,50 @@
+{>header /}
+
+<div class="container main">
+    <div class="row">
+        <div class="col-md-offset-2 col-md-8">
+            <div class="panel">
+                <h4>Account details</h4>
+
+                <div class="panel-body">
+
+                    <h3>Account name: {user.username}</h3>
+
+                    <h3>Account status: </h3>
+
+
+                    <h3>Change password</h3>
+                    {?error}
+                    <div class="alert alert-error">
+                        <p>{error}</p>
+                    </div>
+                    {/error}
+                    {?success}
+                    <div class="alert alert-success">
+                        <p>Your password was successfully changed</p>
+                    </div>
+                    {/success}
+
+                    <p>Enter your new password</p>
+                    <form class="form" role="form" action="" method="post">
+                        <div class="form-group">
+                            <input class="form-control" type="password" name="password" placeholder="Enter new password">
+                        </div>
+
+                        <div class="form-group">
+                            <input class="form-control" type="password" name="passwordAgain" placeholder="Repeat password">
+                        </div>
+
+                        <button type="submit"  class="btn btn-primary">Save password</button>
+
+                    </form>
+                   
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+{>footer /}
