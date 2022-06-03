@@ -130,7 +130,7 @@
 		</dependency>
 
 		<!-- Js dependencies -->
-	    <dependency>
+		<dependency>
 			<groupId>io.reactiverse</groupId>
 			<artifactId>es4x</artifactId>
 			<version>0.17.1</version>
@@ -144,6 +144,19 @@
 			<groupId>org.graalvm.js</groupId>
 			<artifactId>js</artifactId>
 			<version>22.0.0.2</version>
+		</dependency>
+
+		<!-- Formula Parsing for Filters -->
+		<dependency>
+			<groupId>net.objecthunter</groupId>
+			<artifactId>exp4j</artifactId>
+			<version>0.4.8</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math3 -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+			<version>3.6.1</version>
 		</dependency>
 
 	</dependencies>
@@ -240,7 +253,7 @@
 					</arguments>
 				</configuration>
 			</plugin>
-			<!--  es4x Plugin -->  
+			<!-- es4x Plugin -->
 			<plugin>
 				<groupId>io.reactiverse</groupId>
 				<artifactId>vertx-maven-plugin</artifactId>
