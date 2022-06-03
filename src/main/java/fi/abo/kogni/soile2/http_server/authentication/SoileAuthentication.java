@@ -3,6 +3,7 @@ package fi.abo.kogni.soile2.http_server.authentication;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.http_server.authentication.utils.UserUtils;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidLoginException;
@@ -17,7 +18,7 @@ import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.mongo.MongoClient;
 
 /**
- * This Verticle will handle User Authentication 
+ * SoileAuthentication will handle the authentication of clients. 
  * @author thomas
  *
  */

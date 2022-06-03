@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.http_server.authentication;
 
+import fi.abo.kogni.soile2.http_server.authentication.utils.PermissionIDStrategy;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -18,10 +19,8 @@ public class SoileAuthorizationProvider implements AuthorizationProvider{
 
 	
 	public static final String SoileAuth = "SoileAuth";		
-	private final MongoClient client;
-	public SoileAuthorizationProvider(MongoClient client)	
-	{		
-		this.client = client;
+	public SoileAuthorizationProvider()	
+	{				
 	}
 	
 

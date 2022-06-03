@@ -4,7 +4,7 @@ import java.util.function.BiConsumer;
 
 import fi.abo.kogni.soile2.utils.DataRetriever;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import fi.abo.kogni.soile2.utils.TimeStampedDataMap;
+import fi.abo.kogni.soile2.utils.TimeStampedPropertyMap;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.auth.authorization.AuthorizationContext;
 import io.vertx.ext.auth.authorization.AuthorizationProvider;
@@ -17,13 +17,13 @@ public class SoileExperimentAuthorizationHandler implements AuthorizationHandler
 	
 	final AuthorizationHandler authHandler;
 	final MongoClient client;
-	TimeStampedDataMap expDataMap;
+	TimeStampedPropertyMap expDataMap;
 	public SoileExperimentAuthorizationHandler(Authorization auth, MongoClient client)
 	{
 		authHandler = AuthorizationHandler.create(auth);
 		this.client = client;		
 		// Expire after an hour
-		expDataMap = new TimeStampedDataMap(new DataRetriever(client, SoileConfigLoader.getDbCfg().getString("experimentCollection"), "_id"),3600000L); 
+		expDataMap = new TimeStampedPropertyMap(new DataRetriever(client, SoileConfigLoader.getDbCfg().getString("experimentCollection"), "_id"),3600000L); 
 	}
 	
 	@Override

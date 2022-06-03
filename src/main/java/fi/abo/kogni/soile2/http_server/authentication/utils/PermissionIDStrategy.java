@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.http_server.authentication;
+package fi.abo.kogni.soile2.http_server.authentication.utils;
 
 public class PermissionIDStrategy {
 	

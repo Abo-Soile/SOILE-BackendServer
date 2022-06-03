@@ -135,8 +135,7 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	{
 		
 		// Create the authorization providers
-		MongoAuthorizationOptions userConf = SoileConfigLoader.getMongoAuthZOptions();	
-		authZuser = new SoileAuthorizationProvider(client);		
+		authZuser = new SoileAuthorizationProvider();		
 		// define necessary messages 
 		setupUserRoutes();	
 	}
@@ -144,6 +143,7 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	{
 		router.route().handler(cookieCreationHandler);
 	}
+	
 	void setupUserRoutes()
 	{		
 		
