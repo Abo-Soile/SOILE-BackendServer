@@ -1,26 +1,26 @@
 package fi.abo.kogni.soile2.utils;
 
+import java.io.InvalidClassException;
+
 import io.vertx.core.json.JsonObject;
 
-public class TimeStampedProperties {
+public class TimeStampedProperties extends TimeStampedData{
 
-	long validTill;
-	JsonObject properties;
-	
 	public TimeStampedProperties(JsonObject properties, long ttl)
-	{		
-		this.validTill = System.currentTimeMillis() + ttl;
-		this.properties = properties;
-	}
-		
-	public boolean isValid()
 	{
-		return validTill > System.currentTimeMillis();
+		super(properties,ttl);
 	}
 	
-	public JsonObject getProperties()
+	public JsonObject getProperties() throws InvalidClassException
 	{
-		return properties;
+		if(data instanceof JsonObject)
+		{
+			return (JsonObject)data;
+		}
+		else
+		{
+			throw new InvalidClassException("Expected data to be " + JsonObject.class.getCanonicalName() + ". Found " + data.getClass().getCanonicalName() +  " instead");
+		}
 	}
-		
+
 }

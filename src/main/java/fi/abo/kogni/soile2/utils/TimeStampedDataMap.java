@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.utils;
 
+import java.io.InvalidClassException;
 import java.util.HashMap;
 
 import io.vertx.core.AsyncResult;
@@ -13,7 +14,7 @@ import io.vertx.core.json.JsonObject;
  */
 public class TimeStampedDataMap {
 
-	private HashMap<String, TimeStampedProperties> experimentMap = new HashMap<String, TimeStampedProperties>();
+	private HashMap<String, TimeStampedData<JsonObject>> experimentMap = new HashMap<String, TimeStampedData<JsonObject>>();
 	DataRetriever retriever;
 	long ttl;
 	public TimeStampedDataMap(DataRetriever retriever, long TTL) {
@@ -33,13 +34,13 @@ public class TimeStampedDataMap {
 	 */
 	public void getProperties(String experimentUUID, Handler<AsyncResult<JsonObject>> resultHandler)
 	{
-		TimeStampedProperties expData = experimentMap.get(experimentUUID);
+		TimeStampedData<JsonObject> expData = experimentMap.get(experimentUUID);
 		if(expData == null)
 		{
 			retriever.getElement(experimentUUID, result -> {
 				if(result.succeeded())
 				{
-					experimentMap.put(experimentUUID, new TimeStampedProperties(result.result(),ttl));
+					experimentMap.put(experimentUUID, new TimeStampedData<JsonObject>(result.result(),ttl));
 				}
 				resultHandler.handle(result);				
 			});
@@ -47,7 +48,7 @@ public class TimeStampedDataMap {
 		}
 		else
 		{
-			resultHandler.handle(Future.succeededFuture(expData.getProperties()));
+			resultHandler.handle(Future.succeededFuture(expData.getData()));
 		}
 	}
 	
