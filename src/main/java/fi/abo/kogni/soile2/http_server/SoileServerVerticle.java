@@ -73,7 +73,6 @@ public class SoileServerVerticle extends AbstractVerticle {
 	Future<Void> setUpRouting(Void unused)
 	{
 		store = LocalSessionStore.create(vertx);
-		SessionHandler shandler = SessionHandler.create(store);
 		router = Router.router(vertx);
 		return Future.<Void>succeededFuture();
 	}

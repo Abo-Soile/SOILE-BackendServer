@@ -2,13 +2,10 @@ package fi.abo.kogni.soile2.http_server.authentication;
 
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authorization.AuthorizationProvider;
-import io.vertx.ext.auth.authorization.PermissionBasedAuthorization;
 import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import io.vertx.ext.mongo.MongoClient;
 
@@ -32,31 +29,27 @@ public class SoileAuthorizationProvider implements AuthorizationProvider{
 	@Override
 	public void getAuthorizations(User user, Handler<AsyncResult<Void>> handler) {
 		
-		JsonObject query = new JsonObject().put(SoileConfigLoader.getdbField("usernameField"), user.principal().getString("username"));
-		client.find(SoileConfigLoader.getdbProperty("userCollection"), query, res -> {
-			if (res.failed()) {
-				handler.handle(Future.failedFuture(res.cause()));
-				return;
-			}
-
-			for (JsonObject jsonObject : res.result()) {
-				JsonArray roles = jsonObject.getJsonArray(SoileConfigLoader.getdbField("userRolesField"));
-				if (roles!=null) {
-					for (int i=0; i<roles.size(); i++) {
-						String role = roles.getString(i);
-						user.authorizations().add(SoileAuth, RoleBasedAuthorization.create(role));
-					}
-				}
-				JsonArray permissions = jsonObject.getJsonArray(SoileConfigLoader.getdbField("userPermissionsField"));
-				if (permissions!=null) {
-					for (int i=0; i<permissions.size(); i++) {
-						String permission = permissions.getString(i);
-						user.authorizations().add(SoileAuth, PermissionBasedAuthorization.create(permission));
-					}
-				}
-			}
-			handler.handle(Future.succeededFuture());
-		});
+		JsonArray owned = user.principal().getJsonArray(SoileConfigLoader.getSessionProperty("userOwnes"));
+		JsonArray collaborates = user.principal().getJsonArray(SoileConfigLoader.getSessionProperty("userCollaborates"));
+		JsonArray participates = user.principal().getJsonArray(SoileConfigLoader.getSessionProperty("userParticipates"));
+		JsonArray roles = user.principal().getJsonArray(SoileConfigLoader.getSessionProperty("userRoles"));
+		for(Object Exp : owned)
+		{			
+			user.authorizations().add(SoileAuth, RoleBasedAuthorization.create(PermissionIDStrategy.getPermissionID(Exp.toString(), PermissionIDStrategy.Type.Owner)));
+		}
+		for(Object Exp : collaborates)
+		{			
+			user.authorizations().add(SoileAuth, RoleBasedAuthorization.create(PermissionIDStrategy.getPermissionID(Exp.toString(), PermissionIDStrategy.Type.Collaborator)));
+		}
+		for(Object Exp : participates)
+		{			
+			user.authorizations().add(SoileAuth, RoleBasedAuthorization.create(PermissionIDStrategy.getPermissionID(Exp.toString(), PermissionIDStrategy.Type.Participant)));
+		}
+		for(Object role : roles)
+		{
+			user.authorizations().add(SoileAuth, RoleBasedAuthorization.create(role.toString()));			
+		}
+		
 	}
 		
 		

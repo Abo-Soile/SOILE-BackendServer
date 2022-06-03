@@ -49,6 +49,10 @@ public class UserUtils {
 	    	// set properties of the user that are needed for session handling
 	    	user.principal().put(SoileConfigLoader.getSessionProperty("userTypeField"), userJson.getValue(SoileConfigLoader.getdbField("userTypeField")));
 	    	user.principal().put(SoileConfigLoader.getSessionProperty("validSessionCookies"), userJson.getValue(SoileConfigLoader.getdbField("storedSessions")));
+	    	user.principal().put(SoileConfigLoader.getSessionProperty("userOwnes"), userJson.getString(SoileConfigLoader.getdbField("ownerField")));
+	    	user.principal().put(SoileConfigLoader.getSessionProperty("userCollaborates"), userJson.getString(SoileConfigLoader.getSessionProperty("collaboratorField")));
+	    	user.principal().put(SoileConfigLoader.getSessionProperty("userParticipates"), userJson.getString(SoileConfigLoader.getSessionProperty("participantField")));
+	    	user.principal().put(SoileConfigLoader.getSessionProperty("userRoles"),  userJson.getString(SoileConfigLoader.getSessionProperty("userRolesField")));
 	    	//AuthorizationProvider prov = AuthorizationProvider.create("this", null);	    	
 	    	return user;					
 	}
