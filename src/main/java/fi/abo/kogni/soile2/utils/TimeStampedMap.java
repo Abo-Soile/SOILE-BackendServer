@@ -1,23 +1,21 @@
 package fi.abo.kogni.soile2.utils;
 
-import java.io.InvalidClassException;
 import java.util.HashMap;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.json.JsonObject;
 /**
  * A Map that provides timestamped data obtained with a given retriever, which is used to fill in the data.
  * @author Thomas Pfau
  *
  */
-public class TimeStampedDataMap {
+public class TimeStampedMap<K,T> {
 
-	private HashMap<String, TimeStampedData<JsonObject>> experimentMap = new HashMap<String, TimeStampedData<JsonObject>>();
-	DataRetriever retriever;
+	private HashMap<K, TimeStampedData<T>> experimentMap = new HashMap<K, TimeStampedData<T>>();
+	DataRetriever<K,T> retriever;
 	long ttl;
-	public TimeStampedDataMap(DataRetriever retriever, long TTL) {
+	public TimeStampedMap(DataRetriever<K,T> retriever, long TTL) {
 		this.retriever = retriever;
 		ttl = TTL;
 	}
@@ -32,15 +30,15 @@ public class TimeStampedDataMap {
 	 * @param experimentUUID
 	 * @return
 	 */
-	public void getProperties(String experimentUUID, Handler<AsyncResult<JsonObject>> resultHandler)
+	public void getData(K experimentUUID, Handler<AsyncResult<T>> resultHandler)
 	{
-		TimeStampedData<JsonObject> expData = experimentMap.get(experimentUUID);
+		TimeStampedData<T> expData = experimentMap.get(experimentUUID);
 		if(expData == null)
 		{
 			retriever.getElement(experimentUUID, result -> {
 				if(result.succeeded())
 				{
-					experimentMap.put(experimentUUID, new TimeStampedData<JsonObject>(result.result(),ttl));
+					experimentMap.put(experimentUUID, new TimeStampedData<T>(result.result(),ttl));
 				}
 				resultHandler.handle(result);				
 			});

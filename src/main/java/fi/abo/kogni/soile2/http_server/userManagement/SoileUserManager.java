@@ -18,6 +18,7 @@ import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.HashString;
@@ -404,7 +405,7 @@ public class SoileUserManager implements MongoUserUtil{
 
 	}
 
-	@Override
+	
 	public SoileUserManager createUser(String username, String password, Handler<AsyncResult<String>> resultHandler) {
 		if (username == null || password == null) {
 			resultHandler.handle(Future.failedFuture("username or password are null"));			
@@ -441,7 +442,7 @@ public class SoileUserManager implements MongoUserUtil{
 		return this;
 	}
 
-	@Override
+	
 	public SoileUserManager createHashedUser(String username, String hash, Handler<AsyncResult<String>> resultHandler) {
 		if (username == null || hash == null) {
 			resultHandler.handle(Future.failedFuture("username or password hash are null"));
@@ -483,7 +484,7 @@ public class SoileUserManager implements MongoUserUtil{
 		return this;
 	}
 
-	@Override
+	
 	public SoileUserManager createUserRolesAndPermissions(String username, List<String> roles, List<String> permissions,
 			Handler<AsyncResult<String>> resultHandler) {
 
@@ -623,7 +624,9 @@ public class SoileUserManager implements MongoUserUtil{
 		String hashedSessionID = strategy.hash(hashingAlgorithm,
 											   null,
 											   SoileConfigLoader.getSessionProperty("sessionStoreSecret"),
-											   sessionID); 
+											   sessionID);
+		LOGGER.debug("sessionID is :" + sessionID);
+		LOGGER.debug("hashed ID is :" + hashedSessionID);
 		JsonObject query = new JsonObject()
 				.put(authnOptions.getUsernameField(), username); 
 		client.find(
@@ -634,6 +637,7 @@ public class SoileUserManager implements MongoUserUtil{
 					{
 						if(res.result().size() == 1)
 						{
+							LOGGER.debug("Found one user object, trying to update sessions");
 							// Adding the current session ID as valid session for the user.
 							JsonObject validSessions = res.result()
 																.get(0)
@@ -655,7 +659,9 @@ public class SoileUserManager implements MongoUserUtil{
 							{
 								validSessions = new JsonObject();
 							}
+							
 							validSessions.put(hashedSessionID, System.currentTimeMillis());
+							LOGGER.debug("Trying to add the following sessions:\n" + validSessions.encodePrettily());
 							client.updateCollection(authnOptions.getCollectionName(),
 									query,
 									new JsonObject()
@@ -699,7 +705,8 @@ public class SoileUserManager implements MongoUserUtil{
 				   null,
 				   SoileConfigLoader.getSessionProperty("sessionStoreSecret"),
 				   sessionID);
-		
+		LOGGER.debug("sessionID is :" + sessionID);
+		LOGGER.debug("hashed ID is :" + hashedSessionID);
 		JsonObject query = new JsonObject()
 				.put(authnOptions.getUsernameField(), username); 
 		client.find(
@@ -710,18 +717,22 @@ public class SoileUserManager implements MongoUserUtil{
 					{
 						if(res.result().size() == 1)
 						{
+							LOGGER.debug(res.result().get(0).encodePrettily());
 							// Adding the current session ID as valid session for the user.
 							JsonObject storedSessions = res.result()
 																.get(0)
 																.getJsonObject(SoileConfigLoader.getdbField("storedSessions"));
 							Long startTime = storedSessions.getLong(hashedSessionID);
-							// if this is not present, then (i.e. the result is null, then it's not a stored ID.							
-							if(startTime != null && System.currentTimeMillis() - startTime> SoileConfigLoader.getSessionLongProperty("maxTime"))
+							// if this is not present, then (i.e. the result is null, then it's not a stored ID.					
+							LOGGER.debug("Current Time: " + System.currentTimeMillis() +  "; StartTime was: " + startTime + "; Max Age is: " + SoileConfigLoader.getSessionLongProperty("maxTime"));
+							if(startTime != null && (System.currentTimeMillis() - startTime < SoileConfigLoader.getSessionLongProperty("maxTime")))
 							{
+								LOGGER.debug("Session validated Successfully");
 								handler.handle(Future.succeededFuture(true));
 							}							
 							else
 							{
+								LOGGER.debug("Session validated successfully, but no longer valid.");
 								handler.handle(Future.succeededFuture(false));	
 							}
 						}
@@ -748,4 +759,27 @@ public class SoileUserManager implements MongoUserUtil{
 				});
 		return this;
 	}
+
+	@Override
+	public Future<String> createUser(String username, String password) {
+		Promise<String> promise = Promise.promise();
+		createUser(username, password, promise);
+		return promise.future();
+	}
+
+	@Override
+	public Future<String> createHashedUser(String username, String hash) {
+		Promise<String> promise = Promise.promise();
+		createHashedUser(username, hash, promise);
+		return promise.future();
+		}
+
+	@Override
+	public Future<String> createUserRolesAndPermissions(String user, List<String> roles, List<String> permissions) {
+		Promise<String> promise = Promise.promise();
+		createUserRolesAndPermissions(user, roles,permissions, promise);
+		return promise.future();
+	}
+
+
 }

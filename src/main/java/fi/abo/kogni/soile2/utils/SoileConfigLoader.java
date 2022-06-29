@@ -21,6 +21,7 @@ public class SoileConfigLoader {
 	public static final String COMMAND_PREFIX_FIELD = "commandPrefix";
 	public static final String COMMANDS = "commands";
 	public static final String HTTP_SERVER_CFG = "http_server";
+	public static final String TASK_CFG = "tasks";
 
 	public static final String Owner = "Owner";
 	public static final String Participant = "Participant";
@@ -34,7 +35,7 @@ public class SoileConfigLoader {
 	private static JsonObject userCfg;
 	private static JsonObject expCfg;	
 	private static JsonObject serverCfg;
-	
+	private static JsonObject taskCfg;
 	
 	public static ConfigRetriever getRetriever(Vertx vertx)
 	{
@@ -60,6 +61,7 @@ public class SoileConfigLoader {
 		userCfg = config.getJsonObject(USERMGR_CFG);
 		expCfg = config.getJsonObject(EXPERIMENT_CFG);
 		serverCfg = config.getJsonObject(HTTP_SERVER_CFG);
+		taskCfg = config.getJsonObject(TASK_CFG);
 		return Future.succeededFuture();
 	}
 	
@@ -165,6 +167,15 @@ public class SoileConfigLoader {
 		return userCfg.getString(property);
 	}
 	
+	/**
+	 * Get a property from the Task config.
+	 * @param property - the property to obtain.
+	 * @return the property
+	 */
+	public static String getTaskProperty(String property)
+	{
+		return taskCfg.getString(property);
+	}
 	/**
 	 * Get a property from the Communication config.
 	 * @param property - the property to obtain.

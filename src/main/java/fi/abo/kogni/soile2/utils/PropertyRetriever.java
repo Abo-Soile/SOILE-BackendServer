@@ -11,19 +11,20 @@ import io.vertx.ext.mongo.MongoClient;
  * @author Thomas Pfau
  *
  */
-public class DataRetriever {
+public class PropertyRetriever implements DataRetriever<String, JsonObject> {
 	
 	MongoClient client;
 	String collection;
 	String property;
 	
-	public DataRetriever(MongoClient client, String collection, String targetProperty)
+	public PropertyRetriever(MongoClient client, String collection, String targetProperty)
 	{
 		this.client = client;
 		this.collection = collection;
 		this.property = targetProperty;
 	}
 	
+	@Override
 	public Future<JsonObject> getElement(String UUID)
 	{
 		return client.findOne(collection, new JsonObject().put(property, UUID),null);
@@ -34,6 +35,7 @@ public class DataRetriever {
 		return client.findOne(collection, new JsonObject().put(property, UUID),Fields);
 	}
 
+	@Override
 	public void getElement(String UUID, Handler<AsyncResult<JsonObject>> handler)
 	{
 		client.findOne(collection, new JsonObject().put(property, UUID),null, handler);

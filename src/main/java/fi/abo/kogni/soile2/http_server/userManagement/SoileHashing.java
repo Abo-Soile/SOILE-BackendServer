@@ -23,15 +23,25 @@ public class SoileHashing implements HashingStrategy {
 		this.serverSalt = serverSalt;
 	}
 	
+	private String prefix(String input)
+	{
+		return "S" + input;
+	}
+	
+	private String dePrefix(String prefixedString)
+	{
+		return prefixedString.substring(1);
+	}
+	
 	@Override
 	public String hash(String id, Map<String, String> params, String salt, String password) {
 		password = password + serverSalt;
-		return vertxDefault.hash(id, params, salt, password);
+		return prefix(vertxDefault.hash(id, params, salt, password));
 	}
 
 	@Override
 	public boolean verify(String hash, String password) {		
-		return vertxDefault.verify(hash, password+serverSalt);
+		return vertxDefault.verify(dePrefix(hash), password+serverSalt);
 	}
 
 	@Override
