@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.List;
 
 import fi.abo.kogni.soile2.project.exceptions.InvalidPositionException;
+import fi.abo.kogni.soile2.project.items.ExperimentObjectInstance;
 import fi.abo.kogni.soile2.project.items.ProjectDataBaseObjectInstance;
 import fi.abo.kogni.soile2.project.items.TaskObjectInstance;
 import fi.abo.kogni.soile2.project.participant.Participant;
-import fi.abo.kogni.soile2.project.participant.impl.DBParticipant;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
@@ -88,10 +88,9 @@ public abstract class ProjectInstance {
 			TaskObjectInstance cTask = new TaskObjectInstance((JsonObject)cTaskData, this);
 			elements.put(cTask.getInstanceID(), cTask);
 		}
-		for(Object cTaskData : data.getJsonArray("experiments", new JsonArray()))
+		for(Object cExperimentData : data.getJsonArray("experiments", new JsonArray()))
 		{
-			TaskObjectInstance cExperiment = new TaskObjectInstance((JsonObject)cTaskData, this);
-			elements.put(cExperiment.getInstanceID(), cExperiment);
+			parseExperiment((JsonObject)cExperimentData);
 		}
 		// these are all strings...
 		for(Object o : data.getJsonArray("participants"))
@@ -100,6 +99,26 @@ public abstract class ProjectInstance {
 		}
 	}
 		
+	private void parseExperiment(JsonObject experiment)
+	{
+		ExperimentObjectInstance cExperiment = new ExperimentObjectInstance(experiment, this);
+		elements.put(cExperiment.getInstanceID(), cExperiment);		
+		for(Object cElementData : experiment.getJsonArray("elements", new JsonArray()))
+		{			
+			JsonObject element = (JsonObject)cElementData;
+			switch(element.getString("elementtype"))
+			{
+			case "task": 
+				TaskObjectInstance cTask = new TaskObjectInstance(((JsonObject)cElementData).getJsonObject("data"), this);
+				elements.put(cTask.getInstanceID(), cTask);
+				break;
+			case "experiment":
+				parseExperiment(element);
+				break;
+			}
+		}
+		
+	}
 	/**
 	 * Get the instance ID of this project
 	 * @return the instance ID of this project
@@ -174,12 +193,12 @@ public abstract class ProjectInstance {
 		return elements.get(elementID);
 	}
 
-	public void startProject(DBParticipant user)
+	public void startProject(Participant user)
 	{
 		user.setProjectPosition(start);
 	}
 	
-	public void setNextStep(DBParticipant user)
+	public void setNextStep(Participant user)
 	{
 		ProjectDataBaseObjectInstance current = getElement(user.getProjectPosition());
 		String nextElement = current.nextTask(user);		

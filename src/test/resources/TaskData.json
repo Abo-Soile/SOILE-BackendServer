@@ -2,6 +2,7 @@
 {
 "data": 
 	[
+	
 		{
 			"taskID" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", 
 			"outputdata" : 
@@ -55,6 +56,27 @@
 						}
 					] 
 			}		
+		},
+		{
+			"taskID" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",
+			"outputdata" : 
+			[
+				{
+					"name": "clicktimes",
+					"value" : 0.23
+				}	
+			],
+			"resultdata" :
+			{ 
+				"jsondata":
+					[
+						{
+							"name" : "clicktimes",
+							"value" : 0.23
+						}
+					] 
+			}
 		}
+		
 	]						
 }

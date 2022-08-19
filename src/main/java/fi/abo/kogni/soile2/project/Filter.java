@@ -3,18 +3,13 @@ package fi.abo.kogni.soile2.project;
 import java.util.HashMap;
 
 import fi.aalto.scicomp.mathparser.MathHandler;
-import fi.abo.kogni.soile2.project.participant.impl.DBParticipant;
+import fi.abo.kogni.soile2.project.participant.Participant;
 import io.vertx.core.json.JsonObject;
 
 
 public class Filter {
 	
-	public Filter(String filterExpression)
-	{
-		
-	}
-	
-	public static boolean userMatchesFilter(String Filter, DBParticipant user)
+	public static boolean userMatchesFilter(String Filter, Participant user)
 	{
 		MathHandler handler = new MathHandler();
 		// a positive evaluation will lead to a value of one. 

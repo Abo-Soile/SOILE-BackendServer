@@ -11,13 +11,24 @@
 	{
 		"_id": "testUser2",
 		"project" : "223e4567-e89b-12d3-a456-556642440000",
-		"position" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1",
-		"finished": [],
-		"outputData": [],
+		"position" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",
+		"finished": ["t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1"],
+		"outputData": [
+			{
+				"task": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", 
+				"outputs" : 
+				[
+					{
+						"name" : "smoker",
+						"value" : 0.0
+					}
+				]
+			}
+		],
 		"resultData": []
 	},
 	{
-		"_id": "testUser2",
+		"_id": "testUser3",
 		"position" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",
 		"finished" : 
 			[
@@ -27,7 +38,7 @@
 		"outputData" : 
 		[
 			{
-				"task": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2", 
+				"task": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", 
 				"outputs" : 
 				[
 					{
@@ -55,7 +66,7 @@
 	},
 
 	{
-		"_id": "testUser3",
+		"_id": "testUser4",
 		"position" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",
 		"finished" : 
 			[
@@ -65,7 +76,7 @@
 		"outputData" : 
 		[
 			{
-				"task" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",
+				"task" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1",
 				"outputs" :  [
 					{
 						"name" : "smoker", 

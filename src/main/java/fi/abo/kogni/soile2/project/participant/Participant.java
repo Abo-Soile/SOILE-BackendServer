@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import fi.abo.kogni.soile2.project.instance.ProjectInstance;
+import fi.abo.kogni.soile2.project.items.TaskObjectInstance;
 import fi.abo.kogni.soile2.project.participant.ParticipantManager;
 import fi.abo.kogni.soile2.project.resultDB.ResultDBHandler;
 import fi.abo.kogni.soile2.project.task.TaskFileResult;
@@ -30,7 +31,6 @@ public abstract class Participant {
 	 * This is the _id field from the spec.
 	 */
 	protected String uuid;
-	protected ResultDBHandler resultHandler;
 	protected ProjectInstance project;
 	protected JsonArray finished;
 	protected String position;
@@ -137,7 +137,7 @@ public abstract class Participant {
 	 */
 	public void addOutput(String taskID, String outputName, Number value)
 	{
-		if(outputMap != null)
+		if(outputMap == null)
 		{
 			outputMap = new HashMap<String, Double>();
 			outputMap.put(taskID + "." + outputName, value.doubleValue());		
@@ -236,7 +236,7 @@ public abstract class Participant {
 		JsonArray jsonData = resultData.getJsonArray("jsonData", new JsonArray());
 		if(!jsonData.isEmpty())
 		{
-			resultHandler.createResults(jsonData).onSuccess( id -> 
+			saveJsonResults(jsonData).onSuccess( id -> 
 			{
 				taskData.put("dbData", id);
 				addFileResults(taskData, resultData);
@@ -276,6 +276,19 @@ public abstract class Participant {
 		// All data processed. Save this participant.
 		save();
 	}
+	
+	/**
+	 * Skip a specific task. This is most likely called because a task determined, that this user does not 
+	 * match the filters for it. While the task in question was never the actual current task, and thus won't get any results, 
+	 * it is still finished. 
+	 * @param TaskID
+	 */
+	public void skipTask(TaskObjectInstance task)
+	{
+		// If something is skipped, it will anyways not be recorded, so we don't need to directly save.
+		finished.add(task.getInstanceID());
+	}
+	
 	public JsonArray getFinishedTasks()
 	{
 		return new JsonArray().addAll(finished);
@@ -373,6 +386,12 @@ public abstract class Participant {
 		return current;
 	}
 	
+	public ProjectInstance getProject()
+	{
+		return this.project;
+	}
+	
 	public abstract Future<String> save();
-
+	
+	public abstract Future<String> saveJsonResults(JsonArray results);
 }

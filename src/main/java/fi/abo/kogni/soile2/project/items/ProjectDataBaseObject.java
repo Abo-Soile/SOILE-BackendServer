@@ -9,7 +9,7 @@ import io.vertx.core.json.JsonObject;
 
 public abstract class ProjectDataBaseObject {
 
-	JsonObject data; 	
+	protected JsonObject data; 	
 	
 	public ProjectDataBaseObject(JsonObject data)
 	{

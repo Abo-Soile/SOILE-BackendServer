@@ -34,21 +34,28 @@
 				"random" : true,
 				"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3",
 				"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b6",
-				"tasks": [
+				"elements": [
 							{
-								"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",
-								"UUID": "223e4567-e89b-12d3-a456-556642440001",					
-								"name": "Test1",
-								"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3",
-								"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+								"elementtype" : "task",
+								"data" : {
+									"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",
+									"UUID": "223e4567-e89b-12d3-a456-556642440001",					
+									"name": "Test1",
+									"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3",
+									"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+								}
 							},
 							{
-								"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b5",
-								"UUID": "223e4567-e89b-12d3-a456-556642440002",					
-								"name": "Test2",
-								"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3",
-								"resources": "8701f5772dce42201e3801eefa74c4dc19022e6c",
-								"filter": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2.smoker = 0"
+								"elementtype" : "task",
+								"data" : {
+									"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b5",
+									"UUID": "223e4567-e89b-12d3-a456-556642440002",					
+									"name": "Test2",
+									"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3",
+									"resources": "8701f5772dce42201e3801eefa74c4dc19022e6c",
+									"filter": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = 0",
+									"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+								}
 							}  				
 						],
 				"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
@@ -60,22 +67,28 @@
 				"name" : "TestExperiment2",
 				"random" : false,
 				"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b6",
-				"tasks": [
+				"elements": [
 							{
-								"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b7",
-								"UUID": "223e4567-e89b-12d3-a456-556642440001",					
-								"name": "Test3",
-								"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b8",
-								"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+								"elementtype" : "task",
+								"data" : {							
+									"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b7",
+									"UUID": "223e4567-e89b-12d3-a456-556642440001",					
+									"name": "Test3",
+									"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b8",
+									"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+									}
 							},
 							{
-								"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b8",
-								"UUID": "223e4567-e89b-12d3-a456-556642440002",					
-								"name": "Test4",
-								"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b6",
-								"resources": "8701f5772dce42201e3801eefa74c4dc19022e6c",
-								"filter": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = 1",
-								"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"								
+								"elementtype" : "task",
+								"data" : {							
+									"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b8",
+									"UUID": "223e4567-e89b-12d3-a456-556642440002",					
+									"name": "Test4",
+									"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b6",
+									"resources": "8701f5772dce42201e3801eefa74c4dc19022e6c",
+									"filter": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = 1",
+									"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"								
+									}
 							}  				
 						],
 				"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"

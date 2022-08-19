@@ -5,7 +5,7 @@ import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.project.instance.ProjectInstance;
-import fi.abo.kogni.soile2.project.participant.impl.DBParticipant;
+import fi.abo.kogni.soile2.project.participant.Participant;
 import io.vertx.core.json.JsonObject;
 
 public abstract class ProjectDataBaseObjectInstance extends ProjectDataBaseObject {
@@ -43,6 +43,6 @@ public abstract class ProjectDataBaseObjectInstance extends ProjectDataBaseObjec
 	public void setProject(String project) {
 		data.put("project", project);
 	}
-	public abstract String nextTask(DBParticipant user);
+	public abstract String nextTask(Participant user);
 	
 }
