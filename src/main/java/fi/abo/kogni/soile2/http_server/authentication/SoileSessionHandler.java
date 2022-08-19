@@ -112,5 +112,10 @@ public class SoileSessionHandler implements SessionHandler {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	@Override
+	public Future<Void> flush(RoutingContext ctx, boolean ignoreStatus) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

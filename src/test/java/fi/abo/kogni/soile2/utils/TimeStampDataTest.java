@@ -6,14 +6,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import fi.abo.kogni.soile2.http_server.MongoTestBase;
+import fi.abo.kogni.soile2.VertxTest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 @RunWith(VertxUnitRunner.class)
-public class TimeStampDataTest extends MongoTestBase{
+public class TimeStampDataTest extends VertxTest{
 
 	private String coll = "testCollection";
 	

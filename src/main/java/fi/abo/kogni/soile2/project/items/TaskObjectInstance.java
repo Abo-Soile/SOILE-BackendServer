@@ -1,18 +1,16 @@
 package fi.abo.kogni.soile2.project.items;
 
-import java.util.UUID;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import fi.abo.kogni.soile2.http_server.userManagement.Participant;
 import fi.abo.kogni.soile2.project.Filter;
-import fi.abo.kogni.soile2.project.Project;
+import fi.abo.kogni.soile2.project.instance.ProjectInstance;
+import fi.abo.kogni.soile2.project.participant.impl.DBParticipant;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class TaskObjectInstance extends ProjectDataBaseObjectInstance {	
 	    
-	  public TaskObjectInstance(JsonObject data, Project source)
+	  public TaskObjectInstance(JsonObject data, ProjectInstance source)
 	  {
 		  super(data, source);
 	  }
@@ -37,11 +35,11 @@ public class TaskObjectInstance extends ProjectDataBaseObjectInstance {
 
 
 	@Override
-	public UUID nextTask(Participant user) {
+	public String nextTask(DBParticipant user) {
 		// If the user either already finished this task OR there is a filter and the user does not fulfil it, we skip to the next task.
-		if(user.finished(getInstanceID(), sourceProject.getID()) || getFilter() != null && !Filter.userMatchesFilter(getFilter(), user))
+		if(user.finished(getInstanceID()) || getFilter() != null && !Filter.userMatchesFilter(getFilter(), user))
 		{
-			user.finishElement(getInstanceID(), sourceProject.getID());
+			user.finishCurrentTask();
 			return sourceProject.getElement(getNext()).nextTask(user); 
 		}
 		// otherwise we are here at this task!

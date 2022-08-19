@@ -1,0 +1,1631 @@
+openapi: 3.0.0
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/THOMASPFAU/SoileAPI/1.0.0
+  - description: Soile Backend API
+    url: soile.nbe.aalto.fi
+info:
+  description: This is the Backend API for the Soile webservice.
+  version: "1.0.0"
+  title: Soile Backend API
+  contact:
+    email: thomas.pfau@aalto.fi
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: login
+    description: Anything connected to login and registration
+  - name: project
+    description: Operations associated with a project.
+  - name: exeriment
+    description: Operations associated with experiments
+  - name: user
+    description: Operations associated with user modifications
+  - name: task
+    description: Operations associated with Task operations including requests for task ressources etc.
+paths:
+  /register:
+    post:
+      tags: 
+        - login 
+      summary: Register a new user. 
+      operationId: addUser
+      description: Create a new user for the platform. 
+      responses:
+        '201':
+          description: User created
+        '400':
+          description: bad input. Can be user already exists, email already exists or similar.
+        '409':
+          description: User (or email) already exists in the user database. 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        description: The data for the user to be created (at least, username, password and email are required necessary).          
+  /test/auth:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags: 
+        - login 
+      summary: Test whether the login is successfull, if successfull indicates the authenticated user.
+      operationId: testAuth
+      responses:
+        '200':
+          description: User authenticated successfully
+          content: 
+            application/json:
+                schema:
+                  type: object
+                  properties:
+                    authenticated: 
+                      type: boolean
+                      description: true if authenticated, false if not.
+                    user: 
+                      type: string
+        '401':
+          description: No user authenticated
+  /login:
+    post:
+      tags: 
+        - login 
+      summary: Login as a user
+      operationId: loginUser
+      description: Log in as a user, receive an access token.
+      responses:
+        '200':
+          $ref: '#/components/responses/LoginSuccessful'     
+        '400':
+          description: bad input parameter
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+                type: object
+                properties:
+                  username: 
+                    type: string
+                    description: the username
+                  password: 
+                    type: string
+                    description: the password
+                  remember:
+                    type: string
+                    description: whether to create a cookie to remember the login for more than a session.. has to be "1" or "0"
+                    example: "1"
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: 
+                  type: string
+                  description: the username
+                password: 
+                  type: string
+                  description: the password
+                remember:
+                  type: string
+                  description: whether to create a cookie to remember the login for more than a session.. has to be "1" or "0"
+                  example: "1"
+        description: Login Data, containing username and password in the same schema as the User. 
+        
+  /user/list:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - user
+      summary: Get a list of users
+      operationId: listUsers
+      description: |
+        Get a list of users with properties and users listed depending on the level of access of the request
+      parameters:
+        - in: query
+          name: searchString
+          description: pass an optional search string for looking up users
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: skip
+          description: number of records to skip for pagination
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+        - in: query
+          name: limit
+          description: maximum number of records to return
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 50
+      responses:
+        '200':
+          description: search results matching criteria, content depends on the access level of the request.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: bad input parameter
+  /user/create:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - user
+      summary: Create a user
+      operationId: createUser
+      description: Adds a user to the system
+      responses:
+        '201':
+          description: User created
+        '400':
+          description: 'invalid input, object invalid'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          $ref: '#/components/responses/UserExists'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        description: The data for the user to be created (at least, username, password and email are required necessary).
+  /user/delete:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - user
+      summary: Create a user
+      operationId: removeuser
+      description: Remove a user from the system. Must either be requested by the user or an authorized user.
+      responses:
+        '202':
+          description: User deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/UserDoesNotExist'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        description: Body only needs to contain the username to delete.
+  /user/info:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - user
+      summary: Get details of a user
+      operationId: getUserInfo
+      description: Get the details of a user (not the password obviously).
+      parameters:
+        - name: username
+          in: query
+          required: true
+          description: Username for which info is requested
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: The details of the user, no password is supplied... 
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/UserDoesNotExist'
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - user
+      summary: Get details of a user
+      operationId: setUserInfo
+      description: Set the details of a user.
+      parameters:
+        - name: username
+          in: query
+          required: true
+          description: Username for which info is requested
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: The details of the user, no password is supplied... 
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/UserDoesNotExist'
+  /user/activate:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - user
+      summary: Activate a user account.
+      operationId: activateUser
+      description: Activate a user account. this is only necessary if this is a self-registered, non participant account.
+      responses:
+        '200':
+          description: User activated
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/UserDoesNotExist'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        description: Body only needs to contain the username to activate.
+  /user/setaccess:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - user
+      summary: Set the access groups of a user account. 
+      operationId: permissionOrRoleChange
+      description: Set the roles and permissions of a user account. Admins can set all groups/permissions, users can set permissions for Experiments they own.
+      responses:
+        '200':
+          description: Roles updated
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: 'User has no authorization to make this call'
+        '410':
+          $ref: '#/components/responses/UserDoesNotExist'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: 
+                - command
+                - username
+              properties:
+                username:
+                  type: string
+                  example: MyUser
+                  description: Must not include any @ symbols
+                command:
+                  type: string
+                  example: 'setCommand'
+                  description: the type of change. setCommand will replace any permissions currently present, addCommand will add permissions, removeCommand will remove them.
+                roles:
+                  type: array
+                  items:
+                    type: string
+                    example: "Admin"
+                permissions:
+                  type: array
+                  items:
+                    type: string
+                    example: "d290f1ee-6c54-4b01-90e6-d701748f0851Read"
+        description: With command set to setCommand, body needs both permissions and roles and will replace permissions, if the requestor has the permissions to do so.
+                     With add/delete Command only the added or deleted Roles/permissions need to be supplied.
+  /user/getaccess:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - user
+      summary: Get the permissions of a specified user. 
+      operationId: permissionOrRoleRequest
+      description: Get the permissions of a specified user.
+      parameters:
+        - name: username
+          in: query
+          required: true
+          description: Username for which info is requested
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          $ref: '#/components/responses/RolesOfUser'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/UserDoesNotExist'
+  /task/list:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Get a list of all tasks.
+      operationId: getTaskList
+      description: Get a list of all public tasks, a task could be private, in which case it is only shown, if the user has access.
+      responses:
+        '200':
+          description: A List of tasks, with names and IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectList'      
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+  /task/{id}/list:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Get a list of all tagged versions of a specific task
+      operationId: getVersionsForTask
+      description: Get a list of all tagged versions of a task, a task could be private, in which case access can be denied
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task for which versions are requested
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: A List of tasks versions, with Tags and Date information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectVersions'
+                
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist' 
+  /task/create:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Create a new task
+      operationId: createTask
+      description: Create a new empty task and get a UUID as well as an initial version for it.
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: UUID of the task
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: New Task created
+          content:
+            application/json:
+              schema:
+                 $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+  /task/{id}/{version}/:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Get the specified task at the specified version
+      operationId: getTask
+      description: Get the specifications of a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task
+          schema:
+            type : string
+            minimum: 1
+        - name: version
+          in: path
+          required: true
+          description: version of the requested task, can be either a tag or a commit id
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: The task specification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'  
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Update a Task 
+      operationId: updateTask
+      description: Updates the task with the provided code. 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task
+          schema:
+            type : string
+            minimum: 1
+        - name: version
+          in: path
+          required: true
+          description: version of the task to update
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          $ref: '#/components/responses/ObjectUpdated'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'  
+      requestBody:
+        content:
+          application/json:
+            schema:
+             $ref: '#/components/schemas/Task'
+        description: In addition to the required fields, this submission also needs a tag. Otherwise the only way to obtain this version again is by providing the returned version id.
+        
+  /task/{id}/{version}/resource/{file}:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Get the specified resource for the task at the given version
+      operationId: getResource
+      description: Get a resource from a task. 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task
+          schema:
+            type : string
+            minimum: 1
+        - name: version
+          in: path
+          required: true
+          description: version of the requested task, can be either a tag or a commit id
+          schema:
+            type : string
+            minimum: 1
+        - name: file
+          in: path
+          required: true
+          description: The file requested (simple filename request)
+          schema:
+            type : string
+            minimum: 1
+          example: "car.png"
+      responses:
+        '200':
+          description: The requested file, headers set according to the file name/type. 
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'   
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Put a resource to a task at a specific version
+      operationId: putResource
+      description: Update or add a file to te current 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task
+          schema:
+            type : string
+            minimum: 1
+        - name: version
+          in: path
+          required: true
+          description: version of the requested task, can be either a tag or a commit id
+          schema:
+            type : string
+            minimum: 1
+        - name: file
+          in: path
+          required: true
+          description: The file requested (simple filename request)
+          schema:
+            type : string
+            minimum: 1
+          example: "car.png"
+      responses:
+        '200':
+          $ref: '#/components/responses/ObjectUpdated'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'  
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+
+
+  /project/list:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Get a list of all projects.
+      operationId: getProjectList
+      description: Get a list of all projects which you have general access to.
+      responses:
+        '200':
+          description: A List of Projects, with names and IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+          
+  /project/{id}/list:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Get a list of all versions of a specific Project
+      operationId: getVersionsForProject
+      description: Get a list of all Versions of a Project, can be denied if no access to project.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task for which versions are requested
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: A List of project versions, with Tags and Date information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectVersions'    
+                
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'  
+  /project/create:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Create a new task
+      operationId: createProject
+      description: Create a new empty task and get a UUID as well as an initial version for it.
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: UUID of the task
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: New Project created providing a UUID. 
+          content:
+            application/json:
+              schema:
+                 $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+  /project/{id}/{version}/:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Get the specified Project at the specified version
+      operationId: getProject
+      description: Get a project at the specified version (commonly latest).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task
+          schema:
+            type : string
+            minimum: 1
+        - name: version
+          in: path
+          required: true
+          description: version of the requested task, can be either a tag or a commit id or latest, which would refer to the latest commit. 
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: The task specification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist' 
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Update a Project 
+      operationId: updateProject
+      description: Updates the The project with the provided 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+            minimum: 1
+        - name: version
+          in: path
+          required: true
+          description: version of the project to update, this will make this version the latest version.
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          $ref: '#/components/responses/ObjectUpdated'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist' 
+      requestBody:
+        content:
+          application/json:
+            schema:
+             $ref: '#/components/schemas/Task'
+        description: In addition to the required fields, this submission also needs a tag. Otherwise the only way to obtain this version again is by providing the returned version id.
+  /project/{id}/data/list:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Get a list of result data downloadable for the specific experiment
+      operationId: getDataList
+      description: "Get a list of all data that is available for an object. There are multiple different pieces of data, which can be available and which will be listed, that include: 1. Form-Data, which is all data that can be directly obtained from questionaires clicks etc (i.e. any small-scale data). 2. Video data, for each participant. 3. Audio Data for each participant. 4. binary data for each participant (in whichever format it was stored in). Data is associated with tasks in the experiment."
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: A json containing identifiers for all data in the experiment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataScheme'    
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+  /project/{projectid}/data:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Get the result data for a project  
+      operationId: getProjectResults
+      description: "This is the general access point for data retrieval for projects. A simple request without any body will generate one huge tar file with all data while individual files can be requested using the same scheme as returned under the   /project/{id}/data/list endpoint. This post will return an ID that can then be downloaded via /project/{projectid}/download/{downloadid}, where a tar file is waiting for download."
+      parameters:
+        - name: projectid
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: a json containing the download ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  downloadID: 
+                    type: string
+                    description: An id that can be used with the /project/{projectid}/download/{downloadid} endpoint. Has to have the form of a uuid
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call        
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataScheme'    
+        description: This can be an empty body, then the whole data is requested.  
+  /project/{projectid}/download/{downloadid}:  
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Download the collected results from a request.
+      operationId: downlodResults
+      description: "This request will make a zipped data file available for download. NOTE: Upon request, the file might not exist yet, and is just being created. Files will be cleared reguarily to avoid massive buildup of intermediary tar files."
+      parameters:
+        - name: projectid
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+            minimum: 1
+        - name: downloadid
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+            minimum: 1            
+      responses:
+        '200':
+          description: A tar file containing the requested data
+          content:
+            application/tar:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call                     
+  /project/{projectid}/submit:  
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: submit data for the current task of the authorized user in the project
+      operationId: submitJob
+      description: "Submit results for a job using a json, containing both output data and result data. Result data needs to point to file ids generated from the uploaddata endpoint or be contained in a flat json object depth 1). Output data needs to be provided in a flat json object as well."
+      parameters:
+        - name: projectid
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: Submission succesful
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call            
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskData'
+  /project/{projectid}/getTask:  
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Get the Current Task for the authorized user within the project
+      operationId: getCurrentTask
+      description: "Get the ID of the current task for the authorized user."
+      parameters:
+        - name: projectid
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: Submission succesful
+          content:
+            application/json:
+              schema:
+                type: string
+                description: the ID of the current task to be used. Has to have the form of a uuid
+                
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call            
+  /project/{projectid}/uploaddata:  
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Upload large result data for a project
+      operationId: uploaddata
+      description: "Upload large content for a project, e.g. audio or video files. "
+      parameters:
+        - name: projectid
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: Upload finished successfully
+          content:
+            application/json:
+              schema:
+                type: string
+                description: the UUID of the uploaded file to be resupplied to /project/{projectid}/submit. Has to have the form of a uuid
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call            
+      requestBody:
+        content:
+          application/binary:
+            schema:
+              type: string
+              format: binary
+              description: the file to upload
+  /experiment/list:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - experiment
+      summary: Get a list of all experiments.
+      operationId: getExperimentList
+      description: Get a list of all experiments which you have general access to.
+      responses:
+        '200':
+          description: A List of experiments, with names and IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectList'    
+                
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+          
+  /experiment/{id}/list:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - experiment
+      summary: Get a list of all versions of a specific experiment
+      operationId: getVersionsForExperiment
+      description: Get a list of all Versions of a experiment, can be denied if no access to experiment.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task for which versions are requested
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: A List of experiment versions, with Tags and Date information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectVersions'    
+                
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'
+  /experiment/create:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - experiment
+      summary: Create a new task
+      operationId: createExperiment
+      description: Create a new empty task and get a UUID as well as an initial version for it.
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: UUID of the task
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: New Task created providing a UUID. 
+          content:
+            application/json:
+              schema:
+                 $ref: '#/components/schemas/Experiment'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+          
+  /experiment/{id}/{version}/:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - experiment
+      summary: Get the specified experiment at the specified version
+      operationId: getExperiment
+      description: Get a experiment at the specified version (commonly latest).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task
+          schema:
+            type : string
+            minimum: 1
+        - name: version
+          in: path
+          required: true
+          description: version of the requested experiment, can be either a tag or a commit id or latest, which would refer to the latest commit.
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: The task specification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Experiment'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - experiment
+      summary: Update a experiment 
+      operationId: updateExperiment
+      description: Updates the The experiment with the provided 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the experiment
+          schema:
+            type : string
+            minimum: 1
+        - name: version
+          in: path
+          required: true
+          description: version of the experiment to update, this will make this version the latest version.
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          $ref: '#/components/responses/ObjectUpdated'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'
+      requestBody:
+        content:
+          application/json:
+            schema:
+             $ref: '#/components/schemas/Experiment'
+        description: In addition to the required fields, this submission also needs a tag. Otherwise the only way to obtain this version again is by providing the returned version id.          
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - username
+      properties:
+        id:
+          type: string
+          description: The unique id of this user. Has to have the form of a uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        username:
+          type: string
+          example: MyUser
+          description: Must not include any @ symbols
+        fullname:
+          type: string
+          example: Jon Doe
+        password:
+          type: string
+          example: '****sss***'
+        email:
+          type: string
+          example: 'me@domain.org'
+          description: must be a valid email address
+        roles:
+          type: array
+          items: 
+            type: string
+        permissions:
+          type: array
+          items: 
+            type: string
+        participantIn:
+          type: array
+          items:
+            type: object
+            properties:
+              uuid: 
+                type: string
+                description: the uuid of the project. Has to have the form of a uuid
+              participantID:
+                type: string
+                description: The users ID within a Project. Has to have the form of a uuid
+    Participant:
+      description: An Entry in this database represents one participant in one project.
+                   Data relevant for this project is stored in each document e.g. the position in the project, data from the project etc. 
+      type: object
+      properties:
+        uuid: 
+          type: string
+          description: The UUID of this participant. Has to have the form of a uuid
+        position: 
+          type: string
+          description: the uuid of the element in the project this user is currently at. Has to have the form of a uuid
+          default: the project uuid if the user just started.
+        finished: 
+          type: array
+          items:
+            type: string
+            description: uuids of all tasks already finished in this project.
+        outputdata: 
+          type: array
+          items:
+            type: object
+            properties:
+              task: 
+                type: string
+                description: The task for which data is being stored. Contains one entry for each defined output of a task.
+              outputs:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name: 
+                      type: string
+                      description: the name of the output, the format is "[0-9A-Za-z]+"
+                      example: "smoker"
+                    value:
+                      type: number
+                      description: The value of an output of the task this is under.
+        resultdata: 
+          type: array
+          description: an array of output data. 
+          items:
+            type: object
+            description: The task for which data is being stored. Data from this task.  
+            properties:
+              task: 
+                type: string
+                description: " Has to follow the format t[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]"
+              data:
+                type: array
+                items:
+                  type: object
+                  required: 
+                    - name
+                    - resultType
+                    - target
+                  properties: 
+                    name:
+                      type: string
+                      description: The name of the result, the format is "[0-9A-Za-z]+"
+                    resultType: 
+                      type: string
+                      description: Must be either "db" or "file"
+                    fileformat:
+                       type: string
+                       description: The file format of the stored file.
+                    id:
+                       type: string
+                       description: The ID of the file or data (if it's a db entry, this is the UUID of the data in the mongo db)
+    TaskData:
+      type: object
+      required:
+        - resultdata
+        - outputdata
+      description: Data sumitted for a specific task. 
+      properties:
+        outputdata:
+          type: array
+          description: Output data according to each task. fields are task names following the scheme 't[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]'.
+                       which are themselves objects, which have fields representing output names. Unfortunately OpenAPI 3.0.0 does not yet allow patternproperties, 
+                       so the actual def is commented below 
+          items:
+            type: object
+            properties:
+              task:
+                type: string
+                description:  The format needs to follow the scheme 't[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]'
+              taskData:
+                type: array
+                description: Tha data for the task containing objects with two fields, name and data
+                items:
+                  type: object
+                  properties:
+                    name: 
+                      type: string
+                      description: the name of the output format is  '[0-9A-Za-z]+'
+                    value:
+                      type: number
+                      description: The value of an output of the task this is under. 
+        resultdata:
+          type: array
+          description: An array of objects with one entry per task
+          items: 
+            type: object
+            properties:
+              taskname:
+                type: string
+                description: The name of the task this resultobject refers to. The task id has the form 't[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]'
+              taskdata:
+                type: array
+                items: 
+                  type: object
+                  required: 
+                    - format
+                    - data
+                  properties: 
+                    format: 
+                      type: string
+                      description: the format (json or file) of the result, db indicates data json
+                    data: 
+                      type: object
+                      properties:
+                        filename: 
+                          type: string
+                          description: "the data submitted in the results. If format is file the fields filename, fileid and fileformat must be set. if format is json, this is a json object of depth 1, i.e. only strings, or numbers are allowed as fields entries in the object. The field names however are freely choosable."
+                        fileformat:
+                          type: string
+                          description: optional field available for files to indicate the type of the file stored.
+                        fileid:
+                          type: string
+                          description: optional field available for files to indicate the id a file has been assigned to.
+    Task:
+      type: object
+      required:
+        - UUID
+        - version
+      properties:
+        UUID:
+          type: string
+          description: Has to have the form of a uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        name:
+          type: string
+          example: Observation Task
+        codetype:
+          type: string
+          example: qlang
+          description: What kind of code this task has, either elang (soile experiment language), qlang (soile questionaire language), or (PsychoPy)javascript
+        code:
+          type: string
+          example: "... Multiline actual code ..."
+          description: The code of this task. 
+        resources:
+          type: array
+          items: 
+            type: string
+            example: "images/apple.jpg"
+          description: names of resources used in this task. This will be used based on the task UUID and version to obtain the correct files.
+        version:
+          type: string
+          description: This is the version (in form of a githash) of this task
+          example: dd6de3fddf28e769ef80808db277608ae9b76ead
+        next:
+          type: string
+          example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
+          description: Which element to perform after this task, cannot point back to itself! And will only be present in instances not in the generation step. This has the same
+            This will need to opint to an instanceID of another task or experiment.
+        project:
+          type: string
+          example: d290f1ee-6c54-4b01-90e6-c701748f0851
+          description: The project this task belongs to. Has to have the form of a uuid
+        instanceID:
+          type: string
+          example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
+          description: The Unique ID of this task within its project. This is a string of the form "t + sha256"
+        filter:
+          type: string
+          example: Task1.output1 * Task2.output2 > 4
+          description: A Filter that indicates whether this task will be run. Must refer to output elements specified in other Tasks. This must be a valid mathematical formula that can be parsed. 
+        outputs:
+          type: array
+          items:
+            type: string
+            example: output1
+          description: All outputs that this task provides which should be available for filtering outside this task within its project. Must be outputs generated in this task!
+        tag:
+          type: string
+          description: A Tag for this version, will be used to retrieve actual versions of the task. Must be a valid github tag id
+      description: A Task is the smallest unit within a project and commonly specifies a questionaire or test like e.g. a reaction test. The optional fields are required if the task is an instance within an experiment. The required fields only represent the task template as stored in the task database.
+    Experiment:
+      type: object
+      properties:
+        UUID: 
+          type: string
+          description: Has to have the form of a uuid
+        tasks:
+          type: array
+          items:
+              $ref: '#/components/schemas/Task'
+          description: Instances of tasks, need to have instance IDs etc pp project back-reference, etc. 
+        experiments:
+          type: array
+          items:
+              $ref: '#/components/schemas/Experiment'
+          description: Instances of experiments within this experiment. Only one level of Recursion is allowed. 
+        next: 
+          type: string
+          description: instanceID of a task, experiment that follows this node. if not present, this is the last entry.
+        instanceID:
+          type: string
+          example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
+          description: The Unique ID of this experiment within its project (for instances).  This is a string of the form "t + sha256"
+    Project:
+      type: object
+      properties:
+        UUID: 
+          type: string
+          description: Has to have the form of a uuid
+        name: 
+          type: string
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+          description: Instances of tasks, need to have instance IDs etc pp project back-reference, etc. 
+        experiments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Experiment'
+          description: Instances of experiments, need to have instance IDs etc pp project back-reference, etc. 
+        start:
+          type: string
+          example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
+          description: the initial experiment or Task for this project, must be the instanceID of the task or Experiment
+        private:
+          type: boolean
+          description: Whether this project is visible to non-members.
+        version:
+          type: string
+          description: This is the version in form of a git hash of this Project
+    ObjectVersions:
+      type: array
+      items:
+        type: object
+        properties:
+          tag: 
+            type: string
+          date:
+            type: string
+            example: "2022-07-06T18:22"
+    ObjectList:
+      type: array
+      items:
+        type: object
+        properties:
+          uuid: 
+            type: string
+            description: Has to have the form of a uuid
+          name:
+            type: string
+    DataScheme:
+      type: object
+      properties:
+        tasks:
+          type: array
+          items:
+            type: object
+            properties:
+              taskID:
+                type: string
+                description: this is the UUID of the specified task WITHIN the Project. It is NOT the UUID of the task in the task library!
+              dataType:
+                type: string
+                example: video, audio, data
+              participantData:
+                type: array
+                items: 
+                  type: object
+                  required:
+                    - id
+                    - dataID
+                  properties:
+                    id: 
+                      type: string
+                      description: participant ID in this project
+                    dataID: 
+                      type: string
+                      description: Has to have the form of a uuid
+  securitySchemes:
+    JWTAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: SoileAuthCookie
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid      
+    UserExists:  
+      description: User already exists
+      content:
+        application/json:
+          schema:
+            type: object
+            properties: 
+              reason:
+                type: string
+                example: 'Username already exists'  
+    LoginSuccessful:
+      description: Successfull Login, Authentication information is supplied both in a cookie and a JWT Token. Cookie if the user requests to stay logged in. 
+      headers:
+        Set-Cookie:
+          schema:
+            type: string
+            example: SoileAuthCookie='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties: 
+              Token:
+                type: string
+                example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+    UserDoesNotExist:
+      description: User does not exist
+      content:
+        application/json:
+          schema:
+            type: object
+            properties: 
+              reason:
+                type: string
+                example: 'Specified user does not exist'
+    ResourceDoesNotExist:
+      description: Requested resource does not exist (invalid version or uuid)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties: 
+              reason:
+                type: string
+                example: 'The requested task/project/experiment or the specified version does not exst'                
+    RolesOfUser:
+      description: Roles of a user
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+                example: MyUser
+                description: Must not include any @ symbols
+              roles:
+                type: array
+                items:
+                  type: string
+                  example: "Admin"
+              permissions:
+                type: array
+                items:
+                  type: string
+                  example: "d290f1ee-6c54-4b01-90e6-d701748f0851Read/Write/Owner"
+    ObjectUpdated:
+      description: Update of Object successful, providing new version gitid.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              version: 
+                type: string
+                description: the new version id of the updated Object. This will be a git commit hash.

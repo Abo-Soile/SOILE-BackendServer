@@ -1,0 +1,107 @@
+
+{"data": [
+	{
+		"_id": "testUser1",
+		"project" : "223e4567-e89b-12d3-a456-556642440000",
+		"finished": [],
+		"outputData": [],
+		"resultData": []
+
+	},
+	{
+		"_id": "testUser2",
+		"project" : "223e4567-e89b-12d3-a456-556642440000",
+		"position" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1",
+		"finished": [],
+		"outputData": [],
+		"resultData": []
+	},
+	{
+		"_id": "testUser2",
+		"position" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",
+		"finished" : 
+			[
+				"t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1",
+				"t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2"							
+			],	
+		"outputData" : 
+		[
+			{
+				"task": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2", 
+				"outputs" : 
+				[
+					{
+						"name" : "smoker",
+						"value" : 1.0
+					}
+				]
+			}
+		],
+		"resultData" :
+		[
+			{
+				"task" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",
+				"dbData" : "1",
+				"fileData": 
+				[
+					{
+						"targetid" : "abcde",
+						"fileformat" : "jpg",
+						"filename" : "Output"
+					}
+				]
+			}
+		]						
+	},
+
+	{
+		"_id": "testUser3",
+		"position" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",
+		"finished" : 
+			[
+				"t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1",
+				"t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2"							
+			],	
+		"outputData" : 
+		[
+			{
+				"task" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",
+				"outputs" :  [
+					{
+						"name" : "smoker", 
+						"value" : 1.0
+					}
+				]
+			},
+			{
+				"task" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3",
+				"outputs" : 
+				[
+					{
+						"name" : "output1",
+						"value"  : 1.0
+					},
+					{
+						"name" : "output2",
+						"value" : 1.0
+					}
+				]
+			},
+			{
+				"task" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",
+				"outputs" : 
+				[
+					{
+						"name" : "output3",
+						"value" : 7.0
+					},
+					{
+						"name" : "output4",
+						"value" : 12.0
+					}
+				]
+			}
+		]
+	}						
+]
+}

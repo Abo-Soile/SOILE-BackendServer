@@ -9,11 +9,11 @@ public class CookieStrategy {
 	
 	public static String getUserNameFromCookieContent(String content)
 	{
-		return content.split(":",1)[0];
+		return content.split(":",2)[0];
 	}
 	
 	public static String getTokenFromCookieContent(String content)
 	{
-		return content.split(":",1)[1];
+		return content.split(":",2)[1];
 	}
 }

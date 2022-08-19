@@ -4,40 +4,34 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import fi.abo.kogni.soile2.http_server.userManagement.Participant;
-import fi.abo.kogni.soile2.project.Project;
+import fi.abo.kogni.soile2.project.instance.ProjectInstance;
+import fi.abo.kogni.soile2.project.participant.impl.DBParticipant;
 import io.vertx.core.json.JsonObject;
 
 public abstract class ProjectDataBaseObjectInstance extends ProjectDataBaseObject {
 
-	Project sourceProject;
-	public ProjectDataBaseObjectInstance(JsonObject data, Project source)
+	ProjectInstance sourceProject;
+	public ProjectDataBaseObjectInstance(JsonObject data, ProjectInstance source)
 	{
 		super(data);
 		this.sourceProject = source; 
 	}
 	
 	@JsonProperty("next")
-	public UUID getNext() {
-		return UUID.fromString(data.getString("next"));
-	}
-	public void setNext(UUID next) {
-		data.put("next", next.toString());
+	public String getNext() {
+		return data.getString("next");
 	}
 	public void setNext(String next) {
 		data.put("next", next);
 	}
 	@JsonProperty("instanceID")
-	public UUID getInstanceID() {
-		return UUID.fromString(data.getString("instanceID"));
-
-	}
-	public void setInstanceID(UUID instanceID) {
-		data.put("instanceID", instanceID.toString());
+	public String getInstanceID() {
+		return data.getString("instanceID");
 	}
 	public void setInstanceID(String instanceID) {
 		data.put("instanceID", instanceID);
 	}
+
 
 	@JsonProperty("project")
 	public UUID getProject() {
@@ -49,6 +43,6 @@ public abstract class ProjectDataBaseObjectInstance extends ProjectDataBaseObjec
 	public void setProject(String project) {
 		data.put("project", project);
 	}
-	public abstract UUID nextTask(Participant user);
+	public abstract String nextTask(DBParticipant user);
 	
 }

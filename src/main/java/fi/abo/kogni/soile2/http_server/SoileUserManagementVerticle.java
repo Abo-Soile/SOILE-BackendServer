@@ -73,6 +73,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		vertx.eventBus().consumer(getEventbusCommandString("permissionOrRoleChange"), this::permissionOrRoleChange);		
 		vertx.eventBus().consumer(getEventbusCommandString("setUserFullNameAndEmail"), this::setUserFullNameAndEmail);
 		vertx.eventBus().consumer(getEventbusCommandString("getUserData"), this::getUserData);
+		LOGGER.debug("Reistering eventbus consumer for:" + getEventbusCommandString("checkUserSessionValid")); 
 		vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid);
 		vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession);
 		vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession);
@@ -102,17 +103,19 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		{
 			JsonObject command = (JsonObject)msg.body();			
 
-			
+			LOGGER.debug("Trying to save a session with the following data: \n" + command.encodePrettily());
 			userManager.addUserSession(command.getString(getCommunicationField("usernameField"))
-												  ,sessionFields.getString("sessionID")
+												  ,command.getString(getCommunicationField("sessionID"))
 												  ,res ->
 			{
 				if(res.succeeded())
 				{
+					LOGGER.debug("Adding Session suceeded");
 					msg.reply(SoileCommUtils.successObject());
 				}
 				else
 				{
+					LOGGER.debug("Adding Session Failed: " + res.cause().getMessage());
 					msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, res.cause().getMessage());						
 				}
 			});
@@ -147,7 +150,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			JsonObject command = (JsonObject)msg.body();			
 			
 			userManager.removeUserSession(command.getString(getCommunicationField("usernameField"))
-												  ,sessionFields.getString("sessionID")
+												  ,command.getString(getCommunicationField("sessionID"))
 												  ,res ->
 			{
 				if(res.succeeded())
@@ -170,7 +173,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 * Test whether a given session is still valid for a given user.
 	 * {
 	 *  <usernameField> : username,
-	 *  <userTypeField> : userType,
 	 *  <sessionID> : sessionID,
 	 *  }
 	 *  I the session is valid the result will be a json with   
@@ -192,27 +194,31 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 */
 	void isSessionValid(Message<Object> msg)
 	{
+		LOGGER.debug("Got a request for a session validation");
 		if (msg.body() instanceof JsonObject)
 		{
 			JsonObject command = (JsonObject)msg.body();						
-			
+			LOGGER.debug("Checking, whether a session is valid:" + command.encodePrettily());
 			userManager.isSessionValid(command.getString(getCommunicationField("usernameField"))
-												  ,getCommunicationField("userTypeField")
+												  ,command.getString(getCommunicationField("sessionID"))
 												  ,res ->
 			{
 				if(res.succeeded())
 				{
 					if(res.result())
-					{						
+					{		
+						LOGGER.debug("Session Valid. Replying accordingly");
 						msg.reply(SoileCommUtils.successObject().put(sessionFields.getString("sessionIsValid"), true));
 					}
 					else
 					{
+						LOGGER.debug("Session no longer valid.");
 						msg.fail(HttpURLConnection.HTTP_UNAUTHORIZED, "Session not valid");
 					}
 				}
 				else
 				{
+					LOGGER.error(res.cause().getMessage() ) ;
 					msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, "Session could not be validated " +  res.cause().getMessage());						
 				}
 			});
@@ -271,10 +277,10 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			
 			//LOGGER.debug("Verticle: Creating user");
 			userManager.createUser(command.getString(getCommunicationField("usernameField")),
-					command.getString(getCommunicationField("passwordField"))).onSuccess(id ->
-				{
-
-				});
+					command.getString(getCommunicationField("passwordField")), res -> 
+			{
+				//TODO: Implement				
+			});
 		}
 	}
 	
@@ -299,8 +305,8 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			
 			//LOGGER.debug("Verticle: Creating user");
 			userManager.createUser(command.getString(getCommunicationField("usernameField")),
-					command.getString(getCommunicationField("passwordField"))).onComplete(
-					id -> {
+					command.getString(getCommunicationField("passwordField")), id -> 
+					{
 						// do this only if the user was created Successfully
 						if(id.succeeded()) {
 							LOGGER.debug("User created successfully");
@@ -468,7 +474,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 							}
 							else
 							{
-
 
 								msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, "Something went wrong when setting username and email: " +  res.cause().getMessage());
 							}

@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import fi.abo.kogni.soile2.VertxTest;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
@@ -22,7 +23,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
  * Unit tests for the User Management code (i.e. permission setting/removing, user addition etc pp)
  */
 @RunWith(VertxUnitRunner.class)
-public class SoileUserManagementTest extends MongoTestBase{
+public class SoileUserManagementTest extends VertxTest{
 
 	String getCommand(String commandString)
 	{

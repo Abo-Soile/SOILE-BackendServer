@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
+import fi.abo.kogni.soile2.http_server.authentication.SoileCookieCreationHandler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Vertx;
 import io.vertx.ext.auth.KeyStoreOptions;
@@ -19,35 +20,34 @@ public class SoileAuthenticationHandler {
 	
 	private static JWTAuth authProvider;
 	private static SimpleAuthenticationHandler cookieHandler;
-	
-	public synchronized static JWTAuth getAuthProvider(Vertx vertx)
+	public synchronized static JWTAuth getJWTAuthProvider(Vertx vertx)
 	{
 		if(authProvider == null)
 		{
 			JWTAuthOptions config = new JWTAuthOptions()
 										.setKeyStore(new KeyStoreOptions()
-										.setPath("jwtstore.jceks")
+										.setPath("soile.jceks")
 										.setPassword(SoileConfigLoader.getServerProperty("jwtStoreSecret")));
 			authProvider = JWTAuth.create(vertx, config);
 		}
 		return authProvider;
 	}
 	
-	public synchronized static SimpleAuthenticationHandler getCookieAuthProvider(Vertx vertx, MongoClient client)
+	public synchronized static SimpleAuthenticationHandler getCookieAuthProvider(Vertx vertx, MongoClient client, SoileCookieCreationHandler cookieCreationHandler)
 	{
 		if(cookieHandler == null)
 		{		
 			cookieHandler = SimpleAuthenticationHandler.create();
-			SoileCookieAuth soileHandler = new SoileCookieAuth(vertx, client);
+			SoileCookieAuth soileHandler = new SoileCookieAuth(vertx, client, cookieCreationHandler);
 			cookieHandler.authenticate(soileHandler::authenticate);		
 		}
 		return cookieHandler;
 	}	
 	
-	public static ChainAuthHandler create(Vertx vertx, MongoClient client)
+	public static ChainAuthHandler create(Vertx vertx, MongoClient client, SoileCookieCreationHandler cookieCreationHandler)
 	{			
-		JWTAuthHandler jwtAuth = JWTAuthHandler.create(getAuthProvider(vertx));	
-		ChainAuthHandler handler = ChainAuthHandler.any().add(getCookieAuthProvider(vertx, client)).add(jwtAuth);
+		JWTAuthHandler jwtAuth = JWTAuthHandler.create(getJWTAuthProvider(vertx));	
+		ChainAuthHandler handler = ChainAuthHandler.any().add(getCookieAuthProvider(vertx, client, cookieCreationHandler)).add(jwtAuth);
 		return handler;
 	}
 }

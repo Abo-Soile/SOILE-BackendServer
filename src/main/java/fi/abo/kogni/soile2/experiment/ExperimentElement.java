@@ -17,7 +17,7 @@ public interface ExperimentElement {
 		case Questionaire:
 			return new Questionaire(UUID);
 		case Task:
-			return new Task(UUID);
+			return null;
 		case Experiment:
 			return null;
 		}	

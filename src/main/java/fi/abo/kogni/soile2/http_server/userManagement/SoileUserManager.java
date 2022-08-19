@@ -46,8 +46,6 @@ public class SoileUserManager implements MongoUserUtil{
 	private final MongoAuthenticationOptions authnOptions;
 	private final MongoAuthorizationOptions authzOptions;
 	private final String hashingAlgorithm;
-	private JsonObject userManagerconfig;
-	// We only keep a session valid for at most 30 days before a new logon is required.
 	public static enum PermissionChange{
 		Remove,
 		Add,
@@ -702,13 +700,13 @@ public class SoileUserManager implements MongoUserUtil{
 			return this;
 		}
 		String hashedSessionID = strategy.hash(hashingAlgorithm,
-				   null,
-				   SoileConfigLoader.getSessionProperty("sessionStoreSecret"),
-				   sessionID);
+											   null,
+											   SoileConfigLoader.getSessionProperty("sessionStoreSecret"),
+											   sessionID);
 		LOGGER.debug("sessionID is :" + sessionID);
 		LOGGER.debug("hashed ID is :" + hashedSessionID);
 		JsonObject query = new JsonObject()
-				.put(authnOptions.getUsernameField(), username); 
+							   .put(authnOptions.getUsernameField(), username); 
 		client.find(
 				authnOptions.getCollectionName(),
 				query,

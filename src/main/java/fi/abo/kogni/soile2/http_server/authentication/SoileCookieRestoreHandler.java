@@ -7,7 +7,6 @@ import fi.abo.kogni.soile2.http_server.authentication.utils.CookieStrategy;
 import fi.abo.kogni.soile2.http_server.authentication.utils.UserUtils;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpServerRequest;
@@ -16,9 +15,10 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
+import io.vertx.ext.web.handler.AuthenticationHandler;
 
 
-public class SoileCookieRestoreHandler implements Handler<RoutingContext> {
+public class SoileCookieRestoreHandler implements AuthenticationHandler {
 
 	private final Vertx vertx;
 	private MongoClient client;
@@ -38,6 +38,11 @@ public class SoileCookieRestoreHandler implements Handler<RoutingContext> {
 		{ 
 			log.debug(" No user found Checking Cookie");
 			Cookie sessionCookie = context.request().getCookie(SoileConfigLoader.getSessionProperty("sessionCookieID"));
+			log.debug(context.request().cookieCount());
+			for(Cookie c: context.request().cookies())
+			{
+				log.debug(c.toString());
+			}
 			if(sessionCookie != null)
 			{
 				// start async operations with a paused request.
@@ -47,11 +52,8 @@ public class SoileCookieRestoreHandler implements Handler<RoutingContext> {
 				}
 				try
 				{
-					log.debug(" Cookie found. Trying to restore session");					
 					String token = CookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
 					String username = CookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());
-					log.debug("Submitting request to eventbus");
-					log.debug(SoileCommUtils.getUserEventBusCommand("checkUserSessionValid"));
 					JsonObject command = new JsonObject().put(SoileCommUtils.getCommunicationField("usernameField"), username)
 							.put(SoileCommUtils.getCommunicationField("sessionID"), token);
 
@@ -63,7 +65,7 @@ public class SoileCookieRestoreHandler implements Handler<RoutingContext> {
 						if(res.succeeded())
 						{
 							// User token verified, create User and add it to session.
-							JsonObject result = (JsonObject)res.result();
+							JsonObject result = (JsonObject)res.result().body();
 							if(SoileCommUtils.isResultSuccessFull(result)) 
 							{
 								JsonObject query = new JsonObject()
@@ -121,6 +123,7 @@ public class SoileCookieRestoreHandler implements Handler<RoutingContext> {
 		}
 		else
 		{
+			log.debug("Context had user: \n" + context.user().principal().encodePrettily());
 			context.next();
 			return;
 		}
@@ -130,6 +133,7 @@ public class SoileCookieRestoreHandler implements Handler<RoutingContext> {
 	@Override
 	public void handle(RoutingContext ctx) {
 		// TODO Auto-generated method stub
+		log.debug("Received a request, checking if cookie is present");
 		authenticate(ctx);
 	}
 

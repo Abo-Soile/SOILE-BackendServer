@@ -2,6 +2,10 @@ package fi.abo.kogni.soile2.http_server.authentication.utils;
 
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import fi.abo.kogni.soile2.http_server.SoileAuthenticationVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidLoginException;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -13,7 +17,9 @@ import io.vertx.ext.auth.authorization.AuthorizationProvider;
 import io.vertx.ext.mongo.MongoClient;
 
 public class UserUtils {
-			
+
+	static final Logger LOGGER = LogManager.getLogger(UserUtils.class);
+
 	/**
 	 * Build a user from the database result adding several properties.
 	 * This fails if multiple or no entry were returned.
@@ -46,13 +52,14 @@ public class UserUtils {
 	public static User buildUserForDBEntry(JsonObject userJson, String username)
 	{
 	    	User user = User.fromName(userJson.getString(SoileConfigLoader.getdbField("usernameField")));
+	    	LOGGER.error(userJson.encodePrettily());
 	    	// set properties of the user that are needed for session handling
 	    	user.principal().put(SoileConfigLoader.getSessionProperty("userTypeField"), userJson.getValue(SoileConfigLoader.getdbField("userTypeField")));
 	    	user.principal().put(SoileConfigLoader.getSessionProperty("validSessionCookies"), userJson.getValue(SoileConfigLoader.getdbField("storedSessions")));
 	    	user.principal().put(SoileConfigLoader.getSessionProperty("userOwnes"), userJson.getString(SoileConfigLoader.getdbField("ownerField")));
-	    	user.principal().put(SoileConfigLoader.getSessionProperty("userCollaborates"), userJson.getString(SoileConfigLoader.getSessionProperty("collaboratorField")));
-	    	user.principal().put(SoileConfigLoader.getSessionProperty("userParticipates"), userJson.getString(SoileConfigLoader.getSessionProperty("participantField")));
-	    	user.principal().put(SoileConfigLoader.getSessionProperty("userRoles"),  userJson.getString(SoileConfigLoader.getSessionProperty("userRolesField")));
+	    	user.principal().put(SoileConfigLoader.getSessionProperty("userCollaborates"), userJson.getString(SoileConfigLoader.getdbField("collaboratorField")));
+	    	user.principal().put(SoileConfigLoader.getSessionProperty("userParticipates"), userJson.getString(SoileConfigLoader.getdbField("participantField")));
+	    	user.principal().put(SoileConfigLoader.getSessionProperty("userRoles"),  userJson.getString(SoileConfigLoader.getdbField("userRolesField")));
 	    	//AuthorizationProvider prov = AuthorizationProvider.create("this", null);	    	
 	    	return user;					
 	}

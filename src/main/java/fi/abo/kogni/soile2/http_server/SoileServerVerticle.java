@@ -2,7 +2,12 @@ package fi.abo.kogni.soile2.http_server;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.core.AbstractVerticle;
@@ -15,22 +20,19 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 public class SoileServerVerticle extends AbstractVerticle {
 
 	static final Logger LOGGER = LogManager.getLogger(SoileExperimentPermissionVerticle.class);
 	private JsonObject soileConfig = new JsonObject();
-	private Router router;
-	private SessionStore store;
+	SoileRouteBuilding soileRouter;
 	@Override
-	public void start(Promise<Void> startPromise) throws Exception {		
+	public void start(Promise<Void> startPromise) throws Exception {
+		soileRouter = new SoileRouteBuilding();
 		getConfig()
 		.compose(this::storeConfig)
-		.compose(this::setUpRouting)		
+		.compose(this::setupFolders)
 		.compose(this::deployVerticles)
 		.compose(this::startHttpServer).onComplete(res ->
 		{
@@ -54,8 +56,10 @@ public class SoileServerVerticle extends AbstractVerticle {
 		List<Future> deploymentFutures = new LinkedList();
 		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileUserManagementVerticle(), opts, promise)));
 		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileExperimentPermissionVerticle(), opts, promise)));				
-		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileAuthenticationVerticle(router,store), opts, promise)));
-		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
+		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileAuthenticationVerticle(), opts, promise)));
+		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(soileRouter, opts, promise)));
+		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), SoileConfigLoader.getServerProperty("soileGitFolder")), opts, promise )));
+		//deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
 		return CompositeFuture.all(deploymentFutures).mapEmpty();
 	}
 	
@@ -70,13 +74,38 @@ public class SoileServerVerticle extends AbstractVerticle {
 		ConfigRetriever cfgRetriever = SoileConfigLoader.getRetriever(vertx);		
 		return Future.future( promise -> cfgRetriever.getConfig(promise));
 	}
-	Future<Void> setUpRouting(Void unused)
+
+
+	Future<Void> setupFolders(Void unused)
 	{
-		store = LocalSessionStore.create(vertx);
-		router = Router.router(vertx);
-		return Future.<Void>succeededFuture();
+		return createFolder(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder"))
+		.compose( unusedVoid -> {
+		 return createFolder(SoileConfigLoader.getServerProperty("soileResultDirectory"));	
+		});		
 	}
 
+	Future<Void> createFolder(String folderName)
+	{
+		Promise<Void> folderCreatedPromise = Promise.<Void>promise();
+		vertx.fileSystem().exists(folderName).onSuccess(exists-> {
+			if(!exists)
+			{
+				vertx.fileSystem().mkdirs(folderName)
+				.onSuccess(created -> {
+					folderCreatedPromise.complete();
+				});				
+			}
+			else
+			{
+				folderCreatedPromise.complete();	
+			}
+		}).onFailure(fail ->{
+			folderCreatedPromise.fail(fail.getMessage());
+		});
+		return folderCreatedPromise.future();
+	}
+	
+	
 	
 	Future<Void> startHttpServer(Void unused)
 	{
@@ -90,7 +119,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 									 .setLogActivity(true) 
 									 .setSsl(true)
 									 .setKeyStoreOptions(keyOptions);
-		HttpServer server = vertx.createHttpServer(opts).requestHandler(router);
+		HttpServer server = vertx.createHttpServer(opts).requestHandler(soileRouter.getRouter());
 		int httpPort = http_config.getInteger("port", 8080);
 				
 		return Future.<HttpServer>future(promise -> server.listen(httpPort,promise)).mapEmpty();	

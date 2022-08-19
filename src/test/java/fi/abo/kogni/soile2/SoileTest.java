@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2;
 
-import java.io.IOException;
-
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
@@ -15,13 +13,19 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 
+/**
+ * This class pre-loads the config in order to allow tests to use the 
+ * config before the vertx instance is actually et up. 
+ * @author Thomas Pfau
+ *
+ */
 @RunWith(VertxUnitRunner.class)
 public abstract class SoileTest {
 
-	public Vertx vertx;
 	@BeforeClass
 	public static void init(TestContext context)
 	{
+				
 		Vertx vertx = Vertx.vertx();
 		ConfigRetriever retriever = SoileConfigLoader.getRetriever(vertx);
 		final Async CFGAsync = context.async();

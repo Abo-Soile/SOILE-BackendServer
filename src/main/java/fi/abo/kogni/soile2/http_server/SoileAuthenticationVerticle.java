@@ -9,10 +9,10 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthentication;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthorizationProvider;
-import fi.abo.kogni.soile2.http_server.authentication.SoileCookieAuthHandler;
+import fi.abo.kogni.soile2.http_server.auth.SoileFormLoginHandler;
+import fi.abo.kogni.soile2.http_server.authentication.SoileAuthHandler;
 import fi.abo.kogni.soile2.http_server.authentication.SoileCookieCreationHandler;
 import fi.abo.kogni.soile2.http_server.authentication.SoileCookieRestoreHandler;
-import fi.abo.kogni.soile2.http_server.authentication.SoileFormLoginHandler;
 import fi.abo.kogni.soile2.utils.DebugRouter;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -39,11 +39,9 @@ import io.vertx.ext.web.sstore.SessionStore;
 public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	
 	MongoClient client;
-	Router router;
-	SessionStore store;
 	SoileAuthorizationProvider authZuser;
 	SoileAuthentication soileAuth;
-	SoileCookieAuthHandler accessHandler;
+	SoileAuthHandler accessHandler;
 	SoileCookieRestoreHandler restoreHandler;
 	SoileCookieCreationHandler cookieCreationHandler;
 	RedirectAuthHandler auth;
@@ -61,10 +59,8 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	 * @param router The {@link Router} that will be user
 	 * @param store the {@link SessionStore} that will be used.
 	 */
-	public SoileAuthenticationVerticle(Router router, SessionStore store)
+	public SoileAuthenticationVerticle()
 	{
-		this.store = store;
-		this.router = router;
 	}
 	
 	@Override
@@ -78,7 +74,7 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 		setupHandlers();
 		setupRouteInit();
 		setupAuthenticationHandlers();	
-		//setupBasicRoutes();
+		setupRoutes();
 		setUpAuthentication();
 		setupPostAuthHandlers();
 		}
@@ -98,7 +94,7 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	{
 //		SoileAuthenticationOptions  authOpts = new SoileAuthenticationOptions(config());			
 		soileAuth = new SoileAuthentication(client);
-		accessHandler = new SoileCookieAuthHandler(vertx, soileAuth);
+		accessHandler = new SoileAuthHandler(vertx, soileAuth);
 		restoreHandler = new SoileCookieRestoreHandler(vertx, config());
 		auth = RedirectAuthHandler.create(soileAuth,"/static/login.html");
 		cookieCreationHandler = new SoileCookieCreationHandler(vertx.eventBus());
@@ -108,10 +104,6 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	 */
 	void setupRouteInit()
 	{
-		router.route().handler(new DebugRouter());
-		router.route().handler(LoggerHandler.create());
-		router.route().handler(SessionHandler.create(store));		
-		router.route().handler(restoreHandler);		
 	}
 	
 	/**
@@ -119,16 +111,16 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	 * areas of the Server. 
 	 */
 	void setupAuthenticationHandlers()
-	{
+	{		
 	}
 	
 	void setUpAuthentication()
 	{
 		LOGGER.debug("Adding handler to POST: /auth");		
 		// This will only handle the login request send to this address. handler(BodyHandler.create()).
-		router.post("/auth").handler(BodyHandler.create());
-		router.post("/auth").handler(new SoileFormLoginHandler(soileAuth, "username", "password",
-									 RedirectAuthHandler.DEFAULT_RETURN_URL_PARAM, "/", cookieCreationHandler));		
+		//router.post("/auth").handler(BodyHandler.create());
+		//router.post("/auth").handler(new SoileFormLoginHandler(soileAuth, "username", "password",
+		//							 null, null));		
 	}
 	
 	void setupAuthorization()
@@ -137,18 +129,14 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 		// Create the authorization providers
 		authZuser = new SoileAuthorizationProvider();		
 		// define necessary messages 
-		setupUserRoutes();	
+		setupRoutes();	
 	}
 	void setupPostAuthHandlers()
 	{
-		router.route().handler(cookieCreationHandler);
 	}
 	
-	void setupUserRoutes()
+	void setupRoutes()
 	{		
-		
-		router.route(HttpMethod.GET,"/experiment/:id/resources/*").handler( this::handleFileReadAccess);
-		router.route("/experiment/:id/resources/*").handler(RedirectAuthHandler.create(null));
 	}
 	
 	

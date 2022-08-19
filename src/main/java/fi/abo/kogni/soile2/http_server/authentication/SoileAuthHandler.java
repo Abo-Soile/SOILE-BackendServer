@@ -1,24 +1,17 @@
 package fi.abo.kogni.soile2.http_server.authentication;
 
-import static io.vertx.ext.auth.impl.Codec.base64Encode;
-
-import java.security.SecureRandom;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
-import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
@@ -27,18 +20,21 @@ import io.vertx.ext.web.Session;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.handler.impl.AuthenticationHandlerImpl;
 import io.vertx.ext.web.impl.RoutingContextInternal;
+/**
+ * This AuthenticationHandler will handle Authentication based on a form, that contains username, password and a "remember" field. 
+ * If remember is ticked, it will put the remember flag on in the session, This flag is checked, post authentication, to set the cookie, if requested. 
+ * The cookie can be used for later reauthentication based on a previous CookieHandler. 
+ * @author Thomas Pfau
+ *
+ */
+public class SoileAuthHandler extends AuthenticationHandlerImpl<AuthenticationProvider> implements Handler<RoutingContext>{
 
-public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<AuthenticationProvider> implements Handler<RoutingContext>{
-
-	private final Vertx vertx;
-	private final SecureRandom random = new SecureRandom();
-	static final Logger LOGGER = LogManager.getLogger(SoileCookieAuthHandler.class);
+	static final Logger LOGGER = LogManager.getLogger(SoileAuthHandler.class);
 
 
-	public SoileCookieAuthHandler(Vertx vertx, SoileAuthentication mAuthen)
+	public SoileAuthHandler(Vertx vertx, SoileAuthentication mAuthen)
 	{		
 		super(mAuthen);
-		this.vertx = vertx;
 	}
 
 
@@ -101,13 +97,6 @@ public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<Authentica
 	public void postAuthentication(RoutingContext ctx) {
 		// if this has now an assigned user, we will store this user.
 		LOGGER.debug("Handling Post-Authentication");	
-		LOGGER.debug(ctx.user());
-		LOGGER.debug(ctx.session().get("remember").toString());
-		if(ctx.session().<Boolean>remove("remember") && ctx.user() != null)
-		{
-			// store this session
-			storeSessionCookie(ctx);			
-		}
 		HttpServerRequest req = ctx.request();
 		Session session = ctx.session();
 		if (session != null) {
@@ -126,33 +115,6 @@ public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<Authentica
 	}
 	
 	
-	public void storeSessionCookie(RoutingContext ctx)
-	{
-		LOGGER.debug("Adding Cookie");
-		final byte[] rand = new byte[64];
-	    random.nextBytes(rand);
-	    String token = base64Encode(rand);
-	    // we don't need any reply here.
-	    JsonObject cuser = ctx.user().principal();
-		vertx.eventBus()
-			 .send(SoileCommUtils.getUserEventBusCommand("addSession")
-				   ,new JsonObject().put(SoileCommUtils.getCommunicationField("sessionID"),token)
-					 				.put(SoileCommUtils.getCommunicationField("usernameField"),cuser.getString(SoileConfigLoader.getdbField("usernameField")))
-					 				.put(SoileCommUtils.getCommunicationField("userTypeField"), cuser.getString(SoileConfigLoader.getdbField("userTypeField"))));
-		// now build the cookie to store on the remote system. 		
-		String cookiecontent = token + ":" 
-							   + cuser.getString(SoileCommUtils.getCommunicationField("usernameField")) + ":" 
-							   + cuser.getString(SoileCommUtils.getCommunicationField("userTypeField")); 
-		Cookie cookie = Cookie.cookie(SoileConfigLoader.getSessionProperty("sessionCookieID"),cookiecontent)
-							  .setDomain(SoileConfigLoader.getServerProperty(("domain")))
-							  .setSecure(true)
-							  .setPath(SoileConfigLoader.getSessionProperty("cookiePath"))
-							  .setMaxAge(SoileConfigLoader.getSessionLongProperty("maxTime")/1000); //Maxtime in seconds
-							 													 //TODO: Check whether SameSite needs to be set.
-		LOGGER.debug("Adding Cookie: " + cookie.getName() + " / " +  cookie.getDomain() + " / " +  cookie.getValue() + " / " +  cookie.isSecure() );
-		ctx.response().addCookie(cookie);		
-	}
-	
 	@Override
 	  protected void processException(RoutingContext ctx, Throwable exception) {
 	    if (exception != null) {
@@ -169,10 +131,8 @@ public class SoileCookieAuthHandler extends AuthenticationHandlerImpl<Authentica
 	            return;
 	          case 401:
 	        	// we will reroute the request to the login page. 
-	            String header = authenticateHeader(ctx);
-	            if (header != null && !"XMLHttpRequest".equals(ctx.request().getHeader("X-Requested-With"))) {
-	              ctx.response()
-	                .putHeader("WWW-Authenticate", header);
+	            if (!"XMLHttpRequest".equals(ctx.request().getHeader("X-Requested-With"))) {
+	            	setAuthenticateHeader(ctx);
 	            }
 	            ctx.redirect("/login");	            
 	            return;

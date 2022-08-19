@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import fi.abo.kogni.soile2.project.Project;
 import io.vertx.core.json.JsonObject;
 
 public abstract class ProjectDataBaseObject {

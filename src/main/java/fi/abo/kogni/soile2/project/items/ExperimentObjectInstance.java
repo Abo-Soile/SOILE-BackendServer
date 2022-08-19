@@ -5,15 +5,15 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import fi.abo.kogni.soile2.http_server.userManagement.Participant;
-import fi.abo.kogni.soile2.project.Project;
+import fi.abo.kogni.soile2.project.instance.ProjectInstance;
+import fi.abo.kogni.soile2.project.participant.impl.DBParticipant;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class ExperimentObjectInstance extends ProjectDataBaseObjectInstance {
 
 	Random rand = new Random();
-	public ExperimentObjectInstance(JsonObject data, Project source) {
+	public ExperimentObjectInstance(JsonObject data, ProjectInstance source) {
 		super(data, source);
 		// TODO Auto-generated constructor stub		
 	}
@@ -87,11 +87,11 @@ public class ExperimentObjectInstance extends ProjectDataBaseObjectInstance {
 	}
 	
 	@Override
-	public UUID nextTask(Participant user) {
+	public String nextTask(DBParticipant user) {
 
 		JsonArray elements = getElements();
 		//remove all elements already finished by the user.
-		for(UUID id : user.getFinisheTasks(getProject()))
+		for(Object id : user.getFinishedTasks())
 		{				
 			elements.remove(id.toString());
 		}
@@ -101,18 +101,18 @@ public class ExperimentObjectInstance extends ProjectDataBaseObjectInstance {
 			if(getRandom())
 			{
 				//if this is random, return a random remaining element
-				return sourceProject.getElement(UUID.fromString(elements.getString(rand.nextInt(elements.size())))).nextTask(user);
+				return sourceProject.getElement(elements.getString(rand.nextInt(elements.size()))).nextTask(user);
 			}
 			else
 			{
 				// otherwise return the next element (most likely this is just generally the first, as otherwise this experiment would not be called back.
-				return sourceProject.getElement(UUID.fromString(elements.getString(0))).nextTask(user);	
+				return sourceProject.getElement(elements.getString(0)).nextTask(user);	
 			}
 		}
 		else
 		{
 			// everything in this Experiment is done. Update the user and return the next element.
-			user.finishElement(getUUID(), getProject());
+			user.finishCurrentTask();
 			return sourceProject.getElement(getNext()).nextTask(user);
 		}
 

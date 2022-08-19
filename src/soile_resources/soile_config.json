@@ -1,4 +1,5 @@
 {
+	"api" : "api.yml",
 	"http_server": {
 		"port": 8081,
 		"host": "127.0.0.1",
@@ -10,7 +11,13 @@
 		"externalport":8080,
 		"externalURI": false,
 		"domain" : "localhost",
-		"serverSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m"
+		"serverSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m",
+		"jwtStoreSecret" : "storeserect",
+		"jwtKeySecret" : "keysecret",
+		"gitVerticleAddress" : "githandler",
+		"soileGitFolder" : "/tmp/soile/git",
+		"soileGitDataLakeFolder" : "/tmp/soile/gitLake",
+		"soileResultDirectory" : "/tmp/soile/resultLake"
 	},
 
 	"db": {
@@ -18,12 +25,14 @@
 		"port": 27022,
 		"db_name": "soile",
 		"userCollection" : "users",
-		"experimentCollection" : "experiments"
+		"experimentCollection" : "experiments",
+		"participantCollection" : "participants",
+		"projectInstanceCollection" : "projectInstances"
 	},
 	
 	
 	"db_user_fields": {
-		"permissionField" : "permissions",
+		"userPermissionField" : "permissions",
 		"userTypeField" : "type",
 		"usernameField" : "username",
 		"userEmailField" : "email",
@@ -31,7 +40,7 @@
 		"ownerField" : "ownedExperiments",
 		"collaboratorField" : "collaboratedExperiments",
 		"participantField" : "participantIn",
-		"userPermissionsField" : "userPermissions",
+		"userRolesField" : "userRoles",	
 		"usernameCredentialField" : "username",
 		"passwordField" : "password",
 		"passwordCredentialField" : "password",
@@ -50,13 +59,17 @@
 		"returnURLParam" : "returnURL",
 		"loginURL" : "/services/auth",
 		"sessionStoreSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m/fn6fx8uKJcKILHuS1ecZzBaS9cSX2thq60P/VwcsY",
-		"cookiePath" : "soile/session",
-		"validSessionCookies" : "validSessionCookies" 
+		"cookiePath" : "/",
+		"validSessionCookies" : "validSessionCookies",
+		"userOwnes" : "ownerOf",
+		"userCollaborates" : "collaboratorOf",
+		"userParticipates" : "participantOf",
+		"userRoles" : "roles" 
 	},
 
 	"communication" : {
 		"setCommand" : "set", 
-	    "addCommand" : "add",
+		"addCommand" : "add",
 		"removeCommand" : "remove",	
 		"Fields" : {
 			"privateField" : "isPrivate",
@@ -78,8 +91,8 @@
 			"experimentID" : "experimentID",			
 			"roleChanged" : "roleChanged",	
 			"ownerField" : "owners",
-		    "collaboratorField" : "collaborators",
-		    "participantField" : "participants"
+			"collaboratorField" : "collaborators",
+			"participantField" : "participants"
 					 						
 			}		
 	},	
@@ -98,19 +111,24 @@
 			"getUserData" : "getUserData",
 			"addSession" : "addUserSession",
 			"checkUserSessionValid" : "isSessionValid",
-			"invalidateUserSession" : "invalidateSession"
+			"listUsers" : "listUsers",
+			"invalidateUserSession" : "invalidateSession",
+			"activateUser" : "activateUser",
+			"getUserInfo" : "getUserInfo",
+			"setUserInfo" : "getUserInfo"
 			}
 	},
 
 	"experiments": {
+		"projectFileName" : "project.json",
+		"experimentFileName" : "experiment.json",
+		"taskFileName" : "task.json",
+		"sourceCodeFileName" : "source.code",		
 	    "nameField" : "experimentName",
 		"IDField" : "experimentID",
 		"commandPrefix" : "experiment.",
 		"privateField" : "isPrivate",
-		"logonRequireField" : "logonRequired",
-		"ownerField" : "owners",
-		"collaboratorField" : "collaborators",
-		"participantField" : "participants",			
+		"logonRequireField" : "logonRequired",						
 		"commands" : {
 			"getFilePermissions" : "requestFilePermission",
 			"getDataPermissions" : "requestDataPermission",
@@ -128,6 +146,15 @@
 		}
 	},
 		
+	"tasks":{
+		"IDField" : "ID",
+		"VersionField" : "Version",
+		"SourceType": "Type",
+		"accessibleOutputs" : "Outputs",
+		"taskFolder" : "tasks/repos/",
+		"repoTaskAddress" : "soile::tasks::repo"
+	},
+	
 	"deploy": [
 		{
 			"module": "fi.abo.kogni.soile~experiment-lang~1.0",

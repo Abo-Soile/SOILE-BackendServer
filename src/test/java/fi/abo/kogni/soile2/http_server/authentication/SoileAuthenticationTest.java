@@ -3,7 +3,7 @@ package fi.abo.kogni.soile2.http_server.authentication;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import fi.abo.kogni.soile2.http_server.MongoTestBase;
+import fi.abo.kogni.soile2.VertxTest;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -11,7 +11,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 @RunWith(VertxUnitRunner.class)
-public class SoileAuthenticationTest extends MongoTestBase{
+public class SoileAuthenticationTest extends VertxTest{
 
 
 	@Test	

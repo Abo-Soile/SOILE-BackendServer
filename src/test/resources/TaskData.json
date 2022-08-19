@@ -1,0 +1,60 @@
+
+{
+"data": 
+	[
+		{
+			"taskID" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", 
+			"outputdata" : 
+			[
+				{ 
+					"name" : "smoker",
+					"value" : 1											 
+				}
+			],
+			"resultdata" : 
+			{
+				"jsondata" : 
+				[
+					{
+						"name" : "smoker",
+						"value" : 1.0
+					},
+					{
+						"name" : "alone",
+						"value" : "yes"
+					} 
+				],
+				"filedata" : 
+				[
+					{				
+						"filename" : "testData.txt",
+						"fileformat" : "txt",
+						"fileid" : "abcde"								
+					} 
+				]
+				
+			}
+			
+		},
+		{
+			"taskID" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",
+			"outputdata" : [
+				]
+			,
+			"resultdata" :
+			{ 
+				"jsondata":
+					[
+						{
+							"name" : "result1",
+							"value" : 1
+						},
+						{
+							"name" : "result2",
+							"value" : "yes"
+						}
+					] 
+			}		
+		}
+	]						
+}

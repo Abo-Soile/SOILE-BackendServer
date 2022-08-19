@@ -26,7 +26,7 @@ public class DebugCookieStore implements CookieStore {
   @Override
   public Iterable<Cookie> get(Boolean ssl, String domain, String path) {
     assert domain != null && domain.length() > 0;
-
+    System.out.println("Got a request for a cookie" + ssl + "/" + domain + ":" + path);
     String cleanPath;
     {
       String uri = HttpUtils.removeDots(path);

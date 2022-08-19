@@ -3,7 +3,7 @@ package fi.abo.kogni.soile2.http_server.userManagement;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import fi.abo.kogni.soile2.http_server.MongoTestBase;
+import fi.abo.kogni.soile2.VertxTest;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -11,7 +11,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 
 @RunWith(VertxUnitRunner.class)
-public class SoileUserManagerTest extends MongoTestBase{
+public class SoileUserManagerTest extends VertxTest{
 	
 	@Test
 	public void testUserAddition(TestContext context) {
