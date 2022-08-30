@@ -31,15 +31,15 @@ public class TestFilter {
 			context.fail(e.getMessage());
 			return ;
 		}
-		String FilterString = "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2.smoker = 1 & t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3.output1 > 0 | t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4.output4 < 10";		
+		String FilterString = "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = 1 & t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3.output1 > 0 | t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4.output4 < 10";		
 		context.assertEquals("Success", Filter.testFilterExpression(FilterString, filterData));
 		context.assertNotEquals("Success", Filter.testFilterExpression(FilterString, new JsonObject()));
-		String WrongFilterString = "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2.smoker = sdasd1 & t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3.output1 > 0 | t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4.output4 < 10";
+		String WrongFilterString = "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = sdasd1 & t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3.output1 > 0 | t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4.output4 < 10";
 		context.assertNotEquals("Success", Filter.testFilterExpression(WrongFilterString, filterData));		
 		Async partAsync = context.async();
 		TestParticipant.getTestParticipant(context,3,projectData).onSuccess(p -> {
 			context.assertTrue(Filter.userMatchesFilter(FilterString, p));
-			String FilterNoSmoker = "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2.smoker = 0 & t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3.output1 > 0 | t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4.output4 < 10";		
+			String FilterNoSmoker = "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = 0 & t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3.output1 > 0 | t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4.output4 < 10";		
 			context.assertFalse(Filter.userMatchesFilter(FilterNoSmoker, p));
 			partAsync.complete();
 		}).onFailure(fail ->{

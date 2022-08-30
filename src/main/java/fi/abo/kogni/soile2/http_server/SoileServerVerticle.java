@@ -53,7 +53,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 	Future<Void> deployVerticles(Void unused)
 	{
 		DeploymentOptions opts = new DeploymentOptions().setConfig(soileConfig);
-		List<Future> deploymentFutures = new LinkedList();
+		List<Future> deploymentFutures = new LinkedList<Future>();
 		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileUserManagementVerticle(), opts, promise)));
 		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileExperimentPermissionVerticle(), opts, promise)));				
 		deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileAuthenticationVerticle(), opts, promise)));

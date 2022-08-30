@@ -22,9 +22,9 @@ public class TestProjectFactory implements ProjectFactory{
 	{
 
 		@Override
-		public Future<Void> save() {
+		public Future<JsonObject> save() {
 			// do nothing;
-			return Future.succeededFuture();
+			return Future.<JsonObject>succeededFuture(this.toJson());
 		}
 
 		@Override

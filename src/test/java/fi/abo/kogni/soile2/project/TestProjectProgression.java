@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2.project;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.nio.file.Files;
@@ -11,11 +9,8 @@ import java.util.LinkedList;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import fi.abo.kogni.soile2.MongoTest;
 import fi.abo.kogni.soile2.project.exceptions.InvalidPositionException;
 import fi.abo.kogni.soile2.project.instance.ProjectInstance;
-import fi.abo.kogni.soile2.project.participant.Participant;
-import fi.abo.kogni.soile2.project.participant.impl.DBParticipant;
 import fi.abo.kogni.soile2.project.utils.TestParticipant;
 import fi.abo.kogni.soile2.project.utils.TestProjectFactory;
 import io.vertx.core.json.JsonArray;

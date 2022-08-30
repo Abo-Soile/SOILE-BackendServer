@@ -140,8 +140,9 @@ public abstract class Participant {
 		if(outputMap == null)
 		{
 			outputMap = new HashMap<String, Double>();
-			outputMap.put(taskID + "." + outputName, value.doubleValue());		
-		}
+		}		
+		outputMap.put(taskID + "." + outputName, value.doubleValue());		
+
 		if(!outputData.containsKey(taskID))
 		{
 			outputData.put(taskID, new JsonObject());

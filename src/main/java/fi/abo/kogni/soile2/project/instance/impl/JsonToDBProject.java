@@ -2,6 +2,7 @@ package fi.abo.kogni.soile2.project.instance.impl;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
@@ -13,8 +14,8 @@ import io.vertx.ext.mongo.MongoClient;
  */
 public class JsonToDBProject extends DBProject{
 
-	public JsonToDBProject(MongoClient client, String projectInstanceDB) {
-		super(client, projectInstanceDB);
+	public JsonToDBProject(MongoClient client, String projectInstanceDB, EventBus eb) {
+		super(client, projectInstanceDB, eb);
 	}
 	
 	

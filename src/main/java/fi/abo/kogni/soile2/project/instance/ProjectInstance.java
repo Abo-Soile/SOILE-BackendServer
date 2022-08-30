@@ -1,6 +1,7 @@
 package fi.abo.kogni.soile2.project.instance;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 import fi.abo.kogni.soile2.project.exceptions.InvalidPositionException;
@@ -40,6 +41,7 @@ public abstract class ProjectInstance {
 	 */
 	protected ProjectInstance()
 	{		
+		participants = new LinkedList<String>();
 	};
 	
 	/**
@@ -74,7 +76,10 @@ public abstract class ProjectInstance {
 		});
 		return projPromise.future();
 	}	
-	
+	/**
+	 * Parse a project from Json data.
+	 * @param data
+	 */
 	private void parseProject(JsonObject data)
 	{
 		// Get the top-level information
@@ -98,7 +103,10 @@ public abstract class ProjectInstance {
 			participants.add(o.toString());
 		}
 	}
-		
+	/**
+	 * Parse an experiment from the given experiment Json. 
+	 * @param experiment
+	 */
 	private void parseExperiment(JsonObject experiment)
 	{
 		ExperimentObjectInstance cExperiment = new ExperimentObjectInstance(experiment, this);
@@ -169,12 +177,17 @@ public abstract class ProjectInstance {
 		participants.remove(p.getID());
 	}
 	
+	public List<String> getParticipants()
+	{
+		return List.copyOf(participants);
+	}
+	
 	/**
 	 * Finish a step for a particular participant storing the supplied output information obtained for the user.
 	 * @param user
 	 * @param resultData
 	 */
-	public void finishStep(Participant user, JsonObject resultData) throws InvalidPositionException
+	public Future<String> finishStep(Participant user, JsonObject resultData) throws InvalidPositionException
 	{
 		if(!resultData.getString("taskID").equals(user.getProjectPosition()))
 		{
@@ -183,21 +196,31 @@ public abstract class ProjectInstance {
 		user.setOutputDataForCurrentTask(resultData.getJsonArray("outputdata",new JsonArray()));
 		user.setResultDataForCurrentTask(resultData.getJsonObject("resultdata"));
 		user.finishCurrentTask();
-		/*TODO:
-		 * Store the updated user in the database. 
-		 */
+		return user.save();
 	}	
-
+	/**
+	 * Get a specific Task/Experiment element for the given Element ID.
+	 * @param elementID
+	 * @return
+	 */
 	public ProjectDataBaseObjectInstance getElement(String elementID)
 	{
 		return elements.get(elementID);
 	}
 
+	/**
+	 * Start the project for the provided user.
+	 * @param user
+	 */
 	public void startProject(Participant user)
 	{
 		user.setProjectPosition(start);
 	}
 	
+	/**
+	 * Proceed the user to the next step within this project (depending on Filters etc pp).
+	 * @param user The user that proceeds to the next step.
+	 */
 	public void setNextStep(Participant user)
 	{
 		ProjectDataBaseObjectInstance current = getElement(user.getProjectPosition());
@@ -205,9 +228,26 @@ public abstract class ProjectInstance {
 		user.setProjectPosition(nextElement);
 	}				
 	
-	public abstract Future<Void> save();
+	/**
+	 * This operation saves the Project. It should ensure that the data can be reconstructed by supplying what is returned 
+	 * form this function to the load() function of this class.
+	 * @return A JsonObject 
+	 */
+	public abstract Future<JsonObject> save();
 	
+	/**
+	 * Load all data that is necessary for the project. This function should work with the Data contained in the future provided by 
+	 * the save function.  
+	 * @param object The object to retrieve the data from.
+	 * @return A Future containing all data actually necessary for {@link ProjectInstance} to reconstruct all necessary fields. 
+	 */
 	public abstract Future<JsonObject> load(JsonObject object);
 	
+	/**
+	 * Delete the project instance represented by this Object. Note: This must NOT delete the actual Project data, but only the data 
+	 * associated with this run of the project.
+	 * @return A future that contains the data that was associated with the ProjectInstance. This function must NOT handle the deletion of it's 
+	 * participants, that deletion should be handled at whatever place this Future is requested. 
+	 */
 	public abstract Future<JsonObject> delete();
 }

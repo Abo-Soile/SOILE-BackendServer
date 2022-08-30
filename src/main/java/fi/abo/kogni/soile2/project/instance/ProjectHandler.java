@@ -10,14 +10,12 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.project.participant.Participant;
 import fi.abo.kogni.soile2.project.participant.ParticipantHandler;
+import fi.abo.kogni.soile2.project.participant.impl.DBParticipant;
 import fi.abo.kogni.soile2.project.task.TaskFileResult;
-import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.TimeStampedMap;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.json.JsonObject;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.mongo.MongoClient;
 
 public class ProjectHandler {
@@ -27,8 +25,7 @@ public class ProjectHandler {
 	private ParticipantHandler participants;
 	private TimeStampedMap<String, ProjectInstance> projects;
 	private String dataLakeFolder;
-	private ProjectManager manager;
-	
+	private ProjectManager manager;	 
 	/**
 	 * Default constructor that sets up a Manager with DB connections.
 	 * @param participants the participants handler to obtain participants
@@ -36,11 +33,11 @@ public class ProjectHandler {
 	 * @param client the mongoclient for connecting to the mongo database
 	 */
 	public ProjectHandler(ParticipantHandler participants, String dataLakeFolder,
-			MongoClient client) {
+			MongoClient client, EventBus eb) {
 		super();
 		this.participants = participants;
 		this.dataLakeFolder = dataLakeFolder;
-		this.manager = new ProjectManager(client);
+		this.manager = new ProjectManager(client, eb);
 		projects = new TimeStampedMap<String, ProjectInstance>(manager, 1000*60*60);
 	}
 

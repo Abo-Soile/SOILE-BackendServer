@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2.project.utils;
 
-import static org.junit.Assert.fail;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;

@@ -16,7 +16,7 @@
 		<maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
 		<exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
 
-		<vertx.version>4.3.2</vertx.version>
+		<vertx.version>4.3.3</vertx.version>
 		<!-- <main.verticle>fi.abo.kogni.soile2.http_server.SoileServerVerticle</main.verticle> -->
 		<vertx.verticle>fi.abo.kogni.soile2.http_server.SoileServerVerticle</vertx.verticle>
 		<launcher.class>io.vertx.core.Launcher</launcher.class>
@@ -41,6 +41,11 @@
 		<dependency>
 			<groupId>fi.aalto.scicomp</groupId>
 			<artifactId>gitFs</artifactId>
+			<version>0.1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>fi.aalto.scicomp</groupId>
+			<artifactId>zipper</artifactId>
 			<version>0.1.0</version>
 		</dependency>
 		<dependency>

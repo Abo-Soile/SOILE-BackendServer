@@ -332,7 +332,7 @@ public class SoileExperimentPermissionVerticle extends SoileBaseVerticle{
 			if(res.succeeded())
 			{
 				//Now, we also need to update the users.
-				List<Future> changedUsers = new LinkedList();												
+				List<Future> changedUsers = new LinkedList<Future>();												
 				submitChanges(changes, changedUsers, originalData.getString(getConfig("IDField")), Role);
 				CompositeFuture.all(changedUsers).onComplete(userAddedRes ->
 				{

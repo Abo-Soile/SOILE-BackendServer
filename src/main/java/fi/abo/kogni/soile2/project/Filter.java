@@ -30,6 +30,7 @@ public class Filter {
 				JsonObject taskOutputs = Values.getJsonObject(task); 
 				for(String output : taskOutputs.fieldNames())
 				{
+					System.out.println(task + "." + output);
 					variables.put(task + "." + output, taskOutputs.getDouble(output));
 				}
 			}

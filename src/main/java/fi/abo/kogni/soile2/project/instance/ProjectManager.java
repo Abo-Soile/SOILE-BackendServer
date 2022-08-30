@@ -11,6 +11,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
@@ -30,12 +31,12 @@ public class ProjectManager implements DataRetriever<String, ProjectInstance> {
 	private ProjectFactory createFactory;
 	//TODO: needs constructor.
 	
-	public ProjectManager(MongoClient client)
+	public ProjectManager(MongoClient client, EventBus eb)
 	{
 		this.client = client;
 		String projectInstanceCollection = SoileConfigLoader.getdbProperty("projectCollection");	
-		this.dbFactory = new DBProjectFactory(client, projectInstanceCollection);
-		this.createFactory = new JsonToDBProjectFactory(client, projectInstanceCollection);
+		this.dbFactory = new DBProjectFactory(client, projectInstanceCollection, eb);
+		this.createFactory = new JsonToDBProjectFactory(client, projectInstanceCollection, eb);
 		
 	}
 
@@ -92,7 +93,7 @@ public class ProjectManager implements DataRetriever<String, ProjectInstance> {
 	}
 	
 	
-	public Future<Void> save(ProjectInstance proj)
+	public Future<JsonObject> save(ProjectInstance proj)
 	{
 		return proj.save();
 	}

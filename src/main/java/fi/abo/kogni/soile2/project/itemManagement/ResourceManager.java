@@ -62,4 +62,15 @@ public class ResourceManager implements DataRetriever<GitFile,DataLakeFile> {
 												  .put("targetFile", targetFileName);		
 		return manager.writeGitResourceFile(target, fileContents);		
 	}
+	
+	/**
+	 * Test, whether the git repository for a specific element (Task/Experiment/Project) exists
+	 * @param elementID the UUID of the element
+	 * @return A future whether the element exists
+	 */
+	public Future<Boolean> existElementRepo(String elementID)
+	{
+		return manager.doesRepoExist(elementID);
+	}
+	
 }

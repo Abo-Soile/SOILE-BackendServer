@@ -26,15 +26,39 @@ import io.vertx.ext.web.FileUpload;
 public class GitInteractionTest extends SoileVerticleTest{
 
 	@Test
+	public void testGitRepoExists(TestContext context)
+	{
+		String targetElement = "TestElement";
+		ResourceManager rm = new ResourceManager(vertx.eventBus());
+		Async notExistAsync = context.async();
+		rm.existElementRepo(targetElement).onSuccess(exists -> {
+			Async existAsync = context.async();
+			context.assertFalse(exists);
+			initGitRepo(targetElement, context).onSuccess(unused -> {
+				rm.existElementRepo(targetElement).onSuccess(existNow -> {
+					context.assertTrue(existNow);
+					existAsync.complete();
+				}).onFailure(fail -> {
+					context.fail(fail);
+					existAsync.complete();
+				});
+			}).onFailure(fail -> {
+				context.fail(fail);
+				existAsync.complete();
+			});
+			notExistAsync.complete();
+		});
+	}
+	@Test
 	public void testGitResourceItemManagement(TestContext context) 
 	{
 		// set up the git Repository and the DataLake folder we will use for the test
 		Async initAsync = context.async();
-		String targetElement = "TestElement";		
+		String targetElement = "TestElement";
+		ResourceManager rm = new ResourceManager(vertx.eventBus());
+		ObjectManager om = new ObjectManager(vertx.eventBus());		
 		initGitRepo(targetElement, context).onSuccess(initialVersion -> 
 		{		
-			ResourceManager rm = new ResourceManager(vertx.eventBus());
-			ObjectManager om = new ObjectManager(vertx.eventBus());
 			Path dataPath = Paths.get(getClass().getClassLoader().getResource("FilterData.json").getPath());
 			Path dataLakePath = Paths.get(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder"), targetElement, dataPath.getFileName().toString());
 			try
@@ -51,6 +75,7 @@ public class GitInteractionTest extends SoileVerticleTest{
 				return;
 			}
 			SimpleFileUpload upload = new SimpleFileUpload(dataLakePath.getFileName().toString(), dataPath.getFileName().toString());
+			
 			Async writeAsync = context.async();
 			rm.writeElement(new GitFile("NewFile.txt", targetElement, initialVersion), upload).onSuccess(newVersion -> 
 			{
@@ -201,13 +226,16 @@ public class GitInteractionTest extends SoileVerticleTest{
 	{		
 		Promise<String> versionPromise = Promise.<String>promise();
 		System.out.println("Requesting handling for git command:\n " + gitProviderVerticle.createInitCommand(gitRepoName).encodePrettily() + "\n\nUsing address: " + SoileConfigLoader.getServerProperty("gitVerticleAddress"));
+		Async repoCreationAsync = context.async();
 		vertx.eventBus().request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitProviderVerticle.createInitCommand(gitRepoName))
 		.onSuccess( res -> {
 			versionPromise.complete(((JsonObject)res.body()).getString(gitProviderVerticle.COMMITHASHFIELD));
+			repoCreationAsync.complete();
 		}		
 		).onFailure(fail ->
 		{
-			versionPromise.fail(fail.getMessage());
+			versionPromise.fail(fail);
+			repoCreationAsync.complete();
 		});		
 		return versionPromise.future();
 	}
