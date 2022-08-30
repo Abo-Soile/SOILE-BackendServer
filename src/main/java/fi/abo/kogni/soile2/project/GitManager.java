@@ -35,7 +35,7 @@ public class GitManager {
 	 * @return a Future that on success indicates whether the element exists or not. Failure means either the request was inconsistent, or something went wrong 
 	 * 		   in the process, and should not be taken as non existence indication. 
 	 */
-	public Future<Boolean> doesRepoElementExist(String elementID)
+	public Future<Boolean> doesRepoExist(String elementID)
 	{
 		Promise<Boolean> existPromise = Promise.<Boolean>promise();
 		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitProviderVerticle.createExistRepoCommand(elementID))
