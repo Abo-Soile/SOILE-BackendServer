@@ -11,9 +11,8 @@ public class Filter {
 	
 	public static boolean userMatchesFilter(String Filter, Participant user)
 	{
-		MathHandler handler = new MathHandler();
 		// a positive evaluation will lead to a value of one. 
-		double val = handler.evaluate(Filter, user.getOutputs());
+		double val = MathHandler.evaluate(Filter, user.getOutputs());
 		// and we leave some tolerance due to numerical issues.
 		return Math.abs(val - 1) < 0.0001;
 	}	
@@ -22,8 +21,7 @@ public class Filter {
 	{
 		
 		try
-		{
-			MathHandler handler = new MathHandler();
+		{			
 			HashMap<String,Double> variables = new HashMap<String, Double>();
 			for(String task : Values.fieldNames())
 			{
@@ -34,7 +32,7 @@ public class Filter {
 					variables.put(task + "." + output, taskOutputs.getDouble(output));
 				}
 			}
-			handler.evaluate(FilterString, variables);
+			MathHandler.evaluate(FilterString, variables);
 		}
 		catch(Exception e)
 		{
