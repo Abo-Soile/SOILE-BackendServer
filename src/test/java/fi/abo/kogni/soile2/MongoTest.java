@@ -14,7 +14,7 @@ import de.flapdoodle.embed.mongo.config.Net;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
 
-public class MongoTest extends SoileTest {
+public abstract class MongoTest extends SoileTest {
 
 	
 	static MongodProcess MONGO;

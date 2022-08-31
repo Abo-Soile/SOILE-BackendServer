@@ -1,6 +1,5 @@
 package fi.abo.kogni.soile2.http_server;
 
-import org.junit.After;
 import org.junit.Before;
 
 import fi.abo.kogni.soile2.VertxTest;
@@ -12,7 +11,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientSession;
 
-public class SoileVerticleTest extends VertxTest {
+public abstract class SoileVerticleTest extends VertxTest {
 	protected WebClient webclient;
 	protected HttpClient httpClient;
 	protected int port;
