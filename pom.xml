@@ -24,6 +24,13 @@
 		<jackson-datatype-jsr310.version>2.7.4</jackson-datatype-jsr310.version>
 	</properties>
 
+	<repositories>
+		<repository>
+			<id>Scicomp Repo</id>
+			<url>https://github.com/tpfau/scicompMaven/raw/main/</url>
+		</repository>
+	</repositories>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
