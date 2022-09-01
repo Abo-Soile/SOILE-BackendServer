@@ -40,84 +40,92 @@ public class TestProjectProgression{
 		}
 
 		Async p1Async = context.async();
-		TestParticipant.getTestParticipant(context,0,projectData).onSuccess(p1 -> {
-			ProjectInstance p = p1.getProject();
+		TestParticipant.getTestParticipant(context,0,projectData).onSuccess(participant1 -> {
+			ProjectInstance project = participant1.getProject();
 			
-			p.startProject(p1);
-			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", p1.getProjectPosition());
+			project.startProject(participant1);
+			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", participant1.getProjectPosition());
 			try
 			{
-				p.finishStep(p1,taskData.getJsonObject(0));
+				project.finishStep(participant1,taskData.getJsonObject(0));
 			}
 			catch(InvalidPositionException e)
 			{
 				context.fail(e);
 				p1Async.complete();
 			}
-			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", p1.getProjectPosition());
-			context.assertTrue(p1.getFinishedTasks().contains("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1"));
-			p.setNextStep(p1);
-			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2", p1.getProjectPosition());					
+			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", participant1.getProjectPosition());
+			context.assertTrue(participant1.getFinishedTasks().contains("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1"));
+			project.setNextStep(participant1);
+			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2", participant1.getProjectPosition());					
 			p1Async.complete();
 		}).onFailure(fail -> {
 			context.fail(fail);
 			p1Async.complete();
 		});		
 		Async p2Async = context.async();
-		TestParticipant.getTestParticipant(context,3,projectData).onSuccess(p2 -> {
-			context.assertEquals(Double.valueOf(1.0),p2.getOutputs().get("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker"));
-			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",p2.getProjectPosition());
-			ProjectInstance p = p2.getProject();
+		TestParticipant.getTestParticipant(context,3,projectData).onSuccess(participant2 -> {
+			context.assertEquals(Double.valueOf(1.0),participant2.getOutputs().get("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker"));
+			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",participant2.getProjectPosition());
+			ProjectInstance proj = participant2.getProject();
 			try
 			{
-				p.finishStep(p2,taskData.getJsonObject(1));
+				proj.finishStep(participant2,taskData.getJsonObject(1));
 			}
 			catch(InvalidPositionException e)
 			{
 				context.fail(e);
 				p2Async.complete();
 			}
-			p.setNextStep(p2);
+			proj.setNextStep(participant2);
 			// The first task in the second experiment
-			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b7",p2.getProjectPosition());
+			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b7",participant2.getProjectPosition());
 			p2Async.complete();
 		}).onFailure(fail -> {
 			context.fail(fail);
 			p2Async.complete();
 		});
 		Async p3Async = context.async();
-		TestParticipant.getTestParticipant(context,1,projectData).onSuccess(p3 -> {
-			context.assertEquals(Double.valueOf(0.0),p3.getOutputs().get("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker"));
-			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",p3.getProjectPosition());
-			ProjectInstance p = p3.getProject();
+		TestParticipant.getTestParticipant(context,1,projectData).onSuccess(participant3 -> {
+			context.assertEquals(Double.valueOf(0.0),participant3.getOutputs().get("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker"));
+			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",participant3.getProjectPosition());
+			ProjectInstance proj = participant3.getProject();
 			try
 			{
-				p.finishStep(p3,taskData.getJsonObject(2));
+				proj.finishStep(participant3,taskData.getJsonObject(2));
 			}
 			catch(InvalidPositionException e)
 			{
 				context.fail(e);
 				p3Async.complete();
 			}
-			p.setNextStep(p3);
+			proj.setNextStep(participant3);
 			// Can be now either at the first or the second task.
 			LinkedList<String> resultOptions = new LinkedList<String>();
 			resultOptions.add("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4");
 			resultOptions.add("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b5");
-			context.assertTrue(resultOptions.contains(p3.getProjectPosition()));
-			resultOptions.remove(p3.getProjectPosition());
+			context.assertTrue(resultOptions.contains(participant3.getProjectPosition()));
+			resultOptions.remove(participant3.getProjectPosition());
 			try
 			{
-				p.finishStep(p3,taskData.getJsonObject(1));
+				//this depends on which step we are at now... 
+				if(resultOptions.contains("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b5"))
+				{
+					proj.finishStep(participant3,taskData.getJsonObject(1));
+				}
+				else
+				{
+					proj.finishStep(participant3,taskData.getJsonObject(3));	
+				}
 			}
 			catch(InvalidPositionException e)
 			{
 				context.fail(e);
 				p3Async.complete();
 			}
-			p.setNextStep(p3);
+			proj.setNextStep(participant3);
 			// this now has to be the other task of this experiment.
-			context.assertTrue(resultOptions.contains(p3.getProjectPosition()));
+			context.assertTrue(resultOptions.contains(participant3.getProjectPosition()));
 			p3Async.complete();
 		}).onFailure(fail -> {
 			context.fail(fail);

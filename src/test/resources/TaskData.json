@@ -76,6 +76,26 @@
 						}
 					] 
 			}
+		},
+				{
+			"taskID" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b5",
+			"outputdata" : [
+				]
+			,
+			"resultdata" :
+			{ 
+				"jsondata":
+					[
+						{
+							"name" : "result1",
+							"value" : 1
+						},
+						{
+							"name" : "result2",
+							"value" : "yes"
+						}
+					] 
+			}		
 		}
 		
 	]						
