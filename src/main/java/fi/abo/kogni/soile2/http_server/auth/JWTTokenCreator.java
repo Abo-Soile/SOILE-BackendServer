@@ -11,6 +11,13 @@ import io.vertx.ext.web.handler.HttpException;
 public class JWTTokenCreator{
 
 	Vertx vertx;	
+	SoileAuthenticationBuilder handler;
+	
+	public JWTTokenCreator(SoileAuthenticationBuilder handler, Vertx vertx)
+	{
+		this.vertx = vertx;
+		this.handler = handler;
+	}
 	public Future<String> getToken(RoutingContext context) {
 		Promise<String> tokenPromise = Promise.<String>promise();
 		if(context.user() == null)
@@ -19,8 +26,8 @@ public class JWTTokenCreator{
 			tokenPromise.fail(new HttpException(401,"No user authenticated"));			
 		}
 		else
-		{
-			JWTAuth jwt =  SoileAuthenticationHandler.getJWTAuthProvider(vertx);
+		{			
+			JWTAuth jwt =  handler.getJWTAuthProvider(vertx);
 			String jwtToken = jwt.generateToken(new JsonObject().put("username", context.user().principal().getString("username")));			
 			tokenPromise.complete(jwtToken);
 		}		

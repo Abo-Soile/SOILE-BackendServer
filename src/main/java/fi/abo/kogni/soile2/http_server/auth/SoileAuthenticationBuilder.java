@@ -16,11 +16,11 @@ import io.vertx.ext.web.handler.SimpleAuthenticationHandler;
  * @author Thomas Pfau
  *
  */
-public class SoileAuthenticationHandler {
+public class SoileAuthenticationBuilder {
 	
-	private static JWTAuth authProvider;
-	private static SimpleAuthenticationHandler cookieHandler;
-	public synchronized static JWTAuth getJWTAuthProvider(Vertx vertx)
+	private JWTAuth authProvider;
+	private SimpleAuthenticationHandler cookieHandler;
+	public synchronized JWTAuth getJWTAuthProvider(Vertx vertx)
 	{
 		if(authProvider == null)
 		{
@@ -33,7 +33,7 @@ public class SoileAuthenticationHandler {
 		return authProvider;
 	}
 	
-	public synchronized static SimpleAuthenticationHandler getCookieAuthProvider(Vertx vertx, MongoClient client, SoileCookieCreationHandler cookieCreationHandler)
+	public synchronized SimpleAuthenticationHandler getCookieAuthProvider(Vertx vertx, MongoClient client, SoileCookieCreationHandler cookieCreationHandler)
 	{
 		if(cookieHandler == null)
 		{		
@@ -44,7 +44,7 @@ public class SoileAuthenticationHandler {
 		return cookieHandler;
 	}	
 	
-	public static ChainAuthHandler create(Vertx vertx, MongoClient client, SoileCookieCreationHandler cookieCreationHandler)
+	public ChainAuthHandler create(Vertx vertx, MongoClient client, SoileCookieCreationHandler cookieCreationHandler)
 	{			
 		JWTAuthHandler jwtAuth = JWTAuthHandler.create(getJWTAuthProvider(vertx));	
 		ChainAuthHandler handler = ChainAuthHandler.any().add(getCookieAuthProvider(vertx, client, cookieCreationHandler)).add(jwtAuth);

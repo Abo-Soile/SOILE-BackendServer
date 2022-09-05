@@ -5,7 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.auth.JWTTokenCreator;
-import fi.abo.kogni.soile2.http_server.auth.SoileAuthenticationHandler;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthenticationBuilder;
 import fi.abo.kogni.soile2.http_server.auth.SoileFormLoginHandler;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthentication;
 import fi.abo.kogni.soile2.http_server.authentication.SoileCookieCreationHandler;
@@ -38,6 +38,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private MongoClient client;
 	private SoileCookieCreationHandler cookieHandler;
 	private Router soileRouter;
+	private SoileAuthenticationBuilder handler;
 	
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {		
@@ -73,16 +74,17 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	}
 	
 	Future<RouterBuilder> setupAuth(RouterBuilder builder)
-	{		
-		builder.securityHandler("cookieAuth",SoileAuthenticationHandler.getCookieAuthProvider(vertx, client, cookieHandler))
-			   .securityHandler("JWTAuth", JWTAuthHandler.create(SoileAuthenticationHandler.getJWTAuthProvider(vertx)));
+	{	
+		handler = new SoileAuthenticationBuilder();
+		builder.securityHandler("cookieAuth",handler.getCookieAuthProvider(vertx, client, cookieHandler))
+			   .securityHandler("JWTAuth", JWTAuthHandler.create(handler.getJWTAuthProvider(vertx)));
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
 	Future<RouterBuilder> setupLogin(RouterBuilder builder)
 	{
 		builder.operation("addUser").handler(handleUserManagerCommand("addUser", MessageResponseHandler.createDefaultHandler(201)));
-		SoileFormLoginHandler formLoginHandler = new SoileFormLoginHandler(new SoileAuthentication(client), "username", "password",new JWTTokenCreator(), cookieHandler);
+		SoileFormLoginHandler formLoginHandler = new SoileFormLoginHandler(new SoileAuthentication(client), "username", "password",new JWTTokenCreator(handler,vertx), cookieHandler);
 		builder.operation("loginUser").handler(formLoginHandler::handle);
 		builder.operation("testAuth").handler(this::testAuth);
 		return Future.<RouterBuilder>succeededFuture(builder);

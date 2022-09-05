@@ -53,6 +53,7 @@ public class SoileCookieAuth {
 				// start async operations with a paused request.
 				final boolean parseEnded = request.isEnded();
 				if (!parseEnded) {
+					log.debug("Pausing Request");
 					request.pause();
 				}
 				try
@@ -134,6 +135,7 @@ public class SoileCookieAuth {
 				{
 					log.error("Problem processing cookies: " + e.getMessage() );
 					log.error(e);
+					System.out.println(context.request().isEnded());
 					e.printStackTrace(System.out);
 					userPromise.fail(new HttpException(401));				}
 			}
