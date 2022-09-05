@@ -53,6 +53,7 @@ public abstract class VertxTest extends MongoTest{
 	@Before
 	public void setUp(TestContext context)
 	{	
+		
 		System.out.println("Starting new test");
 		//TODO: remove these options again before deploying. Evebn in tests they should not be in, but for debugging they avoid loads of 
 		// error messages.

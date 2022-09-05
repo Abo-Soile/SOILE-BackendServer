@@ -18,13 +18,7 @@ public abstract class SoileVerticleTest extends VertxTest {
 	@Before
 	public void setUp(TestContext context){
 		super.setUp(context);
-		// We pass the options as the second parameter of the deployVerticle method.
-		 //PemKeyCertOptions keyOptions = new PemKeyCertOptions();
-		 //   keyOptions.setKeyPath("keypk8.pem");
-		  //  keyOptions.setCertPath("cert.pem");	
-		//HttpClientOptions opts = new HttpClientOptions().setSsl(true).setVerifyHost(false).setPemKeyCertOptions(keyOptions);
 		port = cfg.getJsonObject("http_server").getInteger("port");
-
 		setupWebClient();
 		vertx.deployVerticle(SoileServerVerticle.class.getName(), new DeploymentOptions(), context.asyncAssertSuccess());
 	}
