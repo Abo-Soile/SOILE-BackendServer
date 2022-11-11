@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project.instance;
+package fi.abo.kogni.soile2.project.instance.impl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -8,6 +8,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.project.instance.ProjectInstance;
 import fi.abo.kogni.soile2.project.participant.Participant;
 import fi.abo.kogni.soile2.project.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.project.participant.impl.DBParticipant;
@@ -73,6 +74,7 @@ public class ProjectHandler {
 			}
 			catch(FileNotFoundException e)
 			{
+				//TODO: properly handle this.
 				// if a file can't be found, that's fine it seems to already have been deleted.
 				continue;
 			}

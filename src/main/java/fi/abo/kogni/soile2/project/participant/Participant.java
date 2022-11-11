@@ -1,15 +1,18 @@
 package fi.abo.kogni.soile2.project.participant;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import fi.abo.kogni.soile2.project.elements.TaskObjectInstance;
 import fi.abo.kogni.soile2.project.instance.ProjectInstance;
-import fi.abo.kogni.soile2.project.items.TaskObjectInstance;
-import fi.abo.kogni.soile2.project.participant.ParticipantManager;
-import fi.abo.kogni.soile2.project.resultDB.ResultDBHandler;
 import fi.abo.kogni.soile2.project.task.TaskFileResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -32,15 +35,19 @@ public abstract class Participant {
 	 */
 	protected String uuid;
 	protected ProjectInstance project;
-	protected JsonArray finished;
+	//protected JsonArray finished;
 	protected String position;
 	protected JsonObject outputData;
 	protected JsonArray resultData;
+	protected JsonArray activeExperiments;
+	HashMap<String,List> finishedExperimentTasks;
+	
 	/**
 	 * This map is a way to get output data faster than relying on outputData
-	 */
-	private HashMap<String,Double> outputMap;
+	 */	
+	private DatedDataMap<String,Double> outputMap;	
 	
+	private static DateFormat dateFormatter = new SimpleDateFormat("MM/dd/yyyy - HH:SS");
 	/**
 	 * A Participant is strictly associated with one project, thus we can construct it from the participant json and the project information. 	 
 	 * @param data the data for the participant
@@ -54,16 +61,29 @@ public abstract class Participant {
 		position = "";
 		outputData = new JsonObject();
 		resultData = new JsonArray();
+		activeExperiments = new JsonArray();
+		finishedExperimentTasks = new HashMap<>();
 		setupParticipant(data);
 	}
 
 
 	private void setupParticipant(JsonObject participantInfo)
 	{				
-		finished = participantInfo.getJsonArray("finished",new JsonArray());
+		//finished = participantInfo.getJsonArray("finished",new JsonArray());
 		position = participantInfo.getString("position","0")  ;
 		parseOutputData(participantInfo.getJsonArray("outputData", new JsonArray()));	
-		resultData = participantInfo.getJsonArray("resultData", new JsonArray());		
+		resultData = participantInfo.getJsonArray("resultData", new JsonArray());	
+		activeExperiments = participantInfo.getJsonArray("activeExperiments",new JsonArray());
+		for(Object o : participantInfo.getJsonArray("finishedExperimentTasks",new JsonArray()))
+		{			
+			JsonObject jo = (JsonObject) o;
+			LinkedList<String> tasks = new LinkedList<>(); 
+			for(Object task : jo.getJsonArray("tasks"))
+			{
+				tasks.add(task.toString());
+			}
+			finishedExperimentTasks.put(jo.getString("experimentID"), tasks);
+		}
 		
 	}
 	/**
@@ -71,7 +91,7 @@ public abstract class Participant {
 	 * @param data the outputData (i.e. results) for this participant
 	 */
 	private void parseOutputData(JsonArray data)
-	{
+	{		
 		for(Object output : data)
 		{
 			JsonObject outputElement = (JsonObject)output;
@@ -80,11 +100,20 @@ public abstract class Participant {
 			for( Object taskOutput : outputs)
 			{
 				JsonObject taskOutputData = (JsonObject) taskOutput;
-				addOutput(task, taskOutputData.getString("name"), taskOutputData.getNumber("value"));
+				try
+				{
+					addOutput(task, taskOutputData.getString("name"), taskOutputData.getNumber("value"),dateFormatter.parse(taskOutputData.getString("value")));
+				}
+				catch(ParseException e)
+				{					
+					//TODO: LOG THE ISSUE.
+					// we will add the output, but put it to the back. 
+					addOutput(task, taskOutputData.getString("name"), taskOutputData.getNumber("value"),new Date(Long.MIN_VALUE));
+				}
 			}
 		}
 	}		
-
+	
 	/**
 	 * Encode the output data into a {@link JsonArray}.
 	 * @return The jsonArray of Output data as required by the database
@@ -94,14 +123,10 @@ public abstract class Participant {
 		JsonArray currentOutputs = new JsonArray();
 		for(String taskName : outputData.fieldNames())
 		{
-			JsonObject taskData = outputData.getJsonObject(taskName);
+			JsonArray taskData = outputData.getJsonArray(taskName);
 			JsonObject OutputTaskElement = new JsonObject();
 			OutputTaskElement.put("task", taskName);
-			JsonArray outputs = new JsonArray();
-			for(String outputName : taskData.fieldNames()) {
-				outputs.add(new JsonObject().put("name", outputName).put("value", taskData.getNumber(outputName)));												
-			}
-			OutputTaskElement.put("outputData", OutputTaskElement);
+			OutputTaskElement.put("outputs", taskData);			
 			currentOutputs.add(OutputTaskElement);
 		}
 		return currentOutputs;
@@ -114,20 +139,8 @@ public abstract class Participant {
 	 * @return a Map of all t<TaskUUID>.<output> -> value mappings. 
 	 */
 	public Map<String,Double> getOutputs()
-	{
-		if(outputMap == null)
-		{
-			outputMap = new HashMap<String, Double>();
-			for(String taskID : outputData.fieldNames())
-			{
-				JsonObject taskData = outputData.getJsonObject(taskID);
-				for(String output : taskData.fieldNames())
-				{
-					outputMap.put(taskID + "." + output, taskData.getDouble(output));
-				}
-			}
-		}
-		return outputMap;
+	{		
+		return outputMap.getNewestData();
 	}
 	/**
 	 * Add the output to this participant, we try not to recalculate this....
@@ -137,28 +150,38 @@ public abstract class Participant {
 	 */
 	public void addOutput(String taskID, String outputName, Number value)
 	{
+		addOutput(taskID,outputName,value,new Date());
+	}
+
+	/**
+	 * Add the output to this participant, we try not to recalculate this....
+	 * @param taskID The taskID for the output
+	 * @param outputName the name of the output in the task
+	 * @param value the value of the output
+	 */
+	public void addOutput(String taskID, String outputName, Number value, Date outputDate)
+	{
 		if(outputMap == null)
 		{
-			outputMap = new HashMap<String, Double>();
+			outputMap = new DatedDataMap<>();
 		}		
-		outputMap.put(taskID + "." + outputName, value.doubleValue());		
+		outputMap.addDatedEntry(taskID + "." + outputName, new TimeStampedData<Double>(value.doubleValue()));		
 
 		if(!outputData.containsKey(taskID))
 		{
-			outputData.put(taskID, new JsonObject());
+			outputData.put(taskID, new JsonArray());
 		}
-		outputData.getJsonObject(taskID).put(outputName, value);		
+		outputData.getJsonArray(taskID).add(new JsonObject().put("name",outputName).put("value",value).put("timestamp", dateFormatter.format(outputDate)));		
 	}
-
 	/**
 	 * Get whether a a specific task is finished for this participant
 	 * @param taskID the Task to check
 	 * @return whether the task is finished or not.
 	 */
-	public boolean finished(String taskID)
-	{
-		return finished.contains(taskID);
-	}
+//	public boolean finished(String taskID)
+//	{
+//		return finished.contains(taskID);
+//	}
 
 	/**
 	 * Get the position of this participant within its project
@@ -169,7 +192,55 @@ public abstract class Participant {
 		return position;
 	}
 
-
+	/**
+	 * Get all tasks done for a given experiment
+	 * @return
+	 */
+	public List<String> getFinishedExpTasks(String experimentID)
+	{		
+		return finishedExperimentTasks.get(experimentID);
+	}
+	
+	/**
+	 * Get all tasks done for a given experiment
+	 * @return
+	 */
+	public void addFinishedExpTask(String experimentID, String TaskID)
+	{		
+		finishedExperimentTasks.get(experimentID).add(TaskID);
+	}
+	
+	/**
+	 * Add an experiment that is currently active (i.e. the participant is currently in this experiment).
+	 * This is used to indicate to the experiment, whether we are currently in it, or whether we got a callback and should leave. 
+	 * @param expeirmentID
+	 */
+	public void addActiveExperiment(String experimentID)
+	{
+		activeExperiments.add(experimentID);
+		finishedExperimentTasks.put(experimentID, new LinkedList<String>());
+	}
+	
+	/**
+	 * Check, whether an experimen is currently active 
+	 * @param expeirmentID
+	 */
+	public boolean isActiveExperiment(String experimentID)
+	{
+		return activeExperiments.contains(experimentID);
+	}
+	
+	
+	/**
+	 * Remove an experiment from the currently active experiments. 
+	 * @param expeirmentID
+	 */
+	public void endActiveExperiment(String experimentID)
+	{
+		activeExperiments.remove(experimentID);
+		finishedExperimentTasks.remove(experimentID);
+	}
+	
 	/**
 	 * Add the result to this participant
 	 * @param taskID The taskID for the output
@@ -216,7 +287,7 @@ public abstract class Participant {
 
 
 	/**
-	 * Update the results information. This needs to update before the task is finished.    
+	 * Update the results information.   
 	 * @param taskID the task for which to store data
 	 * @param resultData The data of the outputs for this task. A {@link JsonArray} containing 
 	 * 					 JsonObjects with the field 'format' which can be db or file and the field 'data'
@@ -227,13 +298,9 @@ public abstract class Participant {
 	{	
 		Promise<Void> updatePromise = Promise.<Void>promise();
 		// we fail the future and don't do anything if the task is already finished.
-		if(finished.contains(getProjectPosition()))
-		{
-			updatePromise.fail("Trying to set Results for a finished Task");
-			return updatePromise.future();
-		}		
 		// check, that this Participant hasn't already got result data for this task
 		JsonObject taskData = new JsonObject().put("task", position);
+		taskData.put("timestamp", dateFormatter.format(new Date()));
 		JsonArray jsonData = resultData.getJsonArray("jsonData", new JsonArray());
 		if(!jsonData.isEmpty())
 		{
@@ -266,35 +333,16 @@ public abstract class Participant {
 		}		
 	}
 
-
 	/**
-	 * Finish a specific task, and add it to the finished tasks.
+	 * Save after finishing a task.
 	 * @param taskID The just completed task 
 	 */
 	public void finishCurrentTask()
 	{
-		finished.add(getProjectPosition());
 		// All data processed. Save this participant.
 		save();
 	}
 	
-	/**
-	 * Skip a specific task. This is most likely called because a task determined, that this user does not 
-	 * match the filters for it. While the task in question was never the actual current task, and thus won't get any results, 
-	 * it is still finished. 
-	 * @param TaskID
-	 */
-	public void skipTask(TaskObjectInstance task)
-	{
-		// If something is skipped, it will anyways not be recorded, so we don't need to directly save.
-		finished.add(task.getInstanceID());
-	}
-	
-	public JsonArray getFinishedTasks()
-	{
-		return new JsonArray().addAll(finished);
-	}
-
 	public void setProjectPosition(String taskID)
 	{		
 		position = taskID;	
@@ -377,19 +425,44 @@ public abstract class Participant {
 	public JsonObject toJson()
 	{		
 		JsonObject current = new JsonObject();
-		JsonArray finishedTasks = new JsonArray().addAll(finished);
 		current.put("_id", uuid)
 		.put("position", position)
-		.put("finished", finishedTasks)
 		.put("project", project.getID().toString())
 		.put("outputData", encodeOutputDataForDB())
-		.put("resultdata", resultData);		
+		.put("resultdata", resultData)
+		.put("activeExperiments", this.activeExperiments)
+		.put("finishedExperimentTasks", convertFinishedTasks());
 		return current;
+	}
+	
+	private JsonArray convertFinishedTasks()
+	{
+		JsonArray result = new JsonArray();
+		for(String exp : finishedExperimentTasks.keySet())
+		{
+			JsonObject data = new JsonObject();			
+			data.put("experimentID", exp);
+			data.put("tasks", new JsonArray(finishedExperimentTasks.get(exp)));
+			result.add(data);
+		}
+		return result;
 	}
 	
 	public ProjectInstance getProject()
 	{
 		return this.project;
+	}
+	
+	public boolean equals(Object other)
+	{
+		if( other instanceof Participant)
+		{
+			return this.toJson().equals(((Participant)other).toJson());
+		}
+		else
+		{
+			return false;
+		}
 	}
 	
 	public abstract Future<String> save();

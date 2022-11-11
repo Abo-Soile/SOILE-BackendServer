@@ -7,7 +7,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
 /**
- * This class builds project which does not yet have a Database representation, but which upon creation obtains
+ * This class builds a project which does not yet have a Database representation, but which upon creation 
  * stores itself and updates using the received ID.
  * @author Thomas Pfau
  *

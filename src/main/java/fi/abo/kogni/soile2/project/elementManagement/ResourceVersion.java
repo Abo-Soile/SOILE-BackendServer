@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project.itemManagement;
+package fi.abo.kogni.soile2.project.elementManagement;
 
 import java.util.UUID;
 

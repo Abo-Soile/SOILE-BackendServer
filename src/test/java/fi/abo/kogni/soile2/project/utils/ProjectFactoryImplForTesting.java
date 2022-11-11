@@ -7,9 +7,10 @@ import java.nio.file.Paths;
 import fi.abo.kogni.soile2.project.instance.ProjectFactory;
 import fi.abo.kogni.soile2.project.instance.ProjectInstance;
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-public class TestProjectFactory implements ProjectFactory{
+public class ProjectFactoryImplForTesting implements ProjectFactory{
 
 	@Override
 	public ProjectInstance createInstance() {
@@ -41,10 +42,15 @@ public class TestProjectFactory implements ProjectFactory{
 	
 	public static JsonObject loadProjectData() throws IOException
 	{
-		JsonObject ProjectInstanceDef = new JsonObject(Files.readString(Paths.get(TestProjectFactory.class.getClassLoader().getResource("ProjectDefinition.json").getPath())));
-		JsonObject projectGitDef = new JsonObject(Files.readString(Paths.get(TestProjectFactory.class.getClassLoader().getResource("GitProjObj.json").getPath())));
-		projectGitDef.mergeIn(ProjectInstanceDef);
-		return projectGitDef;
+		return loadProjectData(0);
+	}
+	
+	public static JsonObject loadProjectData(int i) throws IOException
+	{
+		JsonArray ProjectInstanceDef = new JsonArray(Files.readString(Paths.get(ProjectFactoryImplForTesting.class.getClassLoader().getResource("ProjectDefinition.json").getPath())));
+		JsonArray projectGitDef = new JsonArray(Files.readString(Paths.get(ProjectFactoryImplForTesting.class.getClassLoader().getResource("GitProjObj.json").getPath())));
+		projectGitDef.getJsonObject(i).mergeIn(ProjectInstanceDef.getJsonObject(i));
+		return projectGitDef.getJsonObject(i);
 
 	}
 }

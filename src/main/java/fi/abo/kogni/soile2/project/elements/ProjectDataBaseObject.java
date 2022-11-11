@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project.items;
+package fi.abo.kogni.soile2.project.elements;
 
 import java.util.List;
 import java.util.UUID;
@@ -77,7 +77,6 @@ public abstract class ProjectDataBaseObject {
 		}
 		return restricted.encodePrettily();
 	}
-
 
 	@JsonProperty("private")
 	public Boolean getPrivate() {

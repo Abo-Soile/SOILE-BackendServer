@@ -10,7 +10,11 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
-
+/**
+ * This is a Project stored in a (most likely git) Database. 
+ * @author thomas
+ *
+ */
 public class DBProject extends ProjectInstance{
 	
 	MongoClient client;
@@ -45,7 +49,11 @@ public class DBProject extends ProjectInstance{
 		Promise<JsonObject> loadSuccess = Promise.<JsonObject>promise();		
 		JsonObject query = new JsonObject().put("_id", object.getString("_id"));
 		client.findOne(projectInstanceDB, query, null).onSuccess(instanceJson -> {
-			eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"),gitProviderVerticle.createGetCommand(instanceJson.getString("_id"), instanceJson.getString("version"), "project.json")).onSuccess(response -> {
+			eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"),
+					   gitProviderVerticle.createGetCommand(instanceJson.getString("_id"),
+							   instanceJson.getString("version"),
+							   "project.json"))
+			.onSuccess(response -> {
 				// we got a positive reply.
 				JsonObject projectData = new JsonObject(((JsonObject)response.body()).getString(gitProviderVerticle.DATAFIELD));
 				instanceJson.mergeIn(projectData);

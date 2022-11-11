@@ -2,7 +2,7 @@ package fi.abo.kogni.soile2.project.participant;
 
 
 
-import fi.abo.kogni.soile2.project.instance.ProjectManager;
+import fi.abo.kogni.soile2.project.instance.impl.ProjectManager;
 import fi.abo.kogni.soile2.utils.DataRetriever;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;

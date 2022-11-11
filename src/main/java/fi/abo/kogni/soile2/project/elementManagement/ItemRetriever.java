@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project.itemManagement;
+package fi.abo.kogni.soile2.project.elementManagement;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.utils.DataRetriever;

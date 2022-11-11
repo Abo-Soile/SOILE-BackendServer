@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project.items;
+package fi.abo.kogni.soile2.project.elements;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -19,8 +19,6 @@ public class TaskObject extends ProjectDataBaseObject {
 	public void setCodetype(String codetype) {
 		data.put("codetype", codetype);
 	}
-
-
 
 	@JsonProperty("code")
 	public String getCode() {

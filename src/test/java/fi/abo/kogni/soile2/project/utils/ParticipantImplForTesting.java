@@ -14,11 +14,11 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 
-public class TestParticipant extends Participant {
+public class ParticipantImplForTesting extends Participant {
 
 	private HashMap<String, JsonArray> resultsMap;
 
-	public TestParticipant(JsonObject data, ProjectInstance p) {
+	public ParticipantImplForTesting(JsonObject data, ProjectInstance p) {
 		super(data, p);
 		resultsMap = new HashMap<String, JsonArray>();
 		// TODO Auto-generated constructor stub
@@ -42,7 +42,7 @@ public class TestParticipant extends Participant {
 		JsonArray Participant_data;
 		try
 		{			
-			Participant_data = new JsonObject(Files.readString(Paths.get(TestParticipant.class.getClassLoader().getResource("Participant.json").getPath()))).getJsonArray("data");
+			Participant_data = new JsonObject(Files.readString(Paths.get(ParticipantImplForTesting.class.getClassLoader().getResource("Participant.json").getPath()))).getJsonArray("data");
 		}
 		catch(Exception e)
 		{			
@@ -50,9 +50,9 @@ public class TestParticipant extends Participant {
 			return partProm.future();
 		}
 		Async partCreation = context.async();
-		TestProjectFactory fac = new TestProjectFactory();
+		ProjectFactoryImplForTesting fac = new ProjectFactoryImplForTesting();
 		ProjectInstance.instantiateProject(projectData, fac).onSuccess(project -> {
-			partProm.complete(new TestParticipant(Participant_data.getJsonObject(i), project));
+			partProm.complete(new ParticipantImplForTesting(Participant_data.getJsonObject(i), project));
 			partCreation.complete();
 		}).onFailure(fail ->{
 			partProm.fail(fail);

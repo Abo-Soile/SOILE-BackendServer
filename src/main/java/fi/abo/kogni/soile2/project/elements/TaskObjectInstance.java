@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project.items;
+package fi.abo.kogni.soile2.project.elements;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -36,10 +36,17 @@ public class TaskObjectInstance extends ProjectDataBaseObjectInstance {
 
 	@Override
 	public String nextTask(Participant user) {
-		// If the user either already finished this task OR there is a filter and the user does not fulfil it, we skip to the next task.
-		if(user.finished(getInstanceID()) || getFilter() != null && !Filter.userMatchesFilter(getFilter(), user))
+		// this indicates, that the user currently was on this task, so lets ake the next.
+		if(user.getProjectPosition().equals(getInstanceID()))
 		{
-			user.skipTask(this);
+			return sourceProject.getElement(this.getNext()).nextTask(user);
+		}
+		// If this has a filter and the user matches the filter, return the next task.
+		// We will also set the current position to this.
+		if(getFilter() != null && !Filter.userMatchesFilter(getFilter(), user))
+		{			
+			// We have done this, but it is still the position we are currently at.
+			user.setProjectPosition(this.getInstanceID());			
 			return sourceProject.getElement(getNext()).nextTask(user); 
 		}
 		// otherwise we are here at this task!

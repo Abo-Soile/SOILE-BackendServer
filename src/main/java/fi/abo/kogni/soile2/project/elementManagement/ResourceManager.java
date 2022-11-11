@@ -1,12 +1,12 @@
-package fi.abo.kogni.soile2.project.itemManagement;
+package fi.abo.kogni.soile2.project.elementManagement;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
+import fi.abo.kogni.soile2.project.GitFile;
 import fi.abo.kogni.soile2.project.GitManager;
-import fi.abo.kogni.soile2.project.items.GitFile;
 import fi.abo.kogni.soile2.utils.DataLakeFile;
 import fi.abo.kogni.soile2.utils.DataRetriever;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;

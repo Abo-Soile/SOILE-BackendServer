@@ -4,10 +4,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import fi.abo.kogni.soile2.project.elements.ExperimentObjectInstance;
+import fi.abo.kogni.soile2.project.elements.FilterObjectInstance;
+import fi.abo.kogni.soile2.project.elements.ProjectDataBaseObjectInstance;
+import fi.abo.kogni.soile2.project.elements.TaskObjectInstance;
 import fi.abo.kogni.soile2.project.exceptions.InvalidPositionException;
-import fi.abo.kogni.soile2.project.items.ExperimentObjectInstance;
-import fi.abo.kogni.soile2.project.items.ProjectDataBaseObjectInstance;
-import fi.abo.kogni.soile2.project.items.TaskObjectInstance;
 import fi.abo.kogni.soile2.project.participant.Participant;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -93,6 +94,11 @@ public abstract class ProjectInstance {
 			TaskObjectInstance cTask = new TaskObjectInstance((JsonObject)cTaskData, this);
 			elements.put(cTask.getInstanceID(), cTask);
 		}
+		for(Object cTaskData : data.getJsonArray("filters", new JsonArray()))
+		{
+			FilterObjectInstance cFilter= new FilterObjectInstance((JsonObject)cTaskData, this);
+			elements.put(cFilter.getInstanceID(), cFilter);
+		}
 		for(Object cExperimentData : data.getJsonArray("experiments", new JsonArray()))
 		{
 			parseExperiment((JsonObject)cExperimentData);
@@ -123,6 +129,11 @@ public abstract class ProjectInstance {
 			case "experiment":
 				parseExperiment(element);
 				break;
+			case "filter":
+				FilterObjectInstance cFilter = new FilterObjectInstance(((JsonObject)cElementData).getJsonObject("data"), this);
+				elements.put(cFilter.getInstanceID(), cFilter);
+				break;
+				
 			}
 		}
 		
@@ -207,7 +218,18 @@ public abstract class ProjectInstance {
 	{
 		return elements.get(elementID);
 	}
-
+	
+	/**
+	 * Obtain the next element for the given user using the given element ID to query the next element 
+	 * @param nextElementID
+	 * @param user
+	 * @return
+	 */
+	public String getNextTask(String nextElementID, Participant user)
+	{
+		return elements.get(nextElementID).nextTask(user);
+	}
+	
 	/**
 	 * Start the project for the provided user.
 	 * @param user
@@ -223,8 +245,10 @@ public abstract class ProjectInstance {
 	 */
 	public void setNextStep(Participant user)
 	{
+		
 		ProjectDataBaseObjectInstance current = getElement(user.getProjectPosition());
-		String nextElement = current.nextTask(user);		
+		String nextElement = current.nextTask(user);
+		System.out.println("Updating user position:" + current.getInstanceID() + " -> " + nextElement);		
 		user.setProjectPosition(nextElement);
 	}				
 	

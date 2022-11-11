@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project.items;
+package fi.abo.kogni.soile2.project;
 
 /**
  * This represents all data necessary to retrieve the file for a given repository (the repository id can e.g. be a task/project or similar). 

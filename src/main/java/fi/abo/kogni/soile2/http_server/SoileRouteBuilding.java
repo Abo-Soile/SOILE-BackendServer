@@ -72,7 +72,11 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	{
 		return this.soileRouter;
 	}
-	
+	/**
+	 * Set up auth handling
+	 * @param builder the Routerbuilder to be used.
+	 * @return the routerbuilder in a future for composite use
+	 */
 	Future<RouterBuilder> setupAuth(RouterBuilder builder)
 	{	
 		handler = new SoileAuthenticationBuilder();

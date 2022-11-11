@@ -6,7 +6,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
-import fi.abo.kogni.soile2.project.items.GitFile;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;

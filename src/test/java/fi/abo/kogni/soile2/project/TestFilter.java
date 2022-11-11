@@ -7,8 +7,8 @@ import java.nio.file.Paths;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import fi.abo.kogni.soile2.project.utils.TestParticipant;
-import fi.abo.kogni.soile2.project.utils.TestProjectFactory;
+import fi.abo.kogni.soile2.project.utils.ParticipantImplForTesting;
+import fi.abo.kogni.soile2.project.utils.ProjectFactoryImplForTesting;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -24,7 +24,7 @@ public class TestFilter {
 		try
 		{			
 			filterData = new JsonObject(Files.readString(Paths.get(getClass().getClassLoader().getResource("FilterData.json").getPath())));
-			projectData = TestProjectFactory.loadProjectData();
+			projectData = ProjectFactoryImplForTesting.loadProjectData();
 		}
 		catch(Exception e)
 		{			
@@ -37,7 +37,7 @@ public class TestFilter {
 		String WrongFilterString = "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = sdasd1 & t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3.output1 > 0 | t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4.output4 < 10";
 		context.assertNotEquals("Success", Filter.testFilterExpression(WrongFilterString, filterData));		
 		Async partAsync = context.async();
-		TestParticipant.getTestParticipant(context,3,projectData).onSuccess(p -> {
+		ParticipantImplForTesting.getTestParticipant(context,3,projectData).onSuccess(p -> {
 			context.assertTrue(Filter.userMatchesFilter(FilterString, p));
 			String FilterNoSmoker = "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = 0 & t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3.output1 > 0 | t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4.output4 < 10";		
 			context.assertFalse(Filter.userMatchesFilter(FilterNoSmoker, p));

@@ -1,16 +1,12 @@
-package fi.abo.kogni.soile2.project.instance;
+package fi.abo.kogni.soile2.project.instance.impl;
 
-import fi.abo.kogni.soile2.project.instance.impl.DBProject;
-import fi.abo.kogni.soile2.project.instance.impl.DBProjectFactory;
-import fi.abo.kogni.soile2.project.instance.impl.JsonToDBProject;
-import fi.abo.kogni.soile2.project.instance.impl.JsonToDBProjectFactory;
+import fi.abo.kogni.soile2.project.instance.ProjectFactory;
+import fi.abo.kogni.soile2.project.instance.ProjectInstance;
 import fi.abo.kogni.soile2.utils.DataRetriever;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -76,7 +72,6 @@ public class ProjectManager implements DataRetriever<String, ProjectInstance> {
 	 */
 	public Future<ProjectInstance> createProject(String projectID, String projectVersion )
 	{	
-		Promise<ProjectInstance> projectPromise = Promise.<ProjectInstance>promise();
 		JsonObject defaultProjectInfo = getDefaultProjectInfo(projectID,projectVersion); 		
 		return ProjectInstance.instantiateProject(defaultProjectInfo, createFactory);
 	}

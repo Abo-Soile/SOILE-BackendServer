@@ -2,7 +2,7 @@ package fi.abo.kogni.soile2.project.experiment;
 
 import java.util.UUID;
 
-import fi.abo.kogni.soile2.project.itemManagement.ResourceVersion;
+import fi.abo.kogni.soile2.project.elementManagement.ResourceVersion;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 
 public class ExperimentVersion extends ResourceVersion{

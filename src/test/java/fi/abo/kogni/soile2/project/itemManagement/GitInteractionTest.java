@@ -12,7 +12,9 @@ import org.junit.runner.RunWith;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
-import fi.abo.kogni.soile2.project.items.GitFile;
+import fi.abo.kogni.soile2.project.GitFile;
+import fi.abo.kogni.soile2.project.elementManagement.ObjectManager;
+import fi.abo.kogni.soile2.project.elementManagement.ResourceManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
