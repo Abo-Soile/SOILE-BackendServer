@@ -2,7 +2,8 @@ package fi.abo.kogni.soile2.http_server;
 
 import org.junit.Before;
 
-import fi.abo.kogni.soile2.VertxTest;
+import fi.abo.kogni.soile2.MongoTest;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -11,14 +12,15 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientSession;
 
-public abstract class SoileVerticleTest extends VertxTest {
+public abstract class SoileVerticleTest extends MongoTest {
 	protected WebClient webclient;
 	protected HttpClient httpClient;
 	protected int port;
-	@Before
-	public void setUp(TestContext context){
-		super.setUp(context);
-		port = cfg.getJsonObject("http_server").getInteger("port");
+	
+	@Override
+	public void runBeforeTests(TestContext context){
+		super.runBeforeTests(context);
+		port = SoileConfigLoader.getServerIntProperty("port");
 		setupWebClient();
 		vertx.deployVerticle(SoileServerVerticle.class.getName(), new DeploymentOptions(), context.asyncAssertSuccess());
 	}

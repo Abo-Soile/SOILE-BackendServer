@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2.experiment.task;
 
-//import fi.aalto.scicomp.gitFs.gitFs.gitProviderVerticle;
-import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;

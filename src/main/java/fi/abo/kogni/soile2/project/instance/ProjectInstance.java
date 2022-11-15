@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-import fi.abo.kogni.soile2.project.elements.ExperimentObjectInstance;
-import fi.abo.kogni.soile2.project.elements.FilterObjectInstance;
 import fi.abo.kogni.soile2.project.elements.ProjectDataBaseObjectInstance;
-import fi.abo.kogni.soile2.project.elements.TaskObjectInstance;
+import fi.abo.kogni.soile2.project.elements.impl.ExperimentObjectInstance;
+import fi.abo.kogni.soile2.project.elements.impl.FilterObjectInstance;
+import fi.abo.kogni.soile2.project.elements.impl.TaskObjectInstance;
 import fi.abo.kogni.soile2.project.exceptions.InvalidPositionException;
 import fi.abo.kogni.soile2.project.participant.Participant;
 import io.vertx.core.Future;
@@ -217,6 +217,15 @@ public abstract class ProjectInstance {
 	public ProjectDataBaseObjectInstance getElement(String elementID)
 	{
 		return elements.get(elementID);
+	}
+	
+	/**
+	 * Get all element IDs in this Project
+	 * @return
+	 */
+	public List<String> getElements()
+	{
+		return List.copyOf(elements.keySet());
 	}
 	
 	/**

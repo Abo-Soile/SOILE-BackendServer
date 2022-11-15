@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import fi.abo.kogni.soile2.project.elements.TaskObjectInstance;
+import fi.abo.kogni.soile2.datamanagement.utils.DatedDataMap;
+import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedData;
+import fi.abo.kogni.soile2.project.elements.impl.TaskObjectInstance;
 import fi.abo.kogni.soile2.project.instance.ProjectInstance;
 import fi.abo.kogni.soile2.project.task.TaskFileResult;
 import io.vertx.core.Future;

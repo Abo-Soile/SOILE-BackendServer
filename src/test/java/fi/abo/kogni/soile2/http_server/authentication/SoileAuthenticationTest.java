@@ -3,7 +3,9 @@ package fi.abo.kogni.soile2.http_server.authentication;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import fi.abo.kogni.soile2.VertxTest;
+import fi.abo.kogni.soile2.MongoTest;
+import fi.abo.kogni.soile2.UserManagementTest;
+import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -11,23 +13,32 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 @RunWith(VertxUnitRunner.class)
-public class SoileAuthenticationTest extends VertxTest{
+public class SoileAuthenticationTest extends MongoTest implements UserManagementTest{
 
-
+	SoileUserManager uManager;
+	
+	@Override
+	public void runBeforeTests(TestContext context)
+	{
+		super.runBeforeTests(context);
+		uManager = createManager(vertx);
+	}
+	
+	
 	@Test	
 	public void testValidAuthentication(TestContext context) {
 		// create a user, that we want to authenticate later on.
 		JsonObject participant1 = new JsonObject().put("username", "participant")
-				.put(cfg.getJsonObject(SoileConfigLoader.SESSION_CFG).getString("passwordField"), "password");
+				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password");
 
 		JsonObject invalidUser = new JsonObject().put("username", "user1")
-				.put(cfg.getJsonObject(SoileConfigLoader.SESSION_CFG).getString("passwordField"), "password2");
+				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password2");
 
-		JsonObject DB_User = new JsonObject().put(cfg.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("usernameField"), "participant")
-				.put(cfg.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("passwordField"), "password"); 
+		JsonObject DB_User = new JsonObject().put(SoileConfigLoader.getdbField("usernameField"), "participant")
+				.put(SoileConfigLoader.getdbField("passwordField"), "password"); 
 		Async overall = context.async();
 		// Lets create two users.
-		createUser(DB_User, context).onComplete(x1 -> 
+		createUser(DB_User, context, uManager ).onComplete(x1 -> 
 		{			
 
 			SoileAuthentication auth = new SoileAuthentication(mongo_client);		
@@ -56,18 +67,18 @@ public class SoileAuthenticationTest extends VertxTest{
 	public void testInValidAuthentication(TestContext context) {
 		// create a user, that we want to authenticate later on.
 		JsonObject participant1 = new JsonObject().put("username", "participant")
-				.put(cfg.getJsonObject(SoileConfigLoader.SESSION_CFG).getString("passwordField"), "password");
+				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password");
 
 		JsonObject invalidUser = new JsonObject().put("username", "user1")
-				.put(cfg.getJsonObject(SoileConfigLoader.SESSION_CFG).getString("passwordField"), "password2");
+				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password2");
 
-		JsonObject DB_User = new JsonObject().put(cfg.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("usernameField"), "participant")
-				.put(cfg.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("passwordField"), "password"); 
+		JsonObject DB_User = new JsonObject().put(SoileConfigLoader.getdbField("usernameField"), "participant")
+				.put(SoileConfigLoader.getdbField("passwordField"), "password"); 
 
 		
 		Async overall = context.async();
 		// Lets create two users.
-		createUser(DB_User, context).onComplete(x1 -> 
+		createUser(DB_User, context, uManager).onComplete(x1 -> 
 		{					
 
 			SoileAuthentication auth = new SoileAuthentication(mongo_client);				

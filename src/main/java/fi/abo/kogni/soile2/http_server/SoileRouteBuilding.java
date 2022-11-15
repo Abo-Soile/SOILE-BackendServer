@@ -9,6 +9,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthenticationBuilder;
 import fi.abo.kogni.soile2.http_server.auth.SoileFormLoginHandler;
 import fi.abo.kogni.soile2.http_server.authentication.SoileAuthentication;
 import fi.abo.kogni.soile2.http_server.authentication.SoileCookieCreationHandler;
+import fi.abo.kogni.soile2.http_server.routes.TaskRouter;
 import fi.abo.kogni.soile2.utils.DebugRouter;
 import fi.abo.kogni.soile2.utils.MessageResponseHandler;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
@@ -48,15 +49,12 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		RouterBuilder.create(vertx, config().getString("api"))
 					 .compose(this::setupAuth)
 					 .compose(this::setupLogin)
+					 .compose(this::addHandlers)
+					 .compose(this::setupTaskAPI)
 					 .onSuccess( routerBuilder ->
 					 {
 						// add Debug, Logger and Session Handlers.						
-						routerBuilder.rootHandler(LoggerHandler.create());
-						routerBuilder.rootHandler(SessionHandler.create(LocalSessionStore.create(vertx)));
-						routerBuilder.rootHandler(BodyHandler.create());
-						routerBuilder.rootHandler(new DebugRouter());
 						soileRouter = routerBuilder.createRouter();
-						LOGGER.debug("Routerbuilder started successfully");
 						startPromise.complete();
 					 })
 					 .onFailure(fail ->
@@ -82,6 +80,15 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		handler = new SoileAuthenticationBuilder();
 		builder.securityHandler("cookieAuth",handler.getCookieAuthProvider(vertx, client, cookieHandler))
 			   .securityHandler("JWTAuth", JWTAuthHandler.create(handler.getJWTAuthProvider(vertx)));
+		return Future.<RouterBuilder>succeededFuture(builder);
+	}
+	
+	Future<RouterBuilder> addHandlers(RouterBuilder builder)
+	{
+		builder.rootHandler(LoggerHandler.create());
+		builder.rootHandler(SessionHandler.create(LocalSessionStore.create(vertx)));
+		builder.rootHandler(BodyHandler.create());
+		builder.rootHandler(new DebugRouter());
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
@@ -153,4 +160,11 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		}
 	}	
 	
+	
+	public Future<RouterBuilder> setupTaskAPI(RouterBuilder builder)
+	{
+		TaskRouter router = new TaskRouter();
+		router.buildTaskAPI(builder);
+		return Future.<RouterBuilder>succeededFuture(builder);
+	}
 }

@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project.elements;
+package fi.abo.kogni.soile2.project.elements.impl;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -12,7 +12,7 @@ import fi.abo.kogni.soile2.project.participant.Participant;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-public class ExperimentObjectInstance extends ProjectDataBaseObjectInstance{
+public class ExperimentObjectInstance extends ProjectDataBaseObjectInstanceImpl{
 
 	Random rand = new Random();
 	List<String> elementIDs;

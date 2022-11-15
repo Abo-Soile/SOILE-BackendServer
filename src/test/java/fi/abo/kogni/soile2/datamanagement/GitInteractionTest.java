@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project.itemManagement;
+package fi.abo.kogni.soile2.datamanagement;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -11,10 +11,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
+import fi.abo.kogni.soile2.datamanagement.git.GitFile;
+import fi.abo.kogni.soile2.datamanagement.git.ObjectManager;
+import fi.abo.kogni.soile2.datamanagement.git.ResourceManager;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
-import fi.abo.kogni.soile2.project.GitFile;
-import fi.abo.kogni.soile2.project.elementManagement.ObjectManager;
-import fi.abo.kogni.soile2.project.elementManagement.ResourceManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;

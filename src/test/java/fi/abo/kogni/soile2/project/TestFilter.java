@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import fi.abo.kogni.soile2.project.task.Filter;
 import fi.abo.kogni.soile2.project.utils.ParticipantImplForTesting;
 import fi.abo.kogni.soile2.project.utils.ProjectFactoryImplForTesting;
 import io.vertx.core.json.JsonObject;

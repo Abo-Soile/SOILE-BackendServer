@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import fi.abo.kogni.soile2.http_server.utils.DebugCookieStore;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
@@ -29,7 +30,7 @@ public class SoileLoginTest extends SoileVerticleTest {
 					.put("fullname","Test User")
 					.put("remember","1");
 			WebClientSession session = WebClientSession.create(webclient, new DebugCookieStore());			
-			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(uCfg,"addUser"), 
+			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"addUser"), 
 					userObject,res -> {
 							if(res.succeeded())
 							{
@@ -43,12 +44,12 @@ public class SoileLoginTest extends SoileVerticleTest {
 								session.post(port,"localhost","/login").sendForm(map).onSuccess(authed ->
 								{
 									boolean foundSessionCookie = false;
-									for(Cookie current : session.cookieStore().get(true, serverCfg.getString("domain"), sessionCfg.getString("cookiePath")))
+									for(Cookie current : session.cookieStore().get(true, SoileConfigLoader.getServerProperty("domain"), SoileConfigLoader.getSessionProperty("cookiePath")))
 									{
 										System.out.println("Found Cookie: " + current.toString());
 										System.out.println(current.name());
-										System.out.println(sessionCfg.getString("sessionCookieID"));
-										if(current.name().equals(sessionCfg.getString("sessionCookieID")))
+										System.out.println(SoileConfigLoader.getSessionProperty("sessionCookieID"));
+										if(current.name().equals(SoileConfigLoader.getSessionProperty("sessionCookieID")))
 										{		
 											//add the cookie to the other session.
 											newsession.cookieStore().put(current);
@@ -94,7 +95,7 @@ public class SoileLoginTest extends SoileVerticleTest {
 					.put("type", "participant")
 					.put("fullname","Test User")
 					.put("remember","1");					
-			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(uCfg,"addUser"), 
+			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"addUser"), 
 					userObject,res -> {
 							if(res.succeeded())
 							{

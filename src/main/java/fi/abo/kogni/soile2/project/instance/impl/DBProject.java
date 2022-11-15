@@ -69,7 +69,6 @@ public class DBProject extends ProjectInstance{
 
 	@Override
 	public Future<JsonObject> delete() {
-		Promise<JsonObject> loadSuccess = Promise.<JsonObject>promise();		
 		JsonObject query = new JsonObject().put("_id", this.instanceID);
 		return client.findOneAndDelete(projectInstanceDB, query);		
 	}

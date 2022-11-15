@@ -6,8 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import fi.abo.kogni.soile2.VertxTest;
+import fi.abo.kogni.soile2.MongoTest;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
@@ -23,12 +24,8 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
  * Unit tests for the User Management code (i.e. permission setting/removing, user addition etc pp)
  */
 @RunWith(VertxUnitRunner.class)
-public class SoileUserManagementTest extends VertxTest{
+public class SoileUserManagementTest extends MongoTest{
 
-	String getCommand(String commandString)
-	{
-		return uCfg.getString("commandPrefix") + uCfg.getJsonObject("commands").getString(commandString);
-	}
 	/**
 	 * Before executing our test, let's deploy our verticle.
 	 * <p/>
@@ -37,10 +34,10 @@ public class SoileUserManagementTest extends VertxTest{
 	 *
 	 * @param context the test context.
 	 */
-	@Before
-	public void setUp(TestContext context){
-		super.setUp(context);
+	@Override
+	public void runBeforeTests(TestContext context){		
 		// We pass the options as the second parameter of the deployVerticle method.
+		super.runBeforeTests(context);
 		vertx.deployVerticle(SoileServerVerticle.class.getName(), new DeploymentOptions(), context.asyncAssertSuccess());
 	}
 
@@ -106,13 +103,13 @@ public class SoileUserManagementTest extends VertxTest{
 							JsonObject obj = (JsonObject)res.result().body();					
 							context.assertEquals("Success",obj.getValue("Result"));
 							System.out.println("User Creation Test Successfull");
-							vertx.eventBus().request(SoileCommUtils.getEventBusCommand(uCfg, "removeUser"), userObject, remres ->
+							vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "removeUser"), userObject, remres ->
 							{
 								if(remres.succeeded())
 								{
 									Async iasync = context.async();
 									//lets try to remove it again;
-									vertx.eventBus().request(SoileCommUtils.getEventBusCommand(uCfg, "removeUser"), userObject, rrres ->
+									vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "removeUser"), userObject, rrres ->
 									{
 										if(rrres.succeeded())
 										{

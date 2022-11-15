@@ -2,10 +2,10 @@ package fi.abo.kogni.soile2.project.participant;
 
 import java.util.NoSuchElementException;
 
+import fi.abo.kogni.soile2.datamanagement.utils.DataRetriever;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.project.instance.ProjectInstance;
 import fi.abo.kogni.soile2.project.instance.impl.ProjectManager;
-import fi.abo.kogni.soile2.utils.DataRetriever;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;

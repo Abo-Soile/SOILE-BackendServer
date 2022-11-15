@@ -1,8 +1,8 @@
 package fi.abo.kogni.soile2.project.instance.impl;
 
+import fi.abo.kogni.soile2.datamanagement.utils.DataRetriever;
 import fi.abo.kogni.soile2.project.instance.ProjectFactory;
 import fi.abo.kogni.soile2.project.instance.ProjectInstance;
-import fi.abo.kogni.soile2.utils.DataRetriever;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -25,15 +25,13 @@ public class ProjectManager implements DataRetriever<String, ProjectInstance> {
 	// should go to the constructor.
 	private ProjectFactory dbFactory;
 	private ProjectFactory createFactory;
-	//TODO: needs constructor.
 	
 	public ProjectManager(MongoClient client, EventBus eb)
 	{
 		this.client = client;
 		String projectInstanceCollection = SoileConfigLoader.getdbProperty("projectCollection");	
 		this.dbFactory = new DBProjectFactory(client, projectInstanceCollection, eb);
-		this.createFactory = new JsonToDBProjectFactory(client, projectInstanceCollection, eb);
-		
+		this.createFactory = new JsonToDBProjectFactory(client, projectInstanceCollection, eb);		
 	}
 
 	public ProjectManager(MongoClient client, ProjectFactory createFactory, ProjectFactory dbFactory)
@@ -56,7 +54,7 @@ public class ProjectManager implements DataRetriever<String, ProjectInstance> {
 	}
 
 	/**
-	 * Create a new Procject with empty information provide it to the Handler
+	 * Create a new Project with empty information provide it to the Handler
 	 * database.
 	 * @param handler the handler to handle the created participant
 	 */

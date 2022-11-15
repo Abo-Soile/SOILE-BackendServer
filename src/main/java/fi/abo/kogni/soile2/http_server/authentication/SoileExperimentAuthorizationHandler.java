@@ -2,9 +2,9 @@ package fi.abo.kogni.soile2.http_server.authentication;
 
 import java.util.function.BiConsumer;
 
-import fi.abo.kogni.soile2.utils.PropertyRetriever;
+import fi.abo.kogni.soile2.datamanagement.utils.PropertyRetriever;
+import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import fi.abo.kogni.soile2.utils.TimeStampedMap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.auth.authorization.AuthorizationContext;

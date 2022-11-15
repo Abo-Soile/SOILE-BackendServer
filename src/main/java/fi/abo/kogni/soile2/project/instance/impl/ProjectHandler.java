@@ -8,12 +8,12 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.project.instance.ProjectInstance;
 import fi.abo.kogni.soile2.project.participant.Participant;
 import fi.abo.kogni.soile2.project.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.project.participant.impl.DBParticipant;
 import fi.abo.kogni.soile2.project.task.TaskFileResult;
-import fi.abo.kogni.soile2.utils.TimeStampedMap;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
@@ -61,7 +61,7 @@ public class ProjectHandler {
 	
 	/**
 	 * Get a list of all Files associated with the specified {@link DBParticipant} within this {@link ProjectInstance}.
-	 * @param p the {@link DBParticipant} for which  
+	 * @param p the {@link DBParticipant} for which to retrieve the file results.
 	 * @return
 	 */
 	public Set<File> getFilesForParticipant(Participant p)

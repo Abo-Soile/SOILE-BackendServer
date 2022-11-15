@@ -9,8 +9,24 @@ public class VersionedTask {
 	{
 		this.taskID = TaskID;
 		this.versionID = VersionID;		
-	}
+	}		
 	
+	public String getTaskID() {
+		return taskID;
+	}
+
+	public void setTaskID(String taskID) {
+		this.taskID = taskID;
+	}
+
+	public String getVersionID() {
+		return versionID;
+	}
+
+	public void setVersionID(String versionID) {
+		this.versionID = versionID;
+	}
+
 	@Override
 	public int hashCode()
 	{

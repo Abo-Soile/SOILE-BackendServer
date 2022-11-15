@@ -1,11 +1,11 @@
-package fi.abo.kogni.soile2.project.elements;
+package fi.abo.kogni.soile2.project.elements.impl;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-public class TaskObject extends ProjectDataBaseObject {
+public class TaskObject extends ProjectDataBaseObjectImpl {
 
 	public TaskObject(JsonObject data)
 	{

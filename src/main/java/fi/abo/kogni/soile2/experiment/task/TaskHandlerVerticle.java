@@ -4,6 +4,6 @@ import io.vertx.core.AbstractVerticle;
 
 public class TaskHandlerVerticle {
 
-	private TaskRetriever retriever;
+	private TaskCodeRetriever retriever;
 		
 }

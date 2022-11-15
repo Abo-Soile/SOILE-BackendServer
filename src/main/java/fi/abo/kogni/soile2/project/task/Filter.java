@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project;
+package fi.abo.kogni.soile2.project.task;
 
 import java.util.HashMap;
 

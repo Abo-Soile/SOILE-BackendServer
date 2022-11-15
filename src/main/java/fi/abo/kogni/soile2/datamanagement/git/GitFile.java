@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project;
+package fi.abo.kogni.soile2.datamanagement.git;
 
 /**
  * This represents all data necessary to retrieve the file for a given repository (the repository id can e.g. be a task/project or similar). 
@@ -26,6 +26,15 @@ public class GitFile {
 		return repoVersion;
 	}
 	
+	@Override
+	public boolean equals(Object o)
+	{
+		if(o instanceof GitFile)
+		{
+			return ((GitFile) o).getRepoID().equals(repoID) && ((GitFile) o).getRepoVersion().equals(repoVersion) && ((GitFile) o).getFileName().equals(fileName);
+		}
+		return false;
+	}
 	
 	
 }

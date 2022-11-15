@@ -46,8 +46,6 @@ public abstract class VertxTest extends MongoTest{
 	private SoileHashing hashStrat;	
 	private String hashinAlgo;
 	private SecureRandom random = new SecureRandom();
-	private SoileUserManager uManager;
-	public SoileAuthenticationOptions authOptions;		
 
 
 	@Before
@@ -70,7 +68,7 @@ public abstract class VertxTest extends MongoTest{
 		}
 		
 		
-		super.init(context);
+		super.setUp(context);
 		final Async oasync = context.async();				
 		cfg = new JsonObject(vertx.fileSystem().readFileBlocking("soile_config.json"));
 		hashStrat = new SoileHashing(cfg.getJsonObject(SoileConfigLoader.USERMGR_CFG)
@@ -104,7 +102,6 @@ public abstract class VertxTest extends MongoTest{
 			}
 			oasync.complete();
 		});
-		uManager = createManager();
 	}
 	/**
 	 * This method, called after our test, just cleanup everything by closing the vert.x instance
@@ -134,14 +131,6 @@ public abstract class VertxTest extends MongoTest{
 				base64Encode(salt),
 				password);
 
-	}
-	
-	public Future<String> createUser(JsonObject userdata, TestContext context)
-	{			
-		String username = userdata.getString(cfg.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("usernameField"));
-		String password = userdata.getString(cfg.getJsonObject(SoileConfigLoader.DB_FIELDS).getString("passwordField"));
-		System.out.println("Creating user with name " + username + " and password " + password);
-		return uManager.createUser(username, password);
 	}
 
 	public MultiMap createFormFromJson(JsonObject json)

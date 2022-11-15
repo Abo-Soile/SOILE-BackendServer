@@ -5,9 +5,9 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.project.instance.ProjectInstance;
 import fi.abo.kogni.soile2.project.instance.impl.ProjectHandler;
-import fi.abo.kogni.soile2.utils.TimeStampedMap;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;

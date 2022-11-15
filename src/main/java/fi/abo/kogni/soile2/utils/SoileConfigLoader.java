@@ -96,6 +96,16 @@ public class SoileConfigLoader {
 	}
 
 	/**
+	 * Get a property from the Server config.
+	 * @param property - the property to obtain.
+	 * @return the property
+	 */
+	public static int getServerIntProperty(String property)
+	{
+		return serverCfg.getInteger(property);
+	}
+	
+	/**
 	 * Get the database config
 	 * @return the database config {@link JsonObject}
 	 */

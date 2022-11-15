@@ -1,19 +1,11 @@
 package fi.abo.kogni.soile2.project.data;
 
-import java.io.File;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import fi.abo.kogni.soile2.project.instance.ProjectInstance;
-import fi.abo.kogni.soile2.project.participant.Participant;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 

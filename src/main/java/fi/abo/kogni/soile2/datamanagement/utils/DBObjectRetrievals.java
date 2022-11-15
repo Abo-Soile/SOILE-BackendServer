@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.utils;
+package fi.abo.kogni.soile2.datamanagement.utils;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;

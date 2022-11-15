@@ -3,7 +3,8 @@ package fi.abo.kogni.soile2.http_server.userManagement;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import fi.abo.kogni.soile2.VertxTest;
+import fi.abo.kogni.soile2.MongoTest;
+import fi.abo.kogni.soile2.UserManagementTest;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -11,12 +12,12 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 
 @RunWith(VertxUnitRunner.class)
-public class SoileUserManagerTest extends VertxTest{
+public class SoileUserManagerTest extends MongoTest implements UserManagementTest{
 	
 	@Test
 	public void testUserAddition(TestContext context) {
 		final Async async = context.async();
-		SoileUserManager man = createManager(); 		
+		SoileUserManager man = createManager(vertx); 		
 		String username =  "testUser";
 		String password =  "testpw";
 		
@@ -48,7 +49,7 @@ public class SoileUserManagerTest extends VertxTest{
 	@Test
 	public void testSetUserNameAndPassword(TestContext context) {
 		final Async async = context.async();
-		SoileUserManager man = createManager();		
+		SoileUserManager man = createManager(vertx);		
 		String username =  "testUser2";
 		String password =  "testpw";
 		String email = "test@test.blubb";
@@ -98,7 +99,7 @@ public class SoileUserManagerTest extends VertxTest{
 	@Test
 	public void testInvalidUserName(TestContext context) {
 		final Async async = context.async();
-		SoileUserManager man = createManager();		
+		SoileUserManager man = createManager(vertx);		
 		String username =  "test@User2";
 		String password =  "testpw";
 		man.createUser(username, password).onComplete(id -> {
@@ -118,7 +119,7 @@ public class SoileUserManagerTest extends VertxTest{
 	@Test
 	public void testSessionValidity(TestContext context) {
 		final Async async = context.async();
-		SoileUserManager man = createManager();		
+		SoileUserManager man = createManager(vertx);		
 		String username =  "testUser2";
 		String password =  "testpw";
 		String email = "test@test.blubb";

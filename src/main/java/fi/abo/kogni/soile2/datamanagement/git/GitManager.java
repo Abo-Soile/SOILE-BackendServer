@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.project;
+package fi.abo.kogni.soile2.datamanagement.git;
 
 import java.io.File;
 

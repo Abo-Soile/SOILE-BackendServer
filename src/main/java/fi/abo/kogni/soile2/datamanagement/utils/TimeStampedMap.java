@@ -1,15 +1,11 @@
-package fi.abo.kogni.soile2.utils;
+package fi.abo.kogni.soile2.datamanagement.utils;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.logging.log4j.core.Filter.Result;
 
-import fi.abo.kogni.soile2.project.participant.impl.DBParticipant;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -29,9 +25,13 @@ public class TimeStampedMap<K,T> {
 		ttl = TTL;
 	}
 	
+	/**
+	 * Clean up old data, that is not currently in use
+	 * @return the removed data.
+	 */
 	public Collection<T> cleanup()
 	{
-		Collection<K> toClean = CollectionUtils.select(experimentMap.keySet(), key -> experimentMap.get(key).isValid()); 
+		Collection<K> toClean = CollectionUtils.select(experimentMap.keySet(), key -> !experimentMap.get(key).isValid()); 
 		Collection<T> cleaned = CollectionUtils.collect(toClean, key -> experimentMap.get(key).getData());				
 		experimentMap.keySet().removeAll(toClean);
 		return cleaned;
@@ -74,6 +74,8 @@ public class TimeStampedMap<K,T> {
 		}
 		else
 		{
+			// refresh the timestamp.
+			expData.updateStamp();
 			itemPromise.complete(expData.getData());
 		}
 		return itemPromise.future();
