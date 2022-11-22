@@ -61,7 +61,6 @@ public class MongoTest extends SoileBaseTest {
 					{
 						async.complete();
 					});
-
 				}			
 			}
 			else

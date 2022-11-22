@@ -24,10 +24,12 @@
 		"host": "127.0.0.1",
 		"port": 27022,
 		"db_name": "soile",
-		"userCollection" : "users",
-		"experimentCollection" : "experiments",
+		"userCollection" : "users",		
 		"participantCollection" : "participants",
-		"projectInstanceCollection" : "projectInstances"
+		"projectInstanceCollection" : "projectInstances",
+		"projectCollection": "projects",
+		"taskCollection": "tasks",	
+		"experimentCollection" : "experiments"
 	},
 	
 	

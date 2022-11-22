@@ -5,6 +5,8 @@ import java.io.File;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.google.gson.JsonArray;
+
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
@@ -49,6 +51,51 @@ public class GitManager {
 		return existPromise.future();
 	}
 	
+	
+	/**
+	 * Initialize a repository
+	 * @param elementID the ID (Project, Task or ExperimentID)
+	 * @return a Future that on success returns the current Version of the (empty) repository. Fails if the repository exists.    
+	 */
+	public Future<String> initRepo(String elementID)
+	{
+		Promise<String> initPromise = Promise.<String>promise();
+		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitProviderVerticle.createExistRepoCommand(elementID))
+		.onSuccess( reply ->
+		{
+			JsonObject replyObject = (JsonObject) reply.body();
+			if(replyObject.getBoolean(gitProviderVerticle.DATAFIELD))
+			{
+				// The repository exists.
+				initPromise.fail("The requested Repository already exists");	
+			}
+			else
+			{
+				eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitProviderVerticle.createInitCommand(elementID))
+				.onSuccess(initReply -> {
+					JsonObject info = (JsonObject)initReply.body();
+					// return the new version of this repository (for future changes)
+					initPromise.complete(info.getString(gitProviderVerticle.COMMITHASHFIELD));
+				})
+				.onFailure(err -> 
+				{
+					initPromise.fail(err);
+				});
+			}
+										
+		})
+		.onFailure(fail ->
+		{
+			initPromise.fail(fail);
+		});
+		return initPromise.future();
+	}
+	/*
+	public Future<Boolean> deleteRepo(String elementID)
+	{
+		
+	}*/
+
 
 	/**
 	 * Get the file contents of a file in the github repository, these are all just json/linker files). 
@@ -162,7 +209,7 @@ public class GitManager {
 	{
 		return writeGitFile(file, data.encodePrettily());
 	}
-	
+		
 	/**
 	 * Write data to a file specified by the {@link GitFile} in the resources folder of the repo.  
 	 * @param file the GitFile containing name (including folders) but excluding the resources folder,  
@@ -184,5 +231,44 @@ public class GitManager {
 	{
 		return writeGitResourceFile(file, data.encodePrettily());
 	}
+
+	/**
+	 * A Basic Github object with a given name.
+	 * @param name
+	 * @return
+	 */
+	public static JsonObject buildBasicGitObject(String name)
+	{
+		return new JsonObject().put("name", name);
+	}
 	
+	/**
+	 * Build an empty github Project object
+	 * @param name
+	 * @return
+	 */
+	public static JsonObject buildBasicGitProject(String name)
+	{
+		return buildBasicGitObject(name).put("tasks", new JsonArray()).put("experiments", new JsonArray()).put("filters", new JsonArray()).put("start",  "");
+	}
+
+	/**
+	 * Build an empty github Task object
+	 * @param name
+	 * @return
+	 */
+	public static JsonObject buildBasicGitTask(String name)
+	{
+		return buildBasicGitObject(name).put("code", "").put("codetype", "").put("resources", new JsonArray());
+	}
+	
+	/**
+	 * Build an empty github experiment
+	 * @param name
+	 * @return
+	 */
+	public static JsonObject buildBasicGitExperiment(String name)
+	{
+		return buildBasicGitObject(name).put("elements", new JsonArray());
+	}
 }

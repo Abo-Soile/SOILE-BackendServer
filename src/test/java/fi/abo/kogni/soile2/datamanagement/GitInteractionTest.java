@@ -1,6 +1,7 @@
 package fi.abo.kogni.soile2.datamanagement;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,6 +12,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
+import fi.abo.kogni.soile2.SoileBaseTest;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.ObjectManager;
 import fi.abo.kogni.soile2.datamanagement.git.ResourceManager;
@@ -25,8 +27,23 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.ext.web.FileUpload;
 
 @RunWith(VertxUnitRunner.class)
-public class GitInteractionTest extends SoileVerticleTest{
+public class GitInteractionTest extends SoileBaseTest{
 
+	File tmpFolder;
+	
+	@Override
+	public void runBeforeTests(TestContext context)
+	{
+		try {
+			tmpFolder = Files.createTempDirectory("SoileTMP").toFile();	
+		}
+		catch(IOException e)
+		{
+			context.fail(e);
+			return;
+		}
+		vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), tmpFolder.getAbsolutePath()), context.asyncAssertSuccess());
+	}
 	@Test
 	public void testGitRepoExists(TestContext context)
 	{
@@ -204,7 +221,7 @@ public class GitInteractionTest extends SoileVerticleTest{
 	{
 		try
 		{
-			FileUtils.deleteDirectory(new File(SoileConfigLoader.getServerProperty("soileGitFolder")));
+			FileUtils.deleteDirectory(tmpFolder);
 		}
 		catch(Exception e)
 		{
