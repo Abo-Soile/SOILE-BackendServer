@@ -329,6 +329,7 @@ public abstract class ElementBase implements Element {
 		return saveSuccess.future();
 	}
 	
-	public abstract JsonObject getUpdates();			
+	public abstract JsonObject getUpdates();				
 	
+	public abstract ElementBase createElement();
 }
