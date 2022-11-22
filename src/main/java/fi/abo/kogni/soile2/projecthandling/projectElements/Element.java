@@ -2,13 +2,11 @@ package fi.abo.kogni.soile2.projecthandling.projectElements;
 
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 /**
  * Objects that implement this class reflect elements in a database that allow linking to 
@@ -152,5 +150,12 @@ public interface Element {
 	 * @param version
 	 * @return
 	 */
-	public Date getVersionDate(String version);	
+	public Date getVersionDate(String version);
+	
+	/**
+	 * Get the database collection to use for this Element
+	 * @return
+	 */
+	public String getTargetCollection();
+
 }

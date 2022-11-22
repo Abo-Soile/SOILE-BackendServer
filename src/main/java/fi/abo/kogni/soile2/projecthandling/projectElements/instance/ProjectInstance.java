@@ -7,7 +7,6 @@ import java.util.List;
 import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ProjectManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FilterObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;

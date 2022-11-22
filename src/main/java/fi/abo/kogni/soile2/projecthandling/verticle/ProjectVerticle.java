@@ -1,26 +1,17 @@
 package fi.abo.kogni.soile2.projecthandling.verticle;
 
-import java.util.UUID;
-
-import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.datamanagement.git.ObjectManager;
 import fi.abo.kogni.soile2.datamanagement.git.ResourceManager;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ProjectManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceManager;
-import fi.abo.kogni.soile2.utils.SoileCommUtils;
-import io.vertx.core.Promise;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.json.JsonObject;
 
 public class ProjectVerticle {
 
 	private ResourceManager resourceManager;
 	private ObjectManager objectManager;
 	private ProjectInstanceManager projectInstanceManager;
-	private ProjectManager projectManager;
 	private GitManager gitManager;
 	private TimeStampedMap<String, ProjectInstance> currentProjects;
 

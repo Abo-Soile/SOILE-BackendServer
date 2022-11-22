@@ -72,8 +72,7 @@ public abstract class ElementBase implements Element {
 		this.data = new JsonObject();
 		loadfromJson(data);		
 		this.collectionToUse = collectionToUse;		
-	}
-	
+	}		
 
 	@Override
 	@JsonProperty("UUID")
@@ -300,6 +299,11 @@ public abstract class ElementBase implements Element {
 		}		
 		return result; 
 	}
+	@Override
+	public String getTargetCollection()
+	{
+		return collectionToUse;
+	}
 	
 	public Future<String> save(MongoClient client)
 	{
@@ -330,6 +334,4 @@ public abstract class ElementBase implements Element {
 	}
 	
 	public abstract JsonObject getUpdates();				
-	
-	public abstract ElementBase createElement();
 }

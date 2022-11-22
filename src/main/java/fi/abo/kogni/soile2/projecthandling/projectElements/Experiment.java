@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import fi.abo.kogni.soile2.projecthandling.apielements.APIElement;
+import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
@@ -58,37 +60,9 @@ public class Experiment extends ElementBase {
 			return updates;
 	}
 	
-	
-	/**
-	 * Load a project as specified by the UUID. This UUID is the mongoDB id. if no project could be loaded, the promise fails.
-	 * @param client
-	 * @param UUID
-	 * @return
-	 */
-	public static Future<Experiment> loadExperiment(MongoClient client, String UUID)
-	{
-		Promise<Experiment> expPromise = Promise.<Experiment>promise();
-
-		client.findOne(SoileConfigLoader.getdbProperty("experimentCollection"), new JsonObject().put("_id", UUID), null)
-		.onSuccess(currentExp ->
-				{					
-					if(currentExp != null)
-					{
-						System.out.println("Found an existing project");
-						
-						Experiment p = new Experiment();
-						p.loadfromJson(currentExp);
-						expPromise.complete(p);
-					}
-					else
-					{
-							expPromise.fail(new ObjectDoesNotExist(UUID));
-					}
-				})
-		.onFailure(err -> {
-			expPromise.fail(err);
-		});		
-		return expPromise.future();
-
+	@Override
+	public String getTargetCollection() {
+		// TODO Auto-generated method stub
+		return SoileConfigLoader.getdbProperty("experimentCollection");
 	}
 }

@@ -1,24 +1,17 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map.Entry;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.mongo.MongoClient;
 
 /**
  * This class represents a Project as stored in the mongoDB Project Database.
@@ -33,6 +26,7 @@ public class Project extends ElementBase{
 	public Project()
 	{
 		super(new JsonObject(), SoileConfigLoader.getdbProperty("projectCollection"));
+		elements = new LinkedList<String>();
 	}
 			
 		
@@ -75,65 +69,9 @@ public class Project extends ElementBase{
 												 .put("$set", new JsonObject().put("private", getPrivate()).put("name", getName()));
 			return updates;
 	}
-	
-	
 	@Override
-	public void loadfromJson(JsonObject project)
-	{
-		super.loadfromJson(project);
-		setElements(project.getJsonArray("elements", new JsonArray()));
+	public String getTargetCollection() {
+		// TODO Auto-generated method stub
+		return SoileConfigLoader.getdbProperty("projectCollection");
 	}
-			
-	public static Future<Project> createProject(MongoClient client)
-	{
-		Promise<Project> projectPromise = Promise.<Project>promise();
-
-		Project newProject = new Project();
-		newProject.save(client)						
-		.onSuccess( id -> {
-			System.out.println(" Generated ID is : " + id);
-			newProject.setUUID(id);
-			projectPromise.complete(newProject);
-		})
-		.onFailure(err -> {
-			projectPromise.fail(err);
-		});
-
-		return projectPromise.future();
-	}
-	/**
-	 * Load a project as specified by the UUID. This UUID is the mongoDB id. if no project could be loaded, the promise fails.
-	 * @param client
-	 * @param UUID
-	 * @return
-	 */
-	public static Future<Project> loadProject(MongoClient client, String UUID)
-	{
-		Promise<Project> projectPromise = Promise.<Project>promise();
-
-		client.findOne(SoileConfigLoader.getdbProperty("projectCollection"), new JsonObject().put("_id", UUID), null)
-		.onSuccess(currentProject ->
-				{					
-					System.out.println(UUID);
-					if(currentProject != null)
-					{
-						System.out.println("Found an existing project");
-						
-						Project p = new Project();
-						p.loadfromJson(currentProject);
-						projectPromise.complete(p);
-					}
-					else
-					{
-							projectPromise.fail(new ObjectDoesNotExist(UUID));
-					}
-				})
-		.onFailure(err -> {
-			projectPromise.fail(err);
-		});		
-		return projectPromise.future();
-
-	}
-		
-	
 }

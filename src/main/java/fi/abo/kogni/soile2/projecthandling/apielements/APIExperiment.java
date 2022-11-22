@@ -30,22 +30,12 @@ public class APIExperiment extends APIElementBase<Experiment> {
 	}
 	
 	@Override
-	public Future<Experiment> getDBElement(MongoClient client) {
-		Promise<Experiment> expPromise = Promise.<Experiment>promise();
-
-		Experiment.loadExperiment(client, getUUID()).onSuccess(experiment -> 
+	public void setElementProperties(Experiment experiment) {
+		JsonArray currentElements = data.getJsonArray("elements",new JsonArray()); 
+		for(int i = 0; i < currentElements.size(); i++)
 		{
-			setDefaultProperties(experiment);
-			JsonArray currentElements = data.getJsonArray("elements",new JsonArray()); 
-			for(int i = 0; i < currentElements.size(); i++)
-			{
-				experiment.addElement(currentElements.getJsonObject(i).getJsonObject("data").getString("UUID"));
-			}	
-			expPromise.complete(experiment);
-			
-		})
-		.onFailure(fail -> expPromise.fail(fail));
-		return expPromise.future();
+			experiment.addElement(currentElements.getJsonObject(i).getJsonObject("data").getString("UUID"));
+		}			
 	}
 
 	@Override

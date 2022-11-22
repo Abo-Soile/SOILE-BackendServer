@@ -1,10 +1,18 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
+import java.util.function.Supplier;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.MongoClient;
 /**
  * This is the representation of Database elements for Project generation and modification.
  * The spec is:
@@ -143,4 +151,35 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 		target.setPrivate(getPrivate());
 	}
 	
+	public boolean hasAdditionalContent()
+	{
+		return false;
+	}
+	
+	/**
+	 * This is essentially a no--op on most objects.
+	 */
+	public Future<String> storeAdditionalData(String currentVersion, GitManager gitManager)
+	{
+		return Future.succeededFuture(currentVersion);
+	}
+	
+	/**
+	 * Set the element Properties for a DB element of the type specified for this APIElement.
+	 * @param target
+	 */
+	public abstract void setElementProperties(T target);
+	
+	@Override
+	public Future<T> getDBElement(MongoClient client, ElementFactory<T> ElementFactory) {
+		Promise<T> elementPromise = Promise.<T>promise();
+		ElementFactory.loadElement(client, getUUID()).onSuccess(element -> 
+		{
+			setDefaultProperties(element);
+			setElementProperties(element);
+			elementPromise.complete(element);		
+		})
+		.onFailure(fail -> elementPromise.fail(fail));
+		return elementPromise.future();
+	}
 }

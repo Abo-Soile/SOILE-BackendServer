@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -12,36 +13,25 @@ public class APIProject extends APIElementBase<Project>{
 	
 	private static String[] gitFields = new String[] {"name","tasks","experiments","filters","start"};
 	private static Object[] gitDefaults = new Object[] {"",new JsonArray(),new JsonArray(),new JsonArray(),null};
-
 	
 	public APIProject(JsonObject data) {
 		super(data);
-		// TODO Auto-generated constructor stub
+		// TODO Auto-generated constructor stub		
 	}
 
-		
-	@Override
-	public Future<Project> getDBElement(MongoClient client) {
-		Promise<Project> projectPromise = Promise.<Project>promise();
 
-		Project.loadProject(client, getUUID()).onSuccess(project -> 
+	@Override
+	public void setElementProperties(Project project) {
+		JsonArray currentTasks = data.getJsonArray("tasks",new JsonArray()); 
+		for(int i = 0; i < currentTasks.size(); i++)
 		{
-			setDefaultProperties(project);
-			JsonArray currentTasks = data.getJsonArray("tasks",new JsonArray()); 
-			for(int i = 0; i < currentTasks.size(); i++)
-			{
-				project.addElement(currentTasks.getJsonObject(i).getString("UUID"));
-			}
-			JsonArray currentExperiments = data.getJsonArray("experiments",new JsonArray()); 
-			for(int i = 0; i < currentExperiments.size(); i++)
-			{
-				project.addElement(currentExperiments.getJsonObject(i).getString("UUID"));
-			}
-			projectPromise.complete(project);
-			
-		})
-		.onFailure(fail -> projectPromise.fail(fail));
-		return projectPromise.future();
+			project.addElement(currentTasks.getJsonObject(i).getString("UUID"));
+		}
+		JsonArray currentExperiments = data.getJsonArray("experiments",new JsonArray()); 
+		for(int i = 0; i < currentExperiments.size(); i++)
+		{
+			project.addElement(currentExperiments.getJsonObject(i).getString("UUID"));
+		}		
 	}
 
 

@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.MongoTest;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -18,6 +19,7 @@ public class ProjectTest extends MongoTest {
 	@Test
 	public void testProjectSaveLoad(TestContext context)
 	{
+		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
 		Async testAsync = context.async();
 		buildTestProject(context).onSuccess(p -> {
 			System.out.println("Initial Project set up");
@@ -27,7 +29,7 @@ public class ProjectTest extends MongoTest {
 			.onSuccess(ID -> {
 				p.setUUID(ID);
 				System.out.println(p.getUUID());
-				Project.loadProject(mongo_client, p.getUUID())
+				projectFactory.loadElement(mongo_client, p.getUUID())
 				.onSuccess(project -> {
 					context.assertEquals(p.getPrivate(),project.getPrivate());
 					context.assertEquals(p.getName(),project.getName());
@@ -53,6 +55,7 @@ public class ProjectTest extends MongoTest {
 	@Test
 	public void testProjectUpdate(TestContext context)
 	{
+		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
 		Async testAsync = context.async();	
 		buildTestProject(context).onSuccess(p -> {
 			p.addVersion("abcdefg");
@@ -66,7 +69,7 @@ public class ProjectTest extends MongoTest {
 				p.setPrivate(false);
 				p.save(mongo_client)
 				.onSuccess(Void2 -> {						
-					Project.loadProject(mongo_client, p.getUUID())
+					projectFactory.loadElement(mongo_client, p.getUUID())
 					.onSuccess(project -> {					
 						context.assertEquals(p.getPrivate(),project.getPrivate());
 						context.assertEquals(2, project.getTags().size());
@@ -98,13 +101,14 @@ public class ProjectTest extends MongoTest {
 
 	public Future<Project> buildTestProject(TestContext context)
 	{			
+		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
 		Promise<Project> projectPromise = Promise.<Project>promise();
 		try
 		{
 			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(ProjectTest.class.getClassLoader().getResource("DBProject.json").getPath())));
 			Project tempProject = new Project();
 			tempProject.loadfromJson(projectDef);
-			Project.createProject(mongo_client)
+			projectFactory.createElement(mongo_client)
 			.onSuccess(project -> 
 			{
 				System.out.println("The generated project has the id: " + project.getUUID());

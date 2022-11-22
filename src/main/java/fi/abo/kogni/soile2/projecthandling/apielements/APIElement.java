@@ -1,10 +1,14 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
 
+import java.util.function.Supplier;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import fi.abo.kogni.soile2.datamanagement.git.GitManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 /**
@@ -13,7 +17,7 @@ import io.vertx.ext.mongo.MongoClient;
  * @author Thomas Pfau
  *
  */
-public interface APIElement<T> {
+public interface APIElement<T extends ElementBase> {
 
 	/**
 	 * This UUID is a mongoDB ID. 
@@ -93,7 +97,18 @@ public interface APIElement<T> {
 	@JsonProperty("private")
 	void setPrivate(Boolean _private);
 
-	Future<T> getDBElement(MongoClient client);
+	/**
+	 * Get a Future of an (updated) element from the database. Note, this element will Be updated with the information provided 
+	 * in the API Element and can directly be saved in order to update the database object.
+	 * @param client the mongoclient to use to save the data
+	 * @param elementFactory the elementFactory used to build the element  
+	 * @return
+	 */
+	Future<T> getDBElement(MongoClient client, ElementFactory<T> elementFactory);
+	
+	boolean hasAdditionalContent();
+	
+	Future<String> storeAdditionalData(String currentVersion, GitManager gitManager);
 	
 	JsonObject getGitJson();
 }
