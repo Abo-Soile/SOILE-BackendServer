@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.projecthandling.utils;
+package fi.abo.kogni.soile2.projecthandling.projectElements;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -70,7 +70,9 @@ public class ProjectTest extends MongoTest {
 				p.save(mongo_client)
 				.onSuccess(Void2 -> {						
 					projectFactory.loadElement(mongo_client, p.getUUID())
-					.onSuccess(project -> {					
+					.onSuccess(project -> {		
+						System.out.println("This is the final task:");
+						System.out.println(project.toJson().encodePrettily());			
 						context.assertEquals(p.getPrivate(),project.getPrivate());
 						context.assertEquals(2, project.getTags().size());
 						context.assertEquals(2, project.getVersions().size());

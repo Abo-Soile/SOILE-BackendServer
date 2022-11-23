@@ -212,6 +212,13 @@ public abstract class ElementBase implements Element {
 		currentVersion = current;
 	}
 
+	
+	@Override
+	public String getCurrentVersion()
+	{
+		return currentVersion;
+	}
+	
 	/**
 	 * Add a tag to a version for better retrievability.
 	 * @param tag
@@ -223,7 +230,7 @@ public abstract class ElementBase implements Element {
 		tags.put(tag, version);
 	}
 	/**
-	 * Get the Vrsions available for this project.
+	 * Get the Versions available for this project.
 	 * @return
 	 */
 	@Override
@@ -268,7 +275,7 @@ public abstract class ElementBase implements Element {
 	{		
 		setTags(json.getJsonArray("tags", new JsonArray()));
 		setVersions(json.getJsonArray("versions", new JsonArray()));
-		setName(json.getString("name"));
+		setName(json.getString("name",""));
 		// either load from the UUID Field or from the _id field if the UUID does not exist.
 		setUUID(json.getString("UUID", json.getString("_id")));
 		setPrivate(json.getBoolean("private",false));		

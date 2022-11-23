@@ -134,6 +134,11 @@ public interface Element {
 	 */	
 	public void setCurrentVersion(String current);
 	/**
+	 * Get the version to be used for this project
+	 * @param current the version to be used as currentVersion
+	 */	
+	public String getCurrentVersion();
+	/**
 	 * Add a tag to a version for better retrievability.
 	 * @param tag
 	 * @param version

@@ -14,8 +14,12 @@ public class Task extends ElementBase {
 	}
 	
 	public Task(JsonObject data)
-	{
+	{		
 		super(data, SoileConfigLoader.getdbProperty("taskCollection"));
+		if(data.getJsonArray("resources") == null)
+		{
+			data.put("resources", new JsonArray());
+		}
 	}
 
 	@JsonProperty("codetype")
@@ -38,10 +42,21 @@ public class Task extends ElementBase {
 		data.put("resources", resources);
 	}
 
-	public void addResource(String filename) {
+	public void addResource(String filename) {		
 		data.getJsonArray("resources").add(filename);
 	}
-
+	@Override
+	public void loadfromJson(JsonObject json)
+	{		
+		super.loadfromJson(json);
+		setResources(json.getJsonArray("resources",new JsonArray()));
+		setCodetype(json.getString("codetype", "javascript"));
+	}
+	@Override
+	public JsonObject toJson(boolean provideUUID)
+	{		
+		return super.toJson(provideUUID).put("resources", getResources()).put("codetype", getCodetype()); 
+	}
 	@Override
 	public JsonObject getUpdates()
 	{
@@ -50,6 +65,7 @@ public class Task extends ElementBase {
 			JsonObject updateResources = new JsonObject().put("resources", new JsonObject().put("$each", getResources()));
 			JsonObject updates = new JsonObject().put("$addToSet", new JsonObject().mergeIn(updateVersions).mergeIn(updateResources).mergeIn(updateTags))
 												 .put("$set", new JsonObject().put("private", getPrivate()).put("name", getName()));
+			System.out.println(updates.encodePrettily());
 			return updates;
 	}
 

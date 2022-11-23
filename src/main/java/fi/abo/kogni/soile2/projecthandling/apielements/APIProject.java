@@ -1,12 +1,8 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.mongo.MongoClient;
 
 public class APIProject extends APIElementBase<Project>{
 

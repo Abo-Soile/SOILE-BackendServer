@@ -1,0 +1,8 @@
+{
+	"name": "TestTask",
+	"private" : true,	
+	"tags" : [],
+	"versions" : [],
+	"resources" : [],
+	"codetype" : "javascript" 
+}
