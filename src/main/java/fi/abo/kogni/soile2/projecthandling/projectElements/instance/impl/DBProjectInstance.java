@@ -3,7 +3,13 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
+import fi.abo.kogni.soile2.datamanagement.git.GitFile;
+import fi.abo.kogni.soile2.datamanagement.git.GitManager;
+import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
+import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -20,8 +26,10 @@ public class DBProjectInstance extends ProjectInstance{
 	MongoClient client;
 	String projectInstanceDB;
 	EventBus eb;
-	public DBProjectInstance(MongoClient client, String projectInstanceDB, EventBus eb) {
+	GitManager gitManager;
+	public DBProjectInstance(GitManager gitManager, MongoClient client, String projectInstanceDB, EventBus eb) {
 		super();
+		this.gitManager = gitManager;
 		this.client = client;
 		this.projectInstanceDB = projectInstanceDB;
 		this.eb = eb;
@@ -41,26 +49,31 @@ public class DBProjectInstance extends ProjectInstance{
 	}
 
 	/**
-	 * This loader expects a _id field in the json.
+	 * This loader expects that the input json is a query for the mongo db of instances.
 	 * It will then extract the remaining data first from the Project Instance database and then from the git repository.
 	 */
 	@Override
-	public Future<JsonObject> load(JsonObject object) {
-		Promise<JsonObject> loadSuccess = Promise.<JsonObject>promise();		
-		JsonObject query = new JsonObject().put("_id", object.getString("_id"));
-		client.findOne(projectInstanceDB, query, null).onSuccess(instanceJson -> {
-			eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"),
-					   gitProviderVerticle.createGetCommand(instanceJson.getString("_id"),
-							   instanceJson.getString("version"),
-							   "project.json"))
-			.onSuccess(response -> {
-				// we got a positive reply.
-				JsonObject projectData = new JsonObject(((JsonObject)response.body()).getString(gitProviderVerticle.DATAFIELD));
-				instanceJson.mergeIn(projectData);
-				loadSuccess.complete(instanceJson);
-			}).onFailure(fail -> {
-				loadSuccess.fail(fail);
-			});
+	public Future<JsonObject> load(JsonObject instanceInfo) {
+		Promise<JsonObject> loadSuccess = Promise.<JsonObject>promise();				
+		client.findOne(projectInstanceDB, instanceInfo, null).onSuccess(instanceJson -> {
+			if(instanceJson == null)
+			{
+				loadSuccess.fail(new ObjectDoesNotExist(instanceID));
+			}
+			else
+			{		
+				GitFile proj = new GitFile("object.json",instanceJson.getString("sourceId"),instanceJson.getString("version")); 
+				gitManager.getGitFileContentsAsJson(proj)
+				.onSuccess(projectData -> 
+				{
+					// we got a positive reply.
+					instanceJson.mergeIn(projectData);
+					loadSuccess.complete(instanceJson);
+				}
+				).onFailure(fail -> {
+					loadSuccess.fail(fail);
+				});
+			}
 		}).onFailure(fail -> {
 			loadSuccess.fail(fail);
 		});

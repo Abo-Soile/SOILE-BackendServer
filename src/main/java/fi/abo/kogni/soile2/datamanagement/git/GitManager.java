@@ -5,14 +5,17 @@ import java.io.File;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.gson.JsonArray;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
+import fi.abo.kogni.soile2.experiment.task.Task;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.JsonArray;
 
 /**
  * This class manages access to the {@link gitProviderVerticle}s via the eventbus..
@@ -207,6 +210,7 @@ public class GitManager {
 	 */
 	public Future<String> writeGitFile(GitFile file, JsonObject data)
 	{
+		System.out.println(data);
 		return writeGitFile(file, data.encodePrettily());
 	}
 		
@@ -232,6 +236,26 @@ public class GitManager {
 		return writeGitResourceFile(file, data.encodePrettily());
 	}
 
+	
+	public static JsonObject buildBasicGitElement(String name, Class type)
+	{
+		if( Project.class.equals(type)) {
+			return buildBasicGitProject(name);
+		}
+		else if(Task.class.equals(type)) {
+			return buildBasicGitTask(name);
+		}
+		else if(Experiment.class.equals(type))
+		{
+			return buildBasicGitExperiment(name);
+		}
+		else
+		{
+			return buildBasicGitObject(name);
+		}
+	}
+	
+	
 	/**
 	 * A Basic Github object with a given name.
 	 * @param name

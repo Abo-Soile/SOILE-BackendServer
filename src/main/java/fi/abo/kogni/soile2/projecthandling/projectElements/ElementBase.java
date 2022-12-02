@@ -5,8 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.collections4.Put;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -67,6 +70,7 @@ public abstract class ElementBase implements Element {
 
 	public ElementBase(JsonObject data, String collectionToUse)
 	{	
+		// by default, an object is visible. 		
 		versions = new HashMap<>();
 		tags = new HashMap<>();		
 		this.data = new JsonObject();
@@ -177,6 +181,20 @@ public abstract class ElementBase implements Element {
 	public void setPrivate(Boolean isprivate) {
 		data.put("private",isprivate);
 	}
+
+	
+	@Override
+	@JsonProperty("visible")
+	public Boolean getVisible() {
+		return data.getBoolean("visible");
+	}
+	
+	@Override
+	@JsonProperty("visible")
+	public void setVisible(Boolean visible) {
+		data.put("visible",visible);
+	}
+	
 	
 	/**
 	 * Get the version stored for a tag.
@@ -276,6 +294,7 @@ public abstract class ElementBase implements Element {
 		setTags(json.getJsonArray("tags", new JsonArray()));
 		setVersions(json.getJsonArray("versions", new JsonArray()));
 		setName(json.getString("name",""));
+		setVisible(json.getBoolean("visible", true));
 		// either load from the UUID Field or from the _id field if the UUID does not exist.
 		setUUID(json.getString("UUID", json.getString("_id")));
 		setPrivate(json.getBoolean("private",false));		
@@ -299,7 +318,8 @@ public abstract class ElementBase implements Element {
 		JsonObject result = new JsonObject().put("name", getName())
 				   .put("versions", getVersions())
 				   .put("tags", getTags())				   
-				   .put("private", getPrivate());
+				   .put("private", getPrivate())
+				   .put("visible",getVisible());
 		if(provideUUID)
 		{
 			result.put("_id", getUUID());	
@@ -318,17 +338,42 @@ public abstract class ElementBase implements Element {
 		// TODO: Set the UUID field as an Index, then this should work.
 		if(getUUID() != null)
 		{
-			System.out.println(getUUID());
+			// So, we have a UUID in this element, which means it is not freshly created.
 			JsonObject updates = getUpdates();
-			client.updateCollection(collectionToUse,
-										   new JsonObject().put("_id", this.getUUID().toString()), updates)
-			.onSuccess(res -> {
-				saveSuccess.complete(getUUID());
+			// now, check that the name we have here does not collide with a name in the db.
+			JsonObject differingIDQuery = new JsonObject()
+					.put("_id", new JsonObject()
+							.put("$not", new JsonObject()
+											 .put("$eq", getUUID())											  
+							)
+			)
+			.put("name",getName());
+			client.findOne(collectionToUse, differingIDQuery , null)
+			.onSuccess(exists -> {
+				if(exists != null)
+				{
+					System.out.println("Query\n" + differingIDQuery.encodePrettily());
+					System.out.println("Result\n" + exists.encodePrettily());
+					saveSuccess.fail(new ElementNameExistException(getName(), exists.getString("_id")));	
+				}
+				else
+				{
+					client.updateCollection(collectionToUse,
+							new JsonObject().put("_id", this.getUUID().toString()), updates)
+					.onSuccess(res -> {
+						saveSuccess.complete(getUUID());
+					})
+					.onFailure(err -> saveSuccess.fail(err));		
+				}
 			})
-			.onFailure(err -> saveSuccess.fail(err));
+			.onFailure(err -> {
+				saveSuccess.fail(err);	
+			});
+			
 		}
 		else
 		{
+			// since the item did not exist in the db (i.e. did not have a UUID yet, we can simply return it.			
 			client.save(collectionToUse,toJson(false))
 			.onSuccess(res -> {
 				System.out.println(res);

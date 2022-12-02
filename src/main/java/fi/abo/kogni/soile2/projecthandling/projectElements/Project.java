@@ -69,9 +69,10 @@ public class Project extends ElementBase{
 												 .put("$set", new JsonObject().put("private", getPrivate()).put("name", getName()));
 			return updates;
 	}
+	
 	@Override
-	public String getTargetCollection() {
+	public String getTypeID() {
 		// TODO Auto-generated method stub
-		return SoileConfigLoader.getdbProperty("projectCollection");
+		return "P";
 	}
 }

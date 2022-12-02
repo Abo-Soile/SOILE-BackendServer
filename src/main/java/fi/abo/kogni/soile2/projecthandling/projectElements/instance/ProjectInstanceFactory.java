@@ -6,11 +6,11 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance;
  * @author Thomas Pfau
  *
  */
-public interface ProjectInstanceFactory {
-
+public interface ProjectInstanceFactory {	
 	/**
 	 * Create a {@link ProjectInstance} of the type provided by the factory.
 	 * @return a {@link ProjectInstance} 
 	 */
 	public ProjectInstance createInstance();
+	
 }

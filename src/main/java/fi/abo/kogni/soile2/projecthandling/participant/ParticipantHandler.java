@@ -81,7 +81,7 @@ public class ParticipantHandler {
 	}
 	
 	/**
-	 * Retrieve a participant from the datbase (or memory) and return the participant
+	 * Retrieve a participant from the database (or memory) and return the participant
 	 * based on the participants uID.
 	 * @param id the uid of the participant
 	 * @param handler the handler that requested the participant.

@@ -44,6 +44,7 @@ public class MongoTest extends SoileBaseTest {
 	{	
 		super.runBeforeTests(context);
 		mongo_client = MongoClient.createShared(vertx, SoileConfigLoader.getDbCfg());
+		System.out.println("initialized mongo Client as : " + mongo_client);
 	}
 	
 	@After

@@ -69,5 +69,10 @@ public class Task extends ElementBase {
 			return updates;
 	}
 
+	@Override
+	public String getTypeID() {
+		// TODO Auto-generated method stub
+		return "T";
+	}
 
 }

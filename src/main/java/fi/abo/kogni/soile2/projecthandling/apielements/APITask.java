@@ -6,17 +6,23 @@ import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class APITask extends APIElementBase<Task> {
 
-	private static String[] gitFields = new String[] {"name", "codetype", "resources"};
-	private static Object[] gitDefaults = new Object[] {"", "javascript", new JsonArray()};
-
+	private String[] gitFields = new String[] {"name", "codetype", "resources"};
+	private Object[] gitDefaults = new Object[] {"", "javascript", new JsonArray()};
+	
+	public APITask() {
+		super(new JsonObject());
+		// TODO Auto-generated constructor stub		
+	}
 	
 	public APITask(JsonObject data) {
-		super(data); 
+		super(data);
+		loadGitJson(data);
 	}
 
 	@JsonProperty("codetype")
@@ -66,7 +72,15 @@ public class APITask extends APIElementBase<Task> {
 		return gitData;
 	}
 	@Override
-	public boolean hasAdditionalContent()
+	public void loadGitJson(JsonObject json) {
+		for(int i = 0; i < gitFields.length ; ++i)
+		{
+			this.data.put(gitFields[i], json.getValue(gitFields[i], gitDefaults[i]));	
+		}
+	}
+	
+	@Override
+	public boolean hasAdditionalGitContent()
 	{
 		return true;
 	}
@@ -77,4 +91,19 @@ public class APITask extends APIElementBase<Task> {
 		GitFile g = new GitFile("Code.obj", getUUID(), currentVersion);
 		return gitManager.writeGitFile(g, getCode());
 	}
+	
+	public Future<Boolean> loadAdditionalData(GitManager gitManager)
+	{
+		Promise<Boolean> successPromise = Promise.promise();
+		GitFile g = new GitFile("Code.obj", getUUID(), this.getVersion());
+		gitManager.getGitFileContents(g).onSuccess(code -> {
+			setCode(code);
+			successPromise.complete(true);
+		})
+		.onFailure(err -> {
+			successPromise.fail(err);
+		});
+		
+		return successPromise.future();
+	}	
 }

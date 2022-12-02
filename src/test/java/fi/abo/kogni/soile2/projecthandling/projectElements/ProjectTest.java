@@ -6,8 +6,6 @@ import java.nio.file.Paths;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.MongoTest;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
@@ -107,10 +105,10 @@ public class ProjectTest extends MongoTest {
 		Promise<Project> projectPromise = Promise.<Project>promise();
 		try
 		{
-			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(ProjectTest.class.getClassLoader().getResource("DBProject.json").getPath())));
+			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(ProjectTest.class.getClassLoader().getResource("DBTestData/DBProject.json").getPath())));
 			Project tempProject = new Project();
 			tempProject.loadfromJson(projectDef);
-			projectFactory.createElement(mongo_client)
+			projectFactory.createElement(mongo_client, "TestProject")
 			.onSuccess(project -> 
 			{
 				System.out.println("The generated project has the id: " + project.getUUID());

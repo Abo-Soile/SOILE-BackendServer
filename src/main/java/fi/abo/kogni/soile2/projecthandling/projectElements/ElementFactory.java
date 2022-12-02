@@ -4,16 +4,28 @@ package fi.abo.kogni.soile2.projecthandling.projectElements;
 
 import java.util.function.Supplier;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import fi.abo.kogni.soile2.http_server.auth.SoileCookieAuth;
+import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
+/**
+ * A Factory to load Database elements from the mongo DB.
+ * @author Thomas Pfau
+ *
+ * @param <T> The type of element this factory retrieves 
+ */
 public class ElementFactory<T extends ElementBase> {	
 	
 	Supplier<T> DBObjectSupplier;
-	
+	public static final Logger log = LogManager.getLogger(ElementFactory.class);
+
 	public ElementFactory(Supplier<T> supplier)
 	{		
 		DBObjectSupplier = supplier;
@@ -25,19 +37,38 @@ public class ElementFactory<T extends ElementBase> {
 	 * @param element
 	 * @return
 	 */
-	public Future<T> createElement(MongoClient client)
+	public Future<T> createElement(MongoClient client, String name)
 	{		
 		Promise<T> elementPromise = Promise.<T>promise();
 		T element = DBObjectSupplier.get();
-		element.save(client)						
-		.onSuccess( id -> {
-			System.out.println(" Generated ID is : " + id);
-			element.setUUID(id);
-			elementPromise.complete(element);
-		})
-		.onFailure(err -> {
+		// make sure no element exists with the exact same name.		
+		client.findOne(element.getTargetCollection(), new JsonObject().put("name",name), null)
+		.onSuccess(res -> {
+			// if this is not null, we already have an element with the name
+			if( res == null)
+			{
+				log.debug("No element with the given name existed. Creating a new one");
+				// otherwise, we can set the name and save the element.
+				element.setName(name);
+				element.save(client)						
+				.onSuccess( id -> {					
+					element.setUUID(id);					
+					elementPromise.complete(element);
+				})
+				.onFailure(err -> {
+					elementPromise.fail(err);
+				});		
+			}
+			else
+			{
+				log.debug("Element with the name " + name + " existed. Failing");
+				element.loadfromJson(res);
+				elementPromise.fail(new ElementNameExistException(name, element.getUUID()));
+			}
+		}).onFailure(err -> {
 			elementPromise.fail(err);
 		});
+		
 
 		return elementPromise.future();
 	}
@@ -76,4 +107,5 @@ public class ElementFactory<T extends ElementBase> {
 		return projectPromise.future();
 
 	}
+	
 }

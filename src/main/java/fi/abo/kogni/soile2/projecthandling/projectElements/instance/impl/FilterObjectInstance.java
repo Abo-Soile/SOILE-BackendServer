@@ -49,6 +49,7 @@ public class FilterObjectInstance extends ElementInstanceBase {
 				return sourceProject.getElement(optionsNext.get(exp)).nextTask(user);
 			}
 		}
+		
 		return sourceProject.getElement(defaultNext).nextTask(user);
 	}
 

@@ -105,11 +105,11 @@ public class TaskTest extends MongoTest {
 		Promise<Task> taskPromise = Promise.<Task>promise();
 		try
 		{
-			JsonObject taskDef = new JsonObject(Files.readString(Paths.get(TaskTest.class.getClassLoader().getResource("DBTask.json").getPath())));
+			JsonObject taskDef = new JsonObject(Files.readString(Paths.get(TaskTest.class.getClassLoader().getResource("DBTestData/DBTask.json").getPath())));
 			Task tempTask = new Task();
 			tempTask.loadfromJson(taskDef);
 			System.out.println(tempTask.toJson().encodePrettily());
-			taskFactory.createElement(mongo_client)
+			taskFactory.createElement(mongo_client, "TestTask")
 			.onSuccess(task -> 
 			{
 				tempTask.setUUID(task.getUUID());

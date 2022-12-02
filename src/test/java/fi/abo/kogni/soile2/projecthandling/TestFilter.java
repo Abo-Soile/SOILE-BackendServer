@@ -16,7 +16,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 @RunWith(VertxUnitRunner.class)
-public class TestFilter {
+public class TestFilter extends ProjectBaseTest{
 
 	@Test
 	public void testFilterCheck(TestContext context) {
@@ -38,7 +38,7 @@ public class TestFilter {
 		String WrongFilterString = "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = sdasd1 & t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3.output1 > 0 | t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4.output4 < 10";
 		context.assertNotEquals("Success", Filter.testFilterExpression(WrongFilterString, filterData));		
 		Async partAsync = context.async();
-		ParticipantImplForTesting.getTestParticipant(context,3,projectData).onSuccess(p -> {
+		ParticipantImplForTesting.getTestParticipant(context,3,getPos(0)).onSuccess(p -> {
 			context.assertTrue(Filter.userMatchesFilter(FilterString, p));
 			String FilterNoSmoker = "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = 0 & t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3.output1 > 0 | t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4.output4 < 10";		
 			context.assertFalse(Filter.userMatchesFilter(FilterNoSmoker, p));

@@ -5,15 +5,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import fi.abo.kogni.soile2.projecthandling.apielements.APIElement;
-import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
-import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.mongo.MongoClient;
 
 public class Experiment extends ElementBase {
 
@@ -22,6 +16,7 @@ public class Experiment extends ElementBase {
 	public Experiment()
 	{
 		this(new JsonObject());
+		
 	}
 	
 	public Experiment(JsonObject data) {
@@ -50,6 +45,13 @@ public class Experiment extends ElementBase {
 	
 	
 	@Override
+	public void loadfromJson(JsonObject o)
+	{
+		super.loadfromJson(o);
+		setElements(o.getJsonArray("elements",new JsonArray()));
+	}
+	
+	@Override
 	public JsonObject getUpdates()
 	{
 			JsonObject updateVersions = new JsonObject().put("versions", new JsonObject().put("$each", getVersions()));
@@ -59,10 +61,10 @@ public class Experiment extends ElementBase {
 												 .put("$set", new JsonObject().put("private", getPrivate()).put("name", getName()));
 			return updates;
 	}
-	
+
 	@Override
-	public String getTargetCollection() {
+	public String getTypeID() {
 		// TODO Auto-generated method stub
-		return SoileConfigLoader.getdbProperty("experimentCollection");
+		return "E";
 	}
 }

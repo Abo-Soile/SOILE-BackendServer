@@ -3,6 +3,7 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
@@ -18,7 +19,7 @@ import io.vertx.core.json.JsonObject;
 /**
  * Instance of a Project in Soile. 
  * This reflects  running instance of a project. The Project Management (during creation and modfication of the project)
- * is handled in the {@link Project} class, which represents a project in the database that the {@link ProjectManager} 
+ * is handled in the {@link Project} class, which represents a project in the database that the {@link ProjectManagerImpl} 
  * links with the respective code in the git Repository.  
  * @author Thomas Pfau
  *
@@ -34,11 +35,16 @@ public abstract class ProjectInstance {
 	 */
 	protected String sourceUUID;
 	protected String version;
+	/**
+	 * Access to the participants array needs to be synchronized, at least after initiation of the object. 
+	 */
 	protected List<String> participants;	
 	protected String name;	
 	// This reflects all tasks/experiments and their respective String representation
 	protected HashMap<String, ElementInstance> elements;
-	protected String start;		
+	protected String start;
+	// a url shortcut.
+	protected String shortcut;	
 	/**
 	 * A basic constructor that can be called by any Implementing class. 
 	 */
@@ -60,25 +66,27 @@ public abstract class ProjectInstance {
 	}		
 	
 	/**
-	 * Instantiate the project (return a {@link ProjectInstance} when finished), where data is data the probvided project implementation
+	 * Instantiate the project (return a {@link ProjectInstance} when finished), where data is data the provided project implementation
 	 * can use to retrieve the information required by setupProject.
-	 * @param p The (uninitialized base project)
+	 * @param instantiationInfo All information needed by the Instance generated from the provided factory to create the instance.
 	 * @param data The data required by the project implementation to build the Project data
 	 * @param pManager the project Manager 
-	 * @return a Fture that will have the instantiated project created from the factory.
+	 * @return a Future that will have the instantiated project created from the factory.
 	 */
-	public static Future<ProjectInstance> instantiateProject(JsonObject data, ProjectInstanceFactory factory) 
+	public static Future<ProjectInstance> instantiateProject(JsonObject instantiationInfo, ProjectInstanceFactory factory) 
 	{
 		Promise<ProjectInstance> projPromise = Promise.<ProjectInstance>promise();	
 		ProjectInstance p = factory.createInstance();
-		p.load(data).onSuccess(dataJson -> {
+		p.load(instantiationInfo).onSuccess(dataJson -> {
 			p.setupProject(dataJson);
 			projPromise.complete(p);
 		}).onFailure(fail -> {
 			projPromise.fail(fail);
 		});
 		return projPromise.future();
-	}	
+	}
+	
+	
 	/**
 	 * Parse a project from Json data.
 	 * @param data
@@ -91,6 +99,7 @@ public abstract class ProjectInstance {
 		instanceID = data.getString("_id");
 		version = data.getString("version");
 		name = data.getString("name");
+		shortcut = data.getString("shortcut",null);
 		for(Object cTaskData : data.getJsonArray("tasks", new JsonArray()))
 		{
 			TaskObjectInstance cTask = new TaskObjectInstance((JsonObject)cTaskData, this);
@@ -153,13 +162,15 @@ public abstract class ProjectInstance {
 	 * Create the Json of the data relevant for this instance (data that can be retrieved from the project is ignored.
 	 * @return the {@link JsonObject} representing a projectInstance schema
 	 */
-	public JsonObject toDBJson()
+	public synchronized JsonObject toDBJson()
 	{
 		JsonObject dbData = new JsonObject()
 								.put("_id",instanceID)
 								.put("sourceUUID",sourceUUID)
 								.put("version", version)
-								.put("participants", new JsonArray(participants));
+								.put("participants", new JsonArray(participants))
+								.put("name", name)
+								.put("shortcut", shortcut);
 		return dbData;
 	}	
 	
@@ -167,7 +178,7 @@ public abstract class ProjectInstance {
 	 * Add a participant to the list of participants of this projects
 	 * @param p the participant to add
 	 */
-	public void addParticipant(Participant p)
+	public synchronized void addParticipant(Participant p)
 	{
 		participants.add(p.getID());
 	}
@@ -176,12 +187,12 @@ public abstract class ProjectInstance {
 	 * Delete a participant from the list of participants of this projects
 	 * @param p the participant to remove
 	 */
-	public void deleteParticipant(Participant p)
+	public synchronized void deleteParticipant(Participant p)
 	{
 		participants.remove(p.getID());
 	}
 	
-	public List<String> getParticipants()
+	public synchronized List<String> getParticipants()
 	{
 		return List.copyOf(participants);
 	}
@@ -250,6 +261,10 @@ public abstract class ProjectInstance {
 		
 		ElementInstance current = getElement(user.getProjectPosition());
 		String nextElement = current.nextTask(user);
+		if(nextElement.equals("") || nextElement == null)
+		{
+			
+		}
 		System.out.println("Updating user position:" + current.getInstanceID() + " -> " + nextElement);		
 		user.setProjectPosition(nextElement);
 	}				
@@ -264,10 +279,10 @@ public abstract class ProjectInstance {
 	/**
 	 * Load all data that is necessary for the project. This function should work with the Data contained in the future provided by 
 	 * the save function.  
-	 * @param object The object to retrieve the data from.
+	 * @param object The object to retrieve the data from. Can be specific to the Actual implementation used. e.g. can only contain one ID if loading from a DB or multiple fields if construction from multiple DBs. 
 	 * @return A Future containing all data actually necessary for {@link ProjectInstance} to reconstruct all necessary fields. 
 	 */
-	public abstract Future<JsonObject> load(JsonObject object);
+	public abstract Future<JsonObject> load(JsonObject instanceInfo);
 	
 	/**
 	 * Delete the project instance represented by this Object. Note: This must NOT delete the actual Project data, but only the data 

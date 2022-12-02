@@ -34,4 +34,11 @@ public class ProjectBaseTest {
 			return;
 		}
 	}
+	
+	
+	public JsonObject getPos(int i)
+	{
+		return new JsonObject().put("pos", i);
+	}
 }
+

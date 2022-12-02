@@ -6,8 +6,7 @@ import java.nio.file.Paths;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.MongoTest;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
+import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
@@ -17,23 +16,23 @@ import io.vertx.ext.unit.TestContext;
 public class ExperimentTest extends MongoTest {
 
 	@Test
-	public void testProjectSaveLoad(TestContext context)
+	public void testExperimentSaveLoad(TestContext context)
 	{
-		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
+		ElementFactory<Experiment> ExperimentFactory = new ElementFactory<Experiment>(Experiment::new);
 		Async testAsync = context.async();
-		buildTestProject(context).onSuccess(p -> {
-			System.out.println("Initial Project set up");
+		buildTestExperiment(context).onSuccess(p -> {
+			System.out.println("Initial Experiment set up");
 			p.addVersion("abcdefg");
 			p.addTag("NewVersion", "abcdefg");
 			p.save(mongo_client)
 			.onSuccess(ID -> {
 				p.setUUID(ID);
 				System.out.println(p.getUUID());
-				projectFactory.loadElement(mongo_client, p.getUUID())
-				.onSuccess(project -> {
-					context.assertEquals(p.getPrivate(),project.getPrivate());
-					context.assertEquals(p.getName(),project.getName());
-					context.assertEquals(p.getVersionForTag("NewVersion"), project.getVersionForTag("NewVersion"));
+				ExperimentFactory.loadElement(mongo_client, p.getUUID())
+				.onSuccess(Experiment -> {
+					context.assertEquals(p.getPrivate(),Experiment.getPrivate());
+					context.assertEquals(p.getName(),Experiment.getName());
+					context.assertEquals(p.getVersionForTag("NewVersion"), Experiment.getVersionForTag("NewVersion"));
 					testAsync.complete();
 				})
 				.onFailure(err -> {
@@ -52,30 +51,44 @@ public class ExperimentTest extends MongoTest {
 		});
 	}
 
+	
 	@Test
-	public void testProjectUpdate(TestContext context)
+	public void testExperimentUpdate(TestContext context)
 	{
-		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
+		ElementFactory<Experiment> ExperimentFactory = new ElementFactory<Experiment>(Experiment::new);
 		Async testAsync = context.async();	
-		buildTestProject(context).onSuccess(p -> {
-			p.addVersion("abcdefg");
-			p.addTag("NewVersion", "abcdefg");
-			p.setPrivate(true);
-			p.save(mongo_client)
+		buildTestExperiment(context).onSuccess(exp -> {
+			exp.addVersion("abcdefg");
+			exp.addTag("NewVersion", "abcdefg");
+			exp.setPrivate(true);
+			exp.addElement("32145");
+			exp.save(mongo_client)
 			.onSuccess(ID -> {
-				p.setUUID(ID);
-				p.addVersion("12345");
-				p.addTag("Another Tag", "12345");
-				p.setPrivate(false);
-				p.save(mongo_client)
+				exp.setUUID(ID);
+				exp.addVersion("12345");
+				exp.addTag("Another Tag", "12345");				
+				exp.setPrivate(false);
+				exp.addElement("32145");
+				exp.addElement("14555");
+				exp.save(mongo_client)				
 				.onSuccess(Void2 -> {						
-					projectFactory.loadElement(mongo_client, p.getUUID())
-					.onSuccess(project -> {					
-						context.assertEquals(p.getPrivate(),project.getPrivate());
-						context.assertEquals(2, project.getTags().size());
-						context.assertEquals(2, project.getVersions().size());
-						context.assertEquals(p.getVersionForTag("Another Tag"), project.getVersionForTag("Another Tag"));
-						context.assertEquals(p.getVersionDate("12345"),project.getVersionDate("12345"));
+					ExperimentFactory.loadElement(mongo_client, exp.getUUID())
+					.onSuccess(Experiment -> {					
+						context.assertEquals(exp.getPrivate(),Experiment.getPrivate());
+						context.assertEquals(2, Experiment.getTags().size());
+						context.assertEquals(2, Experiment.getVersions().size());
+						context.assertEquals(2, Experiment.getElements().size());
+						boolean found = false;
+						for(int i = 0; i < 2; i++)
+						{							
+							if(Experiment.getElements().getString(i).equals("32145"))
+							{
+								found = true;
+							}
+						}						
+						context.assertTrue(found);
+						context.assertEquals(exp.getVersionForTag("Another Tag"), Experiment.getVersionForTag("Another Tag"));
+						context.assertEquals(exp.getVersionDate("12345"),Experiment.getVersionDate("12345"));
 						testAsync.complete();
 					}).onFailure(err -> {
 						context.fail(err);
@@ -98,26 +111,50 @@ public class ExperimentTest extends MongoTest {
 		});
 
 	}
+	
+	@Test
+	public void testExperimentNameException(TestContext context)
+	{
+		Async testAsync = context.async();	
+		buildTestExperiment(context).onSuccess(exp -> {
+			System.out.println(exp.toJson(true).encodePrettily());
+			buildTestExperiment(context)
+			.onFailure(err -> {
+				context.assertEquals(err.getClass(), ElementNameExistException.class);
+				testAsync.complete();
+			})
+			.onSuccess(exp2 -> {
+				System.out.println(exp2.toJson(true).encodePrettily());
+				context.fail("The creation should have failed due to colliding names");
+				testAsync.complete();
+			});
+			
+		})
+		.onFailure(err -> {
+			context.fail(err);
+			testAsync.complete();
+		});
 
-	public Future<Project> buildTestProject(TestContext context)
+	}
+
+	public Future<Experiment> buildTestExperiment(TestContext context)
 	{			
-		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
-		Promise<Project> projectPromise = Promise.<Project>promise();
+		ElementFactory<Experiment> ExperimentFactory = new ElementFactory<Experiment>(Experiment::new);
+		Promise<Experiment> ExperimentPromise = Promise.<Experiment>promise();
 		try
 		{
-			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(ExperimentTest.class.getClassLoader().getResource("DBProject.json").getPath())));
-			Project tempProject = new Project();
-			tempProject.loadfromJson(projectDef);
-			projectFactory.createElement(mongo_client)
-			.onSuccess(project -> 
+			JsonObject ExperimentDef = new JsonObject(Files.readString(Paths.get(ExperimentTest.class.getClassLoader().getResource("DBTestData/DBExperiment.json").getPath())));
+			Experiment tempExperiment = new Experiment();
+			tempExperiment.loadfromJson(ExperimentDef);
+			ExperimentFactory.createElement(mongo_client,tempExperiment.getName())
+			.onSuccess(Experiment -> 
 			{
-				System.out.println("The generated project has the id: " + project.getUUID());
-				project.setName(tempProject.getName());
-				project.setPrivate(tempProject.getPrivate());
-				projectPromise.complete(project);
+				System.out.println("The generated Experiment has the id: " + Experiment.getUUID());				
+				Experiment.setPrivate(tempExperiment.getPrivate());
+				ExperimentPromise.complete(Experiment);
 			})
 			.onFailure(err -> {
-				projectPromise.fail(err);
+				ExperimentPromise.fail(err);
 				context.fail(err);
 			});
 		}
@@ -125,11 +162,11 @@ public class ExperimentTest extends MongoTest {
 		{
 			e.printStackTrace(System.out);
 			context.fail(e);
-			projectPromise.fail(e);			
+			ExperimentPromise.fail(e);			
 		}
-		return projectPromise.future();
+		return ExperimentPromise.future();
 
 	}
-
+	
 }
 

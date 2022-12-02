@@ -1,0 +1,246 @@
+package fi.abo.kogni.soile2.projecthandling.utils;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+
+import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
+import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
+import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.MongoClient;
+
+public class ObjectGenerator {
+
+	
+	
+	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID)
+	{
+		Promise<APITask> taskPromise = Promise.promise();
+		try
+		{
+			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
+			String TaskCode = Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));		
+			manager.createOrLoadElement(TaskDef.getString("name"))
+			.onSuccess(task -> {
+				APITask apiTask = new APITask(TaskDef);				
+				apiTask.loadGitJson(TaskDef);
+				apiTask.setCode(TaskCode);
+				apiTask.setVersion(task.getCurrentVersion());
+				apiTask.setUUID(task.getUUID());
+				taskPromise.complete(apiTask);
+			})
+			.onFailure(fail -> taskPromise.fail(fail));
+		}
+		catch(IOException e)
+		{
+			taskPromise.fail(e);
+		}
+		return taskPromise.future();
+	}
+	
+	public static Future<APIExperiment> buildAPIExperiment(ElementManager<Experiment> experimentManager,ElementManager<Task> taskManager,MongoClient client, String experimentName)
+	{
+		Promise<APIExperiment> experimentPromise = Promise.promise();
+		try
+		{
+			JsonObject ExperimentDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/ExperimentData.json").getPath()))).getJsonObject(experimentName);
+			APIExperiment apiExperiment = new APIExperiment();
+			System.out.println("The initial API experiment looks as follows: " + apiExperiment.getJson().encodePrettily() );			
+			apiExperiment.setPrivate(ExperimentDef.getBoolean("private"));
+			System.out.println("Creating Experiment with name " + ExperimentDef.getString("name") );
+			System.out.println(ExperimentDef.encodePrettily());
+			experimentManager.createOrLoadElement(ExperimentDef.getString("name"))
+			.onSuccess(experiment -> {							
+				apiExperiment.setName(experiment.getName());
+				apiExperiment.setVersion(experiment.getCurrentVersion());
+				apiExperiment.setUUID(experiment.getUUID());
+				System.out.println("The Experiment Manager Returned an experiment with the following data: \n"  + experiment.toJson().encodePrettily());
+
+				ConcurrentHashMap<String, JsonObject> elements = new ConcurrentHashMap();
+				List<Future> partFutures = new LinkedList<Future>();
+				for(Object item : ExperimentDef.getJsonArray("items"))
+				{
+					JsonObject current = (JsonObject) item;
+					if(current.getString("type").equals("task"))
+					{
+						partFutures.add(
+								buildAPITask(taskManager, current.getString("name")).onSuccess(task -> {
+									experiment.addElement(task.getUUID());
+									JsonObject taskInstance = new JsonObject();
+									taskInstance.put("instanceID", current.getString("instanceID"))
+												.put("next", current.getString("next", null))
+												.put("UUID", task.getUUID())
+												.put("version", task.getVersion())
+												.put("filter", current.getString("filter",""))
+												.put("name", task.getName())
+												.put("outputs", current.getJsonArray("outputs",new JsonArray()));
+									elements.put(current.getString("name"), new JsonObject().put("type", "task")
+											.put("data",taskInstance));
+								})
+								);
+					}
+					if(current.getString("type").equals("filter"))
+					{
+						elements.put(current.getString("name"), new JsonObject().put("type", "filter")
+								.put("data",current.getJsonObject("data")));
+					}					
+					if(current.getString("type").equals("experiment"))
+					{
+						partFutures.add(
+								buildAPIExperiment(experimentManager, taskManager, client, current.getString("name")).onSuccess(subexperiment -> {
+									experiment.addElement(subexperiment.getUUID());
+									JsonObject experimentInstance = new JsonObject();
+									experimentInstance.put("instanceID", current.getString("instanceID"))
+												.put("next", current.getString("next", null))
+												.put("UUID", subexperiment.getUUID())
+												.put("version", subexperiment.getVersion())
+												.put("randomize", current.getBoolean("randomize",false))
+												.put("name", subexperiment.getName());
+									elements.put(current.getString("name"), 
+											new JsonObject().put("type", "experiment")
+															.put("data", experimentInstance));
+								})
+								);
+						
+					}
+				}
+				//deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
+				System.out.println("There are " + partFutures.size() + " Elements in the experiment ");
+				CompositeFuture.all(partFutures).mapEmpty().onSuccess(Void -> {
+					// once all is done, we put it in in the right order.
+					for(Object item : ExperimentDef.getJsonArray("items"))
+					{
+						JsonObject current = (JsonObject) item;
+						
+						apiExperiment.getElements().add(elements.get(current.getString("name")));
+					}
+					experiment.save(client)
+					.onSuccess(Void2 -> { 
+							experimentPromise.complete(apiExperiment);
+					})
+					.onFailure(err -> {
+						experimentPromise.fail(err);
+					});
+					
+				})
+				.onFailure(err -> {
+					experimentPromise.fail(err);
+				});
+			})
+			.onFailure(fail -> experimentPromise.fail(fail));
+		}
+		catch(IOException e)
+		{
+			experimentPromise.fail(e);
+		}
+		return experimentPromise.future();
+	}
+
+	
+	public static Future<APIProject> buildAPIProject(ElementManager<Project> projectManager, ElementManager<Experiment> expManager,ElementManager<Task> taskManager, MongoClient client, String projectName)
+	{
+		Promise<APIProject> projectPromise = Promise.promise();
+		try
+		{
+			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/ProjectData.json").getPath()))).getJsonObject(projectName);
+			System.out.println(projectDef.encodePrettily());
+			APIProject apiProject = new APIProject();		
+			apiProject.setStart(projectDef.getString("start"));
+			projectManager.createOrLoadElement(projectDef.getString("name"))
+			.onSuccess(project -> {							
+				apiProject.setName(project.getName());
+				apiProject.setVersion(project.getCurrentVersion());
+				apiProject.setUUID(project.getUUID());
+				apiProject.setPrivate(project.getPrivate());				
+				ConcurrentHashMap<String, JsonObject> tasks = new ConcurrentHashMap();
+				List<Future> taskFutures = new LinkedList<Future>();
+				for(Object item : projectDef.getJsonArray("tasks"))
+				{
+					JsonObject current = (JsonObject) item;
+					taskFutures.add(
+						buildAPITask(taskManager, current.getString("name"))
+						.onSuccess(task -> {
+							project.addElement(task.getUUID());
+							JsonObject taskInstance = new JsonObject();
+							taskInstance.put("instanceID", current.getString("instanceID"))
+										.put("next", current.getString("next", null))
+										.put("UUID", task.getUUID())
+										.put("version", task.getVersion())
+										.put("filter", current.getString("filter",""))
+										.put("name", task.getName())
+										.put("outputs", current.getJsonArray("outputs",new JsonArray()));
+							tasks.put(current.getString("name"), taskInstance);
+						})
+						);
+				}
+				System.out.println("There are " + taskFutures.size() + " Elements in the experiment ");
+				CompositeFuture.all(taskFutures).mapEmpty().onSuccess(Void -> {
+					LinkedList<JsonObject> taskList = new LinkedList<JsonObject>();
+					taskList.addAll(tasks.values());
+					JsonArray taskArray = new JsonArray(taskList);
+					apiProject.setTasks(taskArray);
+					// and now we do the experiments. Since they could in theory refer back to the same unique tasks, we need to have created the tasks first.
+					ConcurrentHashMap<String, JsonObject> experiments = new ConcurrentHashMap();
+					List<Future> experimentFutures = new LinkedList<Future>();
+					// and for filters. This should work even without
+					JsonArray filters = apiProject.getFilters();
+					for(Object item : projectDef.getJsonArray("filters"))
+					{
+						filters.add(item);
+					}
+					for(Object item : projectDef.getJsonArray("experiments"))
+					{
+						JsonObject current = (JsonObject) item;
+						experimentFutures.add(
+							buildAPIExperiment(expManager, taskManager, client, current.getString("name"))
+							.onSuccess(experiment -> {
+								project.addElement(experiment.getUUID());						
+								JsonObject expinstance = experiment.getJson();
+								expinstance.put("instanceID",current.getString("instanceID"))
+										   .put("next", current.getString("next", null))
+										   .put("random", current.getBoolean("random", true));
+								experiments.put(current.getString("name"), expinstance);								
+							})
+							);						
+					}
+					// once the futures are set up, wait for them do be done and then finish up.
+					CompositeFuture.all(experimentFutures).mapEmpty()
+					.onSuccess(Void2 -> {
+						LinkedList<JsonObject> expList = new LinkedList<JsonObject>();
+						expList.addAll(experiments.values());
+						JsonArray expArray = new JsonArray(expList);
+						apiProject.setExperiments(expArray);
+						project.save(client)
+						.onSuccess(Void3 -> {
+							projectPromise.complete(apiProject);
+						})
+						.onFailure(err -> projectPromise.fail(err));
+					});
+					
+				})
+				.onFailure(err -> projectPromise.fail(err));
+				
+				//deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
+				
+			})
+			.onFailure(fail -> projectPromise.fail(fail));
+		}
+		catch(IOException e)
+		{
+			projectPromise.fail(e);
+		}
+		return projectPromise.future();
+	}
+}

@@ -106,11 +106,40 @@ public interface APIElement<T extends ElementBase> {
 	 */
 	Future<T> getDBElement(MongoClient client, ElementFactory<T> elementFactory);
 	
-	boolean hasAdditionalContent();
+	/**
+	 * Load data from a database element fitting to this API elements type 
+	 * @param element The element to load data from 
+	 * @return
+	 */
+	void loadFromDBElement(T element);	
 	
+	/**
+	 * Test whether this API Element has additional Content stored in the git repository besides the pure object data.
+	 * If true, the additional data will be stored using storeAdditonalGitData and loaded via its loadAdditionalGitData functions
+	 * @return this API Element has additional Content stored in the git repository
+	 */
+	boolean hasAdditionalGitContent();
+	
+	/**
+	 * Store additional data to the git Manager, returns a future of the new git repo version with the data stored.
+	 * @param currentVersion the version on which to base the additions
+	 * @param gitManager a git Manager to use
+	 * @return A Future of the updated version
+	 */
 	Future<String> storeAdditionalData(String currentVersion, GitManager gitManager);
 	
+	/**
+	 * Load additional data to from git and add it to this object.
+	 * @param gitManager a git Manager to use
+	 * @return if the loading operation was successfull
+	 */
+	Future<Boolean> loadAdditionalData(GitManager gitManager);
+	
 	JsonObject getGitJson();
+	
+	void loadGitJson(JsonObject json);
+	
+	JsonObject getJson();
 }
 
 

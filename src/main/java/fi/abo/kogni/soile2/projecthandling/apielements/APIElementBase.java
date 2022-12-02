@@ -1,16 +1,12 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
-import java.util.function.Supplier;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 /**
@@ -60,9 +56,15 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 
 	protected JsonObject data; 	
 
+	public APIElementBase()
+	{
+		this.data = new JsonObject();
+	}
+	
 	public APIElementBase(JsonObject data)
 	{	
-		this.data = data;					
+		this.data = data;
+		// make sure fields are initialised
 	}
 	
 
@@ -151,7 +153,18 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 		target.setPrivate(getPrivate());
 	}
 	
-	public boolean hasAdditionalContent()
+	/**
+	 * Load the default properties retrievable from the db object.
+	 * @param target
+	 */
+	public void loadDefaultProperties(T target)
+	{
+		setName(target.getName());
+		setUUID(target.getUUID());
+		setPrivate(target.getPrivate());
+	}
+	
+	public boolean hasAdditionalGitContent()
 	{
 		return false;
 	}
@@ -163,23 +176,49 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	{
 		return Future.succeededFuture(currentVersion);
 	}
-	
+
+	/**
+	 * This is essentially a no--op on most objects.
+	 */
+	public Future<Boolean> loadAdditionalData(GitManager gitManager)
+	{
+		return Future.succeededFuture(true);
+	}
 	/**
 	 * Set the element Properties for a DB element of the type specified for this APIElement.
 	 * @param target
 	 */
 	public abstract void setElementProperties(T target);
 	
+	/**
+	 * Load properties which are specific to this element.
+	 * @param target
+	 */
+	//public abstract void loadElementProperties(T target);
+	
+	
 	@Override
 	public Future<T> getDBElement(MongoClient client, ElementFactory<T> ElementFactory) {
 		Promise<T> elementPromise = Promise.<T>promise();
-		ElementFactory.loadElement(client, getUUID()).onSuccess(element -> 
-		{
+		// load the element with the given UUID.
+		ElementFactory.loadElement(client, getUUID())
+		.onSuccess(element -> 
+		{			
 			setDefaultProperties(element);
 			setElementProperties(element);
 			elementPromise.complete(element);		
 		})
-		.onFailure(fail -> elementPromise.fail(fail));
-		return elementPromise.future();
+			.onFailure(fail -> elementPromise.fail(fail));
+			return elementPromise.future();
+	}
+	
+	@Override
+	public void loadFromDBElement(T element) {
+		// at least for now, all other properties come from the git Repo....
+		loadDefaultProperties(element);
+	}
+	
+	public JsonObject getJson() {
+		return this.data;
 	}
 }

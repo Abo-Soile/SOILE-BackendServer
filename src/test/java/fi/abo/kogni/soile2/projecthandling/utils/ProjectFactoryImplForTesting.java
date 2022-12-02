@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstanceFactory;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -29,9 +30,17 @@ public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
 		}
 
 		@Override
-		public Future<JsonObject> load(JsonObject object) {			
-			// directly pass on the object.
-			return Future.succeededFuture(object);
+		public Future<JsonObject> load(JsonObject id) {			
+			Promise<JsonObject> projectPromise = Promise.promise();
+			try
+			{				
+				projectPromise.complete(loadProjectData(id.getInteger("pos")));
+			}
+			catch(Exception e)
+			{
+				projectPromise.fail(e);
+			}
+			return projectPromise.future();
 		}
 
 		@Override

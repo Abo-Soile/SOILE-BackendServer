@@ -5,6 +5,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 
 public interface ElementInstance {
@@ -59,8 +60,8 @@ public interface ElementInstance {
 	void setInstanceID(String instanceID);
 
 	/**
-	 * Return the ID of the next {@link TaskObjectInstance} for the given user based on the assumption, that 
-	 * has finished the task at its `getProjectPosition()`. This should check, whether    
+	 * Return the ID of the next {@link TaskObjectInstance} for the given user based on the assumption, 
+	 * that the user has finished the task at its `getProjectPosition()`. 
 	 * @param user
 	 * @return
 	 */

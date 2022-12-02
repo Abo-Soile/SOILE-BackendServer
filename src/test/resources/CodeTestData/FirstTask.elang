@@ -1,0 +1,15 @@
+intermezzo-phase p
+    helptext("This is the first task")
+    wait()
+end
+
+intermezzo-phase g
+  wait(1)
+  storesingle("clicktimes" : 20)
+end
+
+transition
+  start(p),
+  p -> g,
+  final(g)
+end

@@ -36,7 +36,7 @@ public class ParticipantImplForTesting extends Participant {
 		return Future.succeededFuture(newUUID);		
 	}
 	
-	public static Future<Participant> getTestParticipant(TestContext context, int i, JsonObject projectData)
+	public static Future<Participant> getTestParticipant(TestContext context, int i, JsonObject id)
 	{
 		Promise<Participant> partProm = Promise.<Participant>promise();
 		JsonArray Participant_data;
@@ -51,7 +51,7 @@ public class ParticipantImplForTesting extends Participant {
 		}
 		Async partCreation = context.async();
 		ProjectFactoryImplForTesting fac = new ProjectFactoryImplForTesting();
-		ProjectInstance.instantiateProject(projectData, fac).onSuccess(project -> {
+		ProjectInstance.instantiateProject(id, fac).onSuccess(project -> {
 			partProm.complete(new ParticipantImplForTesting(Participant_data.getJsonObject(i), project));
 			partCreation.complete();
 		}).onFailure(fail ->{

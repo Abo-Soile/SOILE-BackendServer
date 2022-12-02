@@ -93,6 +93,22 @@ public interface Element {
 	 */
 	@JsonProperty("private")
 	void setPrivate(Boolean _private);
+
+	
+	/**
+	 * The visible property of this element
+	 * @return whether the element is visible (if not visible, it is in the process of deletion and will be removed if no other element refers to it any more.)
+	 */
+	@JsonProperty("visible")
+	Boolean getVisible();
+	/**
+	 * Set the visible property of this object.
+	 * @param _private
+	 */
+	@JsonProperty("visible")
+	void setVisible(Boolean visible);
+	
+	
 	
 	/**
 	 * Convert to a string
@@ -162,5 +178,11 @@ public interface Element {
 	 * @return
 	 */
 	public String getTargetCollection();
-
+	
+	
+	/**
+	 * Get the Type identifier, to be used for git retrieval.
+	 * @return
+	 */
+	public String getTypeID();
 }

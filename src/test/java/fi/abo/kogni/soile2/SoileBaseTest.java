@@ -3,17 +3,17 @@ package fi.abo.kogni.soile2;
 
 import static io.vertx.ext.auth.impl.Codec.base64Encode;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.SecureRandom;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
-import fi.abo.kogni.soile2.http_server.authentication.SoileAuthenticationOptions;
+import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
-import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.core.Future;
@@ -21,7 +21,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -34,10 +33,18 @@ public class SoileBaseTest {
 	private SoileHashing hashStrat;	
 	private String hashingAlgo;
 	private SecureRandom random = new SecureRandom();
-
+	public String tmpDir;
 	@Before
 	public void setUp(TestContext context)
 	{
+		try
+		{
+			tmpDir = Files.createTempDirectory("tmpDirPrefix").toFile().getAbsolutePath();
+		}
+		catch(IOException e)
+		{
+			context.fail(e);
+		}
 		// Spin up vertx and load the Soile config. 
 		boolean isDebug = java.lang.management.ManagementFactory.getRuntimeMXBean().
 		getInputArguments().toString().indexOf("jdwp") >= 0;
@@ -126,6 +133,29 @@ public class SoileBaseTest {
 	{	
 		return SoileConfigLoader.setConfigs(configLoadResult);		
 	}	
+	
+	public void startGitVerticle(TestContext context)
+	{
+		Async gitVerticleAsync = context.async();
+		Path gitPath = Path.of(tmpDir, "gitRepo");
+		try {
+			Files.createDirectories(gitPath);
+		}
+		catch(IOException e)
+		{
+			context.fail(e);
+			gitVerticleAsync.complete();
+			return;
+		}
+		vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitPath.toFile().getAbsolutePath()))
+		.onSuccess(Void -> {
+			gitVerticleAsync.complete();
+		})
+		.onFailure(fail -> {
+			context.fail(fail);
+			gitVerticleAsync.complete();
+		});
+	}
 }
 
 

@@ -1,0 +1,45 @@
+{
+	"TestExperiment1":	
+	{
+		"name" : "TestExperiment1",
+		"private" : false,
+		"items": [
+			{
+				"type": "task", 
+				"name": "Test1", 
+				"instanceID": "tabcdefg2",
+				"outputs": ["smoker"], 
+				"next": "tabcdefg3"
+			},
+			{
+				"type": "task", 
+				"name": "Test2", 
+				"instanceID": "tabcdefg3",
+				"filter": "tabcdefg2.smoker = 0"
+			}
+		  ]						
+	},
+	"TestExperiment2":
+	{
+		"name" : "TestExperiment2",
+		"private" : true,
+		"items": [{"type": "task", "name": "Test3","instanceID": "tabcdefg4", "next": "fabcdefg2"},				  
+				  {"type": "task", "name": "Test4","instanceID": "tabcdefg5"},
+				  {
+				   "type": "filter",
+				   "name": "Filter2", 
+				   "data":{
+				   		"instanceID": "fabcdefg2",								
+						"options": [
+									{
+										"filter": "tabcdefg2.smoker = 1",
+										"next": "tabcdefg5"
+									}								
+							],
+						"defaultOption": ""											
+						}
+					}
+				]
+	}
+}
+				

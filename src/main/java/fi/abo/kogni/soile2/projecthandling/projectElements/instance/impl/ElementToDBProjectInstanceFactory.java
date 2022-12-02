@@ -1,0 +1,24 @@
+package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
+
+import fi.abo.kogni.soile2.datamanagement.git.GitManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.ext.mongo.MongoClient;
+
+public class ElementToDBProjectInstanceFactory extends DBProjectInstanceFactory {
+
+	/**
+	 * Default constructor
+	 * @param client
+	 * @param projectInstanceDB
+	 */
+	public ElementToDBProjectInstanceFactory(GitManager manager, MongoClient client, String projectInstanceDB, EventBus eb) {
+		super(manager, client, projectInstanceDB, eb);
+	}
+
+	@Override
+	public ProjectInstance createInstance() { 
+		return new ElementToDBProjectInstance(gitManager, client, projectInstanceDB, eb);
+	}
+
+}

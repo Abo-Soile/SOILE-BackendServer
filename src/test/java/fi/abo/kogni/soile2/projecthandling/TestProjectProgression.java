@@ -19,7 +19,7 @@ public class TestProjectProgression extends ProjectBaseTest{
 	@Test
 	public void testProgression(TestContext context) {		
 		Async p1Async = context.async();
-		ParticipantImplForTesting.getTestParticipant(context,0,projectData).onSuccess(participant1 -> {
+		ParticipantImplForTesting.getTestParticipant(context,0,getPos(0)).onSuccess(participant1 -> {
 			ProjectInstance project = participant1.getProject();
 			
 			project.startProject(participant1);
@@ -42,7 +42,7 @@ public class TestProjectProgression extends ProjectBaseTest{
 			p1Async.complete();
 		});		
 		Async p2Async = context.async();
-		ParticipantImplForTesting.getTestParticipant(context,3,projectData).onSuccess(participant2 -> {
+		ParticipantImplForTesting.getTestParticipant(context,3,getPos(0)).onSuccess(participant2 -> {
 			context.assertEquals(Double.valueOf(1.0),participant2.getOutputs().get("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker"));
 			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",participant2.getProjectPosition());
 			ProjectInstance proj = participant2.getProject();
@@ -68,7 +68,7 @@ public class TestProjectProgression extends ProjectBaseTest{
 			p2Async.complete();
 		});
 		Async p3Async = context.async();
-		ParticipantImplForTesting.getTestParticipant(context,1,projectData).onSuccess(participant3 -> {
+		ParticipantImplForTesting.getTestParticipant(context,1,getPos(0)).onSuccess(participant3 -> {
 			context.assertEquals(Double.valueOf(0.0),participant3.getOutputs().get("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker"));
 			context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",participant3.getProjectPosition());
 			ProjectInstance proj = participant3.getProject();

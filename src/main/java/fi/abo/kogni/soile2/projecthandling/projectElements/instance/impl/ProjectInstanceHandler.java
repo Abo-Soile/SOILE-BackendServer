@@ -16,6 +16,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInsta
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
 public class ProjectInstanceHandler {
@@ -136,5 +137,16 @@ public class ProjectInstanceHandler {
 		}
 		return participantPromise.future();
 	}
+	
+	/**
+	 * Get the participant for the given id. if id is null, a new participant will be created.
+	 * @param id The id of the participant, or null if a new participant needs to be created.
+	 * @param handler the handler that handles the created participant.
+	 */
+	public Future<ProjectInstance> createProject(JsonObject projectInformation)	
+	{
+		return manager.startProject(projectInformation);
+	}
+	
 	
 }
