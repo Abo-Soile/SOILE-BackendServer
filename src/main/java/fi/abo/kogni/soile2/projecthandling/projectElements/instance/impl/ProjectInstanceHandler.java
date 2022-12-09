@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
-import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
+import fi.abo.kogni.soile2.projecthandling.participant.DataParticipant;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.DBParticipant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import io.vertx.core.Future;
@@ -23,7 +23,6 @@ public class ProjectInstanceHandler {
 
 	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceHandler.class);
 
-	private ParticipantHandler participants;
 	private TimeStampedMap<String, ProjectInstance> projects;
 	private String dataLakeFolder;
 	private ProjectInstanceManager manager;	 
@@ -33,10 +32,9 @@ public class ProjectInstanceHandler {
 	 * @param dataLakeFolder The Folder where the dataLake for result files is located
 	 * @param client the mongoclient for connecting to the mongo database
 	 */
-	public ProjectInstanceHandler(ParticipantHandler participants, String dataLakeFolder,
+	public ProjectInstanceHandler(String dataLakeFolder,
 			MongoClient client, EventBus eb) {
 		super();
-		this.participants = participants;
 		this.dataLakeFolder = dataLakeFolder;
 		this.manager = new ProjectInstanceManager(client, eb);
 		projects = new TimeStampedMap<String, ProjectInstance>(manager, 1000*60*60);
@@ -49,10 +47,9 @@ public class ProjectInstanceHandler {
 	 * @param client the mongoclient for connecting to the mongo database
 	 * @param manager a custom project Manager.
 	 */
-	public ProjectInstanceHandler(ParticipantHandler participants, String dataLakeFolder,
+	public ProjectInstanceHandler( String dataLakeFolder,
 			MongoClient client, ProjectInstanceManager manager) {
 		super();
-		this.participants = participants;
 		this.dataLakeFolder = dataLakeFolder;
 		this.manager = manager;
 		projects = new TimeStampedMap<String, ProjectInstance>(manager, 1000*60*60);
@@ -64,10 +61,10 @@ public class ProjectInstanceHandler {
 	 * @param p the {@link DBParticipant} for which to retrieve the file results.
 	 * @return
 	 */
-	public Set<File> getFilesForParticipant(Participant p)
+	public Set<File> getFilesinProject(Set<TaskFileResult> fileResults)
 	{
 		HashSet<File> fileSet = new HashSet<File>();
-		for(TaskFileResult res : p.getFileResults())
+		for(TaskFileResult res : fileResults)
 		{
 			try {
 				fileSet.add(res.getFile(dataLakeFolder));
@@ -87,12 +84,12 @@ public class ProjectInstanceHandler {
 	 * @param p the participant for which to retrieve the folders within this project.
 	 * @return a set of Files representing the folders for this participant, the folders have been checked for existance at time of generation.
 	 */
-	public Set<File> getFoldersForParticipant(Participant p)
+	public Set<File> getTaskFoldersForParticipant(Set<String> tasks, String participantID)
 	{
 		HashSet<File> fileSet = new HashSet<File>();
-		for(String taskID : p.getTasksWithFiles())
+		for(String taskID : tasks)
 		{
-			File folder = new File(dataLakeFolder + File.separator +  taskID + File.separator + p.getID());
+			File folder = new File(dataLakeFolder + File.separator +  taskID + File.separator + participantID);
 			if(folder.exists())
 			{
 				fileSet.add(folder);
@@ -106,47 +103,49 @@ public class ProjectInstanceHandler {
 	 * @param id The id of the participant, or null if a new participant needs to be created.
 	 * @param handler the handler that handles the created participant.
 	 */
-	public Future<Participant> getParticipant(String projectID, String participantID)
+	public Future<Boolean> addParticipant(String projectInstanceID, Participant p)
 	{
 		
-		Promise<Participant> participantPromise = Promise.<Participant>promise();
+		Promise<Boolean> addPromise = Promise.<Boolean>promise();
 				
-		// if no ID is provided, create a new Participant for the project handled by this handler and add that participant to the list.		
-		if(participantID == null)
-		{
-			projects.getData(projectID).onSuccess(targetProject -> 
-			{		
-				participants.create(targetProject).onSuccess(participant ->
-				{
-					targetProject.addParticipant(participant);					
-					participantPromise.complete(participant);
-				}).onFailure(fail -> {
-					participantPromise.fail(fail);
-				});
-			}).onFailure(fail -> {
-				participantPromise.fail(fail);	
-			});
-		}
-		else
-		{
-			participants.getParticpant(participantID).onSuccess(participant -> {
-				participantPromise.complete(participant);
-			}).onFailure(fail -> {
-				participantPromise.fail(fail);
-			});
-		}
-		return participantPromise.future();
+		// if no ID is provided, create a new Participant for the indicated project and add that participant to the list.		
+		projects.getData(projectInstanceID).onSuccess(targetProject -> 
+		{		
+			targetProject.addParticipant(p)
+			.onSuccess(success -> {
+				addPromise.complete(success);
+			})
+			.onFailure(err -> addPromise.fail(err));
+		}).onFailure(fail -> {
+				addPromise.fail(fail);	
+		});		
+		return addPromise.future();
 	}
 	
 	/**
-	 * Get the participant for the given id. if id is null, a new participant will be created.
-	 * @param id The id of the participant, or null if a new participant needs to be created.
-	 * @param handler the handler that handles the created participant.
+	 * Start a project with the given Project Information.
+	 * The information must contain:
+	 * 1. "UUID" of the project from which this was started
+	 * 2. "Version" of the project from which this was started
+	 * 3. "private" field wrt access for this 
+	 * 4. "name" a name field.
+	 * 5. "shortcut" (optional), that can be used as a shortcut to the project.
+	 * @param projectInformation The information needed to start this project.
 	 */
-	public Future<ProjectInstance> createProject(JsonObject projectInformation)	
+	public Future<ProjectInstance> createProjectInstance(JsonObject projectInformation)	
 	{
+		LOGGER.debug("Trying to load Project instance");
 		return manager.startProject(projectInformation);
 	}
 	
+	/**
+	 * Load a project with the given ID. 
+	 * This can fail if the project does not exist.
+	 * @param projectInstanceID the instance ID of the project to retrieve.
+	 */
+	public  Future<ProjectInstance> loadProject(String projectInstanceID)
+	{
+		return projects.getData(projectInstanceID);		
+	}
 	
 }

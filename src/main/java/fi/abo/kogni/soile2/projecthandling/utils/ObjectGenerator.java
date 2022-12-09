@@ -23,8 +23,8 @@ import io.vertx.ext.mongo.MongoClient;
 
 public class ObjectGenerator {
 
-	
-	
+
+
 	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID)
 	{
 		Promise<APITask> taskPromise = Promise.promise();
@@ -49,7 +49,7 @@ public class ObjectGenerator {
 		}
 		return taskPromise.future();
 	}
-	
+
 	public static Future<APIExperiment> buildAPIExperiment(ElementManager<Experiment> experimentManager,ElementManager<Task> taskManager,MongoClient client, String experimentName)
 	{
 		Promise<APIExperiment> experimentPromise = Promise.promise();
@@ -80,20 +80,20 @@ public class ObjectGenerator {
 									experiment.addElement(task.getUUID());
 									JsonObject taskInstance = new JsonObject();
 									taskInstance.put("instanceID", current.getString("instanceID"))
-												.put("next", current.getString("next", null))
-												.put("UUID", task.getUUID())
-												.put("version", task.getVersion())
-												.put("filter", current.getString("filter",""))
-												.put("name", task.getName())
-												.put("outputs", current.getJsonArray("outputs",new JsonArray()));
-									elements.put(current.getString("name"), new JsonObject().put("type", "task")
+									.put("next", current.getString("next", null))
+									.put("UUID", task.getUUID())
+									.put("version", task.getVersion())
+									.put("filter", current.getString("filter",""))
+									.put("name", task.getName())
+									.put("outputs", current.getJsonArray("outputs",new JsonArray()));
+									elements.put(current.getString("name"), new JsonObject().put("elementType", "task")
 											.put("data",taskInstance));
 								})
 								);
 					}
 					if(current.getString("type").equals("filter"))
 					{
-						elements.put(current.getString("name"), new JsonObject().put("type", "filter")
+						elements.put(current.getString("name"), new JsonObject().put("elementType", "filter")
 								.put("data",current.getJsonObject("data")));
 					}					
 					if(current.getString("type").equals("experiment"))
@@ -103,17 +103,17 @@ public class ObjectGenerator {
 									experiment.addElement(subexperiment.getUUID());
 									JsonObject experimentInstance = new JsonObject();
 									experimentInstance.put("instanceID", current.getString("instanceID"))
-												.put("next", current.getString("next", null))
-												.put("UUID", subexperiment.getUUID())
-												.put("version", subexperiment.getVersion())
-												.put("randomize", current.getBoolean("randomize",false))
-												.put("name", subexperiment.getName());
+									.put("next", current.getString("next", null))
+									.put("UUID", subexperiment.getUUID())
+									.put("version", subexperiment.getVersion())
+									.put("randomize", current.getBoolean("randomize",false))
+									.put("name", subexperiment.getName());
 									elements.put(current.getString("name"), 
-											new JsonObject().put("type", "experiment")
-															.put("data", experimentInstance));
+											new JsonObject().put("elementType", "experiment")
+											.put("data", experimentInstance));
 								})
 								);
-						
+
 					}
 				}
 				//deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
@@ -123,17 +123,17 @@ public class ObjectGenerator {
 					for(Object item : ExperimentDef.getJsonArray("items"))
 					{
 						JsonObject current = (JsonObject) item;
-						
+
 						apiExperiment.getElements().add(elements.get(current.getString("name")));
 					}
 					experiment.save(client)
 					.onSuccess(Void2 -> { 
-							experimentPromise.complete(apiExperiment);
+						experimentPromise.complete(apiExperiment);
 					})
 					.onFailure(err -> {
 						experimentPromise.fail(err);
 					});
-					
+
 				})
 				.onFailure(err -> {
 					experimentPromise.fail(err);
@@ -148,7 +148,7 @@ public class ObjectGenerator {
 		return experimentPromise.future();
 	}
 
-	
+
 	public static Future<APIProject> buildAPIProject(ElementManager<Project> projectManager, ElementManager<Experiment> expManager,ElementManager<Task> taskManager, MongoClient client, String projectName)
 	{
 		Promise<APIProject> projectPromise = Promise.promise();
@@ -170,20 +170,20 @@ public class ObjectGenerator {
 				{
 					JsonObject current = (JsonObject) item;
 					taskFutures.add(
-						buildAPITask(taskManager, current.getString("name"))
-						.onSuccess(task -> {
-							project.addElement(task.getUUID());
-							JsonObject taskInstance = new JsonObject();
-							taskInstance.put("instanceID", current.getString("instanceID"))
-										.put("next", current.getString("next", null))
-										.put("UUID", task.getUUID())
-										.put("version", task.getVersion())
-										.put("filter", current.getString("filter",""))
-										.put("name", task.getName())
-										.put("outputs", current.getJsonArray("outputs",new JsonArray()));
-							tasks.put(current.getString("name"), taskInstance);
-						})
-						);
+							buildAPITask(taskManager, current.getString("name"))
+							.onSuccess(task -> {
+								project.addElement(task.getUUID());
+								JsonObject taskInstance = new JsonObject();
+								taskInstance.put("instanceID", current.getString("instanceID"))
+								.put("next", current.getString("next", null))
+								.put("UUID", task.getUUID())
+								.put("version", task.getVersion())
+								.put("filter", current.getString("filter",""))
+								.put("name", task.getName())
+								.put("outputs", current.getJsonArray("outputs",new JsonArray()));
+								tasks.put(current.getString("name"), taskInstance);
+							})
+							);
 				}
 				System.out.println("There are " + taskFutures.size() + " Elements in the experiment ");
 				CompositeFuture.all(taskFutures).mapEmpty().onSuccess(Void -> {
@@ -204,16 +204,16 @@ public class ObjectGenerator {
 					{
 						JsonObject current = (JsonObject) item;
 						experimentFutures.add(
-							buildAPIExperiment(expManager, taskManager, client, current.getString("name"))
-							.onSuccess(experiment -> {
-								project.addElement(experiment.getUUID());						
-								JsonObject expinstance = experiment.getJson();
-								expinstance.put("instanceID",current.getString("instanceID"))
-										   .put("next", current.getString("next", null))
-										   .put("random", current.getBoolean("random", true));
-								experiments.put(current.getString("name"), expinstance);								
-							})
-							);						
+								buildAPIExperiment(expManager, taskManager, client, current.getString("name"))
+								.onSuccess(experiment -> {
+									project.addElement(experiment.getUUID());						
+									JsonObject expinstance = experiment.getJson();
+									expinstance.put("instanceID",current.getString("instanceID"))
+									.put("next", current.getString("next", null))
+									.put("random", current.getBoolean("random", true));
+									experiments.put(current.getString("name"), expinstance);								
+								})
+								);						
 					}
 					// once the futures are set up, wait for them do be done and then finish up.
 					CompositeFuture.all(experimentFutures).mapEmpty()
@@ -222,18 +222,28 @@ public class ObjectGenerator {
 						expList.addAll(experiments.values());
 						JsonArray expArray = new JsonArray(expList);
 						apiProject.setExperiments(expArray);
-						project.save(client)
-						.onSuccess(Void3 -> {
-							projectPromise.complete(apiProject);
+						System.out.println("Saving the project: \n"  + project.toJson().encodePrettily());
+						projectManager.updateElement(apiProject)
+						.onSuccess( newVersion -> {
+							System.out.println("Trying to retrieve version: " + newVersion);
+							projectManager.getAPIElement(project.getUUID(), newVersion)
+							.onSuccess(newApi -> {
+								newApi.getGitJson();
+								System.out.println("The git Json for the given element is: \n"  + newApi.getGitJson().encodePrettily());
+								System.out.println("And Returning the project:\n "  + apiProject.getJson().encodePrettily());
+								projectPromise.complete(apiProject);
+							})
+							.onFailure(err -> projectPromise.fail(err));
 						})
 						.onFailure(err -> projectPromise.fail(err));
+
 					});
-					
+
 				})
 				.onFailure(err -> projectPromise.fail(err));
-				
+
 				//deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
-				
+
 			})
 			.onFailure(fail -> projectPromise.fail(fail));
 		}

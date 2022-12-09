@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.projecthandling.participant.impl;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantFactory;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import io.vertx.core.json.JsonObject;
 /**
  * A Class to generate Participants with a link to the Participant Manager that stores them.
@@ -11,18 +10,17 @@ import io.vertx.core.json.JsonObject;
  *
  */
 public class DBParticipantFactory implements ParticipantFactory{
-
-	ParticipantManager manager;
 	
-	public DBParticipantFactory(ParticipantManager manager)
+	ParticipantManager manager;
+	public DBParticipantFactory(ParticipantManager client)
 	{
-		this.manager = manager;
+		this.manager = client;
 	}
 	
 	@Override
-	public Participant createParticipant(JsonObject data, ProjectInstance p) {
+	public Participant createParticipant(JsonObject data) {
 		// TODO Auto-generated method stub
-		return new DBParticipant(data, p, manager);
+		return new DBParticipant(data, manager);
 	}
 	
 }

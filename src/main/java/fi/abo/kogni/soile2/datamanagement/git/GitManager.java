@@ -109,10 +109,15 @@ public class GitManager {
 	 */
 	public Future<String> getGitFileContents(GitFile file)
 	{
+		if(!gitFileValid(file))
+		{
+			return Future.failedFuture("Supplied File was invalid");
+		}
 		Promise<String> dataPromise = Promise.<String>promise();
 		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitProviderVerticle.createGetCommand(file.getRepoID(),file.getRepoVersion(),file.getFileName()))
 		.onSuccess( reply ->
 		{
+			log.debug(reply.body());
 			dataPromise.complete(((JsonObject)reply.body()).getString(gitProviderVerticle.DATAFIELD));							
 		})
 		.onFailure(fail ->
@@ -139,7 +144,11 @@ public class GitManager {
 	 */
 	public Future<JsonObject> getGitResourceContentsAsJson(GitFile file)
 	{
-		Promise<JsonObject> dataPromise = Promise.<JsonObject>promise();
+		if(!gitFileValid(file))
+		{
+			return Future.failedFuture("Supplied File was invalid");
+		}
+		Promise<JsonObject> dataPromise = Promise.<JsonObject>promise();		
 		getGitResourceContents(file).onSuccess(jsonString -> {
 			try 
 			{
@@ -148,6 +157,7 @@ public class GitManager {
 			}
 			catch(Exception e)
 			{
+				
 				dataPromise.fail(e);
 			}
 		}).onFailure(fail ->{
@@ -162,7 +172,11 @@ public class GitManager {
 	 */
 	public Future<JsonObject> getGitFileContentsAsJson(GitFile file)
 	{
-		Promise<JsonObject> dataPromise = Promise.<JsonObject>promise();
+		if(!gitFileValid(file))
+		{
+			return Future.failedFuture("Supplied File was invalid");
+		}
+		Promise<JsonObject> dataPromise = Promise.<JsonObject>promise();		
 		getGitFileContents(file).onSuccess(stringData ->{
 			try
 			{
@@ -191,6 +205,10 @@ public class GitManager {
 	public Future<String> writeGitFile(GitFile file, String data)
 	{
 		Promise<String> versionPromise = Promise.<String>promise();
+		if(!gitFileValid(file))
+		{
+			return Future.failedFuture("Supplied File was invalid");
+		}
 		JsonObject command = gitProviderVerticle.createWriteCommand(file.getRepoID(), file.getRepoVersion(), data, file.getFileName());
 		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), command).onSuccess(reply -> {
 			JsonObject info = (JsonObject)reply.body();
@@ -236,6 +254,23 @@ public class GitManager {
 		return writeGitResourceFile(file, data.encodePrettily());
 	}
 
+	public boolean gitFileValid(GitFile file)
+	{
+		if(file.getRepoID() == null)
+		{
+			return false;
+		}
+		if(file.getRepoVersion() == null)
+		{
+			return false;
+		}
+		if(file.getFileName() == null)
+		{
+			return false;
+		}
+		return true;
+	}
+	
 	
 	public static JsonObject buildBasicGitElement(String name, Class type)
 	{

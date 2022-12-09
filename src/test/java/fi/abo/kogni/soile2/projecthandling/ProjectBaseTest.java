@@ -36,7 +36,7 @@ public class ProjectBaseTest {
 	}
 	
 	
-	public JsonObject getPos(int i)
+	public static JsonObject getPos(int i)
 	{
 		return new JsonObject().put("pos", i);
 	}

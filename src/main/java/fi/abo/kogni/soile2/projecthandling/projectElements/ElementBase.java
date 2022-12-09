@@ -6,10 +6,13 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.collections4.Put;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -62,11 +65,12 @@ import io.vertx.ext.mongo.MongoClient;
 public abstract class ElementBase implements Element {
 
 	protected JsonObject data; 	
-	protected String currentVersion = "";
+	protected String currentVersion;
 	protected HashMap<String, Date> versions;
 	protected HashMap<String,String> tags;
 	protected String baseCollection;
 	protected String collectionToUse;
+	static final Logger LOGGER = LogManager.getLogger(ElementBase.class);
 
 	public ElementBase(JsonObject data, String collectionToUse)
 	{	
@@ -117,17 +121,19 @@ public abstract class ElementBase implements Element {
 		HashMap<String,Date> newVersions = new HashMap<>();
 		String latestVersion = null;
 		Date latestDate = new Date(0);
-		
+		LOGGER.debug("CurrentVersion is : ");
+		System.out.println(currentVersion);
 		for(int i = 0; i < versions.size(); i++)
 		{
-			JsonObject currentVersion = versions.getJsonObject(i);
-			Date currentDate = new Date(currentVersion.getLong("timestamp")); 
+			JsonObject cVersion = versions.getJsonObject(i);
+			Date currentDate = new Date(cVersion.getLong("timestamp"));
+			LOGGER.debug(currentDate + " found while latest date was: " + latestDate);
 			if(currentDate.after(latestDate))
 			{
 				latestDate = currentDate;
-				latestVersion = currentVersion.getString("version");
+				latestVersion = cVersion.getString("version");
 			}
-			newVersions.put(currentVersion.getString("version"), currentDate);
+			newVersions.put(cVersion.getString("version"), currentDate);
 		}	
 		if(currentVersion == null)
 		{
@@ -332,6 +338,11 @@ public abstract class ElementBase implements Element {
 		return collectionToUse;
 	}
 	
+	/**
+	 * Save the current project, this will return the UUID of the project and 
+	 * 
+	 * @return a Future of the UUID of the saved element.
+	 */
 	public Future<String> save(MongoClient client)
 	{
 		Promise<String> saveSuccess = Promise.<String>promise();

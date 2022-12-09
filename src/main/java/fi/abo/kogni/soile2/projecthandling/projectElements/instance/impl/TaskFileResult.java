@@ -18,14 +18,14 @@ public class TaskFileResult {
 
 	/**
 	 * Generate a new Fileresult for a given task. 
-	 * @param fileID the original ID of the file as supplied by the project generation
+	 * @param originialFileName the original ID of the file as supplied by the project generation
 	 * @param localFileName the name of the file stored locally
 	 * @param fileFormat the type of the file, essentially the file extension
 	 * @param taskID the id of the task this file belongs to.
 	 * @param participantID the id of the participant this file belongs to.
 	 */
-	public TaskFileResult(String fileID, String localFileName, String fileFormat, String taskID, String participantID) {
-		this.fileID = fileID;
+	public TaskFileResult(String originialFileName, String localFileName, String fileFormat, String taskID, String participantID) {
+		this.fileID = originialFileName;
 		this.localFileName = localFileName;
 		this.fileFormat = fileFormat;
 		this.fileFolder = taskID + File.separator + participantID;

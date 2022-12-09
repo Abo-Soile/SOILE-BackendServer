@@ -1,9 +1,13 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.datamanagement.utils.DataRetriever;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedData;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstanceFactory;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -25,19 +29,20 @@ import io.vertx.ext.mongo.MongoClient;
  */
 public class ProjectInstanceManager implements DataRetriever<String, ProjectInstance> {
 
+	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceManager.class);
+
 	MongoClient client;
 	// should go to the constructor.
 	private ProjectInstanceFactory dbFactory;
 	private ProjectInstanceFactory createFactory;
-	private GitManager gitManager;
 	public ProjectInstanceManager(MongoClient client, EventBus eb)
-	{		
+	{						
 		this(client,
-				new DBProjectInstanceFactory(new GitManager(eb), client,SoileConfigLoader.getdbProperty("projectCollection"), eb),
-				new ElementToDBProjectInstanceFactory(new GitManager(eb), client, SoileConfigLoader.getdbProperty("projectCollection"), eb)
+				new ElementToDBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client,SoileConfigLoader.getdbProperty("projectCollection"), eb),								
+				new DBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client,SoileConfigLoader.getdbProperty("projectCollection"), eb)				 
 				);				
-	}
-
+	}		
+		
 	public ProjectInstanceManager(MongoClient client, ProjectInstanceFactory createFactory, ProjectInstanceFactory dbFactory)
 	{
 		this.client = client;
@@ -80,6 +85,7 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 	 */
 	public Future<ProjectInstance> startProject(JsonObject projectInformation )
 	{						
+		LOGGER.debug("Trying to instanciate Project ");
 		return ProjectInstance.instantiateProject(projectInformation, createFactory);
 	}
 	

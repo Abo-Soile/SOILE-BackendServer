@@ -1,7 +1,10 @@
 package fi.abo.kogni.soile2;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedList;
 
+import org.apache.commons.collections4.map.HashedMap;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -48,28 +51,33 @@ public class MongoTest extends SoileBaseTest {
 	}
 	
 	@After
-	public void cleanDB(TestContext context)
-	{
+	public void tearDown(TestContext context)
+	{		
 		final Async oasync = context.async();
-
 		mongo_client.getCollections(cols ->{
 			if(cols.succeeded())
 			{
+				HashMap<String, Async> asyncMap = new HashMap<>(); 
 				for(String col : cols.result())
 				{
 					final Async async = context.async();
-					mongo_client.dropCollection(col).onComplete(res ->
-					{
-						async.complete();
-					});
+					asyncMap.put(col, async);					
 				}			
+				for(String col : cols.result())
+				{
+					mongo_client.dropCollection(col).onComplete(res ->
+				
+					{
+						asyncMap.get(col).complete();
+					});
+				}
 			}
 			else
 			{
 				cols.cause().printStackTrace(System.out);
 			}
 			oasync.complete();
-		});
+		});		
 	}	
 	
 	@AfterClass

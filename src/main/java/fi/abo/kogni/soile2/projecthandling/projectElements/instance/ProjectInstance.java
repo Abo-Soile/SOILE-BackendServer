@@ -3,7 +3,9 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
@@ -20,11 +22,21 @@ import io.vertx.core.json.JsonObject;
  * Instance of a Project in Soile. 
  * This reflects  running instance of a project. The Project Management (during creation and modfication of the project)
  * is handled in the {@link Project} class, which represents a project in the database that the {@link ProjectManagerImpl} 
- * links with the respective code in the git Repository.  
+ * links with the respective code in the git Repository.
+ * To walk through a Project the following steps are necessary:
+ * Participant participant 
+ * taskID = proj.startProject(participant) 
+ * taskID = proj.finishStep(participant,taskDataJson) // taskID must be submitted in the finishStep taskID field, to confirm this is the right task.
+ * taskID = proj.finishStep(participant,taskDataJson)// taskID must be submitted in the finishStep taskID field, to confirm this is the right task. 
+ * proj.finishStep(participant,taskDataJson)
+ * ...
+ *    
  * @author Thomas Pfau
  *
  */
 public abstract class ProjectInstance {
+
+	static final Logger LOGGER = LogManager.getLogger(ProjectInstance.class);
 
 	/**
 	 * This is the projectInstance _id
@@ -75,9 +87,13 @@ public abstract class ProjectInstance {
 	 */
 	public static Future<ProjectInstance> instantiateProject(JsonObject instantiationInfo, ProjectInstanceFactory factory) 
 	{
-		Promise<ProjectInstance> projPromise = Promise.<ProjectInstance>promise();	
+		Promise<ProjectInstance> projPromise = Promise.<ProjectInstance>promise();
+		LOGGER.debug("Creating instance");
 		ProjectInstance p = factory.createInstance();
+		LOGGER.debug(p);
+		LOGGER.debug(factory);
 		p.load(instantiationInfo).onSuccess(dataJson -> {
+			LOGGER.debug("Trying to set up project from data: \n " + dataJson.encodePrettily());
 			p.setupProject(dataJson);
 			projPromise.complete(p);
 		}).onFailure(fail -> {
@@ -94,6 +110,8 @@ public abstract class ProjectInstance {
 	private void parseProject(JsonObject data)
 	{
 		// Get the top-level information
+		LOGGER.debug("Parsing data");
+		LOGGER.debug(data.encodePrettily());
 		sourceUUID = data.getString("sourceUUID");
 		start = data.getString("start"); 
 		instanceID = data.getString("_id");
@@ -127,11 +145,13 @@ public abstract class ProjectInstance {
 	private void parseExperiment(JsonObject experiment)
 	{
 		ExperimentObjectInstance cExperiment = new ExperimentObjectInstance(experiment, this);
-		elements.put(cExperiment.getInstanceID(), cExperiment);		
+		elements.put(cExperiment.getInstanceID(), cExperiment);
+		LOGGER.debug("Experiment info is: " + experiment.encodePrettily());
 		for(Object cElementData : experiment.getJsonArray("elements", new JsonArray()))
 		{			
+			LOGGER.debug("Experiment info is: " + cElementData);
 			JsonObject element = (JsonObject)cElementData;
-			switch(element.getString("elementtype"))
+			switch(element.getString("elementType"))
 			{
 			case "task": 
 				TaskObjectInstance cTask = new TaskObjectInstance(((JsonObject)cElementData).getJsonObject("data"), this);
@@ -159,18 +179,18 @@ public abstract class ProjectInstance {
 	}
 	
 	/**
-	 * Create the Json of the data relevant for this instance (data that can be retrieved from the project is ignored.
+	 * Create the Json of the data relevant for this instance (data that can be retrieved from the project is ignored)
+	 * Participants are excluded from this. 
 	 * @return the {@link JsonObject} representing a projectInstance schema
 	 */
-	public synchronized JsonObject toDBJson()
-	{
-		JsonObject dbData = new JsonObject()
-								.put("_id",instanceID)
-								.put("sourceUUID",sourceUUID)
-								.put("version", version)
-								.put("participants", new JsonArray(participants))
-								.put("name", name)
-								.put("shortcut", shortcut);
+	public JsonObject toDBJson()
+	{		
+			JsonObject dbData = new JsonObject()
+					.put("_id",instanceID)
+					.put("sourceUUID",sourceUUID)
+					.put("version", version)
+					.put("name", name)
+					.put("shortcut", shortcut);			
 		return dbData;
 	}	
 	
@@ -178,41 +198,67 @@ public abstract class ProjectInstance {
 	 * Add a participant to the list of participants of this projects
 	 * @param p the participant to add
 	 */
-	public synchronized void addParticipant(Participant p)
-	{
-		participants.add(p.getID());
-	}
+	public abstract Future<Boolean> addParticipant(Participant p);
 	
 	/**
 	 * Delete a participant from the list of participants of this projects
 	 * @param p the participant to remove
 	 */
-	public synchronized void deleteParticipant(Participant p)
-	{
-		participants.remove(p.getID());
-	}
+	public abstract Future<Boolean> deleteParticipant(Participant p);
 	
-	public synchronized List<String> getParticipants()
-	{
-		return List.copyOf(participants);
-	}
+	/**
+	 * Get a list of Participants in the project 
+	 * @return A Future of a Jsonarray with all participant ids.
+	 */
+	public abstract Future<JsonArray> getParticipants();
 	
 	/**
 	 * Finish a step for a particular participant storing the supplied output information obtained for the user.
 	 * @param user
-	 * @param resultData
+	 * @param taskData
 	 */
-	public Future<String> finishStep(Participant user, JsonObject resultData) throws InvalidPositionException
+	public Future<String> finishStep(Participant user, JsonObject taskData)
 	{
-		if(!resultData.getString("taskID").equals(user.getProjectPosition()))
+		Promise<String> finishedPromise = Promise.promise();
+		LOGGER.debug(taskData.encodePrettily());
+		if(!taskData.getString("taskID").equals(user.getProjectPosition()))
 		{
-			throw new InvalidPositionException(user.getProjectPosition(), resultData.getString("taskID"));
+			finishedPromise.fail( new InvalidPositionException(user.getProjectPosition(), taskData.getString("taskID")));			
 		}
-		user.setOutputDataForCurrentTask(resultData.getJsonArray("outputdata",new JsonArray()));
-		user.setResultDataForCurrentTask(resultData.getJsonObject("resultdata"));
-		user.finishCurrentTask();
-		return user.save();
+		else
+		{
+			user.setOutputDataForTask(user.getProjectPosition(),taskData.getJsonArray("outputdata",new JsonArray()))
+			.onSuccess(v -> {
+				user.addResult(user.getProjectPosition(), getResultDataFromTaskData(taskData))
+				.onSuccess(v2 -> {
+					user.finishCurrentTask()
+					.onSuccess(v3 -> {
+						setNextStep(user).onSuccess( next -> 
+						{
+							finishedPromise.complete(next);
+						})
+						.onFailure(err -> finishedPromise.fail(err));
+					})
+					.onFailure(err -> finishedPromise.fail(err));					
+				})
+				.onFailure(err -> finishedPromise.fail(err));
+				
+			})
+			.onFailure(err -> finishedPromise.fail(err));
+			
+		}
+		return finishedPromise.future();
 	}	
+	
+	private JsonObject getResultDataFromTaskData(JsonObject taskData)
+	{
+		JsonObject resultData = new JsonObject();
+		resultData.put("task", taskData.getString("taskID"))
+				  .put("dbData", taskData.getJsonObject("resultdata",new JsonObject()).getJsonArray("jsonData", new JsonArray()))
+				  .put("fileData", taskData.getJsonObject("resultdata",new JsonObject()).getJsonArray("fileData", new JsonArray()));
+		return resultData;
+	}
+	
 	/**
 	 * Get a specific Task/Experiment element for the given Element ID.
 	 * @param elementID
@@ -236,10 +282,15 @@ public abstract class ProjectInstance {
 	 * Obtain the next element for the given user using the given element ID to query the next element 
 	 * @param nextElementID
 	 * @param user
-	 * @return
+	 * @return The next Task as defined by the element with the given ID, or null if the element is not defined (which means that we have reached an end-point). 
 	 */
 	public String getNextTask(String nextElementID, Participant user)
 	{
+		// if we don't get a nextElementID, we are done with the Project.
+		if("".equals(nextElementID) || nextElementID == null)
+		{
+			return null;
+		}
 		return elements.get(nextElementID).nextTask(user);
 	}
 	
@@ -247,26 +298,28 @@ public abstract class ProjectInstance {
 	 * Start the project for the provided user.
 	 * @param user
 	 */
-	public void startProject(Participant user)
+	public Future<String> startProject(Participant user)
 	{
-		user.setProjectPosition(start);
+		return user.setProjectPosition(start);		
 	}
 	
 	/**
 	 * Proceed the user to the next step within this project (depending on Filters etc pp).
+	 * This will return the position the user was set to if everything succeeds.
 	 * @param user The user that proceeds to the next step.
+	 * @return A future of the next step instance ID, or null if this is participant is finished.
 	 */
-	public void setNextStep(Participant user)
-	{
-		
+	public Future<String> setNextStep(Participant user)
+	{		
 		ElementInstance current = getElement(user.getProjectPosition());
 		String nextElement = current.nextTask(user);
-		if(nextElement.equals("") || nextElement == null)
+		if("".equals(nextElement) || nextElement == null)
 		{
-			
+			// This indicates we are done. 
+			return user.setProjectPosition(null);	
 		}
-		System.out.println("Updating user position:" + current.getInstanceID() + " -> " + nextElement);		
-		user.setProjectPosition(nextElement);
+		LOGGER.debug("Updating user position:" + current.getInstanceID() + " -> " + nextElement);		
+		return user.setProjectPosition(nextElement);
 	}				
 	
 	/**

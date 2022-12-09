@@ -6,6 +6,8 @@ import java.util.List;
 
 import fi.aalto.scicomp.mathparser.MathHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
+import fi.abo.kogni.soile2.projecthandling.participant.DataParticipant;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import io.vertx.core.json.JsonArray;
@@ -46,11 +48,10 @@ public class FilterObjectInstance extends ElementInstanceBase {
 			double val = MathHandler.evaluate(exp, user.getOutputs());
 			if(Math.abs(val - 1) < 0.0001)
 			{
-				return sourceProject.getElement(optionsNext.get(exp)).nextTask(user);
+				return getNextIfThereIsOne(user, optionsNext.get(exp));
 			}
 		}
-		
-		return sourceProject.getElement(defaultNext).nextTask(user);
+		return getNextIfThereIsOne(user, defaultNext);		
 	}
 
 }

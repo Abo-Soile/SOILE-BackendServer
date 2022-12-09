@@ -1,14 +1,8 @@
 package fi.abo.kogni.soile2.projecthandling.utils;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import org.junit.After;
 import org.junit.Test;
 
-import fi.abo.kogni.soile2.MongoTest;
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
+import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
@@ -16,14 +10,11 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
-import fi.abo.kogni.soile2.utils.VerticleInitialiser;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 
-public class ObjectGeneratorTest extends MongoTest {
+public class ObjectGeneratorTest extends GitTest {
 	
-	String gitDir;
-	GitManager gitManager;
 	ElementManager<Task>  taskManager;
 	ElementManager<Experiment>  expManager;
 	ElementManager<Project>  projManager;
@@ -32,34 +23,11 @@ public class ObjectGeneratorTest extends MongoTest {
 	public void runBeforeTests(TestContext context)
 	{		
 		super.runBeforeTests(context);
-		Async gitInit = context.async();
-		VerticleInitialiser.startGitVerticle(vertx).onSuccess( dir -> {
-			gitDir = dir;
-			gitInit.complete();
-		})
-		.onFailure(err -> {
-			context.fail(err);
-			gitInit.complete();
-		});
-		gitManager = new GitManager(vertx.eventBus());
 		projManager = new ElementManager<Project>(Project::new, APIProject::new, mongo_client,gitManager);
 		expManager = new ElementManager<Experiment>(Experiment::new, APIExperiment::new, mongo_client,gitManager);
 		taskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client,gitManager);
 	}
 	
-	@After
-	public void cleanupGit(TestContext context)
-	{
-		try
-		{
-			// clean up git Repo
-			Files.deleteIfExists(Path.of(gitDir));
-		}
-		catch(IOException e)
-		{
-			System.out.println("Could not clean up git repo");
-		}
-	}
 	
 	@Test
 	public void testBuildExperiment(TestContext context)
@@ -72,7 +40,8 @@ public class ObjectGeneratorTest extends MongoTest {
 			
 			// check, that the created Elements actually exist.
 			taskManager.getElementList().onSuccess(list -> {
-				context.assertEquals(2,list.size());				
+				System.out.println(list.encodePrettily());
+				context.assertEquals(2,list.size());					
 				Async expAsync2 = context.async();				
 				ObjectGenerator.buildAPIExperiment(expManager, taskManager,mongo_client, "TestExperiment2")
 				.onSuccess(apiexp2 -> {

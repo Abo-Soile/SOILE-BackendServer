@@ -36,5 +36,11 @@ public class GitFile {
 		return false;
 	}
 	
+	@Override
+	public String toString()
+	{		
+		return "GitFile{ filename: " + fileName + " ; repoID: " + repoID + " ; version: " + repoVersion + " }";
+	}
+	
 	
 }

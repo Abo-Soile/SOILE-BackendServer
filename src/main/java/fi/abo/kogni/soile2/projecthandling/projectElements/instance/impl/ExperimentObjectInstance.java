@@ -8,6 +8,7 @@ import java.util.Random;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
+import fi.abo.kogni.soile2.projecthandling.participant.DataParticipant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
@@ -92,14 +93,13 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 			{
 				System.out.println("Already in Experiment, finishing up, due to non-random");
 				// we are non random, so give the first task.
-				return sourceProject.getElement(getStart()).nextTask(user);	
+				return getNextIfThereIsOne(user, getStart());	
 			}
 			else
 			{
 				// remove option that are already done
 				elements.removeAll(user.getFinishedExpTasks(this.getInstanceID()));
 				// this indicates, that we got a callback from a task in our list.
-				System.out.println(elements);
 				if(elements.remove(user.getProjectPosition()))
 				{
 					System.out.println("Removing element from options");

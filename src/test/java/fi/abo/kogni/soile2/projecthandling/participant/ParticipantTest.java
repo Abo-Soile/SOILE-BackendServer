@@ -13,7 +13,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 @RunWith(VertxUnitRunner.class)
 public class ParticipantTest extends ProjectBaseTest{
 
-	
+
 	@Test
 	public void testComparison(TestContext context) {
 		Async p1Async = context.async();
@@ -28,35 +28,43 @@ public class ParticipantTest extends ProjectBaseTest{
 				context.assertTrue(participant1.equals(participantSame));
 				p3Async.complete();
 			});					// 
-			Async p4Async = context.async();
-			ProjectFactoryImplForTesting fac = new ProjectFactoryImplForTesting();
-			ProjectInstance.instantiateProject(getPos(0), fac).onSuccess(project -> {
-				Participant copy = new ParticipantImplForTesting(participant1.toJson(), project);
+			ProjectFactoryImplForTesting fac = new ProjectFactoryImplForTesting();			
+			Async compAsync = context.async();
+			participant1.toJson()
+			.onSuccess(jsonObject -> 
+			{
+				ParticipantImpl copy = new ParticipantImplForTesting(jsonObject);
 				context.assertTrue(participant1.equals(copy));
-				p4Async.complete();
-			});			
-			p1Async.complete();
+				compAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));
 			
+			p1Async.complete();
+
 		});		
 	}
-	
+
 	@Test
 	public void testJSONIO(TestContext context)
 	{
 		Async p1Async = context.async();
 		ParticipantImplForTesting.getTestParticipant(context,0,getPos(0)).onSuccess(participant1 -> {
-			Async p2Async = context.async();				
 			ProjectFactoryImplForTesting fac = new ProjectFactoryImplForTesting();
-			ProjectInstance.instantiateProject(getPos(0), fac).onSuccess(project -> {
-				Participant copy = new ParticipantImplForTesting(participant1.toJson(), project);
+			Async compAsync = context.async();
+			participant1.toJson()
+			.onSuccess(jsonObject -> 
+			{
+				ParticipantImpl copy = new ParticipantImplForTesting(jsonObject);
 				context.assertTrue(participant1.equals(copy));
-				p2Async.complete();
-			});			
-			p1Async.complete();
+				compAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));
 			
+			p1Async.complete();
+
 		});
 	}
-	
-	
-		
+
+
+
 }

@@ -3,7 +3,7 @@
 	{
 		"_id": "testUser1",
 		"project" : "223e4567-e89b-12d3-a456-556642440000",
-		"finished": [],
+		"finished": false,
 		"outputData": [],
 		"resultData": []
 

@@ -8,8 +8,10 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIElement;
+import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
+import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
+import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
@@ -20,7 +22,7 @@ import io.vertx.ext.mongo.MongoClient;
 
 
 /**
- * The element Manager combines 
+ * The element Manager handles DB elements and their link to the git Repositories. 
  * @author Thomas Pfau
  *
  * @param <T>
@@ -126,6 +128,27 @@ public class ElementManager<T extends ElementBase> {
 	}
 	
 	
+	public Future<JsonObject> getGitJson(String elementID, String elementVersion)
+	{
+		GitFile target = new GitFile("Object.json", getGitID(elementID), elementVersion);
+		return gitManager.getGitFileContentsAsJson(target);
+	}
+	
+	/**
+	 * Get the Element stored in the Database with the given ID.  
+	 * @param elementID the ID of the element.
+	 * @return a Future of the element managed by this Manager.
+	 */
+	public Future<T> getElement(String elementID)
+	{		
+		return factory.loadElement(client, elementID);
+	}
+	
+	/**
+	 * Update the given element in the database and on git using the Data from the provided API element
+	 * @param newData
+	 * @return
+	 */
 	public Future<String> updateElement(APIElement<T> newData)
 	{
 		Promise<String> elementPromise = Promise.<String>promise();
@@ -162,8 +185,7 @@ public class ElementManager<T extends ElementBase> {
 			.onFailure(fail -> elementPromise.fail(fail));
 		})
 		.onFailure(fail -> elementPromise.fail(fail));		
-		return elementPromise.future();		
-	
+		return elementPromise.future();			
 	}
 	
 	public Future<Boolean> deleteElement(APIElement<T> newData)
@@ -222,7 +244,7 @@ public class ElementManager<T extends ElementBase> {
 	{
 		Promise<APIElement<T>> elementPromise = Promise.<APIElement<T>>promise();
 		APIElement<T> apiElement = apisupplier.get();
-		GitFile currentVersion = new GitFile("Object.json", uuid, version);
+		GitFile currentVersion = new GitFile("Object.json", getGitID(uuid), version);
 
 		factory.loadElement(client, uuid).
 		onSuccess(element -> {
@@ -250,5 +272,19 @@ public class ElementManager<T extends ElementBase> {
 		return elementPromise.future();		
 	
 	}
+
+	public static ElementManager<Project> getProjectManager(MongoClient client, GitManager gm)
+	{
+		return new ElementManager<Project>(Project::new,APIProject::new, client, gm);
+	}
 	
+	public static ElementManager<Experiment> getElementManager(MongoClient client, GitManager gm)
+	{
+		return new ElementManager<Experiment>(Experiment::new,APIExperiment::new, client, gm);
+	}
+	
+	public static ElementManager<Task> getTaskManager(MongoClient client, GitManager gm)
+	{
+		return new ElementManager<Task>(Task::new,APITask::new, client, gm);
+	}
 }

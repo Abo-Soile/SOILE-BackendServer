@@ -3,7 +3,9 @@ package fi.abo.kogni.soile2.projecthandling.utils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 
+import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstanceFactory;
 import io.vertx.core.Future;
@@ -46,6 +48,25 @@ public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
 		@Override
 		public Future<JsonObject> delete() {			
 			return Future.succeededFuture(toDBJson());
+		}
+
+		@Override
+		public Future<Boolean> addParticipant(Participant p) {
+			// TODO Auto-generated method stub
+			participants.add(p.getID());
+			return Future.succeededFuture(true);
+		}
+
+		@Override
+		public Future<Boolean> deleteParticipant(Participant p) {
+			participants.remove(p.getID());
+			return Future.succeededFuture(true);
+		}
+
+		@Override
+		public Future<JsonArray> getParticipants() {
+			// TODO Auto-generated method stub
+			return Future.succeededFuture(new JsonArray(List.copyOf(participants)));
 		}		
 	}
 	
@@ -61,5 +82,12 @@ public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
 		projectGitDef.getJsonObject(i).mergeIn(ProjectInstanceDef.getJsonObject(i));
 		return projectGitDef.getJsonObject(i);
 
+	}
+	
+	public static Future<ProjectInstance> loadProject(JsonObject id) throws IOException 
+	{		
+		ProjectFactoryImplForTesting fac = new ProjectFactoryImplForTesting();
+		return ProjectInstance.instantiateProject(id, fac);
+		
 	}
 }
