@@ -8,6 +8,7 @@ import io.vertx.core.json.JsonObject;
 
 public class Task extends ElementBase {
 
+	public static String typeID = "T";
 	public Task()
 	{
 		this(new JsonObject());
@@ -72,7 +73,7 @@ public class Task extends ElementBase {
 	@Override
 	public String getTypeID() {
 		// TODO Auto-generated method stub
-		return "T";
-	}
+		return typeID;
+	}	
 
 }

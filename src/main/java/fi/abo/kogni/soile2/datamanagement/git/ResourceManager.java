@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.file.Paths;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
+import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.eventbus.EventBus;
@@ -18,11 +19,12 @@ import io.vertx.ext.web.FileUpload;
 public class ResourceManager extends GitDataRetriever<DataLakeFile> {
 
 	private String dataLakeBaseFolder;
+	private TimeStampedMap<GitFile,DataLakeFile> elements;
 	
 	public ResourceManager(EventBus bus)
 	{
 		super(bus,true, true);
-		dataLakeBaseFolder = SoileConfigLoader.getServerProperty("soileGitDataLakeFolder");
+		dataLakeBaseFolder = SoileConfigLoader.getServerProperty("soileGitDataLakeFolder");		
 	}
 		
 	/**
@@ -33,10 +35,10 @@ public class ResourceManager extends GitDataRetriever<DataLakeFile> {
 	public Future<String> writeElement(GitFile target, FileUpload targetUpload)	
 	{		
 		String gitFileName = target.getFileName() == null ? targetUpload.fileName() : target.getFileName();
-		String targetFileName = Paths.get(targetUpload.uploadedFileName()).getFileName().toString();
-		
+		String targetFileName = Paths.get(targetUpload.uploadedFileName()).getFileName().toString();		
 		JsonObject fileContents = new JsonObject().put("filename", gitFileName)
-												  .put("targetFile", targetFileName);		
+												  .put("targetFile", targetFileName)
+												  .put("format", targetUpload.contentType());		
 		return manager.writeGitResourceFile(target, fileContents);		
 	}
 	
@@ -54,8 +56,7 @@ public class ResourceManager extends GitDataRetriever<DataLakeFile> {
 	public DataLakeFile createElement(Object elementData, GitFile key) {
 		
 		JsonObject json = (JsonObject) elementData;
-		DataLakeFile target = new DataLakeFile(dataLakeBaseFolder + File.separator + key.getRepoID() + File.separator + json.getString("targetFile"), json.getString("filename"));					
-		
+		DataLakeFile target = new DataLakeFile(dataLakeBaseFolder + File.separator + key.getRepoID() + File.separator + json.getString("targetFile"), json.getString("filename"), json.getString("format"));							
 		return target;
 	}
 	

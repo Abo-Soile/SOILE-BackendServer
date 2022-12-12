@@ -37,6 +37,12 @@ public class GitFile {
 	}
 	
 	@Override
+	public int hashCode()
+	{			
+		return (fileName + repoID + repoVersion).hashCode();
+	}
+	
+	@Override
 	public String toString()
 	{		
 		return "GitFile{ filename: " + fileName + " ; repoID: " + repoID + " ; version: " + repoVersion + " }";

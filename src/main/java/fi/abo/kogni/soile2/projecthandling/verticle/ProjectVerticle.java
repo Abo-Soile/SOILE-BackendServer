@@ -4,18 +4,21 @@ import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.datamanagement.git.ObjectManager;
 import fi.abo.kogni.soile2.datamanagement.git.ResourceManager;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
+import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceManager;
+
 
 public class ProjectVerticle {
 
 	private ResourceManager resourceManager;
 	private ObjectManager objectManager;
-	private ProjectInstanceManager projectInstanceManager;
-	private GitManager gitManager;
-	private TimeStampedMap<String, ProjectInstance> currentProjects;
+	private ProjectInstanceHandler projectInstanceHandler;
+	private ParticipantHandler participantHandler;
+	private GitManager gitManager;	
 
-	/*public void createProject(Message<Object> request)
+	public void createProject(Message<Object> request)
 	{		
 		Promise<Boolean> creationPromise = Promise.<Boolean>promise();
 		// we might need to change this at some point, but for now, just request a creation with the name as body.

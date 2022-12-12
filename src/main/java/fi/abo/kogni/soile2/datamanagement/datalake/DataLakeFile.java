@@ -12,12 +12,13 @@ public class DataLakeFile extends File {
 	
 	private static final long serialVersionUID = 1L;
 	private String originalFileName;
-
+	private String mimeFormat;
 	
-	public DataLakeFile(String pathname, String originalFileName) {
+	public DataLakeFile(String pathname, String originalFileName, String mimeFormat) {
 		super(pathname);
 		// TODO Auto-generated constructor stub
 		this.originalFileName = originalFileName;
+		this.mimeFormat = mimeFormat;
 	}
 	
 	public String getOriginalFileName()
@@ -25,6 +26,12 @@ public class DataLakeFile extends File {
 		return originalFileName;
 	}
 	
+	public String getFormat()
+	{
+		return mimeFormat;
+	}
+	
+
 
 
 }

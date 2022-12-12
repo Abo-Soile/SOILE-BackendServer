@@ -89,7 +89,7 @@ public class SoileFormLoginHandler extends AuthenticationHandlerImpl<Authenticat
 			{
 				ctx.response().setStatusCode(200)
 				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
-				.end(new JsonObject().put("token",token).encodePrettily());			
+				.end(new JsonObject().put("token",token).encode());			
 			}).onFailure(fail ->
 			{
 				if(fail.getCause() instanceof HttpException)
