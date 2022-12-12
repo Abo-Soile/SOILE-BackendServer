@@ -109,6 +109,6 @@ public class SoileAuthentication implements AuthenticationProvider{
 	    	LOGGER.debug("Could not validate user with the following Credentials:\n " + credentials.encodePrettily());
 	    	throw new InvalidLoginException(username);
 	    }
-
-	}	
+	}		
+	
 }

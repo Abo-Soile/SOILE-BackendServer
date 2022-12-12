@@ -16,6 +16,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInsta
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
@@ -148,4 +149,11 @@ public class ProjectInstanceHandler {
 		return projects.getData(projectInstanceID);		
 	}
 	
+	/**
+	 * Get a list of project instances.
+	 */
+	public Future<JsonArray> getProjectList(JsonArray Permissions)
+	{
+		return manager.getProjectInstances(Permissions);
+	}
 }

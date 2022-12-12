@@ -1,5 +1,9 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements;
 
+import java.sql.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.function.Supplier;
 
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +40,7 @@ public class ElementManager<T extends ElementBase> {
 	GitManager gitManager;
 	String typeID;
 	public static final Logger log = LogManager.getLogger(ElementManager.class);
+	private static DateFormat dateFormatter = new SimpleDateFormat("MM/dd/yyyy - HH:SS");
 
 	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, GitManager manager)
 	{
@@ -223,7 +228,7 @@ public class ElementManager<T extends ElementBase> {
 			for(JsonObject current : res)
 			{
 				// rename the _id key to uuid.
-				current.put("UUID",current.getString("_id")).remove("_id");
+				current.put("uuid",current.getString("_id")).remove("_id");
 				result.add(current);
 			}
 			listPromise.complete(result);
@@ -235,12 +240,89 @@ public class ElementManager<T extends ElementBase> {
 	}
 	
 	/**
+	 * Get the list of all tags for the given element.  
+	 * Returns a list of 
+	 * @param id The id of the element in question
+	 * @return
+	 */
+	public Future<JsonArray> getTagListForElement(String id)
+	{
+		Promise<JsonArray> listPromise = Promise.<JsonArray>promise();		
+
+		Element e = supplier.get();
+		JsonArray result = new JsonArray();		
+		// should possibly be done via findBatch
+		client.findOne(e.getTargetCollection(), new JsonObject().put("_id", id), new JsonObject().put("tags", 1).put("versions", 1))
+		.onSuccess(res -> {			
+			HashMap<String,Date> versionMap = createVersionHashMap(res.getJsonArray("versions"));
+			JsonArray tagArray = res.getJsonArray("tags"); 
+			for(int i = 0; i < tagArray.size(); i++)
+			{
+				JsonObject current = tagArray.getJsonObject(i);								
+				current.put("date", dateFormatter.format(versionMap.get(current.getString("version"))));
+				result.add(current);
+			}
+			listPromise.complete(result);
+		})
+		.onFailure(err -> {
+			listPromise.fail(err);
+		});
+		return listPromise.future();		
+	}
+	
+	
+	/**
+	 * Get the list of all versions for the given element.  
+	 * Returns a list of 
+	 * @param id The id of the element in question
+	 * @return
+	 */
+	public Future<JsonArray> getVersionListForElement(String id)
+	{
+		Promise<JsonArray> listPromise = Promise.<JsonArray>promise();		
+
+		Element e = supplier.get();
+		JsonArray result = new JsonArray();		
+		// should possibly be done via findBatch
+		client.findOne(e.getTargetCollection(), new JsonObject().put("_id", id), new JsonObject().put("versions", 1))
+		.onSuccess(res -> {						
+			JsonArray versionArray = res.getJsonArray("versions"); 
+			for(int i = 0; i < versionArray.size(); i++)
+			{	
+				JsonObject currentVersion = versionArray.getJsonObject(i);
+				
+				result.add(new JsonObject()
+							   .put("version", currentVersion.getString("version"))
+							   .put("date", dateFormatter.format(new Date(currentVersion.getLong("timestamp"))))						
+						);				
+			}
+			listPromise.complete(result);
+		})
+		.onFailure(err -> {
+			listPromise.fail(err);
+		});
+		return listPromise.future();		
+	}
+	
+	private HashMap<String,Date> createVersionHashMap(JsonArray versions)
+	{
+		HashMap<String,Date> versionMap = new HashMap<>();
+		for(int i = 0 ; i < versions.size(); i++)
+		{
+			JsonObject currentVersion = versions.getJsonObject(i);
+			versionMap.put(currentVersion.getString("version"), new Date(currentVersion.getLong("timestamp")));
+		}
+		return versionMap;
+	}
+	
+	
+	/**
 	 * Get an API that can be returned based on the given UUID and version.
 	 * @param uuid the uuid of the element to be returned
 	 * @param version the version of the element to be returned
 	 * @return an API object of the type appropriate for this Manager.
 	 */
-	public Future<APIElement<T>> getAPIElement(String uuid, String version)
+	public Future<APIElement<T>> getAPIElementFromDB(String uuid, String version)
 	{
 		Promise<APIElement<T>> elementPromise = Promise.<APIElement<T>>promise();
 		APIElement<T> apiElement = apisupplier.get();
@@ -269,10 +351,23 @@ public class ElementManager<T extends ElementBase> {
 		.onFailure(err -> {
 			elementPromise.fail(err);
 		});
-		return elementPromise.future();		
-	
+		return elementPromise.future();			
 	}
 
+	/**
+	 * Build an API element based on the given Json Object.
+	 * @param apiJson The json representing the API object. 
+	 * @return an APIObject representing the given json
+	 */
+	public Future<APIElement<T>> getAPIElementFromJson(JsonObject json)
+	{
+		Promise<APIElement<T>> elementPromise = Promise.<APIElement<T>>promise();
+		APIElement<T> apiElement = apisupplier.get();		
+		apiElement.loadFromJson(json);
+		elementPromise.complete(apiElement);
+		return elementPromise.future();			
+	}
+	
 	public static ElementManager<Project> getProjectManager(MongoClient client, GitManager gm)
 	{
 		return new ElementManager<Project>(Project::new,APIProject::new, client, gm);

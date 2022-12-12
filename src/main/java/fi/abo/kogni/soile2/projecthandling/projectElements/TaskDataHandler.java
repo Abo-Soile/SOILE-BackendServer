@@ -1,10 +1,9 @@
-package fi.abo.kogni.soile2.datamanagement.verticle;
+package fi.abo.kogni.soile2.projecthandling.projectElements;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.ResourceManager;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;

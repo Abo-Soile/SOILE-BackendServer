@@ -5,6 +5,7 @@ import static io.vertx.ext.auth.impl.Codec.base64Encode;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -46,6 +47,7 @@ public class SoileUserManager implements MongoUserUtil{
 	private final MongoAuthenticationOptions authnOptions;
 	private final MongoAuthorizationOptions authzOptions;
 	private final String hashingAlgorithm;
+	private HashMap<PermissionChange, String> permissionMap;
 	public static enum PermissionChange{
 		Remove,
 		Add,
@@ -60,7 +62,10 @@ public class SoileUserManager implements MongoUserUtil{
 		this.authzOptions = SoileConfigLoader.getMongoAuthZOptions();		
 		strategy = new SoileHashing(SoileConfigLoader.getUserProperty("serverSalt"));
 		hashingAlgorithm = SoileConfigLoader.getUserProperty("hashingAlgorithm");
-		
+		permissionMap = new HashMap<>();
+		permissionMap.put(PermissionChange.Remove, "$pull");
+		permissionMap.put(PermissionChange.Add, "$push");
+		permissionMap.put(PermissionChange.Replace, "$set");
 	}
 
 	public SoileUserManager getUserList(int startpos)
@@ -205,83 +210,36 @@ public class SoileUserManager implements MongoUserUtil{
 	/**
 	 * Change roles or permissions indicating the correct field of the database. 
 	 * @param username - the id to add the roles/permissions for.
-	 * @param roleOrPermissionField - the roles or permissions database field
+	 * @param options - the roles or permissions database field
 	 * @param rolesOrPermissions - the list of roles or permissions to change
 	 * @param alterationFlag - Whether to add, remove or replace the indicated permissions. 
 	 * @param resultHandler - the handler for the results.	 
 	 * @return this
 	 */
-	public SoileUserManager changePermissionsOrRoles(String username, String roleOrPermissionField, List<String> rolesOrPermissions, PermissionChange alterationFlag, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager changePermissions(String username, MongoAuthorizationOptions options, JsonArray rolesOrPermissions, PermissionChange alterationFlag, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
 	{
-		client.find(authzOptions.getCollectionName(),
-				new JsonObject()
-				.put(authzOptions.getUsernameField(), username)
-				,res ->
-		{
-			if(res.succeeded() && res.result().size() > 0)
-			{
-				// Otherwise there is  no user with that username, so don't just add it!
-				JsonArray currentpermissions = 	res.result() //there can be only one....
-						.get(0)
-						.getJsonArray(roleOrPermissionField);
-
-				// Modify the indicated permissions according to the requested change. 
-				switch(alterationFlag) {
-				case Add:
-					for(String permission : rolesOrPermissions)
-					{
-						if(!currentpermissions.contains(permission))
-						{
-							currentpermissions.add(permission);
-						}
-					}
-					break;
-				case Remove:
-					for(String permission : rolesOrPermissions)
-					{
-						currentpermissions.remove(permission);
-					}
-					break;
-				case Replace:
-					currentpermissions = new JsonArray(rolesOrPermissions);
-					break;
-				}
-
-
-				//save the result for the given user.
-				client.save(
-						authzOptions.getCollectionName(),
-						new JsonObject()
-						.put(authzOptions.getUsernameField(), username)									
-						.put(roleOrPermissionField, currentpermissions.getList()),
-						resultHandler);															
-			}
-			else
-			{
-				if(res.failed())
-				{
-					resultHandler.handle(Future.<String>failedFuture("Could not query database"));
-				}
-				else
-				{								
-					resultHandler.handle(Future.<String>failedFuture(new UserDoesNotExistException(username)));
-				}
-			}
-		}
-				);		
+		
+		JsonObject queryObject = new JsonObject().put(options.getUsernameField(), username);		
+		JsonObject updateObject = new JsonObject().put(permissionMap.get(alterationFlag), new JsonObject().put(options.getPermissionField(), rolesOrPermissions));
+		client.updateCollection(options.getCollectionName(), queryObject, updateObject)
+		.onComplete(res -> {
+			resultHandler.handle(res);
+				
+		});		
 		return this;
 	}
 
 	/**
 	 * Update the permissions for a given user, replacing the old ones by the new ones.
 	 * @param username - the id of the user to remove permissions
+	 * @param options - the options to use for the update
 	 * @param permission - the the permission to remove
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public SoileUserManager updatePermissions(String username, List<String> permissions, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager updatePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
 	{
-		return changePermissionsOrRoles(username, authzOptions.getPermissionField(), permissions,PermissionChange.Replace, resultHandler);		
+		return changePermissions(username, options, permissions,PermissionChange.Replace, resultHandler);		
 	}		 
 
 
@@ -292,11 +250,16 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public SoileUserManager updateRoles(String username, List<String> roles, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager updateRole(String username, MongoAuthorizationOptions options, String role, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
 	{
-		return changePermissionsOrRoles(username, authzOptions.getRoleField(), roles, PermissionChange.Replace, resultHandler);		
+		JsonObject queryObject = new JsonObject().put(options.getUsernameField(), username);		
+		JsonObject updateObject = new JsonObject().put("$set", new JsonObject().put(options.getRoleField(), role));
+		client.updateCollection(options.getCollectionName(), queryObject, updateObject)
+		.onComplete(res -> {
+			resultHandler.handle(res);				
+		});		
+		return this;
 	}
-
 	/**
 	 * Remove a permission for a specific user
 	 * @param username - the id of the user to remove permissions
@@ -304,9 +267,9 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public SoileUserManager addPermission(String username, String permission, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager addPermission(String username, MongoAuthorizationOptions options, String permission, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
 	{
-		addPermissions(username, Arrays.asList(permission), resultHandler);
+		addPermissions(username, options, new JsonArray().add(permission), resultHandler);
 		return this;
 	}		
 
@@ -317,39 +280,11 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public SoileUserManager addPermissions(String username, List<String> permissions, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager addPermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
 	{
-		return this.changePermissionsOrRoles(username, authzOptions.getPermissionField(), permissions, PermissionChange.Add, resultHandler);
+		return this.changePermissions(username, options, permissions, PermissionChange.Add, resultHandler);
 
 	}
-
-	/**
-	 * Remove a role for a specific user
-	 * @param username - the id of the user to remove permissions
-	 * @param permission - the role to remove
-	 * @param resultHandler - a result handler to handle the results.
-	 * @return
-	 */
-	public SoileUserManager addRole(String username, String role, Handler<AsyncResult<String>> resultHandler)
-	{
-		addRoles(username, Arrays.asList(role), resultHandler);
-		return this;
-	}
-
-	/**
-	 * Remove roles for a specific user
-	 * @param username - the id of the user to remove permissions
-	 * @param permission - the roles to remove
-	 * @param resultHandler - a result handler to handle the results.
-	 * @return
-	 */
-	public SoileUserManager addRoles(String username, List<String> roles, Handler<AsyncResult<String>> resultHandler)
-	{
-		return this.changePermissionsOrRoles(username, authzOptions.getRoleField(), roles, PermissionChange.Add, resultHandler);
-
-	}
-
-
 
 	/**
 	 * Remove a permission for a specific user
@@ -358,9 +293,9 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public SoileUserManager removePermission(String username, String permission, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager removePermission(String username, MongoAuthorizationOptions options, String permission, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
 	{
-		removePermissions(username, Arrays.asList(permission), resultHandler);
+		removePermissions(username,options, new JsonArray().add(permission), resultHandler);
 		return this;
 	}		
 
@@ -371,38 +306,11 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public SoileUserManager removePermissions(String username, List<String> permissions, Handler<AsyncResult<String>> resultHandler)
+	public SoileUserManager removePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
 	{
-		return this.changePermissionsOrRoles(username, authzOptions.getPermissionField(), permissions, PermissionChange.Remove, resultHandler);
+		return this.changePermissions(username, options, permissions, PermissionChange.Remove, resultHandler);
 
 	}
-
-	/**
-	 * Remove a role for a specific user
-	 * @param username - the id of the user to remove permissions
-	 * @param permission - the role to remove
-	 * @param resultHandler - a result handler to handle the results.
-	 * @return
-	 */
-	public SoileUserManager removeRole(String username, String role, Handler<AsyncResult<String>> resultHandler)
-	{
-		removeRoles(username, Arrays.asList(role), resultHandler);
-		return this;
-	}
-
-	/**
-	 * Remove roles for a specific user
-	 * @param username - the id of the user to remove permissions
-	 * @param permission - the roles to remove
-	 * @param resultHandler - a result handler to handle the results.
-	 * @return
-	 */
-	public SoileUserManager removeRoles(String username, List<String> roles, Handler<AsyncResult<String>> resultHandler)
-	{
-		return this.changePermissionsOrRoles(username, authzOptions.getRoleField(), roles, PermissionChange.Remove, resultHandler);
-
-	}
-
 	
 	public SoileUserManager createUser(String username, String password, Handler<AsyncResult<String>> resultHandler) {
 		if (username == null || password == null) {

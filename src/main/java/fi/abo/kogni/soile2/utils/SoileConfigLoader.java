@@ -27,6 +27,11 @@ public class SoileConfigLoader {
 	public static final String Participant = "Participant";
 	public static final String Collaborator = "Collaborator";	
 	
+	public static final String EXPERIMENT = "experiment";
+	public static final String PROJECT = "project";
+	public static final String TASK = "task";
+	public static final String INSTANCE = "instance";
+	
 	
 	private static JsonObject dbCfg;
 	private static JsonObject dbFields;
@@ -285,6 +290,46 @@ public class SoileConfigLoader {
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
 		res.setCollectionName(dbCfg.getString("userCollection"));
 		res.setPermissionField(getdbField("userPermissionsField"));
+		res.setRoleField(getdbField("userRolesField"));
+		res.setUsernameField(getdbField("usernameField"));				
+		return res;
+	}
+	
+	public static MongoAuthorizationOptions getMongoTaskAuthorizationOptions()
+	{
+		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
+		res.setCollectionName(dbCfg.getString("userCollection"));
+		res.setPermissionField(getdbField("taskPermissionsField"));
+		res.setRoleField(getdbField("userRolesField"));
+		res.setUsernameField(getdbField("usernameField"));				
+		return res;
+	}
+	
+	public static MongoAuthorizationOptions getMongoExperimentAuthorizationOptions()
+	{
+		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
+		res.setCollectionName(dbCfg.getString("userCollection"));
+		res.setPermissionField(getdbField("experimentPermissionsField"));
+		res.setRoleField(getdbField("userRolesField"));
+		res.setUsernameField(getdbField("usernameField"));				
+		return res;
+	}
+	
+	public static MongoAuthorizationOptions getMongoProjectAuthorizationOptions()
+	{
+		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
+		res.setCollectionName(dbCfg.getString("userCollection"));
+		res.setPermissionField(getdbField("projectPermissionsField"));
+		res.setRoleField(getdbField("userRolesField"));
+		res.setUsernameField(getdbField("usernameField"));				
+		return res;
+	}
+	
+	public static MongoAuthorizationOptions getMongoInstanceAuthorizationOptions()
+	{
+		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
+		res.setCollectionName(dbCfg.getString("userCollection"));
+		res.setPermissionField(getdbField("instancePermissionsField"));
 		res.setRoleField(getdbField("userRolesField"));
 		res.setUsernameField(getdbField("usernameField"));				
 		return res;

@@ -8,6 +8,8 @@ import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceManager;
+import io.vertx.core.Promise;
+import io.vertx.core.eventbus.Message;
 
 
 public class ProjectVerticle {
@@ -23,7 +25,7 @@ public class ProjectVerticle {
 		Promise<Boolean> creationPromise = Promise.<Boolean>promise();
 		// we might need to change this at some point, but for now, just request a creation with the name as body.
 		String name = request.body().toString();
-		projectManager.getCurrentUUIDs()
+		/*projectInstanceHandler.getCurrentUUIDs()
 		.onSuccess(uuids -> {
 			UUID projectID;
 			projectID = UUID.randomUUID();			
@@ -64,7 +66,7 @@ public class ProjectVerticle {
 		})
 		.onFailure(err -> {
 			request.fail(500, "Couldn't retrieve UUIDs");
-		});
-	}*/
+		});*/
+	}
 
 }

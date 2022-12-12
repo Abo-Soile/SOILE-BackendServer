@@ -390,26 +390,47 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		{
 			//first get the data from the body
 			JsonObject command = (JsonObject) msg.body();
-			String userName = command.getString(SoileConfigLoader.getCommunicationField("usernameField"));
-			String changeType = command.getString(SoileConfigLoader.getCommunicationField("changeTypeField"));
-			String expID = command.getString(SoileConfigLoader.getCommunicationField("experimentID"));
-			String changedRole = command.getString(SoileConfigLoader.getCommunicationField("roleChanged"));
-			List<String> ExpList = new ArrayList<String>();
-			ExpList.add(expID);
-			userManager.changePermissionsOrRoles(userName, getDBFieldForRoleType(changedRole), ExpList, getChange(changeType), 
-					res ->
+			String userName = command.getString("username");			
+			String changeType = command.getString("command");			
+			String role = command.getString("role");
+			JsonObject permissions = command.getJsonObject("permissions");			
+			if(permissions != null && role != null) 
 			{
-				if(res.succeeded())
+				msg.fail(400, "Cannot change permission and role settings at the same time");
+				return;
+			}
+			if(role != null)
+			{
+			userManager.updateRole(userName, getOptionForType("role"), role, 
+				res ->
 				{
-					msg.reply(new JsonObject().put(SoileCommUtils.RESULTFIELD, SoileCommUtils.SUCCESS));
-				}
-				else
-				{
-					LOGGER.error("Could not update permissions for request:\n" + command.encodePrettily() );
-					LOGGER.error("Error was:\n" + res.cause().getMessage());
-					msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, res.cause().getMessage());	
-				}					
-			});
+					if(res.succeeded())
+					{
+						msg.reply(new JsonObject().put(SoileCommUtils.RESULTFIELD, SoileCommUtils.SUCCESS));
+					}
+					else
+					{
+						LOGGER.error("Could not update permissions for request:\n" + command.encodePrettily() );
+						LOGGER.error("Error was:\n" + res.cause().getMessage());
+						msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, res.cause().getMessage());	
+					}					
+				});
+			}
+			if(permissions != null)
+			{
+				userManager.changePermissions(userName, getOptionForType(permissions.getString("type")), permissions.getJsonArray("target"), getChange(changeType), res -> {
+					if(res.succeeded())
+					{
+						msg.reply(new JsonObject().put(SoileCommUtils.RESULTFIELD, SoileCommUtils.SUCCESS));
+					}
+					else
+					{
+						LOGGER.error("Could not update permissions for request:\n" + command.encodePrettily() );
+						LOGGER.error("Error was:\n" + res.cause().getMessage());
+						msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, res.cause().getMessage());	
+					}	
+				});
+			}
 			
 		}
 		else
@@ -452,6 +473,17 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		return null;
 	}
 	
+	private MongoAuthorizationOptions getOptionForType(String type)
+	{
+		switch(type)
+		{
+			case SoileConfigLoader.TASK: return SoileConfigLoader.getMongoExperimentAuthorizationOptions();
+			case SoileConfigLoader.EXPERIMENT: return SoileConfigLoader.getMongoExperimentAuthorizationOptions();
+			case SoileConfigLoader.PROJECT: return SoileConfigLoader.getMongoProjectAuthorizationOptions();
+			case SoileConfigLoader.INSTANCE: return SoileConfigLoader.getMongoInstanceAuthorizationOptions();				
+			default: return SoileConfigLoader.getMongoAuthZOptions();
+		}
+	}
 	
 	void setUserFullNameAndEmail(Message<JsonObject> msg)
 	{

@@ -226,7 +226,7 @@ public class ObjectGenerator {
 						projectManager.updateElement(apiProject)
 						.onSuccess( newVersion -> {
 							System.out.println("Trying to retrieve version: " + newVersion);
-							projectManager.getAPIElement(project.getUUID(), newVersion)
+							projectManager.getAPIElementFromDB(project.getUUID(), newVersion)
 							.onSuccess(newApi -> {
 								newApi.getGitJson();
 								System.out.println("The git Json for the given element is: \n"  + newApi.getGitJson().encodePrettily());

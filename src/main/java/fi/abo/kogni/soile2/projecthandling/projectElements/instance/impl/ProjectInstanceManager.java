@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,6 +20,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
 
 /**
@@ -35,11 +38,12 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 	// should go to the constructor.
 	private ProjectInstanceFactory dbFactory;
 	private ProjectInstanceFactory createFactory;
+	private String instanceCollection;
 	public ProjectInstanceManager(MongoClient client, EventBus eb)
 	{						
 		this(client,
-				new ElementToDBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client,SoileConfigLoader.getdbProperty("projectCollection"), eb),								
-				new DBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client,SoileConfigLoader.getdbProperty("projectCollection"), eb)				 
+				new ElementToDBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client,SoileConfigLoader.getdbProperty("projectInstanceCollection"), eb),								
+				new DBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client,SoileConfigLoader.getdbProperty("projectInstanceCollection"), eb)				 
 				);				
 	}		
 		
@@ -48,7 +52,7 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 		this.client = client;
 		this.dbFactory = dbFactory;
 		this.createFactory = createFactory;		
-		 
+		instanceCollection = SoileConfigLoader.getdbProperty("projectInstanceCollection");
 	}
 	
 	@Override
@@ -105,4 +109,25 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 	{
 		return proj.save();
 	}
+	
+	public Future<JsonArray> getProjectInstances(JsonArray permissions)
+	{
+		Promise<JsonArray> listPromise = Promise.promise();		 				
+		client.findWithOptions(instanceCollection,new JsonObject().put("private", false).put("_id", permissions),new FindOptions().setFields(new JsonObject().put("_id",1).put("name", 1)))
+		.onSuccess(items -> 
+				{
+					JsonArray result = new JsonArray();
+					for(JsonObject o : items)
+					{
+						o.put("uuid", o.getString("_id")).remove("_id");
+						result.add(o);
+					}
+					listPromise.complete(result);
+							
+				})
+		.onFailure(err -> listPromise.fail(err));
+		
+		return listPromise.future();
+	}
+	
 }

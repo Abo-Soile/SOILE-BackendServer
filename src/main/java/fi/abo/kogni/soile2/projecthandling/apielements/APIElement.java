@@ -140,6 +140,8 @@ public interface APIElement<T extends ElementBase> {
 	void loadGitJson(JsonObject json);
 	
 	JsonObject getJson();
+	
+	void loadFromJson(JsonObject json);
 }
 
 
