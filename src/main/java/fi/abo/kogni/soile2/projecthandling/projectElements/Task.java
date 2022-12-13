@@ -2,6 +2,7 @@ package fi.abo.kogni.soile2.projecthandling.projectElements;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -75,5 +76,9 @@ public class Task extends ElementBase {
 		// TODO Auto-generated method stub
 		return typeID;
 	}	
-
+	@Override
+	public TargetElementType getElementType() {
+		// TODO Auto-generated method stub
+		return TargetElementType.TASK;
+	}
 }

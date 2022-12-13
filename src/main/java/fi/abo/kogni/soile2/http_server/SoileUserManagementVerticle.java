@@ -8,14 +8,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.tsp.ers.SortedHashList;
 
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
+import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidPermissionTypeException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
@@ -418,18 +421,27 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			}
 			if(permissions != null)
 			{
-				userManager.changePermissions(userName, getOptionForType(permissions.getString("type")), permissions.getJsonArray("target"), getChange(changeType), res -> {
-					if(res.succeeded())
-					{
-						msg.reply(new JsonObject().put(SoileCommUtils.RESULTFIELD, SoileCommUtils.SUCCESS));
-					}
-					else
-					{
-						LOGGER.error("Could not update permissions for request:\n" + command.encodePrettily() );
-						LOGGER.error("Error was:\n" + res.cause().getMessage());
-						msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, res.cause().getMessage());	
-					}	
-				});
+				try
+				{
+					JsonArray alteredPermissions = convertPermissionsArray(permissions.getJsonArray("target"));					
+					userManager.changePermissions(userName, getOptionForType(permissions.getString("type")), alteredPermissions, getChange(changeType), res -> {
+						if(res.succeeded())
+						{
+							msg.reply(new JsonObject().put(SoileCommUtils.RESULTFIELD, SoileCommUtils.SUCCESS));
+						}
+						else
+						{
+							LOGGER.error("Could not update permissions for request:\n" + command.encodePrettily() );
+							LOGGER.error("Error was:\n" + res.cause().getMessage());
+							msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, res.cause().getMessage());	
+						}	
+					});
+				}
+				catch(InvalidPermissionTypeException e)
+				{
+					msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, e.getMessage());
+					return;
+				}
 			}
 			
 		}
@@ -513,5 +525,21 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 						});
 		}
 	}	
+	
+	private JsonArray convertPermissionsArray(JsonArray sourceArray) throws InvalidPermissionTypeException
+	{
+		JsonArray result = new JsonArray();
+		for(int i = 0; i < sourceArray.size(); ++i)
+		{
+			JsonObject currentPermission = sourceArray.getJsonObject(i);
+			String permissionType = currentPermission.getString("type");
+			if(!(permissionType.equals(PermissionType.FULL.toString()) || permissionType.equals(PermissionType.READ_WRITE.toString())|| permissionType.equals(PermissionType.READ.toString())))
+			{
+				throw new InvalidPermissionTypeException(permissionType + " is not a valid type for permissions");
+			}
+			result.add(currentPermission.getString("type") + "$" + currentPermission.getString("target"));
+		}
+		return result;
+	}
 	
 }

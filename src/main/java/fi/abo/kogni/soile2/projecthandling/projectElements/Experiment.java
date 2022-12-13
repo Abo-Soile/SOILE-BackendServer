@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -66,5 +67,11 @@ public class Experiment extends ElementBase {
 	public String getTypeID() {
 		// TODO Auto-generated method stub
 		return "E";
+	}
+	
+	@Override
+	public TargetElementType getElementType() {
+		// TODO Auto-generated method stub
+		return TargetElementType.EXPERIMENT;
 	}
 }

@@ -1,6 +1,5 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
@@ -14,13 +13,13 @@ public class ElementToDBProjectInstanceFactory extends DBProjectInstanceFactory 
 	 * @param client
 	 * @param projectInstanceDB
 	 */
-	public ElementToDBProjectInstanceFactory(ElementManager<Project> manager, MongoClient client, String projectInstanceDB, EventBus eb) {
-		super(manager, client, projectInstanceDB, eb);
+	public ElementToDBProjectInstanceFactory(ElementManager<Project> manager, MongoClient client, EventBus eb) {
+		super(manager, client, eb);
 	}
 
 	@Override
 	public ProjectInstance createInstance() { 		
-		return new ElementToDBProjectInstance(projManager, client, projectInstanceDB, eb);
+		return new ElementToDBProjectInstance(projManager, client, eb);
 	}
 
 }

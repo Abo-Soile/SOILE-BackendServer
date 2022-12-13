@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.ext.mongo.MongoClient;
@@ -14,7 +16,7 @@ import io.vertx.ext.mongo.MongoClient;
  * @author Thomas Pfau
  *
  */
-public interface Element {
+public interface Element extends AccessElement {
 
 	/**
 	 * This UUID is a mongoDB ID. 
@@ -185,5 +187,5 @@ public interface Element {
 	 * @return
 	 */
 	public String getTypeID();
-		
+	
 }

@@ -26,8 +26,8 @@ public class ElementToDBProjectInstance extends DBProjectInstance{
 
 	private static final Logger log = LogManager.getLogger(ElementToDBProjectInstance.class.getName());	
 
-	public ElementToDBProjectInstance(ElementManager<Project> manager, MongoClient client, String projectInstanceDB, EventBus eb) {
-		super(manager, client, projectInstanceDB, eb);
+	public ElementToDBProjectInstance(ElementManager<Project> manager, MongoClient client, EventBus eb) {
+		super(manager, client, eb);
 	}
 	
 	
@@ -59,7 +59,7 @@ public class ElementToDBProjectInstance extends DBProjectInstance{
 			query.put("name",inputJson.getString("name"));
 		}
 		log.debug("Trying to load element from DB: \n" + query.encodePrettily());
-		client.findOne(projectInstanceDB, query, null)
+		client.findOne(getTargetCollection(), query, null)
 		.onSuccess(res -> {
 			log.debug("Got reply:" + res);
 			if(res == null)
@@ -71,7 +71,7 @@ public class ElementToDBProjectInstance extends DBProjectInstance{
 				inputJson.put("participants", new JsonArray());
 				log.debug("Trying to save Instance:\n" + inputJson.encodePrettily());
 
-				client.save(projectInstanceDB, inputJson)
+				client.save(getTargetCollection(), inputJson)
 				.onSuccess( dbID -> {
 					log.debug("DB Item has ID: " + dbID);
 					// load it, so we got all we need.

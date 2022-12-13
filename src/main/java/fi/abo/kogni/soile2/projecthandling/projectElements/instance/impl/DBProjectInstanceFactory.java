@@ -19,10 +19,9 @@ public class DBProjectInstanceFactory implements ProjectInstanceFactory {
 	 * @param client
 	 * @param projectInstanceDB
 	 */
-	public DBProjectInstanceFactory(ElementManager<Project> manager, MongoClient client, String projectInstanceDB, EventBus eb) {
+	public DBProjectInstanceFactory(ElementManager<Project> manager, MongoClient client, EventBus eb) {
 		super();
 		this.client = client;
-		this.projectInstanceDB = projectInstanceDB;
 		this.eb = eb;
 		projManager= manager;
 	}
@@ -30,7 +29,7 @@ public class DBProjectInstanceFactory implements ProjectInstanceFactory {
 	@Override
 	public ProjectInstance createInstance() {
 		// TODO Auto-generated method stub
-		return new DBProjectInstance(projManager, client, projectInstanceDB, eb);
+		return new DBProjectInstance(projManager, client, eb);
 	}
 
 }

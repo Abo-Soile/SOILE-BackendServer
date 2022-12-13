@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
+import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIElement;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
@@ -45,7 +46,7 @@ public class ElementManager<T extends ElementBase> {
 	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, GitManager manager)
 	{
 		this.apisupplier = apisupplier;
-		this.supplier = supplier;
+		this.supplier = supplier;		
 		typeID = supplier.get().getTypeID();
 		this.factory = new ElementFactory<T>(supplier);
 		this.client = client;
@@ -354,6 +355,10 @@ public class ElementManager<T extends ElementBase> {
 		return elementPromise.future();			
 	}
 
+	public Supplier<T> getElementSupplier()
+	{
+		return supplier;
+	}
 	/**
 	 * Build an API element based on the given Json Object.
 	 * @param apiJson The json representing the API object. 
@@ -381,5 +386,5 @@ public class ElementManager<T extends ElementBase> {
 	public static ElementManager<Task> getTaskManager(MongoClient client, GitManager gm)
 	{
 		return new ElementManager<Task>(Task::new,APITask::new, client, gm);
-	}
+	}	
 }

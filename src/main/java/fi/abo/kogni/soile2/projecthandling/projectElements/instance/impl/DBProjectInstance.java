@@ -27,16 +27,14 @@ import io.vertx.ext.mongo.MongoClient;
 public class DBProjectInstance extends ProjectInstance{
 	
 	MongoClient client;
-	String projectInstanceDB;
 	EventBus eb;
 	ElementManager<Project> projectManager;	
 	static final Logger LOGGER = LogManager.getLogger(DBProjectInstance.class);
 
-	public DBProjectInstance(ElementManager<Project> projManager, MongoClient client, String projectInstanceDB, EventBus eb) {
+	public DBProjectInstance(ElementManager<Project> projManager, MongoClient client, EventBus eb) {
 		super();
 		this.projectManager = projManager;
 		this.client = client;
-		this.projectInstanceDB = projectInstanceDB;
 		this.eb = eb;
 		// TODO Auto-generated constructor stub
 	}
@@ -51,7 +49,7 @@ public class DBProjectInstance extends ProjectInstance{
 		JsonObject update = toDBJson();
 		update.remove("_id");		
 
-		client.updateCollection(projectInstanceDB, query, update).onSuccess(result ->
+		client.updateCollection(getTargetCollection(), query, update).onSuccess(result ->
 		{			
 			saveSuccess.complete(toDBJson());					
 		}).onFailure(fail ->{
@@ -68,7 +66,7 @@ public class DBProjectInstance extends ProjectInstance{
 	public Future<JsonObject> load(JsonObject instanceInfo) {
 		Promise<JsonObject> loadSuccess = Promise.<JsonObject>promise();
 		LOGGER.debug("Trying to load from DB: \n" + instanceInfo.encodePrettily());		
-		client.findOne(projectInstanceDB, instanceInfo, null).onSuccess(instanceJson -> {
+		client.findOne(getTargetCollection(), instanceInfo, null).onSuccess(instanceJson -> {
 			LOGGER.debug("Found an entry");
 			if(instanceJson == null)
 			{				
@@ -99,7 +97,7 @@ public class DBProjectInstance extends ProjectInstance{
 	@Override
 	public Future<JsonObject> delete() {
 		JsonObject query = new JsonObject().put("_id", this.instanceID);
-		return client.findOneAndDelete(projectInstanceDB, query);		
+		return client.findOneAndDelete(getTargetCollection(), query);		
 	}
 	
 	
@@ -112,7 +110,7 @@ public class DBProjectInstance extends ProjectInstance{
 	{
 		Promise<Boolean> updatePromise = Promise.promise();
 		JsonObject update = new JsonObject().put("$push", new JsonObject().put("participants",p.getID()));
-		client.updateCollection(projectInstanceDB, new JsonObject().put("_id", instanceID), update )
+		client.updateCollection(getTargetCollection(), new JsonObject().put("_id", instanceID), update )
 		.onSuccess(res -> {
 			if(res.getDocModified() != 1)
 			{
@@ -139,7 +137,7 @@ public class DBProjectInstance extends ProjectInstance{
 	{
 		Promise<Boolean> updatePromise = Promise.promise();
 		JsonObject update = new JsonObject().put("$pull", new JsonObject().put("participants",p.getID()));
-		client.updateCollection(projectInstanceDB, new JsonObject().put("_id", instanceID), update )
+		client.updateCollection(getTargetCollection(), new JsonObject().put("_id", instanceID), update )
 		.onSuccess(res -> {
 			if(res.getDocModified() != 1)
 			{
@@ -163,7 +161,7 @@ public class DBProjectInstance extends ProjectInstance{
 	{
 		Promise<JsonArray> listPromise = Promise.promise();
 		
-		client.findOne(projectInstanceDB, new JsonObject().put("_id", instanceID), new JsonObject().put("participants", 1) )
+		client.findOne(getTargetCollection(), new JsonObject().put("_id", instanceID), new JsonObject().put("participants", 1) )
 		.onSuccess(res -> {								
 				listPromise.complete(res.getJsonArray("participants"));
 		})

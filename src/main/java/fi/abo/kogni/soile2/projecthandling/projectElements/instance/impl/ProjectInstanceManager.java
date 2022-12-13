@@ -42,8 +42,8 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 	public ProjectInstanceManager(MongoClient client, EventBus eb)
 	{						
 		this(client,
-				new ElementToDBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client,SoileConfigLoader.getdbProperty("projectInstanceCollection"), eb),								
-				new DBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client,SoileConfigLoader.getdbProperty("projectInstanceCollection"), eb)				 
+				new ElementToDBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client, eb),								
+				new DBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client, eb)				 
 				);				
 	}		
 		

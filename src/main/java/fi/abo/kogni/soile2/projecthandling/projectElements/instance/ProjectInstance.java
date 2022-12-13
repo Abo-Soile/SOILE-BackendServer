@@ -7,12 +7,15 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FilterObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
@@ -34,7 +37,7 @@ import io.vertx.core.json.JsonObject;
  * @author Thomas Pfau
  *
  */
-public abstract class ProjectInstance {
+public abstract class ProjectInstance implements AccessElement{
 
 	static final Logger LOGGER = LogManager.getLogger(ProjectInstance.class);
 
@@ -321,6 +324,17 @@ public abstract class ProjectInstance {
 		LOGGER.debug("Updating user position:" + current.getInstanceID() + " -> " + nextElement);		
 		return user.setProjectPosition(nextElement);
 	}				
+	
+	
+	public TargetElementType getElementType()
+	{
+		return TargetElementType.INSTANCE;
+	}
+
+	public String getTargetCollection()
+	{
+		return SoileConfigLoader.getCollectionName("projectInstanceCollection");
+	}
 	
 	/**
 	 * This operation saves the Project. It should ensure that the data can be reconstructed by supplying what is returned 
