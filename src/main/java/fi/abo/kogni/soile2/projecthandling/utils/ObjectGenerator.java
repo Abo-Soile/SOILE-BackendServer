@@ -25,7 +25,7 @@ public class ObjectGenerator {
 
 
 
-	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID)
+	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID, MongoClient client)
 	{
 		Promise<APITask> taskPromise = Promise.promise();
 		try
@@ -33,13 +33,19 @@ public class ObjectGenerator {
 			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
 			String TaskCode = Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));		
 			manager.createOrLoadElement(TaskDef.getString("name"))
-			.onSuccess(task -> {
+			.onSuccess(task -> {				
 				APITask apiTask = new APITask(TaskDef);				
 				apiTask.loadGitJson(TaskDef);
 				apiTask.setCode(TaskCode);
 				apiTask.setVersion(task.getCurrentVersion());
-				apiTask.setUUID(task.getUUID());
-				taskPromise.complete(apiTask);
+				apiTask.setUUID(task.getUUID());			
+				task.setPrivate(apiTask.getPrivate());
+				task.save(client)
+				.onSuccess(res -> {
+					taskPromise.complete(apiTask);	
+				})
+				.onFailure(err -> taskPromise.fail(err));
+				
 			})
 			.onFailure(fail -> taskPromise.fail(fail));
 		}
@@ -62,10 +68,11 @@ public class ObjectGenerator {
 			System.out.println("Creating Experiment with name " + ExperimentDef.getString("name") );
 			System.out.println(ExperimentDef.encodePrettily());
 			experimentManager.createOrLoadElement(ExperimentDef.getString("name"))
-			.onSuccess(experiment -> {							
+			.onSuccess(experiment -> {	
+				experiment.setPrivate(apiExperiment.getPrivate());
 				apiExperiment.setName(experiment.getName());
 				apiExperiment.setVersion(experiment.getCurrentVersion());
-				apiExperiment.setUUID(experiment.getUUID());
+				apiExperiment.setUUID(experiment.getUUID());				
 				System.out.println("The Experiment Manager Returned an experiment with the following data: \n"  + experiment.toJson().encodePrettily());
 
 				ConcurrentHashMap<String, JsonObject> elements = new ConcurrentHashMap();
@@ -76,7 +83,7 @@ public class ObjectGenerator {
 					if(current.getString("type").equals("task"))
 					{
 						partFutures.add(
-								buildAPITask(taskManager, current.getString("name")).onSuccess(task -> {
+								buildAPITask(taskManager, current.getString("name"), client).onSuccess(task -> {
 									experiment.addElement(task.getUUID());
 									JsonObject taskInstance = new JsonObject();
 									taskInstance.put("instanceID", current.getString("instanceID"))
@@ -162,15 +169,14 @@ public class ObjectGenerator {
 			.onSuccess(project -> {							
 				apiProject.setName(project.getName());
 				apiProject.setVersion(project.getCurrentVersion());
-				apiProject.setUUID(project.getUUID());
-				apiProject.setPrivate(project.getPrivate());				
+				apiProject.setUUID(project.getUUID());							
 				ConcurrentHashMap<String, JsonObject> tasks = new ConcurrentHashMap();
 				List<Future> taskFutures = new LinkedList<Future>();
 				for(Object item : projectDef.getJsonArray("tasks"))
 				{
 					JsonObject current = (JsonObject) item;
 					taskFutures.add(
-							buildAPITask(taskManager, current.getString("name"))
+							buildAPITask(taskManager, current.getString("name"), client)
 							.onSuccess(task -> {
 								project.addElement(task.getUUID());
 								JsonObject taskInstance = new JsonObject();
@@ -206,6 +212,7 @@ public class ObjectGenerator {
 						experimentFutures.add(
 								buildAPIExperiment(expManager, taskManager, client, current.getString("name"))
 								.onSuccess(experiment -> {
+									System.out.println("Constructed experiment as: \n" + experiment.getJson());
 									project.addElement(experiment.getUUID());						
 									JsonObject expinstance = experiment.getJson();
 									expinstance.put("instanceID",current.getString("instanceID"))

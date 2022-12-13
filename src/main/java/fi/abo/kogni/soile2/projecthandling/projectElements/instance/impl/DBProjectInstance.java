@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
+import fi.abo.kogni.soile2.projecthandling.exceptions.ProjectIsInactiveException;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.DataParticipant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
@@ -108,6 +109,11 @@ public class DBProjectInstance extends ProjectInstance{
 	@Override
 	public synchronized Future<Boolean> addParticipant(Participant p)
 	{
+		if(!isActive)
+		{
+			return Future.failedFuture(new ProjectIsInactiveException(name));
+		}
+			
 		Promise<Boolean> updatePromise = Promise.promise();
 		JsonObject update = new JsonObject().put("$push", new JsonObject().put("participants",p.getID()));
 		client.updateCollection(getTargetCollection(), new JsonObject().put("_id", instanceID), update )
@@ -135,6 +141,11 @@ public class DBProjectInstance extends ProjectInstance{
 	@Override
 	public synchronized Future<Boolean> deleteParticipant(Participant p)
 	{
+		if(!isActive)
+		{
+			return Future.failedFuture(new ProjectIsInactiveException(name));
+		}
+		
 		Promise<Boolean> updatePromise = Promise.promise();
 		JsonObject update = new JsonObject().put("$pull", new JsonObject().put("participants",p.getID()));
 		client.updateCollection(getTargetCollection(), new JsonObject().put("_id", instanceID), update )
@@ -169,5 +180,17 @@ public class DBProjectInstance extends ProjectInstance{
 		return listPromise.future();		
 	}
 	
+	@Override
+	public Future<Void> deactivate()
+	{
+		isActive = false;
+		return save().mapEmpty();
+	}
 
+	@Override
+	public Future<Void> activate()
+	{
+		isActive = true;
+		return save().mapEmpty();
+	}
 }

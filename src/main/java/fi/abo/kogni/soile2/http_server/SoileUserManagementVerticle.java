@@ -424,7 +424,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 				try
 				{
 					JsonArray alteredPermissions = convertPermissionsArray(permissions.getJsonArray("target"));					
-					userManager.changePermissions(userName, getOptionForType(permissions.getString("type")), alteredPermissions, getChange(changeType), res -> {
+					userManager.changePermissions(userName, getOptionForType(permissions.getString("elementType")), alteredPermissions, getChange(changeType), res -> {
 						if(res.succeeded())
 						{
 							msg.reply(new JsonObject().put(SoileCommUtils.RESULTFIELD, SoileCommUtils.SUCCESS));

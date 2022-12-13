@@ -5,6 +5,7 @@ import org.junit.Test;
 import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -29,17 +30,18 @@ public class ElementManagerTest extends GitTest{
 			manager.createElement("NewProject2")
 			.onSuccess(p2 -> {
 				System.out.println("Second Project created");
-				manager.getElementList()
+				manager.getElementList(new JsonArray())
 				.onSuccess(list -> {
 					System.out.println("List retrieved");
-					context.assertEquals(2, list.size());
+					context.assertEquals(2, list.size()); // default is non private
 					Project[] projects = new Project[] {project, p2};
 					for(Project p : projects)
 					{
 						for(int i = 0; i < list.size(); i++)
 						{
 							JsonObject current = list.getJsonObject(i); 
-							if(current.getString("UUID").equals(p.getUUID()))
+							System.out.println(current.encodePrettily());
+							if(current.getString("uuid").equals(p.getUUID()))
 							{
 								context.assertEquals(p.getName(), current.getString("name"));
 								list.remove(i);

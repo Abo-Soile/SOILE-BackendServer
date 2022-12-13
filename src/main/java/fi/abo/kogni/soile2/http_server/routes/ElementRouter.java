@@ -30,15 +30,18 @@ public class ElementRouter<T extends ElementBase> {
 	EventBus eb;
 	SoileIDBasedAuthorizationHandler<T> IDAccessHandler;
 	SoileRoleBasedAuthorizationHandler roleHandler;
+	SoileAuthorization authorizationRertiever;
 	MongoAuthorization mongoAuth; 
 	public ElementRouter(ElementManager<T> manager, SoileAuthorization auth, EventBus eb, MongoClient client)
 	{		
+		authorizationRertiever = auth;
 		mongoAuth = auth.getAuthorizationForOption(manager.getElementSupplier().get().getElementType());
 		roleHandler = new SoileRoleBasedAuthorizationHandler();
 		IDAccessHandler = new SoileIDBasedAuthorizationHandler<T>(manager.getElementSupplier(), client);
 		elementManager = manager;
 		this.eb = eb;
 	}
+
 
 	public void getElement(RoutingContext context)
 	{
@@ -86,19 +89,22 @@ public class ElementRouter<T extends ElementBase> {
 		checkAccess(context.user(),null, Roles.Researcher,null,true)
 		.onSuccess(Void -> 
 		{
-			elementManager.getElementList()
-			.onSuccess(elementList -> {	
-				// this list needs to be filtered by access
+			authorizationRertiever.getGeneralPermissions(context.user(),elementManager.getElementSupplier().get().getElementType())
+			.onSuccess( permissions -> {
+				elementManager.getElementList(permissions)
+				.onSuccess(elementList -> {	
+					// this list needs to be filtered by access
 
-				context.response()
-				.setStatusCode(200)
-				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-				.end(elementList.encode());	
+					context.response()
+					.setStatusCode(200)
+					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+					.end(elementList.encode());
+				})
+				.onFailure(err -> handleError(err, context));
 			})
 			.onFailure(err -> handleError(err, context));	
 		})
 		.onFailure(err -> handleError(err, context));
-
 	}
 
 	public void getVersionList(RoutingContext context)
@@ -200,6 +206,7 @@ public class ElementRouter<T extends ElementBase> {
 		default: return SoileConfigLoader.INSTANCE;			
 		}
 	}
+
 
 	protected Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission, boolean adminAllowed)
 	{

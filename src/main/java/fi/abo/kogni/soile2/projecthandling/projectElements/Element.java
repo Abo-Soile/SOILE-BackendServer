@@ -173,14 +173,7 @@ public interface Element extends AccessElement {
 	 * @param version
 	 * @return
 	 */
-	public Date getVersionDate(String version);
-	
-	/**
-	 * Get the database collection to use for this Element
-	 * @return
-	 */
-	public String getTargetCollection();
-	
+	public Date getVersionDate(String version);	
 	
 	/**
 	 * Get the Type identifier, to be used for git retrieval.
@@ -188,4 +181,5 @@ public interface Element extends AccessElement {
 	 */
 	public String getTypeID();
 	
+
 }

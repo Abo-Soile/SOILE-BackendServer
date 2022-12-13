@@ -111,7 +111,8 @@ public class ProjectInstanceHandler {
 				
 		// if no ID is provided, create a new Participant for the indicated project and add that participant to the list.		
 		projects.getData(projectInstanceID).onSuccess(targetProject -> 
-		{		
+		{	
+			
 			targetProject.addParticipant(p)
 			.onSuccess(success -> {
 				addPromise.complete(success);

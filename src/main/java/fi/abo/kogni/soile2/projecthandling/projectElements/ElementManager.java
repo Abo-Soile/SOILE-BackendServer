@@ -217,20 +217,33 @@ public class ElementManager<T extends ElementBase> {
 	 * Returns a list of 
 	 * @return
 	 */
-	public Future<JsonArray> getElementList()
+	public Future<JsonArray> getElementList(JsonArray permissions)
 	{
 		Promise<JsonArray> listPromise = Promise.<JsonArray>promise();		
 
 		Element e = supplier.get();
 		JsonArray result = new JsonArray();		
 		// should possibly be done via findBatch
-		client.findWithOptions(e.getTargetCollection(), new JsonObject(), new FindOptions().setFields(new JsonObject().put("name", 1).put("_id", 1)))
+		client.findWithOptions(e.getTargetCollection(), new JsonObject(), new FindOptions().setFields(new JsonObject().put("private",1).put("name", 1).put("_id", 1)))
 		.onSuccess(res -> {
 			for(JsonObject current : res)
 			{
-				// rename the _id key to uuid.
-				current.put("uuid",current.getString("_id")).remove("_id");
-				result.add(current);
+				boolean addElement = true;
+				log.debug("Retrieved element: \n " + current.encodePrettily());
+				if(current.getBoolean("private", false))
+				{
+					if(!permissions.contains(current.getString("uuid")))
+					{
+						addElement = false;
+					}
+				}			
+				if(addElement)
+				{
+					// rename the _id key to uuid.					
+					current.put("uuid",current.getString("_id")).remove("_id");
+					current.remove("private");
+					result.add(current);
+				}
 			}
 			listPromise.complete(result);
 		})

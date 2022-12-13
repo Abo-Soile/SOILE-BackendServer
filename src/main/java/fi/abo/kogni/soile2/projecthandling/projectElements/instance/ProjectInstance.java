@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
+import fi.abo.kogni.soile2.projecthandling.exceptions.ProjectIsInactiveException;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
@@ -60,6 +61,7 @@ public abstract class ProjectInstance implements AccessElement{
 	protected String start;
 	// a url shortcut.
 	protected String shortcut;	
+	protected boolean isActive;
 	/**
 	 * A basic constructor that can be called by any Implementing class. 
 	 */
@@ -193,7 +195,8 @@ public abstract class ProjectInstance implements AccessElement{
 					.put("sourceUUID",sourceUUID)
 					.put("version", version)
 					.put("name", name)
-					.put("shortcut", shortcut);			
+					.put("shortcut", shortcut)
+					.put("isActive", isActive);				
 		return dbData;
 	}	
 	
@@ -222,6 +225,10 @@ public abstract class ProjectInstance implements AccessElement{
 	 */
 	public Future<String> finishStep(Participant user, JsonObject taskData)
 	{
+		if(!isActive)
+		{
+			return Future.failedFuture(new ProjectIsInactiveException(name));
+		}		
 		Promise<String> finishedPromise = Promise.promise();
 		LOGGER.debug(taskData.encodePrettily());
 		if(!taskData.getString("taskID").equals(user.getProjectPosition()))
@@ -303,6 +310,10 @@ public abstract class ProjectInstance implements AccessElement{
 	 */
 	public Future<String> startProject(Participant user)
 	{
+		if(!isActive)
+		{
+			return Future.failedFuture(new ProjectIsInactiveException(name));
+		}
 		return user.setProjectPosition(start);		
 	}
 	
@@ -314,6 +325,10 @@ public abstract class ProjectInstance implements AccessElement{
 	 */
 	public Future<String> setNextStep(Participant user)
 	{		
+		if(!isActive)
+		{
+			return Future.failedFuture(new ProjectIsInactiveException(name));
+		}		
 		ElementInstance current = getElement(user.getProjectPosition());
 		String nextElement = current.nextTask(user);
 		if("".equals(nextElement) || nextElement == null)
@@ -324,7 +339,7 @@ public abstract class ProjectInstance implements AccessElement{
 		LOGGER.debug("Updating user position:" + current.getInstanceID() + " -> " + nextElement);		
 		return user.setProjectPosition(nextElement);
 	}				
-	
+		
 	
 	public TargetElementType getElementType()
 	{
@@ -359,4 +374,13 @@ public abstract class ProjectInstance implements AccessElement{
 	 */
 	public abstract Future<JsonObject> delete();
 	
+	/**
+	 * Stop a project
+	 */
+	public abstract Future<Void> deactivate();
+	
+	/**
+	 * Restart a project if it was deactivated. By default a project is active.
+	 */
+	public abstract Future<Void> activate();
 }
