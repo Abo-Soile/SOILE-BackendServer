@@ -167,8 +167,11 @@
 			"module": "fi.abo.kogni.soile~questionnaire-render~1.0",
 			"config": "questionnaire_markup",
 			"instances": 1
-		},
-		{
+		}
+	],
+	"old_deploy":
+	[
+			{
 			"module": "fi.abo.kogni.soile~http-server~1.1",
 			"config": "http_server",
 			"instances": 1

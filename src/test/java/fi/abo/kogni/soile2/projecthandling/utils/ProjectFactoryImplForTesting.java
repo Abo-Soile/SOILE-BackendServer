@@ -67,6 +67,18 @@ public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
 		public Future<JsonArray> getParticipants() {
 			// TODO Auto-generated method stub
 			return Future.succeededFuture(new JsonArray(List.copyOf(participants)));
+		}
+
+		@Override
+		public Future<Void> deactivate() {
+			// TODO Auto-generated method stub
+			return Future.succeededFuture();
+		}
+
+		@Override
+		public Future<Void> activate() {
+			// TODO Auto-generated method stub
+			return Future.succeededFuture();
 		}		
 	}
 	
