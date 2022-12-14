@@ -25,6 +25,7 @@ public class ParticipantTest extends ProjectBaseTest{
 			});
 			Async p3Async = context.async();
 			ParticipantImplForTesting.getTestParticipant(context,0,getPos(0)).onSuccess(participantSame -> {
+				
 				context.assertTrue(participant1.equals(participantSame));
 				p3Async.complete();
 			});					// 
@@ -58,10 +59,8 @@ public class ParticipantTest extends ProjectBaseTest{
 				context.assertTrue(participant1.equals(copy));
 				compAsync.complete();
 			})
-			.onFailure(err -> context.fail(err));
-			
+			.onFailure(err -> context.fail(err));			
 			p1Async.complete();
-
 		});
 	}
 

@@ -15,7 +15,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 @RunWith(VertxUnitRunner.class)
-public class ProjectBaseTest {
+public abstract class ProjectBaseTest {
 	protected JsonObject projectData;
 	protected JsonArray taskData;
 	

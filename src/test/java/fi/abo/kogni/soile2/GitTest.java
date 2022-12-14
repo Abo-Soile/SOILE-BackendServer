@@ -12,7 +12,7 @@ import fi.abo.kogni.soile2.utils.VerticleInitialiser;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 
-public class GitTest extends MongoTest {
+public abstract class GitTest extends MongoTest {
 
 	protected String gitDir;
 	protected GitManager gitManager;

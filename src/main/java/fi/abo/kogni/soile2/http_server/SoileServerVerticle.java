@@ -33,6 +33,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 	private JsonObject soileConfig = new JsonObject();
 	SoileRouteBuilding soileRouter;
 	ConcurrentLinkedQueue<String> deployedVerticles;
+	
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
 		soileRouter = new SoileRouteBuilding();

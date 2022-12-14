@@ -353,9 +353,9 @@ public abstract class ParticipantImpl implements Participant{
 		@Override
 		public boolean equals(Object other)
 		{
-			if( other instanceof DataParticipantImpl)
+			if( other instanceof ParticipantImpl)
 			{
-				return this.toJson().equals(((DataParticipant)other).toJson());
+				return this.getID().equals(((ParticipantImpl)other).getID());
 			}
 			else
 			{

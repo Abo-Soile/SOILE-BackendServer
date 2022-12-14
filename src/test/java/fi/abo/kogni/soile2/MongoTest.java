@@ -24,7 +24,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 @RunWith(VertxUnitRunner.class)
-public class MongoTest extends SoileBaseTest {
+public abstract class MongoTest extends SoileBaseTest {
 
 	
 	static MongodProcess MONGO;

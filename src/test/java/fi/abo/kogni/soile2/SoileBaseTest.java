@@ -26,7 +26,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 @RunWith(VertxUnitRunner.class)
-public class SoileBaseTest {
+public abstract class SoileBaseTest {
 
 	public Vertx vertx;
 

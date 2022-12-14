@@ -61,7 +61,7 @@ public abstract class ProjectInstance implements AccessElement{
 	protected String start;
 	// a url shortcut.
 	protected String shortcut;	
-	protected boolean isActive;
+	protected boolean isActive = true;
 	/**
 	 * A basic constructor that can be called by any Implementing class. 
 	 */
@@ -123,6 +123,7 @@ public abstract class ProjectInstance implements AccessElement{
 		version = data.getString("version");
 		name = data.getString("name");
 		shortcut = data.getString("shortcut",null);
+		isActive = data.getBoolean("isActive",true);
 		for(Object cTaskData : data.getJsonArray("tasks", new JsonArray()))
 		{
 			TaskObjectInstance cTask = new TaskObjectInstance((JsonObject)cTaskData, this);
