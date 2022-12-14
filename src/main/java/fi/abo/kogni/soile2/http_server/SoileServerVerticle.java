@@ -46,7 +46,8 @@ public class SoileServerVerticle extends AbstractVerticle {
 		{
 			if(res.succeeded())
 			{
-				LOGGER.debug("Server started successfully");
+				LOGGER.debug("Server started successfully and listening on port " + SoileConfigLoader.getServerIntProperty("port"));
+				
 				startPromise.complete();
 			}
 			else
@@ -153,8 +154,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 									 .setSsl(true)
 									 .setKeyStoreOptions(keyOptions);
 		HttpServer server = vertx.createHttpServer(opts).requestHandler(soileRouter.getRouter());
-		int httpPort = http_config.getInteger("port", 8080);
-				
+		int httpPort = http_config.getInteger("port", SoileConfigLoader.getServerIntProperty("port"));			
 		return Future.<HttpServer>future(promise -> server.listen(httpPort,promise)).mapEmpty();	
 	}
 }
