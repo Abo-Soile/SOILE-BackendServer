@@ -33,7 +33,6 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 
 	MongoClient client;
 	// should go to the constructor.	
-	private String collectionId = SoileConfigLoader.getdbProperty("participantCollection");	
 	private ParticipantFactory factory;
 	private HashMap<String, Long> dirtyTimeStamps; 
 	//TODO: needs constructor.
@@ -51,7 +50,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	public Future<Participant> getElement(String key) {
 		Promise<Participant> participantPromise = Promise.<Participant>promise();
 		JsonObject query = new JsonObject().put("_id", key);
-		client.find(collectionId, query).onSuccess(res ->
+		client.find(participantCollection, query).onSuccess(res ->
 		{
 			//There should be only one
 			if(res.size() != 1)
@@ -104,7 +103,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	{	
 		Promise<Participant> participantPromise = Promise.<Participant>promise();
 		JsonObject defaultParticipant = getDefaultParticipantInfo(); 
-		client.save(collectionId,defaultParticipant).onSuccess(res ->
+		client.save(participantCollection,defaultParticipant).onSuccess(res ->
 		{
 			defaultParticipant.put("_id", res);
 			Participant part = factory.createParticipant(defaultParticipant);
@@ -128,7 +127,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 */
 	public void deleteParticipant(String id, Handler<AsyncResult<JsonObject>> handler)
 	{		
-		handler.handle(client.findOneAndDelete(collectionId, new JsonObject().put("_id", id)));
+		handler.handle(client.findOneAndDelete(participantCollection, new JsonObject().put("_id", id)));
 	}
 	
 	/**
@@ -139,7 +138,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 */
 	public Future<Void> deleteParticipant(String id)
 	{				
-		return client.findOneAndDelete(collectionId, new JsonObject().put("_id", id)).mapEmpty();
+		return client.findOneAndDelete(participantCollection, new JsonObject().put("_id", id)).mapEmpty();
 	}
 	/**
 	 * Get The files stored for a specific participant. 
@@ -182,7 +181,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		}
 		FindOptions options = new FindOptions();
 		options.setFields(new JsonObject().put("_id", 1).put("resultData", new JsonObject().put("task", 1).put("dbData", 1)));
-		return client.findWithOptions(collectionId, matchObj,options);
+		return client.findWithOptions(participantCollection, matchObj,options);
 	}
 	
 	/**
@@ -215,7 +214,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 */
 	public Future<JsonObject> getParticipantResults(String participantID)
 	{		
-		return client.findOne(collectionId, new JsonObject().put("_id", participantID), new JsonObject().put("resultData", 1).put("_id", 1));
+		return client.findOne(participantCollection, new JsonObject().put("_id", participantID), new JsonObject().put("resultData", 1).put("_id", 1));
 	}
 	
 	
@@ -258,7 +257,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	@Override
 	public Future<Participant> getElementIfDirty(String key) {
 		Promise<Participant> dirtyPromise = Promise.promise();
-		client.findOne(collectionId,  new JsonObject().put("_id", key), new JsonObject().put("modifiedStamp",1))
+		client.findOne(participantCollection,  new JsonObject().put("_id", key), new JsonObject().put("modifiedStamp",1))
 		.onSuccess(res -> {
 			if(dirtyTimeStamps.get(key) >= res.getLong("modifiedStamp"))
 			{

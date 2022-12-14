@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.http_server;
+package fi.abo.kogni.soile2.http_server.verticles;
 
 import java.util.LinkedList;
 import java.util.List;

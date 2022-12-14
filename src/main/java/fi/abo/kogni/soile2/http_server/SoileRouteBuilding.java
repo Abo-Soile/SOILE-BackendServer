@@ -58,7 +58,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private GitManager gitManager;
 	private ResourceManager resourceManager;
 	@Override
-	public void start(Promise<Void> startPromise) throws Exception {		
+	public void start(Promise<Void> startPromise) throws Exception {
 		cookieHandler = new SoileCookieCreationHandler(vertx.eventBus());	
 		this.client = MongoClient.createShared(vertx, config().getJsonObject("db"));
 		gitManager = new GitManager(vertx.eventBus());
@@ -83,6 +83,11 @@ public class SoileRouteBuilding extends AbstractVerticle{
 					 );
 		
 		
+	}
+	@Override
+	public void stop(Promise<Void> stopPromise)
+	{
+		stopPromise.complete();
 	}
 	
 	public Router getRouter()

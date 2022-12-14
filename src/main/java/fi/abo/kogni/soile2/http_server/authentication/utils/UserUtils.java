@@ -5,9 +5,9 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.http_server.SoileAuthenticationVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidLoginException;
+import fi.abo.kogni.soile2.http_server.verticles.SoileAuthenticationVerticle;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;

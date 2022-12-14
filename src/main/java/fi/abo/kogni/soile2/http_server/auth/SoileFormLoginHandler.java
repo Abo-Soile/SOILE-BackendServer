@@ -17,11 +17,8 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.Session;
-import io.vertx.ext.web.handler.FormLoginHandler;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.handler.impl.AuthenticationHandlerImpl;
-import io.vertx.ext.web.handler.impl.FormLoginHandlerImpl;
 
 public class SoileFormLoginHandler extends AuthenticationHandlerImpl<AuthenticationProvider> {
 	static final Logger LOGGER = LogManager.getLogger(SoileFormLoginHandler.class);

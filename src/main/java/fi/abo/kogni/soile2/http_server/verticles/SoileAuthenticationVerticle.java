@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.http_server;
+package fi.abo.kogni.soile2.http_server.verticles;
 
 
 
@@ -66,7 +66,7 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception
 	{
-		LOGGER.debug("Starting SoileAuthVerticle");
+		LOGGER.debug("Starting SoileAuthVerticle with id: " + deploymentID());
 		try
 		{
 		setupConfig("experiments");
@@ -99,6 +99,8 @@ public class SoileAuthenticationVerticle extends SoileBaseVerticle{
 		auth = RedirectAuthHandler.create(soileAuth,"/static/login.html");
 		cookieCreationHandler = new SoileCookieCreationHandler(vertx.eventBus());
 	}
+	
+	
 	/**
 	 * These handlers should be present in all routes and handle things like Logging, Sessions or similar. 
 	 */

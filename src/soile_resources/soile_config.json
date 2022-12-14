@@ -32,6 +32,14 @@
 		"experimentCollection" : "experiments"
 	},
 	
+	"verticles": {
+		"elangAddress" : "soile.experiment.lang",
+		"code-gen-template": "templates/elang.stg",
+		"questionaireTemplates" : "templates/questionnaire_embedded.stg",
+		"questionnaireAddress": "soile.workbench.questionnaire.render",
+		"compilationAddress" : "soile.codeRetrieval.compile",
+		"gitCompilationAddress" : "soile.codeRetrieval.gitCompile"
+	},
 	
 	"db_user_fields": {
 		"userPermissionField" : "permissions",
@@ -117,7 +125,9 @@
 			"invalidateUserSession" : "invalidateSession",
 			"activateUser" : "activateUser",
 			"getUserInfo" : "getUserInfo",
-			"setUserInfo" : "getUserInfo"
+			"setUserInfo" : "getUserInfo",
+			"makeUserParticipantInProject" : "addParticipantToUser",
+			"getParticipantForUser" : "getParticipantForUser"
 			}
 	},
 

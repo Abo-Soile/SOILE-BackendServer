@@ -1,7 +1,8 @@
-package fi.abo.kogni.soile2.http_server;
+package fi.abo.kogni.soile2.http_server.verticles;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -16,6 +17,8 @@ import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExis
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
@@ -51,7 +54,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
-		LOGGER.info("Starting UserManagementVerticle");
+		LOGGER.info("Starting UserManagementVerticle with ID: " + deploymentID()  );
 		mongo = MongoClient.createShared(vertx, config().getJsonObject("db"));
 		setupConfig(SoileConfigLoader.USERMGR_CFG);		
 		sessionFields = config().getJsonObject(SoileConfigLoader.SESSION_CFG);
@@ -80,9 +83,31 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid);
 		vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession);
 		vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession);
+		vertx.eventBus().consumer(getEventbusCommandString("makeUserParticpantInProject"), this::makeUserParticpantInProject);
+		vertx.eventBus().consumer(getEventbusCommandString("getParticipantForUser"), this::getParticipantForUser);
 
 	}	
 		
+	
+	@Override
+	public void stop(Promise<Void> stopPromise)
+	{
+		List<Future> undeploymentFutures = new LinkedList<Future>();
+		
+		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("addUser"), this::addUser).unregister());
+		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("addUserWithEmail"), this::addUserWithEmail).unregister());
+		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("removeUser"), this::removeUser).unregister());		
+		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("permissionOrRoleChange"), this::permissionOrRoleChange).unregister());		
+		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("setUserFullNameAndEmail"), this::setUserFullNameAndEmail).unregister());
+		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("getUserData"), this::getUserData).unregister());		 
+		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid).unregister());
+		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession).unregister());
+		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession).unregister());
+		CompositeFuture.all(undeploymentFutures).mapEmpty().
+		onSuccess(v -> stopPromise.complete())
+		.onFailure(err -> stopPromise.fail(err));			
+	}
+	
 	/**
 	 * Add a session to a user
 	 * {
@@ -340,6 +365,45 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	}
 	
 	
+	/**
+	 * Get the participant for the provided user in the given project. 
+	 * @param msg
+	 */
+	void getParticipantForUser(Message<JsonObject> msg)
+	{
+		//make sure we actually get the right thing
+		JsonObject answer = new JsonObject();
+
+		JsonObject command = msg.body();			
+
+		userManager.getParticipantIDForUserInProject(command.getString(getDBField("usernameField")), command.getString("projectInstanceID"))
+		.onSuccess(res -> {
+			msg.reply(new JsonObject().put("participantID", res));
+		})
+		.onFailure(err -> msg.fail(HttpURLConnection.HTTP_BAD_REQUEST,"Invalid Request"));						    							
+
+	}
+	
+	/**
+	 * Get the participant for the provided user in the given project. 
+	 * @param msg
+	 */
+	void makeUserParticpantInProject(Message<JsonObject> msg)
+	{
+		//TODO Implement
+		//make sure we actually get the right thing
+		JsonObject answer = new JsonObject();
+
+		JsonObject command = msg.body();			
+
+		userManager.makeUserParticpantInProject(command.getString(getDBField("usernameField")), command.getString("projectInstanceID"), command.getString("participantID"))
+		.onSuccess(res -> {
+			msg.reply("success");
+		})
+		.onFailure(err -> msg.fail(HttpURLConnection.HTTP_BAD_REQUEST,"Invalid Request"));						    							
+
+	}
+
 	
 	/**
 	 * Remove a user. The message body must contain the 

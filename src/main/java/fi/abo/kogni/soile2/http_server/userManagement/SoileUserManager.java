@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -27,6 +28,7 @@ import io.vertx.ext.auth.HashingStrategy;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
 import io.vertx.ext.auth.mongo.MongoUserUtil;
+import io.vertx.ext.mongo.BulkOperation;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.mongo.MongoClientDeleteResult;
 import io.vertx.ext.mongo.MongoClientUpdateResult;
@@ -96,7 +98,7 @@ public class SoileUserManager implements MongoUserUtil{
 		
 		return this;
 	}
-	
+		
 	
 	/**
 	 * Set Full name and Email address of a user.
@@ -348,6 +350,48 @@ public class SoileUserManager implements MongoUserUtil{
 		return this;
 	}
 
+	public Future<String> getParticipantIDForUserInProject(String username, String project)
+	{
+		Promise<String> participantPromise = Promise.promise();
+		client.findOne(authnOptions.getCollectionName(),new JsonObject().put(authnOptions.getUsernameField(), username), new JsonObject().put(SoileConfigLoader.getdbField("participantField"),1 ))
+		.onSuccess(participantJson -> {
+			JsonArray participantInfo = participantJson.getJsonArray(SoileConfigLoader.getdbField("participantField"), new JsonArray());
+			String particpantID = null;
+			for(int i = 0; i < participantInfo.size(); i++)
+			{
+				if(participantInfo.getJsonObject(i).getString("uuid").equals(project))
+				{
+					particpantID = participantInfo.getJsonObject(i).getString("participantID");
+					break;
+				}
+				
+			}
+			participantPromise.complete(particpantID);
+		})
+		.onFailure(err -> participantPromise.fail(err));
+		
+		return participantPromise.future();
+																				  													  
+																																					 
+	}
+	
+	public Future<Void> makeUserParticpantInProject(String username, String projectInstanceID, String participantID)
+	{
+		JsonObject query = new JsonObject().put(authnOptions.getUsernameField(), username);
+		JsonObject pullUpdate = new JsonObject().put("$pull", new JsonObject()
+				  .put(SoileConfigLoader.getdbField("participantField"), new JsonObject()
+						  				 .put("uuid", new JsonObject()
+						  				 .put("$eq", projectInstanceID))));
+		JsonObject pushUpdate = new JsonObject().put("$push", new JsonObject()
+				.put(SoileConfigLoader.getdbField("participantField"), new JsonObject().put("uuid", projectInstanceID).put("participantID", participantID)));
+		List<BulkOperation> pullAndPut = new LinkedList<>();
+		BulkOperation pullOp = BulkOperation.createUpdate(query, pullUpdate);
+		BulkOperation pushOp = BulkOperation.createUpdate(query, pushUpdate);
+		pullAndPut.add(pullOp);
+		pullAndPut.add(pushOp);		
+		return client.bulkWrite(authnOptions.getCollectionName(), pullAndPut).mapEmpty();
+		
+	}
 	
 	public SoileUserManager createHashedUser(String username, String hash, Handler<AsyncResult<String>> resultHandler) {
 		if (username == null || hash == null) {

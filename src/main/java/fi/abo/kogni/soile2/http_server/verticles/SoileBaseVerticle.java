@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.http_server;
+package fi.abo.kogni.soile2.http_server.verticles;
 
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
