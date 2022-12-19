@@ -1,6 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.data;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +20,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -27,7 +29,9 @@ public class DataBundleGenerator extends AbstractVerticle{
 
 	
 	ConcurrentHashMap<String, DownloadStatus> downloadStatus;
-	ConcurrentHashMap<String, String> downloadErrors;	
+	ConcurrentHashMap<String, String> downloadErrors;
+	ConcurrentHashMap<String, Long> downloadStart;
+	ConcurrentHashMap<String, List<DataLakeFile>> downloadFiles;	
 	ParticipantHandler partHandler;
 	ProjectInstanceHandler projHandler;
 	String dataLakeFolder;
@@ -37,6 +41,7 @@ public class DataBundleGenerator extends AbstractVerticle{
 	public void start(Promise<Void> startPromise)
 	{
 		vertx.eventBus().consumer("fi.abo.soile.DLStatus", this::getStatus);
+		vertx.eventBus().consumer("fi.abo.soile.DLFiles", this::getDownloadFiles);
 		startPromise.complete();
 	}
 	
@@ -71,6 +76,7 @@ public class DataBundleGenerator extends AbstractVerticle{
 			dlID = UUID.randomUUID();			
 		}
 		downloadStatus.put(dlID.toString(), DownloadStatus.creating);
+		downloadStart.put(dlID.toString(), System.currentTimeMillis());
 		return dlID.toString();
 	}
 	
@@ -107,30 +113,52 @@ public class DataBundleGenerator extends AbstractVerticle{
 					jsonData.add(participantData.getJsonArray("resultData"));
 						//TODO: Build Json Result File
 						//TODO: Update Results to point to the actual files in the zip.
-						//TODO: Build Result Zip..					
-					
-				}				
+						//TODO: Build Result Zip..		
+					JsonObject partObject = new JsonObject()
+							.put("participantID", participantData.getString("participantID"))
+							.put("resultData", participantData.getJsonArray("resultData"));
+					jsonData.add(partObject);
+				}								
 				checkForFileProblems(DataLakeFiles)
-				.onSuccess(filesExist -> {
+				.onSuccess(filesExist -> {					
 					// now, we need to filter and update the error.
 					filterFilesAndStatus(DataLakeFiles, filesExist, dlID);
 					// Now we have all result files filtered. Lets build the result Json. 
 					// TODO: Allow XLS download for projects which can be flattened (i.e. which have no repeating tasks.)
-					
+					JsonObject JsonFile = new JsonObject()
+											  .put("project", new JsonObject()
+													              .put("id", projectInstance.getID())
+													              .put("name", projectInstance.getName()))
+											  .put("participantResults", jsonData);
+					vertx.fileSystem().createTempFile(projectID, null)
+					.onSuccess(fileName -> {
+						vertx.fileSystem().writeFile(fileName, Buffer.buffer(JsonFile.encodePrettily()))
+						.onSuccess(written -> 
+						{
+							DataLakeFiles.add(new DataLakeFile(fileName,"data.json","application/json"));
+							downloadFiles.put(dlID, DataLakeFiles);
+							downloadStatus.put(dlID, DownloadStatus.downloadReady);							
+						})
+						.onFailure(err -> {
+							LOGGER.error("Could not create Temporary file.");
+							LOGGER.error(err);
+							failDownload(err, dlID);								
+						});
+					});
 					
 				});
 			})
 			.onFailure(err -> {
 				LOGGER.error("Could not retrieve data for participants");
 				LOGGER.error(err);
-				downloadStatus.put(dlID, DownloadStatus.failed);
-				downloadErrors.put(dlID, err.getMessage());				
+				failDownload(err, dlID);								
 			});
 		})
 		.onFailure(err -> collectionStartedPromise.fail(err));
 		return collectionStartedPromise.future();
 		
 	}
+	
 	
 	/**
 	 * This function assumes to have been provided with the resultData {@link JsonArray} from a participant.
@@ -170,7 +198,17 @@ public class DataBundleGenerator extends AbstractVerticle{
 	
 	public void getStatus(Message<JsonObject> message)
 	{
-		
+		String dlID = message.body().getString("downloadID");
+		message.reply(downloadStatus.get(dlID));
+	}
+
+	public void getDownloadFiles(Message<JsonObject> message)
+	{
+		String dlID = message.body().getString("downloadID");
+		if(downloadStatus.get(dlID) == DownloadStatus.downloadReady)
+		{
+		//TODO: No implemented yet	
+		}
 	}
 	
 	public void filterFilesAndStatus(List<DataLakeFile> files, List<Boolean> existsIndicator, String dlID)
@@ -234,5 +272,12 @@ public class DataBundleGenerator extends AbstractVerticle{
 		return fileExists.future();
 	}
 	
+	private void failDownload(Throwable err, String dlID)
+	{
+		downloadStatus.put(dlID, DownloadStatus.failed);
+		downloadErrors.put(dlID, err.getMessage());
+		downloadFiles.remove(dlID);
+		downloadStart.remove(dlID);
+	}
 	
 }

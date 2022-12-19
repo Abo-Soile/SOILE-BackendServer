@@ -145,6 +145,11 @@ public abstract class ProjectInstance implements AccessElement{
 			participants.add(o.toString());
 		}
 	}
+
+	public String getName()
+	{
+		return name;
+	}
 	
 	
 	@Override
