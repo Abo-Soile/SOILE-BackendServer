@@ -12,16 +12,16 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
 
 /**
- * A Manager/Retriever for Files from the Datalake.  
+ * A Manager/Retriever for Files for which indicator files are stored in the git Repository.  
  * @author thomas
  *
  */
-public class ResourceManager extends GitDataRetriever<DataLakeFile> {
+public class GitResourceManager extends GitDataRetriever<DataLakeFile> {
 
 	private String dataLakeBaseFolder;
 	private TimeStampedMap<GitFile,DataLakeFile> elements;
 	
-	public ResourceManager(EventBus bus)
+	public GitResourceManager(EventBus bus)
 	{
 		super(bus,true, true);
 		dataLakeBaseFolder = SoileConfigLoader.getServerProperty("soileGitDataLakeFolder");		

@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 
+import fi.abo.kogni.soile2.datamanagement.utils.DatedDataMap;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantImpl;
 import io.vertx.core.Future;
@@ -59,7 +60,12 @@ public class ParticipantImplForTesting extends ParticipantImpl {
 	public Future<Integer> getCurrentStep() { 
 		return Future.succeededFuture(currentStep);
 	}
-
-	
+	@Override
+	public Future<Void> resetParticipantResults()
+	{		
+		Future<Void> resetFuture = super.resetParticipantResults();
+		resultsMap = new HashMap<>();
+		return resetFuture;
+	}
 	
 }

@@ -119,7 +119,12 @@ public interface Participant {
 	 */
 	String getID();
 
-
+	/**
+	 * Sart the project for this user, resetting the data
+	 * @param taskID The task to set as the starting task
+	 * @return Retuurning the position of this participant
+	 */
+	Future<Void> startProject(String taskID);
 
 	/**
 	 * Get a Json of this participant that contains all necessary information to continue the project.
@@ -128,12 +133,26 @@ public interface Participant {
 	 */
 	Future<JsonObject> toJson();
 
+	/**
+	 * Whether this is equal to another participant. They are equal if they have the same ID.
+	 * @param other
+	 * @return whether the participants have the same ID
+	 */
 	boolean equals(Object other);
 
+	/**
+	 * Check whether the participant has finished its project.
+	 * @return whether the participant has finished this project.
+	 */
+	boolean isParticipantFinished();
+
+	
 	/**
 	 * Save this Participant updating all relevant Information except resultData.
 	 * @return
 	 */
 	Future<String> save();
+	
+	
 	
 }

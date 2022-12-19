@@ -149,5 +149,5 @@ public abstract class ElementInstanceBase implements ElementInstance {
 		{
 			return element.nextTask(user);
 		}
-	}
+	}	
 }

@@ -68,10 +68,24 @@ public class ElementToDBProjectInstance extends DBProjectInstance{
 				// We will retrieve all necessary information from the input json.
 				// it needs to contain the version, source project uuid, privacy, shortcut and name.
 				// we add an empty participants array.
-				inputJson.put("participants", new JsonArray());
-				log.debug("Trying to save Instance:\n" + inputJson.encodePrettily());
+				JsonObject dbJson = new JsonObject();
+				dbJson.put("participants", new JsonArray());
+				dbJson.put("name", inputJson.getString("name"));
+				if(inputJson.containsKey("sourceUUID"))
+				{
+					dbJson.put("sourceUUID", inputJson.getValue("sourceUUID"));
+				}
+				else
+				{
+					dbJson.put("sourceUUID", inputJson.getValue("UUID"));
+				}
+				dbJson.put("version", inputJson.getValue("version"));
+				dbJson.put("private", inputJson.getBoolean("private",false));
+				dbJson.put("shortcut", inputJson.getString("shortcut",null));
+				
+				log.debug("Trying to save Instance:\n" + dbJson.encodePrettily());
 
-				client.save(getTargetCollection(), inputJson)
+				client.save(getTargetCollection(), dbJson)
 				.onSuccess( dbID -> {
 					log.debug("DB Item has ID: " + dbID);
 					// load it, so we got all we need.

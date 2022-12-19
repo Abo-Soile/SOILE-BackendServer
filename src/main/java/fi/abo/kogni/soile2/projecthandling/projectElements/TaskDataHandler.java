@@ -2,7 +2,7 @@ package fi.abo.kogni.soile2.projecthandling.projectElements;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
-import fi.abo.kogni.soile2.datamanagement.git.ResourceManager;
+import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
@@ -11,10 +11,10 @@ import io.vertx.ext.web.RoutingContext;
 public class TaskDataHandler{
 
 	public static String TASKDATAADRESS = "data:taskData";
-	private ResourceManager resourceManager;
+	private GitResourceManager resourceManager;
 	private TimeStampedMap<GitFile, DataLakeFile> gitElements;
 	
-	public TaskDataHandler(ResourceManager manager)
+	public TaskDataHandler(GitResourceManager manager)
 	{
 		resourceManager = manager;
 		gitElements = new TimeStampedMap<>(resourceManager, 3600*2);

@@ -12,6 +12,7 @@ import io.vertx.core.json.JsonArray;
  * @author Thomas Pfau
  *
  */
+@Deprecated
 public interface DataParticipant extends Participant{	
 	/**
 	 * Get the File Results for a specific task for this participant

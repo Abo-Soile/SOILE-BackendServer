@@ -51,16 +51,16 @@ public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
 		}
 
 		@Override
-		public Future<Boolean> addParticipant(Participant p) {
+		public Future<Void> addParticipant(Participant p) {
 			// TODO Auto-generated method stub
 			participants.add(p.getID());
-			return Future.succeededFuture(true);
+			return Future.succeededFuture();
 		}
 
 		@Override
-		public Future<Boolean> deleteParticipant(Participant p) {
+		public Future<Void> deleteParticipant(Participant p) {
 			participants.remove(p.getID());
-			return Future.succeededFuture(true);
+			return Future.succeededFuture();
 		}
 
 		@Override

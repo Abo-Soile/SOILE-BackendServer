@@ -1,6 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.participant.impl;
 
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantImpl;
+import fi.abo.kogni.soile2.datamanagement.utils.DatedDataMap;
 import fi.abo.kogni.soile2.projecthandling.participant.DataParticipantImpl;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -109,6 +110,13 @@ public class DBParticipant extends ParticipantImpl{
 		return Future.succeededFuture(currentStep);
 	}
 	
+	
+	@Override
+	public Future<Void> resetParticipantResults() {	
+		outputData = new JsonObject();
+		outputMap = new DatedDataMap<>();
+		return manager.resetParticipant(this);
+	}
 	
 
 }

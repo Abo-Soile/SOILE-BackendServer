@@ -172,7 +172,8 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	/**
 	 * This is essentially a no--op on most objects.
 	 */
-	public Future<String> storeAdditionalData(String currentVersion, GitManager gitManager)
+	@Override
+	public Future<String> storeAdditionalData(String currentVersion, GitManager gitManager, String targetRepository)
 	{
 		return Future.succeededFuture(currentVersion);
 	}
@@ -180,7 +181,8 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	/**
 	 * This is essentially a no--op on most objects.
 	 */
-	public Future<Boolean> loadAdditionalData(GitManager gitManager)
+	@Override
+	public Future<Boolean> loadAdditionalData(GitManager gitManager, String targetRepository)
 	{
 		return Future.succeededFuture(true);
 	}

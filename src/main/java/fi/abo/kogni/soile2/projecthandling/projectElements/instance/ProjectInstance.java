@@ -68,6 +68,7 @@ public abstract class ProjectInstance implements AccessElement{
 	protected ProjectInstance()
 	{		
 		participants = new LinkedList<String>();
+		elements = new HashMap<String, ElementInstance>();
 	};
 	
 	/**
@@ -144,6 +145,14 @@ public abstract class ProjectInstance implements AccessElement{
 			participants.add(o.toString());
 		}
 	}
+	
+	
+	@Override
+	public String toString()
+	{
+		return toDBJson().encodePrettily() + elements.toString();
+	}
+	
 	/**
 	 * Parse an experiment from the given experiment Json. 
 	 * @param experiment
@@ -199,32 +208,14 @@ public abstract class ProjectInstance implements AccessElement{
 					.put("shortcut", shortcut)
 					.put("isActive", isActive);				
 		return dbData;
-	}	
-	
-	/**
-	 * Add a participant to the list of participants of this projects
-	 * @param p the participant to add
-	 */
-	public abstract Future<Boolean> addParticipant(Participant p);
-	
-	/**
-	 * Delete a participant from the list of participants of this projects
-	 * @param p the participant to remove
-	 */
-	public abstract Future<Boolean> deleteParticipant(Participant p);
-	
-	/**
-	 * Get a list of Participants in the project 
-	 * @return A Future of a Jsonarray with all participant ids.
-	 */
-	public abstract Future<JsonArray> getParticipants();
+	}			
 	
 	/**
 	 * Finish a step for a particular participant storing the supplied output information obtained for the user.
-	 * @param user
-	 * @param taskData
+	 * @param participant the participant for whom to finish the step
+	 * @param taskData the participants data for this task 
 	 */
-	public Future<String> finishStep(Participant user, JsonObject taskData)
+	public Future<String> finishStep(Participant participant, JsonObject taskData)
 	{
 		if(!isActive)
 		{
@@ -232,19 +223,19 @@ public abstract class ProjectInstance implements AccessElement{
 		}		
 		Promise<String> finishedPromise = Promise.promise();
 		LOGGER.debug(taskData.encodePrettily());
-		if(!taskData.getString("taskID").equals(user.getProjectPosition()))
+		if(!taskData.getString("taskID").equals(participant.getProjectPosition()))
 		{
-			finishedPromise.fail( new InvalidPositionException(user.getProjectPosition(), taskData.getString("taskID")));			
+			finishedPromise.fail( new InvalidPositionException(participant.getProjectPosition(), taskData.getString("taskID")));			
 		}
 		else
 		{
-			user.setOutputDataForTask(user.getProjectPosition(),taskData.getJsonArray("outputdata",new JsonArray()))
+			participant.setOutputDataForTask(participant.getProjectPosition(),taskData.getJsonArray("outputdata",new JsonArray()))
 			.onSuccess(v -> {
-				user.addResult(user.getProjectPosition(), getResultDataFromTaskData(taskData))
+				participant.addResult(participant.getProjectPosition(), getResultDataFromTaskData(taskData))
 				.onSuccess(v2 -> {
-					user.finishCurrentTask()
+					participant.finishCurrentTask()
 					.onSuccess(v3 -> {
-						setNextStep(user).onSuccess( next -> 
+						setNextStep(participant).onSuccess( next -> 
 						{
 							finishedPromise.complete(next);
 						})
@@ -282,7 +273,7 @@ public abstract class ProjectInstance implements AccessElement{
 	
 	/**
 	 * Get all element IDs in this Project
-	 * @return
+	 * @return a list of the element IDs in this project
 	 */
 	public List<String> getElements()
 	{
@@ -308,14 +299,40 @@ public abstract class ProjectInstance implements AccessElement{
 	/**
 	 * Start the project for the provided user.
 	 * @param user
+	 * @return A Future of the position the user will be at after they have started.
 	 */
 	public Future<String> startProject(Participant user)
-	{
+	{		
 		if(!isActive)
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
 		}
-		return user.setProjectPosition(start);		
+		Promise<String> startPositionPromise = Promise.promise();
+		LOGGER.debug("Trying to start User at position: " + start);
+		user.startProject(start).map(start)
+		.onSuccess(startElement -> {		
+			LOGGER.debug("StartElement id is: " + startElement);
+			if(elements.get(startElement) instanceof TaskObjectInstance)
+			{
+				startPositionPromise.complete(startElement);
+			}
+			else
+			{
+				LOGGER.debug("Element at start is: " + elements.get(startElement));
+				setNextStep(user)
+				.onSuccess(taskID -> {
+					user.startProject(taskID)
+					.onSuccess(success -> {
+						startPositionPromise.complete(taskID);
+					})
+					.onFailure(err -> startPositionPromise.fail(err));
+				})
+				.onFailure(err -> startPositionPromise.fail(err));
+			}
+		})
+		.onFailure(err -> startPositionPromise.fail(err));
+		
+		return startPositionPromise.future();
 	}
 	
 	/**
@@ -330,7 +347,9 @@ public abstract class ProjectInstance implements AccessElement{
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
 		}		
+		LOGGER.debug("Trying to set next step for user currently at position: " + user.getProjectPosition());		
 		ElementInstance current = getElement(user.getProjectPosition());
+		LOGGER.debug("Element is : " + current);
 		String nextElement = current.nextTask(user);
 		if("".equals(nextElement) || nextElement == null)
 		{
@@ -341,15 +360,40 @@ public abstract class ProjectInstance implements AccessElement{
 		return user.setProjectPosition(nextElement);
 	}				
 		
-	
+	/**
+	 * Get the elementtype of instances
+	 * @return the TargetElementType for instances
+	 */
 	public TargetElementType getElementType()
 	{
 		return TargetElementType.INSTANCE;
 	}
-
+	/**
+	 * Get the collection in which projects Instances are stored.
+	 * @return The Name of the MongoDB collection where this is stored.
+	 */
 	public String getTargetCollection()
 	{
 		return SoileConfigLoader.getCollectionName("projectInstanceCollection");
+	}
+	
+	/**
+	 * Get a list of Task instanceIDs with their respective name
+	 * The returned JsonArray has elements of the following form:
+	 * { "taskID" : "instanceIDOfTheTask" , "taskName" : "name of the task"}
+	 * @return A jsonArray of the format described above
+	 */
+	public JsonArray getTasksInstancesWithNames()
+	{
+		JsonArray result = new JsonArray();
+		for(ElementInstance element : elements.values())
+		{
+			if(element instanceof TaskObjectInstance)
+			{
+				result.add(new JsonObject().put("taskID",element.getInstanceID()).put("taskName",element.getName()));
+			}
+		}
+		return result;
 	}
 	
 	/**
@@ -376,12 +420,34 @@ public abstract class ProjectInstance implements AccessElement{
 	public abstract Future<JsonObject> delete();
 	
 	/**
-	 * Stop a project
+	 * Deactivate a project
+	 * @return A Future that succeeded if the project was successfully deactivated (or was already inactive)
 	 */
 	public abstract Future<Void> deactivate();
 	
 	/**
 	 * Restart a project if it was deactivated. By default a project is active.
+	 * @return A Future that succeeded if the project was successfully activated (or was already active)
 	 */
 	public abstract Future<Void> activate();
+	
+	/**
+	 * Add a participant to the list of participants of this projects
+	 * @param participant the participant to add
+	 * @return A future that succeeded if the participant was successfully added
+	 */
+	public abstract Future<Void> addParticipant(Participant participant);
+	
+	/**
+	 * Delete a participant from the list of participants of this projects 
+	 * @param p the participant to remove
+	 * @ A Future that suceeded if the participant was successfully removed
+	 */
+	public abstract Future<Void> deleteParticipant(Participant participant);
+	
+	/**
+	 * Get a list of Participants in the project 
+	 * @return A Future of a Jsonarray with all participant ids.
+	 */
+	public abstract Future<JsonArray> getParticipants();
 }

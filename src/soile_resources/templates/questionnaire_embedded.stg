@@ -1,0 +1,257 @@
+delimiters "$", "$"
+
+
+questionnaire_html(title, body, stmts) ::= <<
+
+<!--<title>$title$</title>
+
+<link rel="stylesheet" href="/css/styles.css" media="screen">-->
+
+  <h1>$title$</h1>
+
+  <div>
+
+    $body$
+
+    <p style="height: 1em; clear: both;"><!-- SPACER --></p>
+    
+  </div>  
+                      
+  <script>
+
+    var qdata = {};
+
+    var funcArray = [];
+    //domConstruct.empty('formdata');
+
+    $stmts$
+    //send_questionnaire_data(qdata);
+
+    window.funcArray = funcArray;
+
+  </script>
+
+>>
+
+qdata_widgetdata_dropdownmenu(id, column) ::= <<
+  funcArray.push({"fun":"save_value","params":[qdata, ['$id$'], '$column$']});
+>>
+
+qdata_widgetdata_multiselect(ids, columns, values, defaultValue) ::= <<
+  funcArray.push({"fun":"save_all_checked", "params":[qdata,
+                   [$ids:{id | '$id.text$'}; separator=","$],
+                   [$values:{val | '$val.text$'}; separator=","$],
+                   [$columns:{col | '$col.text$'}; separator=","$],
+                   '$defaultValue$']});
+>>
+
+qdata_widgetdata_singleselect(ids, columnName, values, defaultValue) ::= <<
+  funcArray.push({"fun":"save_first_checked", "params":[qdata,
+                     [$ids:{id | '$id.text$'}; separator=","$],
+                     [$values:{val | '$val.text$'}; separator=","$],
+                     '$columnName$', '$defaultValue$']});
+>>
+
+qdata_widgetdata_numberfield(id, columnName) ::= <<
+  funcArray.push({"fun":"save_value", "params":[qdata, ['$id$'], '$columnName$']});
+>>
+
+qdata_widgetdata_slider(id, columnName) ::= <<
+  funcArray.push({"fun":"save_value", "params":[qdata, ['$id$'], '$columnName$']});
+>>
+
+qdata_widgetdata_textarea(id, columnName, maxlength) ::= <<
+  funcArray.push({"fun":"save_textwidget_value", "params":[qdata, ['$id$', $maxlength$], '$columnName$']});
+>>
+
+qdata_widgetdata_textbox(id, columnName, maxlength) ::= <<
+  funcArray.push({"fun":"save_textwidget_value", "params":[qdata, ['$id$', $maxlength$], '$columnName$']});
+>>
+
+qdata_push_widget_value(id, column, checksum, length) ::= <<
+  // UNUSED: $checksum$, $length$ 
+  domConstruct.create('dt', {innerHTML: '<b>$column$</b>'}, 'formdata');
+  domConstruct.create('dd', {innerHTML: widget_value('$id$')}, 'formdata');
+>>
+
+qdata_push_text_widget_value(id, column, checksum, length, maxlength) ::= <<
+  // UNUSED: $checksum$, $length$ 
+  domConstruct.create('dt', {innerHTML: '<b>$column$</b>'}, 'formdata');
+  domConstruct.create('dd', {innerHTML: text_widget_value('$id$', $maxlength$)}, 'formdata');
+>>
+
+qdata_push_select_value(id, column, checksum, length, value, default_value) ::= <<
+  // UNUSED: $checksum$, $length$ 
+  domConstruct.create('dt', {innerHTML: '<b>$column$</b>'}, 'formdata');
+  domConstruct.create('dd', {innerHTML: set_select_value('$id$', '$value$', '$default_value$')}, 'formdata');
+>>
+
+qdata_validate_widget(id) ::= <<
+  // UNUSED: $id$ 
+>>
+
+qdata_nonempty_text_widget(id) ::= <<
+  // UNUSED: $id$ 
+>>
+
+dropdownmenu(id, label, required,options, inline) ::= <<
+
+
+<div $if(inline)$ class="inlineDropdown" $endif$>
+
+$if(label)$
+<label for="$id$">$label$</label>
+$endif$
+<select id="$id$" name="$id$"
+        required="$required$"
+        data-dojo-type="dijit/form/FilteringSelect"
+        data-dojo-props="value: '', placeHolder: '$label$'">
+ $options:{op | <option value="$op.short$">$op.long$</option>}; separator="\n"$
+</select>
+</div>
+
+>>
+
+numberfield(id, 
+      name, 
+      label, 
+      value, 
+      width, 
+      minimum, 
+      maximum,
+      optional,
+      increment,
+      separator) ::= <<
+
+$if(label)$
+<label for="$id$">$label$</label>
+$separator$
+$endif$
+<input  data-dojo-type="dijit/form/NumberSpinner"
+        id="$id$" name="someNumber"
+        $if(optional)$
+        required="false"
+        $else$
+        required="true"
+        $endif$
+        $if(value)$
+        value="$value$"
+        $endif$
+        style="width: $width$em;"
+        data-dojo-props="smallDelta:$increment$, 
+                         constraints:{min:$minimum$, max:$maximum$}"
+         />
+
+>>
+
+textbox(id, label, length, text, separator, required) ::= <<
+
+$if(label)$
+<label for="$id$">$label$</label>
+$separator$
+$endif$
+<input id="$id$" data-dojo-type="dijit/form/ValidationTextBox"
+       data-dojo-props="placeHolder:'$text$',maxLength:$length$"
+       required="$required$" />
+
+>>
+
+textarea(id, text, rows, columns, label, required, separator) ::= <<
+
+$if(label)$
+<label for="$id$">$label$</label>
+$separator$
+$endif$
+<br />
+<textarea id="$id$" rows="$rows$" cols="$columns$"
+          data-dojo-type="myWidgets/ValidationTextArea"
+          required="$required$"
+          style="width:auto;"
+          data-dojo-props="selectOnClick:true">$text$</textarea>
+
+>>
+
+slider(id, labels, minimum, maximum, increment, select, count, style) ::= <<
+
+<div style="$style$">
+<ol data-dojo-type="dijit/form/HorizontalRuleLabels"
+    data-dojo-props="container: 'topDecoration'"
+    style="height: 1.1em; font-weight: bold">
+  $labels:{lbl | <li>$lbl.value$</li>}; separator="\n"$
+</ol>
+<div data-dojo-type="dijit/form/HorizontalRule"
+     data-dojo-props="container: 'topDecoration', count: $count$"
+     style="height: 5px; margin: 0 12px;">
+</div>
+<input id="$id$" type="range" value="3"
+       data-dojo-type="dijit/form/HorizontalSlider"
+       data-dojo-props="
+                minimum: $minimum$,
+                maximum: $maximum$,
+                value: $select$,
+                clickSelect: true,
+                showButtons: true,
+                discreteValues: $count$,
+                pageIncrement: 1" />
+</div>
+
+>>
+
+select(columns) ::= <<
+
+<div class="selectionBase" style="margin-bottom: 1cm; display: block;">
+ $columns:{col | $col.content$}; separator="\n"$
+</div>
+
+>>
+
+selectradio(columns, optional) ::= <<
+
+<div class="selectionBase" style="margin-bottom: 1cm; display: block;">
+<div class="selectionContainer" data-dojo-type="myWidgets/ValidationRadioButton" optional="$optional$">
+  $columns:{col | $col.content$}; separator="\n"$
+</div>
+</div>
+
+>>
+
+selection_column(elems, width) ::= <<
+
+<div style="width: $width$%; float: left; display: block">
+ $elems:{elem | $elem.content$}; separator="\n"$
+</div>
+ 
+>>
+
+radiobutton(id, name, value, label, checked) ::= <<
+ <div class="innerSelect">
+ <input type="radio" id="$id$" name="$name$" value="$value$" $if(checked)$ checked $endif$
+        data-dojo-type="dijit/form/RadioButton" />
+ $if(label)$
+    <label for="$id$">$label$</label>
+ $endif$
+ </div>
+ <br />
+>>
+
+checkbox(id, name, value, label, checked) ::= <<
+ <div class="innerSelect">
+ <input type="checkbox" id="$id$" name="$name$" value="$value$" $if(checked)$ checked $endif$
+        data-dojo-type="dijit/form/CheckBox" />
+ $if(label)$
+ <label for="$id$">$label$</label>
+  $endif$
+
+ </div>
+ <br />
+>>
+
+vspacer() ::= "<p style=\"height: 1em; clear: both;\"><!-- SPACER --></p>"
+
+tag(name, attributes, empty) ::= "<$name$ $attributes:{attr | $attribute(attr.name, attr.value)$}$ $if(empty)$/> $else$> $endif$ "
+
+attribute(name, value) ::= " $name$=\"$value$\" "
+
+style(decls) ::= <<
+ $decls:{decl | $decl.text$}; separator=" "$
+>>

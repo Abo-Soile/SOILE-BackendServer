@@ -1,0 +1,125 @@
+[{
+	"start" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1",
+	"tasks": 
+		[
+			{
+				"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1",
+				"UUID": "223e4567-e89b-12d3-a456-556642440001",
+				"outputs": ["smoker"],
+				"name": "Initial Questionaire",
+				"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b17",
+				"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+			},
+			{
+				"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",
+				"UUID": "223e4567-e89b-12d3-a456-556642440002",
+				"outputs": ["clicktimes"],
+				"name": "First Task",
+				"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3",
+				"resources": "apple.jpeg",
+				"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+				
+			}  				
+		],
+	"filters":
+		[
+			{
+				"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b17",
+				"options": [
+							
+							{
+								"filter": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = 1",
+								"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2"
+							}
+							
+					],
+				"defaultOption": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3"							
+								
+			}		
+		],
+	"experiments": 
+		[
+			{
+				"UUID" : "223e4567-e89b-12d3-a456-55664244003",
+				"name" : "TestExperiment1",
+				"random" : true,
+				"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3",
+				"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b6",
+				"start": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",
+				"elements": [
+							{
+								"elementType" : "task",
+								"data" : {
+									"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",
+									"UUID": "223e4567-e89b-12d3-a456-556642440001",					
+									"name": "Test1",
+									"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3",
+									"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+								}
+							},
+							{
+								"elementType" : "task",
+								"data" : {
+									"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b5",
+									"UUID": "223e4567-e89b-12d3-a456-556642440002",					
+									"name": "Test2",
+									"filter": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = 0",
+									"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b3",
+									"resources": "apple.jpeg",									
+									"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+								}
+							}  				
+						],
+				"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+						
+
+			},
+			{
+				"UUID" : "223e4567-e89b-12d3-a456-55664244003",
+				"name" : "TestExperiment2",
+				"random" : false,
+				"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b6",
+				"start": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b7",
+				"elements": [
+							{
+								"elementType" : "task",
+								"data" : {							
+									"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b7",
+									"UUID": "223e4567-e89b-12d3-a456-556642440001",					
+									"name": "Test3",
+									"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b18",
+									"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+									}
+							},
+							{
+								"elementType" : "filter",
+								"data" : {							
+									"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b18",								
+									"options": [
+												{
+													"filter": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker = 1",
+													"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b8"
+												}
+												
+										],
+									"defaultOption": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b8"											
+									}
+							},
+							{
+								"elementType" : "task",
+								"data" : {							
+									"instanceID": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b8",
+									"UUID": "223e4567-e89b-12d3-a456-556642440002",					
+									"name": "Test4",
+									"next": "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b6",
+									"resources": "apple.jpeg",
+									"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"								
+									}
+							}  				
+						],
+				"version": "8701f5772dce42201e3801eefa74c4dc19022e6c"
+			}						
+		]
+					
+
+}]

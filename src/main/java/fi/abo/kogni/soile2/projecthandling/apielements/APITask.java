@@ -27,7 +27,7 @@ public class APITask extends APIElementBase<Task> {
 
 	@JsonProperty("codetype")
 	public String getCodetype() {
-		return data.getString("codetype");
+		return data.getString("codetype", "");
 	}
 	@JsonProperty("codetype")
 	public void setCodetype(String codetype) {
@@ -40,7 +40,8 @@ public class APITask extends APIElementBase<Task> {
 	 */
 	@JsonProperty("resources")
 	public JsonArray getResources() {
-		return data.getJsonArray("resources");
+		System.out.println(data.getValue("resources"));
+		return data.getJsonArray("resources", new JsonArray());
 	}
 	@JsonProperty("resources")
 	public void setResources(JsonArray resources) {
@@ -53,7 +54,7 @@ public class APITask extends APIElementBase<Task> {
 	}
 	@JsonProperty("code")
 	public void setCode(String code) {
-		data.put("codetype", code);
+		data.put("code", code);
 	}
 	@Override
 	public void setElementProperties(Task task)
@@ -84,18 +85,18 @@ public class APITask extends APIElementBase<Task> {
 	{
 		return true;
 	}
-	
-	public Future<String> storeAdditionalData(String currentVersion, GitManager gitManager)
+	@Override
+	public Future<String> storeAdditionalData(String currentVersion, GitManager gitManager, String targetRepository)
 	{
 		// We need to store the code. Resources are stored individually.
-		GitFile g = new GitFile("Code.obj", getUUID(), currentVersion);
+		GitFile g = new GitFile("Code.obj", targetRepository, currentVersion);
 		return gitManager.writeGitFile(g, getCode());
 	}
-	
-	public Future<Boolean> loadAdditionalData(GitManager gitManager)
+	@Override
+	public Future<Boolean> loadAdditionalData(GitManager gitManager, String targetRepository)
 	{
 		Promise<Boolean> successPromise = Promise.promise();
-		GitFile g = new GitFile("Code.obj", getUUID(), this.getVersion());
+		GitFile g = new GitFile("Code.obj", targetRepository, this.getVersion());
 		gitManager.getGitFileContents(g).onSuccess(code -> {
 			setCode(code);
 			successPromise.complete(true);

@@ -82,6 +82,7 @@ public class DBProjectInstance extends ProjectInstance{
 					LOGGER.debug("The data from the project git file is: \n" + projectData.encodePrettily());
 					// we got a positive reply.
 					instanceJson.mergeIn(projectData);
+					LOGGER.debug(instanceJson.encodePrettily());	
 					loadSuccess.complete(instanceJson);					
 				}
 				).onFailure(fail -> {
@@ -107,14 +108,14 @@ public class DBProjectInstance extends ProjectInstance{
 	 * @param p the participant to add
 	 */
 	@Override
-	public synchronized Future<Boolean> addParticipant(Participant p)
+	public synchronized Future<Void> addParticipant(Participant p)
 	{
 		if(!isActive)
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
 		}
 			
-		Promise<Boolean> updatePromise = Promise.promise();
+		Promise<Void> updatePromise = Promise.promise();
 		JsonObject update = new JsonObject().put("$push", new JsonObject().put("participants",p.getID()));
 		client.updateCollection(getTargetCollection(), new JsonObject().put("_id", instanceID), update )
 		.onSuccess(res -> {
@@ -127,7 +128,7 @@ public class DBProjectInstance extends ProjectInstance{
 			else
 			{
 				participants.add(p.getID());		
-				updatePromise.complete(true);
+				updatePromise.complete();
 			}
 		})
 		.onFailure(err -> updatePromise.fail(err));		
@@ -139,14 +140,14 @@ public class DBProjectInstance extends ProjectInstance{
 	 * @param p the participant to remove
 	 */
 	@Override
-	public synchronized Future<Boolean> deleteParticipant(Participant p)
+	public synchronized Future<Void> deleteParticipant(Participant p)
 	{
 		if(!isActive)
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
 		}
 		
-		Promise<Boolean> updatePromise = Promise.promise();
+		Promise<Void> updatePromise = Promise.promise();
 		JsonObject update = new JsonObject().put("$pull", new JsonObject().put("participants",p.getID()));
 		client.updateCollection(getTargetCollection(), new JsonObject().put("_id", instanceID), update )
 		.onSuccess(res -> {
@@ -159,7 +160,7 @@ public class DBProjectInstance extends ProjectInstance{
 			else
 			{
 				participants.remove(p.getID());		
-				updatePromise.complete(true);
+				updatePromise.complete();
 			}
 		})
 		.onFailure(err -> updatePromise.fail(err));		
@@ -193,4 +194,5 @@ public class DBProjectInstance extends ProjectInstance{
 		isActive = true;
 		return save().mapEmpty();
 	}
+
 }

@@ -41,13 +41,13 @@ public abstract class ParticipantImpl implements Participant{
 		protected JsonObject outputData;
 		protected JsonArray steps;
 		protected JsonArray activeExperiments;
-		HashMap<String,List> finishedExperimentTasks;
+		HashMap<String,List<String>> finishedExperimentTasks;
 		protected int currentStep;
 		protected boolean finished;
 		/**
 		 * This map is a way to get output data faster than relying on outputData
 		 */	
-		private DatedDataMap<String,Double> outputMap;	
+		protected DatedDataMap<String,Double> outputMap;	
 		static final Logger LOGGER = LogManager.getLogger(ParticipantImpl.class);
 		private static DateFormat dateFormatter = new SimpleDateFormat("MM/dd/yyyy - HH:SS");
 		/**
@@ -178,16 +178,6 @@ public abstract class ParticipantImpl implements Participant{
 			outputData.getJsonArray(taskID).add(new JsonObject().put("name",outputName).put("value",value).put("timestamp", dateFormatter.format(outputDate)));		
 		}
 		/**
-		 * Get whether a a specific task is finished for this participant
-		 * @param taskID the Task to check
-		 * @return whether the task is finished or not.
-		 */
-//		public boolean finished(String taskID)
-//		{
-//			return finished.contains(taskID);
-//		}
-
-		/**
 		 * Get the position of this participant within its project
 		 * @return
 		 */
@@ -289,6 +279,18 @@ public abstract class ParticipantImpl implements Participant{
 			return save().mapEmpty();
 		}
 		
+		@Override 
+		public Future<Void> startProject(String taskID)
+		{				
+			position = taskID;
+			currentStep = 1;
+			steps = new JsonArray();
+			finished = false;
+			activeExperiments = new JsonArray();
+			finishedExperimentTasks = new HashMap<>();
+			return resetParticipantResults();						
+		}
+		
 		@Override
 		public Future<String> setProjectPosition(String taskID)
 		{		
@@ -363,10 +365,21 @@ public abstract class ParticipantImpl implements Participant{
 			}
 		}
 		
+		public boolean isParticipantFinished()
+		{
+			return finished;
+		}
+		
 		@Override
 		public abstract Future<String> save();
 
 		@Override
 		public abstract Future<Integer> getCurrentStep();
-		
+
+		public Future<Void> resetParticipantResults()
+		{
+			outputData = new JsonObject();
+			outputMap = new DatedDataMap<>();
+			return this.save().mapEmpty();
+		}
 }

@@ -49,5 +49,41 @@
 				"random" : false
 			}						
 		]
-	}					
+	},					
+
+"Testproject2": {
+	"name" : "Testproject",
+	"start" : "tabcdefg0",
+	"private": false,
+	"tasks": 
+		[
+			{
+				"instanceID": "tabcdefg0",				
+				"outputs": ["smoker"],
+				"name": "Initial_Questionaire",
+				"next": "tabcdefg1"				
+			},
+			{
+				"instanceID": "tabcdefg1",
+				"outputs": ["clicktimes"],
+				"name": "FirstTask",
+				"next": "eabcdefg1",
+				"resources": "apple.jpeg"								
+			}  				
+		],	
+	"experiments": 
+		[
+			{
+				"instanceID" : "eabcdefg1",
+				"name" : "TestExperiment1",
+				"random" : true,
+				"next": "eabcdefg2"										
+			},
+			{
+				"instanceID" : "eabcdefg2",			
+				"name" : "TestExperiment2",
+				"random" : false
+			}						
+		]
+	}	
 }

@@ -83,9 +83,11 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 	/**
 	 * Create a new Project with empty information and retrieve a new ID from the 
 	 * database.
-	 * @param projectID - The UUID of the project 
-	 * @param projectVersion - The version of the project to start
-	 * @param projectVersion - The name of the instance.
+	 * 1. "UUID" of the project from which this was started
+	 * 2. "Version" of the project from which this was started
+	 * 3. "private" field wrt access for this 
+	 * 4. "name" a name field.
+	 * 5. "shortcut" (optional), that can be used as a shortcut to the project.
 	 */
 	public Future<ProjectInstance> startProject(JsonObject projectInformation )
 	{						
@@ -110,10 +112,15 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 		return proj.save();
 	}
 	
-	public Future<JsonArray> getProjectInstances(JsonArray permissions)
+	/**
+	 * Get a list of uuid of project instances and their privacy status based on the permissions provided (those are essentially _ids)
+	 * @param projectInstanceIDs A JsonArray with strings for each permission/projectID
+	 * @return
+	 */
+	public Future<JsonArray> getProjectInstanceStatus(JsonArray projectInstanceIDs)
 	{
 		Promise<JsonArray> listPromise = Promise.promise();		 				
-		client.findWithOptions(instanceCollection,new JsonObject().put("private", false).put("_id", permissions),new FindOptions().setFields(new JsonObject().put("_id",1).put("name", 1)))
+		client.findWithOptions(instanceCollection,new JsonObject().put("private", false).put("_id", projectInstanceIDs),new FindOptions().setFields(new JsonObject().put("_id",1).put("name", 1)))
 		.onSuccess(items -> 
 				{
 					JsonArray result = new JsonArray();

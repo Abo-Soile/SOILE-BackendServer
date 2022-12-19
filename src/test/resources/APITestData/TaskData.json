@@ -1,14 +1,14 @@
 {
 	"FirstTask": {
 		"name": "FirstTask",
-		"resources": "apple.jpeg",
+		"resources": ["apple.jpeg"],
 		"private": true,
 		"codetype": "elang",
 		"codeFile": "FirstTask.elang"
 	},
 	"Initial_Questionaire": {
 		"name": "Initial Questionaire",
-		"codetype": "qlang",
+		"codetype": "qmarkup",
 		"private": false,
 		"codeFile": "pilotform.qmarkup"
 		
@@ -22,7 +22,7 @@
 	"Test2": {
 		
 		"name": "Test2",
-		"resources": "apple.jpeg",									
+		"resources": ["apple.jpeg"],									
 		"codetype": "javascript",
 		"codeFile": "Test.js"
 	},  				
@@ -33,7 +33,7 @@
 	},
 	"Test4": {							
 		"name": "Test4",
-		"resources": "apple.jpeg",
+		"resources": ["apple.jpeg"],
 		"codeFile": "Test.js"
 	}
 }

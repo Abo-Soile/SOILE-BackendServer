@@ -126,14 +126,14 @@ public interface APIElement<T extends ElementBase> {
 	 * @param gitManager a git Manager to use
 	 * @return A Future of the updated version
 	 */
-	Future<String> storeAdditionalData(String currentVersion, GitManager gitManager);
+	Future<String> storeAdditionalData(String currentVersion, GitManager gitManager, String targetRepository);
 	
 	/**
 	 * Load additional data to from git and add it to this object.
 	 * @param gitManager a git Manager to use
 	 * @return if the loading operation was successfull
 	 */
-	Future<Boolean> loadAdditionalData(GitManager gitManager);
+	Future<Boolean> loadAdditionalData(GitManager gitManager, String targetRepository);
 	
 	JsonObject getGitJson();
 	

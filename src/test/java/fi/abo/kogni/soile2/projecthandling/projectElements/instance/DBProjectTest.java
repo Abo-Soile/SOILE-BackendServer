@@ -29,8 +29,6 @@ public class DBProjectTest extends GitTest{
 		ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, mongo_client, gitManager);
 		Async APIProjectCreationAsync = context.async();		 
 		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(dataLakeDir, mongo_client, vertx.eventBus());		 
-		//ParticipantManager partManager = new ParticipantManager(mongo_client);
-		//ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projInstHandler, partManager, vertx);		 
 
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager, mongo_client, "Testproject")
 		.onSuccess(existingApiProject -> 

@@ -3,7 +3,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import fi.abo.kogni.soile2.projecthandling.ProjectBaseTest;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.utils.ParticipantImplForTesting;
 import fi.abo.kogni.soile2.projecthandling.utils.ProjectFactoryImplForTesting;
 import io.vertx.ext.unit.Async;

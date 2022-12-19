@@ -15,6 +15,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 /**
  * The participantHandler keeps track of all participants. 
@@ -110,6 +112,7 @@ public class ParticipantHandler {
 		return particpantPromise.future();
 
 	}
+
 	
 	/**
 	 * Delete a participant and all data associated with the participant from the project.
@@ -152,7 +155,49 @@ public class ParticipantHandler {
 		.onFailure(err -> deletionPromise.fail(err));
 		return deletionPromise.future();
 	}
+		
 	
-	
-	
+	/**
+	 * Get a {@link JsonArray} of {@link JsonObject} elements that contain the 
+	 * @param project
+	 * @return
+	 */
+	public Future<JsonArray> getParticipantStatusForProject(ProjectInstance project)
+	{
+		return manager.getParticipantStatusForProject(project);
+	}
+
+	/**
+	 * Get a {@link List} of {@link JsonObject} elements that contain the results along with some additional information for each participant. 
+	 * @param project
+	 * @return
+	 */
+	public Future<List<JsonObject>> getParticipantData(ProjectInstance project, JsonArray particpantIDs)
+	{
+		Promise<List<JsonObject>> dataPromise = Promise.<List<JsonObject>>promise();
+		if(particpantIDs == null)
+		{// this is a request for all Participants, so just collect the data.
+			project.getParticipants().onSuccess(participants -> 
+			{				
+				getParticipantData(project, participants)
+				.onSuccess(res -> 
+				{
+					dataPromise.complete(res);
+				})
+				.onFailure(err -> dataPromise.fail(err));
+			})
+			.onFailure(err -> dataPromise.fail(err));
+					
+		}
+		else
+		{
+			manager.getParticipantsResults(particpantIDs, project.getID())
+			.onSuccess( res -> {
+				dataPromise.complete(res);
+			})
+			.onFailure(err -> dataPromise.fail(err));
+			
+		}
+		return dataPromise.future();
+	}
 }

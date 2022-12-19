@@ -5,7 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
-import fi.abo.kogni.soile2.datamanagement.git.ResourceManager;
+import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
 import fi.abo.kogni.soile2.http_server.auth.JWTTokenCreator;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthenticationBuilder;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
@@ -56,13 +56,13 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private SoileAuthenticationBuilder handler;
 	private SoileAuthorization soileAuthorization;
 	private GitManager gitManager;
-	private ResourceManager resourceManager;
+	private GitResourceManager resourceManager;
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
 		cookieHandler = new SoileCookieCreationHandler(vertx.eventBus());	
 		this.client = MongoClient.createShared(vertx, config().getJsonObject("db"));
 		gitManager = new GitManager(vertx.eventBus());
-		resourceManager = new ResourceManager(vertx.eventBus());
+		resourceManager = new GitResourceManager(vertx.eventBus());
 		soileAuthorization = new SoileAuthorization(client);
 		LOGGER.debug("Starting Routerbuilder");
 		RouterBuilder.create(vertx, config().getString("api"))

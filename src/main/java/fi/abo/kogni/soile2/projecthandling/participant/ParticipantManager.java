@@ -7,9 +7,13 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import fi.abo.kogni.soile2.datamanagement.utils.DirtyDataRetriever;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.DBParticipantFactory;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -38,7 +42,8 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	//TODO: needs constructor.
 	private String participantCollection = SoileConfigLoader.getdbProperty("participantCollection");
 	private Vertx vertx;
-	
+	public static final Logger log = LogManager.getLogger(ParticipantManager.class);
+
 	public ParticipantManager(MongoClient client)
 	{
 		this.client  = client;
@@ -102,7 +107,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	public Future<Participant> createParticipant(ProjectInstance p)
 	{	
 		Promise<Participant> participantPromise = Promise.<Participant>promise();
-		JsonObject defaultParticipant = getDefaultParticipantInfo(); 
+		JsonObject defaultParticipant = getDefaultParticipantInfo(p.getID()); 
 		client.save(participantCollection,defaultParticipant).onSuccess(res ->
 		{
 			defaultParticipant.put("_id", res);
@@ -153,6 +158,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		for(int i = 0; i < resultData.size(); i++)
 		{
 			JsonObject taskResults = resultData.getJsonObject(i);
+			int step = taskResults.getInteger("step");
 			JsonArray fileResults = taskResults.getJsonArray("fileData", new JsonArray());
 			for(int j = 0; i < fileResults.size(); j++)
 			{
@@ -160,6 +166,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 				results.add(new TaskFileResult(fileResult.getString("filename"),
 											   fileResult.getString("targetid"),
 											   fileResult.getString("fileformat"),
+											   step,
 											   taskResults.getString("task"), 
 											   resultJson.getString("_id")));
 			}
@@ -208,7 +215,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	
 	
 	/**
-	 * Get The files stored for a specific participant. 
+	 * Get the results stored for a specific participant. 
 	 * @param id the ID of the participant.
 	 * @return 
 	 */
@@ -222,9 +229,10 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 * Default schema of a Participant.
 	 * @return an empty participant information {@link JsonObject}
 	 */
-	public static JsonObject getDefaultParticipantInfo()
+	public static JsonObject getDefaultParticipantInfo(String projectID)
 	{
 		return new JsonObject().put("position","")
+							   .put("prject",projectID)
 							   .put("finished", false)							   
 							   .put("outputData", new JsonArray())
 							   .put("modifiedStamp", System.currentTimeMillis())
@@ -312,5 +320,78 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		pullAndPut.add(setOp);
 
 		return client.bulkWrite(participantCollection, pullAndPut).mapEmpty();
+	}
+	/**
+	 * Get a {@link JsonArray} of {@link JsonObject} elements that contain the 
+	 * @param project
+	 * @return
+	 */
+	public Future<JsonArray> getParticipantStatusForProject(ProjectInstance project)
+	{
+		Promise<JsonArray> participantsPromise = Promise.promise();
+		project.getParticipants()
+		.onSuccess(participants -> {
+			// if there are no participants yet indicate this
+			if(participants.size() == 0)
+			{
+				participantsPromise.complete(new JsonArray());
+			}
+			// For some reason, 
+			JsonObject query = new JsonObject().put("_id", new JsonObject().put("$in", participants));																	
+			client.findWithOptions(participantCollection,query,new FindOptions().setFields(new JsonObject().put("_id", 1).put("finished", 1)))
+			.onSuccess(res -> {				
+				JsonArray result = new JsonArray();
+				for(JsonObject o : res)
+				{
+					o.put("participantID", o.getValue("_id")).remove("_id");
+					result.add(o);
+				}
+				log.debug(result.encodePrettily());		
+				participantsPromise.complete(result);
+			})
+			.onFailure(err -> participantsPromise.fail(err));
+		})
+		.onFailure(err -> participantsPromise.fail(err));
+		return participantsPromise.future();
+	}
+	
+	/**
+	 * Reset the Participant based on the given participants data and empty results. 
+	 * @param project
+	 * @return
+	 */
+	public Future<Void> resetParticipant(Participant part)
+	{
+		Promise<Void> participantsPromise = Promise.promise();
+		part.toJson()
+		.onSuccess(partJson -> {
+				
+				partJson.put("resultData", new JsonArray())
+						.put("modifiedStamp", System.currentTimeMillis());
+				
+				client.save(participantCollection, partJson)
+				.onSuccess( id -> {
+					participantsPromise.complete();
+			})
+			.onFailure(err -> participantsPromise.fail(err));
+		})
+		.onFailure(err -> participantsPromise.fail(err));
+		return participantsPromise.future();
+	}
+	
+	/**
+	 * Get the results for the participantIDs indicated in the provided {@link JsonArray}
+	 * @param participantIDs
+	 * @return
+	 */
+	public Future<List<JsonObject>> getParticipantsResults(JsonArray participantIDs, String projectID)
+	{
+		JsonObject query = new JsonObject().put("_id", new JsonObject().put("$in", participantIDs));
+		// if we have a projectID, we need to restrict the query
+		if(projectID != null && !projectID.equals(""))
+		{
+			query = new JsonObject().put("$and", new JsonArray().add(query).add(new JsonObject().put("project", projectID)));
+		}
+		return client.findWithOptions(participantCollection, query , new FindOptions().setFields(new JsonObject().put("_id", 1).put("steps", 1).put("resultData", 1).put("finished", 1)));		
 	}
 }

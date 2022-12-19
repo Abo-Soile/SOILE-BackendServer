@@ -156,6 +156,13 @@ public abstract class SoileBaseTest {
 			gitVerticleAsync.complete();
 		});
 	}
+	
+	public void failContext(Throwable err, TestContext context)
+	{
+		System.out.println("Test failed due to: " +  err.getMessage());
+		context.fail(err);
+	}
+	
 }
 
 

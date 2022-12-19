@@ -80,7 +80,7 @@ public class DBParticipantTest extends GitTest{
 											mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"),new JsonObject().put("_id", participant.getID()),null)
 											.onSuccess( json -> {
 												System.out.println(json.encodePrettily());
-
+												context.assertTrue(participant.isParticipantFinished());
 												context.assertTrue(json.getBoolean("finished"));
 												context.assertEquals(6,json.getInteger("currentStep"));
 												projTestAsync.complete();	

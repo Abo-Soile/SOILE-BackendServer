@@ -1,7 +1,7 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
-import fi.abo.kogni.soile2.datamanagement.git.ResourceManager;
+import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
@@ -16,7 +16,7 @@ public class TaskRouter extends ElementRouter<Task> {
 
 	TaskDataHandler dataHandler;
 	
-	public TaskRouter(GitManager gitManager, MongoClient client, ResourceManager resManager, EventBus eb, SoileAuthorization auth )
+	public TaskRouter(GitManager gitManager, MongoClient client, GitResourceManager resManager, EventBus eb, SoileAuthorization auth )
 	{
 		super(ElementManager.getTaskManager(client,gitManager),auth, eb, client);
 		dataHandler = new TaskDataHandler(resManager);

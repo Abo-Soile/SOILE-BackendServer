@@ -39,10 +39,15 @@ public class ObjectGenerator {
 				apiTask.setCode(TaskCode);
 				apiTask.setVersion(task.getCurrentVersion());
 				apiTask.setUUID(task.getUUID());			
-				task.setPrivate(apiTask.getPrivate());
+				task.setPrivate(apiTask.getPrivate());				
 				task.save(client)
 				.onSuccess(res -> {
-					taskPromise.complete(apiTask);	
+					manager.updateElement(apiTask)
+					.onSuccess(newVersion -> {
+						apiTask.setVersion(newVersion);
+						taskPromise.complete(apiTask);							
+					})
+					.onFailure(err -> taskPromise.fail(err));						
 				})
 				.onFailure(err -> taskPromise.fail(err));
 				
@@ -133,8 +138,9 @@ public class ObjectGenerator {
 
 						apiExperiment.getElements().add(elements.get(current.getString("name")));
 					}
-					experiment.save(client)
-					.onSuccess(Void2 -> { 
+					experimentManager.updateElement(apiExperiment)
+					.onSuccess(newVersion -> { 
+						apiExperiment.setVersion(newVersion);
 						experimentPromise.complete(apiExperiment);
 					})
 					.onFailure(err -> {
@@ -156,7 +162,10 @@ public class ObjectGenerator {
 	}
 
 
-	public static Future<APIProject> buildAPIProject(ElementManager<Project> projectManager, ElementManager<Experiment> expManager,ElementManager<Task> taskManager, MongoClient client, String projectName)
+	public static Future<APIProject> buildAPIProject(ElementManager<Project> projectManager, 
+													 ElementManager<Experiment> expManager,
+													 ElementManager<Task> taskManager, 
+													 MongoClient client, String projectName)
 	{
 		Promise<APIProject> projectPromise = Promise.promise();
 		try
@@ -202,7 +211,7 @@ public class ObjectGenerator {
 					List<Future> experimentFutures = new LinkedList<Future>();
 					// and for filters. This should work even without
 					JsonArray filters = apiProject.getFilters();
-					for(Object item : projectDef.getJsonArray("filters"))
+					for(Object item : projectDef.getJsonArray("filters", new JsonArray()))
 					{
 						filters.add(item);
 					}
@@ -232,19 +241,15 @@ public class ObjectGenerator {
 						System.out.println("Saving the project: \n"  + project.toJson().encodePrettily());
 						projectManager.updateElement(apiProject)
 						.onSuccess( newVersion -> {
-							System.out.println("Trying to retrieve version: " + newVersion);
-							projectManager.getAPIElementFromDB(project.getUUID(), newVersion)
-							.onSuccess(newApi -> {
-								newApi.getGitJson();
-								System.out.println("The git Json for the given element is: \n"  + newApi.getGitJson().encodePrettily());
+								apiProject.setVersion(newVersion);
+								// Saving the associated project.								
 								System.out.println("And Returning the project:\n "  + apiProject.getJson().encodePrettily());
-								projectPromise.complete(apiProject);
+								projectPromise.complete(apiProject);															
 							})
 							.onFailure(err -> projectPromise.fail(err));
 						})
 						.onFailure(err -> projectPromise.fail(err));
-
-					});
+					
 
 				})
 				.onFailure(err -> projectPromise.fail(err));

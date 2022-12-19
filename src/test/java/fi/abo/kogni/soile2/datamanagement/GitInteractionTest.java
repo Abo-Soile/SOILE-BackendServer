@@ -15,7 +15,7 @@ import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.SoileBaseTest;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.ObjectManager;
-import fi.abo.kogni.soile2.datamanagement.git.ResourceManager;
+import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -47,7 +47,7 @@ public class GitInteractionTest extends SoileBaseTest{
 	public void testGitRepoExists(TestContext context)
 	{
 		String targetElement = "TestElement";
-		ResourceManager rm = new ResourceManager(vertx.eventBus());
+		GitResourceManager rm = new GitResourceManager(vertx.eventBus());
 		Async notExistAsync = context.async();
 		rm.existElementRepo(targetElement).onSuccess(exists -> {
 			Async existAsync = context.async();
@@ -73,7 +73,7 @@ public class GitInteractionTest extends SoileBaseTest{
 		// set up the git Repository and the DataLake folder we will use for the test
 		Async initAsync = context.async();
 		String targetElement = "TestElement";
-		ResourceManager rm = new ResourceManager(vertx.eventBus());
+		GitResourceManager rm = new GitResourceManager(vertx.eventBus());
 		ObjectManager om = new ObjectManager(vertx.eventBus());		
 		initGitRepo(targetElement, context).onSuccess(initialVersion -> 
 		{		
@@ -102,7 +102,7 @@ public class GitInteractionTest extends SoileBaseTest{
 				rm.getElement(new GitFile("NewFile.txt", targetElement, newVersion)).onSuccess(targetFile -> 
 				{
 					context.assertEquals(targetFile.getOriginalFileName(), "NewFile.txt");
-					context.assertEquals(targetFile.getPath(), dataLakePath.toFile().getPath());
+					context.assertEquals(targetFile.getFilePath(), dataLakePath.toFile().getPath());
 					reloadAsync.complete();
 				}).onFailure(fail -> {	
 					fail.printStackTrace(System.out);

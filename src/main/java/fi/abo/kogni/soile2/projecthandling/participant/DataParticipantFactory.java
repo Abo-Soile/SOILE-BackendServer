@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject;
  * @author Thomas Pfau
  *
  */
+@Deprecated
 public interface DataParticipantFactory {	
 	
 	public DataParticipant createParticipant(JsonObject data);

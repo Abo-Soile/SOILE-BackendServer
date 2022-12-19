@@ -7,9 +7,9 @@ import org.apache.logging.log4j.Logger;
 
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
-import fi.abo.kogni.soile2.experiment.task.Task;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;

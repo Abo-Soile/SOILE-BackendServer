@@ -8,6 +8,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.DataParticipant;
@@ -16,6 +17,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInsta
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
@@ -62,20 +64,12 @@ public class ProjectInstanceHandler {
 	 * @param p the {@link DBParticipant} for which to retrieve the file results.
 	 * @return
 	 */
-	public Set<File> getFilesinProject(Set<TaskFileResult> fileResults)
+	public Set<DataLakeFile> getFilesinProject(Set<TaskFileResult> fileResults)
 	{
-		HashSet<File> fileSet = new HashSet<File>();
+		HashSet<DataLakeFile> fileSet = new HashSet<DataLakeFile>();
 		for(TaskFileResult res : fileResults)
 		{
-			try {
-				fileSet.add(res.getFile(dataLakeFolder));
-			}
-			catch(FileNotFoundException e)
-			{
-				//TODO: properly handle this.
-				// if a file can't be found, that's fine it seems to already have been deleted.
-				continue;
-			}
+			fileSet.add(res.getFile(dataLakeFolder));
 		}
 		return fileSet;
 	}
@@ -104,10 +98,10 @@ public class ProjectInstanceHandler {
 	 * @param id The id of the participant, or null if a new participant needs to be created.
 	 * @param handler the handler that handles the created participant.
 	 */
-	public Future<Boolean> addParticipant(String projectInstanceID, Participant p)
+	public Future<Void> addParticipant(String projectInstanceID, Participant p)
 	{
 		
-		Promise<Boolean> addPromise = Promise.<Boolean>promise();
+		Promise<Void> addPromise = Promise.<Void>promise();
 				
 		// if no ID is provided, create a new Participant for the indicated project and add that participant to the list.		
 		projects.getData(projectInstanceID).onSuccess(targetProject -> 
@@ -115,7 +109,7 @@ public class ProjectInstanceHandler {
 			
 			targetProject.addParticipant(p)
 			.onSuccess(success -> {
-				addPromise.complete(success);
+				addPromise.complete();
 			})
 			.onFailure(err -> addPromise.fail(err));
 		}).onFailure(fail -> {
@@ -155,6 +149,17 @@ public class ProjectInstanceHandler {
 	 */
 	public Future<JsonArray> getProjectList(JsonArray Permissions)
 	{
-		return manager.getProjectInstances(Permissions);
+		return manager.getProjectInstanceStatus(Permissions);
+	}
+	
+	/**
+	 * 
+	 */
+	public Future<JsonObject> getAvailableData(ProjectInstance instance)
+	{
+		Promise<JsonObject> dataPromise = Promise.promise();
+		
+		
+		return dataPromise.future();
 	}
 }

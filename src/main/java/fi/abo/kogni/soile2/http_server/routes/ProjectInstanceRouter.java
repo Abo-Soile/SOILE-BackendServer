@@ -52,7 +52,7 @@ public class ProjectInstanceRouter  {
 		roleHandler = new SoileRoleBasedAuthorizationHandler();
 		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler<AccessElement>(AccessProjectInstance::new, client);
 		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler<AccessElement>(Project::new, client);
-		
+
 	}
 
 	public void start(RoutingContext context)
@@ -68,10 +68,10 @@ public class ProjectInstanceRouter  {
 				instanceHandler.createProjectInstance(projectData)
 				.onSuccess(instance -> {
 					JsonObject permissionChange = new JsonObject().put("command", SoileConfigLoader.getCommunicationField("addCommand"))
-																  .put("username", context.user().principal().getString("username"))
-																  .put("permissions", new JsonObject().put("elementType", SoileConfigLoader.INSTANCE)
-																		  							  .put("permissions", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
-																		  									  												  .put("target", instance.getID()))));
+							.put("username", context.user().principal().getString("username"))
+							.put("permissions", new JsonObject().put("elementType", SoileConfigLoader.INSTANCE)
+									.put("permissions", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
+											.put("target", instance.getID()))));
 					eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG,"permissionOrRoleChange"), permissionChange)
 					.onSuccess(success -> {
 						// instance was created, access was updated, everything worked fine. Now
@@ -89,7 +89,7 @@ public class ProjectInstanceRouter  {
 			context.fail(500,err);
 		});		
 	}
-	
+
 	public void getRunningProjectList(RoutingContext context)
 	{				
 		checkAccess(context.user(),null, Roles.Researcher,null,true)
@@ -112,8 +112,8 @@ public class ProjectInstanceRouter  {
 		})
 		.onFailure(err -> handleError(err, context));
 	}
-	
-	
+
+
 	public void stopProject(RoutingContext context)
 	{				
 		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.FULL,true)
@@ -134,7 +134,7 @@ public class ProjectInstanceRouter  {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
-	
+
 	public void restartProject(RoutingContext context)
 	{				
 		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.FULL,true)
@@ -155,7 +155,7 @@ public class ProjectInstanceRouter  {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
-	
+
 	public void deleteProject(RoutingContext context)
 	{				
 		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.FULL,true)
@@ -176,7 +176,7 @@ public class ProjectInstanceRouter  {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
-	
+
 	public void submitData(RoutingContext context)
 	{				
 		//TODO: not implemented properly yet
@@ -190,9 +190,9 @@ public class ProjectInstanceRouter  {
 				.onSuccess(participant-> {
 					project.finishStep(participant, context.body().asJsonObject())
 					.onSuccess(res -> {
-					context.response()
-					.setStatusCode(200)						
-					.end();
+						context.response()
+						.setStatusCode(200)						
+						.end();
 					})
 					.onFailure(err -> handleError(err, context));
 				})
@@ -202,8 +202,57 @@ public class ProjectInstanceRouter  {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
-	
-	
+
+
+	public void listDownloadData(RoutingContext context)
+	{
+		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.READ,false)
+		.onSuccess(Void -> {
+			instanceHandler.loadProject(context.pathParam("id"))
+			.onSuccess(project -> {					
+				//JsonArray taskData = project.getTasksWithNames();
+				// this list needs to be filtered by access
+				partHandler.getParticipantStatusForProject(project)				
+				.onSuccess(participantStatus -> {									
+					JsonObject response = new JsonObject();
+					response.put("participants", participantStatus)
+							.put("tasks", project.getTasksInstancesWithNames());
+					context.response()
+					.setStatusCode(200)
+					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+					.end(response.encode());					
+				})
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));		
+	}
+
+	public void createDownload(RoutingContext context)
+	{				
+		//TODO: not implemented properly yet
+		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.READ,false)
+		.onSuccess(Void -> 
+		{
+			instanceHandler.loadProject(context.pathParam("id"))
+			.onSuccess(project -> {					
+				// this list needs to be filtered by access
+				JsonObject requestBody = context.body().asJsonObject();
+				if(requestBody.containsKey("participants"))
+				{
+					// this is a request for Participant Data
+				}
+						context.response()
+						.setStatusCode(HttpURLConnection.HTTP_NOT_IMPLEMENTED)						
+						.end();
+
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));			
+	}
+
 	private void handleError(Throwable err, RoutingContext context)
 	{
 		if(err instanceof ObjectDoesNotExist)
@@ -221,7 +270,7 @@ public class ProjectInstanceRouter  {
 		context.fail(400, err);
 	}
 
-	
+
 	protected Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission, boolean adminAllowed)
 	{
 		Promise<Void> accessPromise = Promise.<Void>promise();
@@ -243,7 +292,13 @@ public class ProjectInstanceRouter  {
 		});
 		return accessPromise.future();
 	}
-	
+
+	/**
+	 * Get the participant for the current user. 
+	 * @param user the authenticated {@link User} from a routing context
+	 * @param project the {@link ProjectInstance} for which the participant is requested. If there is none yet, one will be created.
+	 * @return
+	 */
 	Future<Participant> getParticpantForUser(User user, ProjectInstance project)
 	{
 		Promise<Participant> partPromise = Promise.promise();
@@ -266,7 +321,7 @@ public class ProjectInstanceRouter  {
 				.onSuccess(particpant -> {
 					// update the user.
 					request.put("participantID", particpant.getID());
-					eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantForUser"), request)
+					eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInProject"), request)
 					.onSuccess( success -> {
 						partPromise.complete(particpant);
 					})
@@ -278,6 +333,17 @@ public class ProjectInstanceRouter  {
 		.onFailure(err -> partPromise.fail(err));
 		return partPromise.future();
 	}
-	
-	
+
+	/**
+	 * Start preparing a download for the indicated data.
+	 * @param participants the participants to prepare a download for.
+	 * @return Whether the preparation started.
+	 */
+	private Future<String> prepareParticipantDownload(JsonArray participants)
+	{
+		Promise<String> downloadIDPromise = Promise.promise();
+		
+		return downloadIDPromise.future();
+	}
+
 }

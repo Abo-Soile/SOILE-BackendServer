@@ -1,67 +1,237 @@
 package fi.abo.kogni.soile2.projecthandling.data;
 
-import java.util.HashMap;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import fi.aalto.scicomp.zipper.FileDescriptor;
+import fi.aalto.scicomp.zipper.Zipper;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
+import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.mongo.MongoClient;
 
-public class DataBundleGenerator {
+public class DataBundleGenerator extends AbstractVerticle{
 
-	MongoClient client;
-	String participantDB;
-	String projectInstanceDB;
-	ConcurrentHashMap<UUID, DownloadStatus> downloadStatus;
 	
+	ConcurrentHashMap<String, DownloadStatus> downloadStatus;
+	ConcurrentHashMap<String, String> downloadErrors;	
+	ParticipantHandler partHandler;
+	ProjectInstanceHandler projHandler;
+	String dataLakeFolder;
+	static final Logger LOGGER = LogManager.getLogger(DataBundleGenerator.class);
+
+	@Override
+	public void start(Promise<Void> startPromise)
+	{
+		vertx.eventBus().consumer("fi.abo.soile.DLStatus", this::getStatus);
+		startPromise.complete();
+	}
+	
+	@Override
+	public void stop(Promise<Void> stopPromise)
+	{
+		vertx.eventBus().consumer("fi.abo.soile.DLStatus", this::getStatus).unregister()
+		.onSuccess(success -> stopPromise.complete())
+		.onFailure(err -> stopPromise.fail(err));
+	}
 	
 	public enum DownloadStatus
 	{
-		participantsCollected,
-		dataCollected,
-		filesCollected,
-		downloadReady
+		creating,
+		collecting,		
+		downloadReady,
+		problems,
+		failed
+	}
+	
+	
+	
+	/**
+	 * Create a download ID. This is synchronized so that we don't create the same ID twice.
+	 * @return
+	 */
+	public synchronized String createDLID()
+	{		
+		UUID dlID = UUID.randomUUID();
+		while(downloadStatus.contains(dlID.toString()))
+		{
+			dlID = UUID.randomUUID();			
+		}
+		downloadStatus.put(dlID.toString(), DownloadStatus.creating);
+		return dlID.toString();
 	}
 	
 	/**
-	 * Get a UUID that can be used to obtain a  
-	 * @param p
-	 * @param resultHandler
+	 * Create a download for the given participants.  
+	 * @param participants
 	 * @return
 	 */
-	public Future<UUID> getDataBundleForProject(JsonObject projectData)
+	public Future<String> buildParticipantBundle(JsonArray participants, String projectID)
 	{
-		// This promise is a promise that can be used in a reply and thatwill point to a specific download which is being generated   
-		Promise<UUID> filePromise = Promise.<UUID>promise();
-		// Now, we collect all data. This can take some time
-		JsonObject query = new JsonObject().put("_id", new JsonObject().put("$in", projectData.getJsonArray("participants")));
-		
-		client.find(participantDB, query).onSuccess(participants -> {
-			// we have collected all Participants successfully. Now we can return the UUID for the download.
-			UUID newID = UUID.randomUUID();
-			downloadStatus.put(newID, DownloadStatus.participantsCollected);
-			filePromise.complete(newID);
-			
-			for(JsonObject participant :  participants)				
-			{
-				//TODO: Create a Data Object for all Json Results (maybe we can at some point offer different formats, 
-				//but first we will have to specify what exactly we allow to come in here.			
-			}
-			downloadStatus.put(newID, DownloadStatus.dataCollected);
-			//We will write the data 
-			// Now we collect the files, which can then be used to, on the fly, zip and and stream a output file on request.
-			HashMap<String,HashMap<String,Object>> fileResults;
-			
-			
-		});
-		return filePromise.future();
+		String dlID = createDLID();					
+		return collectParticipantFiles(dlID, participants, projectID).map(dlID);
 	}
 	
-	public void addParticipantToXLS()
+	Future<Void> collectParticipantFiles(String dlID, JsonArray participants, String projectID)
+	{
+		Promise<Void> collectionStartedPromise = Promise.promise();
+		projHandler.loadProject(projectID)
+		.onSuccess(projectInstance ->
+		{		
+			downloadStatus.put(dlID, DownloadStatus.collecting);
+			collectionStartedPromise.complete();
+			
+			partHandler.getParticipantData(projectInstance,participants)
+			.onSuccess(participantsData -> {
+				// This is a particpant with _id, resultData
+				List<DataLakeFile> DataLakeFiles = new LinkedList<>();
+				JsonArray jsonData = new JsonArray(); 
+				
+				for(JsonObject participantData : participantsData )
+				{
+					participantData.put("participantID", participantData.getValue("_id")).remove("_id");					
+					DataLakeFiles.addAll(extractFilesandUpdateParticipantData(participantData.getJsonArray("resultData"), participantData.getString("participantID")));					
+					jsonData.add(participantData.getJsonArray("resultData"));
+						//TODO: Build Json Result File
+						//TODO: Update Results to point to the actual files in the zip.
+						//TODO: Build Result Zip..					
+					
+				}				
+				checkForFileProblems(DataLakeFiles)
+				.onSuccess(filesExist -> {
+					// now, we need to filter and update the error.
+					filterFilesAndStatus(DataLakeFiles, filesExist, dlID);
+					// Now we have all result files filtered. Lets build the result Json. 
+					// TODO: Allow XLS download for projects which can be flattened (i.e. which have no repeating tasks.)
+					
+					
+				});
+			})
+			.onFailure(err -> {
+				LOGGER.error("Could not retrieve data for participants");
+				LOGGER.error(err);
+				downloadStatus.put(dlID, DownloadStatus.failed);
+				downloadErrors.put(dlID, err.getMessage());				
+			});
+		})
+		.onFailure(err -> collectionStartedPromise.fail(err));
+		return collectionStartedPromise.future();
+		
+	}
+	
+	/**
+	 * This function assumes to have been provided with the resultData {@link JsonArray} from a participant.
+	 * @param resultData
+	 * @param participantID
+	 * @return
+	 */
+	private List<DataLakeFile> extractFilesandUpdateParticipantData(JsonArray resultData, String participantID) 
+	{
+		List<DataLakeFile> files = new LinkedList<>();
+		for(int i = 0; i < resultData.size(); i++)
+		{
+			JsonArray fileNames = new JsonArray();
+			int step = resultData.getJsonObject(i).getInteger("step");
+			String task = resultData.getJsonObject(i).getString("task");
+			JsonArray fileData = resultData.getJsonObject(i).getJsonArray("fileData", new JsonArray());
+			for(int fileEntry = 0; fileEntry < fileData.size(); fileEntry++)
+			{
+				JsonObject fileResult = fileData.getJsonObject(fileEntry);
+				TaskFileResult res = new TaskFileResult(fileResult.getString("filename"),
+														fileResult.getString("targetid"),
+														fileResult.getString("fileformat"),
+														step,
+														task,
+														participantID);				
+				JsonObject fileInfo = new JsonObject().put("filInZip", res.getFile(dataLakeFolder).getOriginalFileName()).put("originalName", fileResult.getString("filename"));
+				fileNames.add(fileInfo);
+				files.add(res.getFile(dataLakeFolder));
+			}
+			// update the file data to only point at the actual files.
+			resultData.getJsonObject(i).put("files", fileNames);
+			resultData.getJsonObject(i).remove("fileData");			
+		}
+		return files;
+	}			
+
+	
+	public void getStatus(Message<JsonObject> message)
 	{
 		
+	}
+	
+	public void filterFilesAndStatus(List<DataLakeFile> files, List<Boolean> existsIndicator, String dlID)
+	{
+		List<String> missingFileNames = new LinkedList<String>();
+		List<DataLakeFile> toRemove = new LinkedList<>();
+		for(int i = 0; i < existsIndicator.size(); ++i)
+		{
+			if(!existsIndicator.get(i)) {
+				missingFileNames.add(files.get(i).getAbsolutePath().replace(dataLakeFolder, ""));
+				toRemove.add(files.get(i));
+			}
+		}
+		if(toRemove.size() > 0)
+		{
+			downloadStatus.put(dlID, DownloadStatus.problems);
+			downloadErrors.put(dlID, String.join("", missingFileNames));
+			files.removeAll(toRemove);
+		}				
+	}
+	
+	public Future<List<Boolean>> checkForFileProblems(List<DataLakeFile> files)
+	{
+		Promise<List<Boolean>> errorPromise = Promise.promise();
+		List<Future> filesExistFutures = new LinkedList<Future>();
+		
+		for(DataLakeFile file : files)
+		{
+			filesExistFutures.add(checkFileExist(file));									
+		}
+		CompositeFuture filesExist =  CompositeFuture.join(filesExistFutures);	
+		filesExist.onComplete(finishedCheck -> {
+			List<Boolean> fileExistIndicator = new LinkedList<>();
+			for(int i = 0; i < filesExistFutures.size(); ++i)				
+			{
+				fileExistIndicator.add(filesExist.succeeded(i));
+			}
+			errorPromise.complete(fileExistIndicator);
+		})
+		.onFailure(err -> errorPromise.fail(err));
+		return errorPromise.future();
+		
+	}
+	
+
+	Future<Void> checkFileExist(DataLakeFile f)
+	{
+		Promise<Void> fileExists = Promise.promise();
+		vertx.fileSystem().exists(f.getAbsolutePath())
+		.onSuccess(res -> {
+			if(res)
+			{
+				fileExists.complete();
+			}
+			else
+			{
+				fileExists.fail("File does not exist");
+			}
+		})
+		.onFailure(err -> fileExists.fail(err));
+		return fileExists.future();
 	}
 	
 	

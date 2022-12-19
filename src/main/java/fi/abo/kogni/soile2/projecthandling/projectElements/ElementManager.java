@@ -137,6 +137,7 @@ public class ElementManager<T extends ElementBase> {
 	public Future<JsonObject> getGitJson(String elementID, String elementVersion)
 	{
 		GitFile target = new GitFile("Object.json", getGitID(elementID), elementVersion);
+		log.debug("Requesting Data for Repo: "  + getGitID(elementID));
 		return gitManager.getGitFileContentsAsJson(target);
 	}
 	
@@ -169,11 +170,11 @@ public class ElementManager<T extends ElementBase> {
 				if(newData.hasAdditionalGitContent())
 				{
 					// this has additional data that we need to save in git.
-					newData.storeAdditionalData(version, gitManager)
+					newData.storeAdditionalData(version, gitManager, getGitID(newData.getUUID()))
 					.onSuccess(newVersion -> {
-						element.addVersion(version);				
+						element.addVersion(newVersion);				
 						element.save(client).onSuccess(res -> {
-							elementPromise.complete(version);
+							elementPromise.complete(newVersion);
 						})
 						.onFailure(fail -> elementPromise.fail(fail));
 					})
@@ -347,7 +348,7 @@ public class ElementManager<T extends ElementBase> {
 			apiElement.loadFromDBElement(element);
 			// the version cannot be extracted from the db element, as the db element stores all versions, and this is a specific request. 
 			apiElement.setVersion(version);
-			apiElement.loadAdditionalData(gitManager)
+			apiElement.loadAdditionalData(gitManager, getGitID(apiElement.getUUID()))
 			.onSuccess(Void -> {
 				gitManager.getGitFileContentsAsJson(currentVersion)
 				.onSuccess(gitJson -> {
@@ -391,7 +392,7 @@ public class ElementManager<T extends ElementBase> {
 		return new ElementManager<Project>(Project::new,APIProject::new, client, gm);
 	}
 	
-	public static ElementManager<Experiment> getElementManager(MongoClient client, GitManager gm)
+	public static ElementManager<Experiment> getExperimentManager(MongoClient client, GitManager gm)
 	{
 		return new ElementManager<Experiment>(Experiment::new,APIExperiment::new, client, gm);
 	}

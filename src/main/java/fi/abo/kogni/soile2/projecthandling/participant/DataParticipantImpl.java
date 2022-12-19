@@ -30,6 +30,7 @@ import io.vertx.core.json.JsonObject;
  * @author Thomas Pfau
  *
  */
+@Deprecated
 public abstract class DataParticipantImpl extends ParticipantImpl implements DataParticipant {
 
 	/**
@@ -84,6 +85,7 @@ public abstract class DataParticipantImpl extends ParticipantImpl implements Dat
 					TaskFileResult result = new TaskFileResult(fileData.getString("fileid"),
 							fileData.getString("filename"),
 							fileData.getString("fileformat"),
+							task.getInteger("step"),
 							taskID,
 							this.uuid);
 
