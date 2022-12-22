@@ -30,7 +30,6 @@ public class ParticipantHandler {
 	CheckDirtyMap<String,Participant> activeparticipants;
 	
 	ParticipantManager manager;
-	DataParticipantManager resultManager;
 	Vertx vertx;
 	
 	
@@ -167,6 +166,16 @@ public class ParticipantHandler {
 		return manager.getParticipantStatusForProject(project);
 	}
 
+	/**
+	 * Get a {@link JsonArray} of {@link JsonObject} elements that contain the 
+	 * @param project
+	 * @return
+	 */
+	public Future<List<JsonObject>> getTaskDataforParticipants(JsonArray participantIDs, String taskID, String projectID)
+	{
+		return manager.getParticipantsResultsForTask(participantIDs, projectID, taskID);
+	}
+	
 	/**
 	 * Get a {@link List} of {@link JsonObject} elements that contain the results along with some additional information for each participant. 
 	 * @param project

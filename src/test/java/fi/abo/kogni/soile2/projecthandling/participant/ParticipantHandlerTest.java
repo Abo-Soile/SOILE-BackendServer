@@ -25,7 +25,7 @@ public class ParticipantHandlerTest extends GitTest{
 
 	@Test
 	public void testGetParticipantStatus(TestContext context) {
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(dataLakeDir, mongo_client, vertx.eventBus());
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
 		ObjectGenerator.buildAPIProject(ElementManager.getProjectManager(mongo_client, gitManager), ElementManager.getExperimentManager(mongo_client, gitManager), ElementManager.getTaskManager(mongo_client, gitManager), mongo_client, "Testproject")
@@ -62,7 +62,7 @@ public class ParticipantHandlerTest extends GitTest{
 
 	@Test
 	public void testParticipantStatus(TestContext context) {
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(dataLakeDir, mongo_client, vertx.eventBus());
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		JsonObject smokerOutput = new JsonObject()
 				.put("name", "smoker")
@@ -124,7 +124,7 @@ public class ParticipantHandlerTest extends GitTest{
 												mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"),new JsonObject().put("_id", participant.getID()),null)
 												.onSuccess( json -> {
 													System.out.println(json.encodePrettily());
-													context.assertTrue(participant.isParticipantFinished());
+													context.assertTrue(participant.isFinished());
 													context.assertTrue(json.getBoolean("finished"));
 													context.assertEquals(6,json.getInteger("currentStep"));
 													partHandler.getParticipantStatusForProject(proj)
@@ -168,7 +168,7 @@ public class ParticipantHandlerTest extends GitTest{
 
 	@Test
 	public void testCreateAndGet(TestContext context) {
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(dataLakeDir, mongo_client, vertx.eventBus());
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
 		ElementManager<Project> projectManager = ElementManager.getProjectManager(mongo_client, gitManager);

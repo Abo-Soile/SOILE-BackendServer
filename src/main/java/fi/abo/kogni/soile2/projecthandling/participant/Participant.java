@@ -78,6 +78,7 @@ public interface Participant {
 
 	/**
 		 * Add the output to this participant, we try not to recalculate this....
+		 * This will ONLY set it within this instance and will NOT update 
 		 * @param taskID The taskID for the output
 		 * @param outputName the name of the output in the task
 		 * @param value the value of the output
@@ -85,7 +86,8 @@ public interface Participant {
 	void addOutput(String taskID, String outputName, Number value, Date outputDate);
 	
 	/**
-	 * Set outputs for the specified task 
+	 * Set outputs for the specified task This function should ALSO handle Database storage and update of the results.
+	 * Note, that only the latest results of a task will be available in the outputs.
 	 * @param taskID he task for which to store data
 	 * @param taskOutputData The output data in the format as specified for TaskData.outputdata
 	 */
@@ -139,12 +141,12 @@ public interface Participant {
 	 * @return whether the participants have the same ID
 	 */
 	boolean equals(Object other);
-
+	
 	/**
 	 * Check whether the participant has finished its project.
 	 * @return whether the participant has finished this project.
 	 */
-	boolean isParticipantFinished();
+	boolean isFinished();
 
 	
 	/**

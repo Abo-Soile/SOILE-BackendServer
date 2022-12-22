@@ -257,12 +257,12 @@ public abstract class ProjectInstance implements AccessElement{
 		return finishedPromise.future();
 	}	
 	
-	private JsonObject getResultDataFromTaskData(JsonObject taskData)
+	public JsonObject getResultDataFromTaskData(JsonObject taskData)
 	{
 		JsonObject resultData = new JsonObject();
 		resultData.put("task", taskData.getString("taskID"))
-				  .put("dbData", taskData.getJsonObject("resultdata",new JsonObject()).getJsonArray("jsonData", new JsonArray()))
-				  .put("fileData", taskData.getJsonObject("resultdata",new JsonObject()).getJsonArray("fileData", new JsonArray()));
+				  .put("dbData", taskData.getJsonObject("resultData",new JsonObject()).getJsonArray("jsonData", new JsonArray()))
+				  .put("fileData", taskData.getJsonObject("resultData",new JsonObject()).getJsonArray("fileData", new JsonArray()));
 		return resultData;
 	}
 	

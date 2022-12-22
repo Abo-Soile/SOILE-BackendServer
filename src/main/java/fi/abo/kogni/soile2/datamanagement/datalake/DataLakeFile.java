@@ -59,7 +59,7 @@ public class DataLakeFile extends File implements FileDescriptor {
 	public JsonObject toJson()
 	{
 		return new JsonObject()
-				.put("AbsolutPath", getAbsolutePath())
+				.put("absolutePath", getAbsolutePath())
 				.put("originalFileName", originalFileName)
 				.put("mimeFormat", mimeFormat);
 	}

@@ -1,7 +1,6 @@
 package fi.abo.kogni.soile2.http_server;
 
-import org.junit.Before;
-
+import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.MongoTest;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.DeploymentOptions;
@@ -12,7 +11,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientSession;
 
-public abstract class SoileVerticleTest extends MongoTest {
+public abstract class SoileVerticleTest extends GitTest {
 	protected WebClient webclient;
 	protected HttpClient httpClient;
 	protected int port;

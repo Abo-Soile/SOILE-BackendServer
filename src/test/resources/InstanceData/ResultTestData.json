@@ -1,0 +1,32 @@
+[{
+	"dbData": [{
+			"name": "smoker",
+			"value" : 1			
+		},
+		{
+			"name" : "married",
+			"value" : false
+		},
+		{
+			"name" : "Name",
+			"value" : "test"
+		}
+	]
+},
+{
+	"dbData": [{
+			"name": "smoker",
+			"value" : 0			
+		},
+		{
+			"name" : "married",
+			"value" : true
+		},
+		{
+			"name" : "Name",
+			"value" : "test2"
+		}
+	]
+
+}
+]

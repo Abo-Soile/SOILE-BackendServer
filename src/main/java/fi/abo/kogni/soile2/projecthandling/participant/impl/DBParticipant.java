@@ -1,10 +1,16 @@
 package fi.abo.kogni.soile2.projecthandling.participant.impl;
 
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantImpl;
+
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+
 import fi.abo.kogni.soile2.datamanagement.utils.DatedDataMap;
 import fi.abo.kogni.soile2.projecthandling.participant.DataParticipantImpl;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
@@ -110,10 +116,35 @@ public class DBParticipant extends ParticipantImpl{
 		return Future.succeededFuture(currentStep);
 	}
 	
+	/**
+	 * 
+	 */
+	@Override
+	public Future<Void> setOutputDataForTask(String taskID, JsonArray taskOutputData)
+	{		
+		if(taskOutputData != null && taskOutputData.size() > 0)
+		{			
+			return manager.updateOutputsForTask(this, taskID, taskOutputData)
+			.compose(v-> {
+				for(Object output : taskOutputData)
+				{
+					JsonObject dataElement = (JsonObject) output;				
+					super.addOutput(taskID, dataElement.getString("name"), dataElement.getNumber("value"));
+				}
+				
+				return Future.succeededFuture();
+			});
+		}
+		else
+		{
+			return Future.succeededFuture();
+		}
+	}
+
 	
 	@Override
-	public Future<Void> resetParticipantResults() {	
-		outputData = new JsonObject();
+	public Future<Void> resetOutputs()
+	{		
 		outputMap = new DatedDataMap<>();
 		return manager.resetParticipant(this);
 	}

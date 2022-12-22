@@ -1,7 +1,15 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
-import java.net.HttpURLConnection;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import fi.aalto.scicomp.zipper.FileDescriptor;
+import fi.aalto.scicomp.zipper.Zipper;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
@@ -9,6 +17,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType
 import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
+import fi.abo.kogni.soile2.projecthandling.data.DataBundleGenerator.DownloadStatus;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
@@ -16,7 +25,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
-import fi.abo.kogni.soile2.utils.SoileCommUtils;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -42,9 +51,13 @@ public class ProjectInstanceRouter  {
 	TargetElementType instanceType = TargetElementType.INSTANCE;
 	MongoAuthorization mongoAuth; 
 	EventBus eb;
+	Vertx vertx;
+	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);
+
 
 	public ProjectInstanceRouter(SoileAuthorization auth, Vertx vertx, MongoClient client) {
-		eb = vertx.eventBus();		
+		eb = vertx.eventBus();
+		this.vertx = vertx;
 		authorizationRertiever = auth;
 		instanceHandler = new ProjectInstanceHandler(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder"), client, eb);
 		partHandler = new ParticipantHandler(client, instanceHandler, vertx);
@@ -55,7 +68,7 @@ public class ProjectInstanceRouter  {
 
 	}
 
-	public void start(RoutingContext context)
+	public void startProject(RoutingContext context)
 	{
 		String id = context.pathParam("id");
 		String version = context.pathParam("version");		
@@ -177,9 +190,8 @@ public class ProjectInstanceRouter  {
 		.onFailure(err -> handleError(err, context));			
 	}
 
-	public void submitData(RoutingContext context)
+	public void submitJob(RoutingContext context)
 	{				
-		//TODO: not implemented properly yet
 		checkAccess(context.user(),context.pathParam("id"), Roles.Participant,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{
@@ -229,30 +241,188 @@ public class ProjectInstanceRouter  {
 		.onFailure(err -> handleError(err, context));		
 	}
 
-	public void createDownload(RoutingContext context)
+	public void getProjectResults(RoutingContext context)
 	{				
 		//TODO: not implemented properly yet
 		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
-		{
-			instanceHandler.loadProject(context.pathParam("id"))
-			.onSuccess(project -> {					
-				// this list needs to be filtered by access
-				JsonObject requestBody = context.body().asJsonObject();
-				if(requestBody.containsKey("participants"))
-				{
-					// this is a request for Participant Data
-				}
-						context.response()
-						.setStatusCode(HttpURLConnection.HTTP_NOT_IMPLEMENTED)						
-						.end();
-
+		{			
+			// this list needs to be filtered by access
+			JsonObject requestBody = context.body().asJsonObject();
+			requestBody.put("projectID", context.pathParam("id"));
+			eb.request("fi.abo.soile.DLCreate", requestBody)
+			.onSuccess(response -> {
+				String dlID = response.body().toString();
+				context.response()
+				.setStatusCode(200)
+				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+				.end(new JsonObject().put("downloadID",dlID).encode());
 			})
-			.onFailure(err -> handleError(err, context));
+			.onFailure(err -> handleError(err, context));										
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
 
+	public void downloadTest(RoutingContext context)
+	{				
+		String projectID = context.pathParam("id");
+		String dlID = context.pathParam("downloadid");
+		checkAccess(context.user(),projectID, Roles.Researcher,PermissionType.READ,false)
+		.onSuccess(Void -> 
+		{
+			// this list needs to be filtered by access
+			eb.request("fi.abo.soile.DLCreate", new JsonObject().put("downloadID",dlID))
+			.onSuccess(response -> {
+				JsonObject responseBody = (JsonObject) response.body();					
+				context.response()
+				.setStatusCode(200)
+				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+				.end(responseBody.encode());
+			})
+			.onFailure(err -> handleError(err, context));										
+		})
+		.onFailure(err -> handleError(err, context));			
+	}	
+	
+	public void downloadResults(RoutingContext context)
+	{				
+		String projectID = context.pathParam("id");
+		String dlID = context.pathParam("downloadid");
+		checkAccess(context.user(),projectID, Roles.Researcher,PermissionType.READ,false)
+		.onSuccess(Void -> 
+		{
+			// this list needs to be filtered by access
+			eb.request("fi.abo.soile.DLFiles", new JsonObject().put("downloadID",dlID))
+			.onSuccess(response -> {				
+				JsonObject responseBody = (JsonObject) response.body();
+				if(responseBody.getString("status").equals(DownloadStatus.downloadReady.toString()))
+				{
+					List<FileDescriptor> dLFiles = new LinkedList<>();
+					for(int i = 0; i < responseBody.getJsonArray("files").size(); i++)
+					{
+						dLFiles.add(new DataLakeFile(responseBody.getJsonArray("files").getJsonObject(i)));
+					}
+					try
+					{
+						Zipper pump = new Zipper(vertx, dLFiles.iterator());
+						// the response is a chunked zip file.
+						context.response().putHeader("content-type", "application/zip")
+				        .putHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dlID + ".zip\"")
+				        .setStatusCode(200)
+				        .setChunked(true);
+						pump.pipeTo(context.response()).onSuccess(success -> {
+							LOGGER.info("Download " + dlID + " successfullytransmitted");
+						}).onFailure(err -> {
+							LOGGER.error("Download " + dlID + " failed");
+							LOGGER.error(err);
+							context.response()
+					        .putHeader("content-type", "text/plain")
+							.setStatusCode(500)
+							.end("Failed because of: " + err.getMessage());
+						});											
+					}
+					catch(IOException e)
+					{
+						handleError(e, context);
+					}			
+				}
+				else
+				{
+					context.response()
+					.setStatusCode(406)					
+					.end("Download not ready");
+
+				}
+			})
+			.onFailure(err -> handleError(err, context));										
+		})
+		.onFailure(err -> handleError(err, context));			
+	}
+	
+	
+
+	public void getTaskType(RoutingContext context)
+	{
+		checkAccess(context.user(),context.pathParam("id"), Roles.Participant,PermissionType.READ,false)
+		.onSuccess(Void -> {
+			instanceHandler.loadProject(context.pathParam("id"))
+			.onSuccess(project -> {					
+				//JsonArray taskData = project.getTasksWithNames();
+				// this list needs to be filtered by access
+				getParticpantForUser(context.user(), project)				
+				.onSuccess(participant-> {		
+					if(participant.isFinished())
+					{
+						context.response()
+						.setStatusCode(200)	
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+						.end(new JsonObject().put("finished", true).put("codeType", "").encode());
+					}					
+					else
+					{
+						try {
+							TaskObjectInstance currentTask = (TaskObjectInstance)project.getElement(participant.getProjectPosition());
+							eb.request(SoileConfigLoader.getVerticleProperty("taskInformationAddress"), new JsonObject().put("taskID", currentTask.getUUID()))
+							.onSuccess(response -> {								
+								JsonObject responseBody = (JsonObject) response.body();
+								context.response()
+								.setStatusCode(200)	
+								.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+								.end(new JsonObject().put("finished", false).put("codeType", responseBody.getString("codeType")).encode());
+							})
+							.onFailure(err -> handleError(err, context));
+						}
+						catch(ClassCastException e)
+						{
+							// This should not happen, but just in case...
+							LOGGER.error("The current Task for user " + participant.getID() + "is NOT a task!!");
+							context.response()
+							.setStatusCode(500)					
+							.end("Problem retrieving task");
+						}						
+					}
+				})
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));		
+	}
+	
+	
+	public void runTask(RoutingContext context)
+	{
+		checkAccess(context.user(),context.pathParam("id"), Roles.Participant,PermissionType.READ,false)
+		.onSuccess(Void -> {
+			instanceHandler.loadProject(context.pathParam("id"))
+			.onSuccess(project -> {					
+				//JsonArray taskData = project.getTasksWithNames();
+				// this list needs to be filtered by access
+				getParticpantForUser(context.user(), project)				
+				.onSuccess(participant-> {		
+					if(participant.isFinished())
+					{
+						context.response()
+						.setStatusCode(406)							
+						.end("User is finished");
+					}					
+					else
+					{
+						// Try catch block.
+						TaskObjectInstance currentTask = instanceHandler.
+								//TODO: Implement
+								// Need to obtain Version/UUID for Task from instance
+								// Need to find a clean way how to get the git Repository (i.e. add the elementIdentifier) 
+								// to obtain the code.
+					}
+				})
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));		
+	}
+	
 	private void handleError(Throwable err, RoutingContext context)
 	{
 		if(err instanceof ObjectDoesNotExist)
@@ -292,6 +462,9 @@ public class ProjectInstanceRouter  {
 		});
 		return accessPromise.future();
 	}
+	
+	
+	
 
 	/**
 	 * Get the participant for the current user. 

@@ -90,4 +90,12 @@ public class TimeStampedData<T> implements Comparable<TimeStampedData<T>>{
 		return this.dataDate.compareTo(o.dataDate);
 	}
 	
+	/**
+	 * Get the time stamp this Data was stored with
+	 * @return
+	 */
+	public Long getTimeStamp()
+	{
+		return dataDate;
+	}
 }

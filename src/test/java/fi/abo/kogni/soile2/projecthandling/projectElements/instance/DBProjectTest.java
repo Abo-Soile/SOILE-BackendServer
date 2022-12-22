@@ -2,6 +2,7 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance;
 
 import org.junit.Test;
 
+import fi.abo.kogni.soile2.ElementTester;
 import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
@@ -28,7 +29,7 @@ public class DBProjectTest extends GitTest{
 		ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, mongo_client, gitManager);		 
 		ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, mongo_client, gitManager);
 		Async APIProjectCreationAsync = context.async();		 
-		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(dataLakeDir, mongo_client, vertx.eventBus());		 
+		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());		 
 
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager, mongo_client, "Testproject")
 		.onSuccess(existingApiProject -> 
@@ -38,15 +39,8 @@ public class DBProjectTest extends GitTest{
 			projManager.getElement(existingApiProject.getUUID())
 			.onSuccess(project -> {
 				System.out.println("Project created" + project.toJson());				
-				Async projInstAsync = context.async();
-				JsonObject creationJson = new JsonObject()
-						.put("sourceUUID", existingApiProject.getUUID())
-						.put("name", "StartedProject1")
-						// this works here, since no other version could be added in between.
-						.put("version", project.getCurrentVersion())
-						.put("private", true)
-						.put("shortcut", "thisIsSomeShortcut");							
-				projInstHandler.createProjectInstance(creationJson)
+				Async projInstAsync = context.async();				
+				projInstHandler.createProjectInstance(ElementTester.getCreationJson(project, "StartedProject1","thisIsSomeShortcut"))
 				.onSuccess(projectInstance -> {					
 					System.out.println("Instantiated Project");
 					System.out.println(projectInstance.toDBJson().encodePrettily());
@@ -78,7 +72,7 @@ public class DBProjectTest extends GitTest{
 		ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, mongo_client, gitManager);		 
 		ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, mongo_client, gitManager);
 		Async APIProjectCreationAsync = context.async();		 
-		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(dataLakeDir, mongo_client, vertx.eventBus());		 
+		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());		 
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projInstHandler, vertx);
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager, mongo_client, "Testproject")
 		.onSuccess(existingApiProject -> 

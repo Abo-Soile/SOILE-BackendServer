@@ -71,19 +71,19 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 		.onFailure(err -> sourceCode.fail(200, err.getMessage()));
 	}
 	
-	private void compileGitCode(Message<JsonObject> sourceCode)
+	private void compileGitCode(Message<JsonObject> codeLocation)
 	{
-		String type = sourceCode.body().getString("type");
-		String id = sourceCode.body().getString("id");
-		String version = sourceCode.body().getString("version");
+		String type = codeLocation.body().getString("type");
+		String id = codeLocation.body().getString("id");
+		String version = codeLocation.body().getString("version");
 		CodeProvider provider = getProviderForType(type);
 		// this is always a Task object (if not, there will not be code).
 		GitFile f = new GitFile("Object.json", id, version);		
 		provider.getCode(f)
 		.onSuccess(compiledCode -> {			
-			sourceCode.reply(new JsonObject().put("code", compiledCode));
+			codeLocation.reply(new JsonObject().put("code", compiledCode));
 		})
-		.onFailure(err -> sourceCode.fail(200, err.getMessage()));
+		.onFailure(err -> codeLocation.fail(200, err.getMessage()));
 	}
 	
 	

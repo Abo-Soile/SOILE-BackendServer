@@ -16,6 +16,7 @@ import fi.abo.kogni.soile2.projecthandling.participant.impl.DBParticipantFactory
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
+import fi.abo.kogni.soile2.utils.MongoAggregationHandler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -27,6 +28,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.BulkOperation;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.WriteOption;
 
 /**
  * This class provides functionalities to interact with the Participant db, creating, saving and deleting participants.
@@ -232,7 +234,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	public static JsonObject getDefaultParticipantInfo(String projectID)
 	{
 		return new JsonObject().put("position","")
-							   .put("prject",projectID)
+							   .put("project",projectID)
 							   .put("finished", false)							   
 							   .put("outputData", new JsonArray())
 							   .put("modifiedStamp", System.currentTimeMillis())
@@ -248,8 +250,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		Promise<String> savePromise = Promise.<String>promise();
 		p.toJson()
 		.onSuccess(update -> {
-			update.put("modifiedStamp", System.currentTimeMillis());
-			
+			update.put("modifiedStamp", System.currentTimeMillis());			
 			//TODO Correct this call. Needs to be upsert. 
 			client.save(participantCollection,update)
 			.onSuccess(res -> {
@@ -367,6 +368,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		.onSuccess(partJson -> {
 				
 				partJson.put("resultData", new JsonArray())
+						.put("outputData", new JsonArray())
 						.put("modifiedStamp", System.currentTimeMillis());
 				
 				client.save(participantCollection, partJson)
@@ -379,19 +381,78 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		return participantsPromise.future();
 	}
 	
+	public Future<Void> updateOutputsForTask(Participant p, String taskID, JsonArray Outputs)
+	{
+		// We will pull the outputs for this task.
+		JsonObject pullUpdate = new JsonObject().put("$pull", new JsonObject()
+																  .put("outputData", new JsonObject()
+																		  				 .put("task", taskID)));
+																		  						 				  	
+		JsonObject pushUpdate = new JsonObject().put("$push", new JsonObject()
+				  .put("outputData", new JsonObject().put("task", taskID).put("outputData",Outputs)));
+		JsonObject setUpdate = new JsonObject().put("$set", new JsonObject()
+				  .put("modifiedStamp", System.currentTimeMillis()));		
+		JsonObject itemQuery = new JsonObject().put("_id", p.getID());
+		List<BulkOperation> pullAndPut = new LinkedList<>();
+		BulkOperation pullOp = BulkOperation.createUpdate(itemQuery, pullUpdate);
+		BulkOperation pushOp = BulkOperation.createUpdate(itemQuery, pushUpdate);
+		BulkOperation setOp = BulkOperation.createUpdate(itemQuery, setUpdate);
+		pullAndPut.add(pullOp);
+		pullAndPut.add(pushOp);				
+		pullAndPut.add(setOp);
+		return client.bulkWrite(participantCollection, pullAndPut).mapEmpty();
+	}
+	
 	/**
 	 * Get the results for the participantIDs indicated in the provided {@link JsonArray}
-	 * @param participantIDs
-	 * @return
+	 * @param participantIDs The participant IDs for which to obtain data.
+	 * @param projectID Nullable. If null or an empty string, participants from multiple projects can be queried simultaneously. 
+	 * 				    Otherwise, only the participants that fit to this projectID are returned. 
+	 * @return a {@link Future} of {@link JsonObject} which contain information on the participants (_id, steps, resultData and finished).
 	 */
 	public Future<List<JsonObject>> getParticipantsResults(JsonArray participantIDs, String projectID)
 	{
+		client.find(participantCollection,new JsonObject()).
+		onSuccess(list -> {
+			
+			log.debug("There are " + list.size() + " participants");
+			for(JsonObject o : list)
+			{
+				log.debug(o.encodePrettily());	
+			}
+		});
 		JsonObject query = new JsonObject().put("_id", new JsonObject().put("$in", participantIDs));
 		// if we have a projectID, we need to restrict the query
+		// so providing a project ID 
 		if(projectID != null && !projectID.equals(""))
 		{
 			query = new JsonObject().put("$and", new JsonArray().add(query).add(new JsonObject().put("project", projectID)));
 		}
 		return client.findWithOptions(participantCollection, query , new FindOptions().setFields(new JsonObject().put("_id", 1).put("steps", 1).put("resultData", 1).put("finished", 1)));		
 	}
+	
+	/**
+	 * Get the results for the participantIDs indicated in the provided {@link JsonArray}
+	 * @param participantIDs
+	 * @return
+	 */
+	public Future<List<JsonObject>> getParticipantsResultsForTask(JsonArray participantIDs, String projectID, String TaskID)
+	{
+		
+		JsonObject query = new JsonObject().put("$and", new JsonArray().add(new JsonObject().put("_id", new JsonObject().put("$in", participantIDs)))
+																	   .add(new JsonObject().put("resultData.task", new JsonObject().put("$eq", TaskID)))
+											   );
+		// if we have a projectID, we need to restrict the query
+		if(projectID != null && !projectID.equals(""))
+		{
+			query = new JsonObject().put("$and", new JsonArray().add(query).add(new JsonObject().put("project", projectID)));
+		}
+		query = new JsonObject().put("$match",query);		
+		JsonObject dataAddReArr = new JsonObject().put("$set", new JsonObject().put("resultData", new JsonObject().put("participantID", "$_id")));
+		JsonObject dataProj = new JsonObject().put("$project", new JsonObject().put("participantData", "$resultData").put("_id", 0));
+		return MongoAggregationHandler.aggregate(client, participantCollection, new JsonArray().add(query).add(dataAddReArr).add(dataProj));		
+	}
+	
+	
+	
 }

@@ -1,0 +1,239 @@
+# Task Images
+
+gvar demonstration <- imagefile("http://ocean.danielwarna.com:8081/testimages/8feedd8a-b54a-474c-91de-146e676ddb96/demonstration.jpg")
+
+gvar practice1 <- imagefile("http://ocean.danielwarna.com:8081/testimages/8feedd8a-b54a-474c-91de-146e676ddb96/practice_trial1.jpg")
+gvar practice2 <- imagefile("http://ocean.danielwarna.com:8081/testimages/8feedd8a-b54a-474c-91de-146e676ddb96/practice_trial2.jpg")
+gvar practice3 <- imagefile("http://ocean.danielwarna.com:8081/testimages/8feedd8a-b54a-474c-91de-146e676ddb96/practice_trial3.jpg")
+
+gvar item1 <- imagefile("http://ocean.danielwarna.com:8081/testimages/8feedd8a-b54a-474c-91de-146e676ddb96/item1.jpg")
+gvar item2 <- imagefile("http://ocean.danielwarna.com:8081/testimages/8feedd8a-b54a-474c-91de-146e676ddb96/item2.jpg")
+gvar item3 <- imagefile("http://ocean.danielwarna.com:8081/testimages/8feedd8a-b54a-474c-91de-146e676ddb96/item3.jpg")
+gvar item4 <- imagefile("http://ocean.danielwarna.com:8081/testimages/8feedd8a-b54a-474c-91de-146e676ddb96/item4.jpg")
+gvar item5 <- imagefile("http://ocean.danielwarna.com:8081/testimages/8feedd8a-b54a-474c-91de-146e676ddb96/item5.jpg")
+
+
+gvar keydown <- imagefile("http://ocean.danielwarna.com:8081/testimages/8feedd8a-b54a-474c-91de-146e676ddb96/keydown.jpg")
+
+gvar answerKey <- 0
+gvar answerWrong <- 0
+
+gvar responsekey <- 0
+
+
+#Functions
+
+
+
+#Positions
+
+val keydownpos <- {top:350 left:400}
+val demopicpos <- {top:150 left:0}
+
+
+# Intermezzo-phase: Instructions
+intermezzo-phase Start
+
+  # Showing instructions
+  showmsg("Choose among five alternatives, the ONE alternative that logically completes the matrix. Use the number buttons on your keyboard to answer. The test has several problems, guess if you are uncertain. You have 20 minutes to solve as many problems as you can. Please press the down arrowkey to see an example.")
+
+  show(keydown keydownpos)
+  resumeonkey("down")
+  wait(500000000000000)
+
+  #Clearing screen
+  hidemsg()
+  hide(keydown)
+end
+
+intermezzo-phase Demo
+
+  showmsg("In this example, response alternative 2 logically completes the matrix. Please press the number 2 on your keyboard to continue.")
+  show(demonstration demopicpos)
+  resumeonkey("2")
+  wait(500000000000000)
+
+  hidemsg()
+  hide(demonstration)
+  showmsg("Great, now press the down arrowkey to try a practice problem.")
+  show(keydown keydownpos)
+  resumeonkey("down")
+  wait(500000000000000)
+
+  hidemsg()
+  hide(keydown)
+
+  wait(200)
+
+end
+
+
+#Practice round
+intermezzo-phase Practice
+
+  show(practice1)
+  resumeonkey()
+  wait(5000000000000000)
+  hide(practice1)
+  answerKey <- getlastkey()
+
+  if eq(answerKey "3")
+  then
+    answerWrong <- 0
+  else
+    answerWrong <- 1
+  end
+
+
+  if eq(answerWrong 1)
+  then
+    #fråga 2
+    showmsg("Your answer was incorrect. The correct alternative was 3, as all the other figures in the matrix were circles. Let's try another practice problem. Press the down arrowkey to continue.")
+    show(keydown keydownpos)
+    resumeonkey("down")
+    wait(500000000000000)
+    hidemsg()
+    hide(keydown)
+    wait(200)
+    show(practice2)
+    resumeonkey()
+    wait(5000000000000000)
+    hide(practice2)
+    answerKey <- getlastkey()
+
+    if eq(answerKey "4")
+    then
+      answerWrong <- 0
+    else
+      answerWrong <- 1
+    end
+  else
+    plus(1 1)
+  end
+
+  if eq(answerWrong 1)
+  then
+    #fråga 3
+    showmsg("Your answer was incorrect. The correct alternative was 4, as all the other figures in the matrix were squares. Let's try another practice problem. Press the down arrowkey to continue.")
+    show(keydown keydownpos)
+    resumeonkey("down")
+    wait(500000000000000)
+    hidemsg()
+    hide(keydown)
+    wait(200)
+    show(practice3)
+    resumeonkey()
+    wait(5000000000000000)
+    hide(practice3)
+    answerKey <- getlastkey()
+
+    if eq(answerKey "5")
+    then
+      answerWrong <- 0
+    else
+      answerWrong <- 1
+      showmsg("Your answer was incorrect. The correct alternative was 5, as all the other figures in the matrix were triangles. Let's try another practice problem. Press the down arrowkey to continue.")
+      show(keydown keydownpos)
+      resumeonkey("down")
+      wait(500000000000000)
+      hidemsg()
+      hide(keydown)
+      wait(200)
+    end
+  end
+end
+
+
+
+interaction-phase Test
+
+  enterphase
+    showmsg("Correct! Always choose the alternative that logically completes the matrix. Remember, you have 20 minutes to solve as many problems as you can. Guess if you are uncertain. You can not return to a problem after you have given an answer, so be sure that you are pressing the intended button. Use the number buttons on your keyboard to answer. Press the down arrowkey to begin the test.")
+    show(keydown keydownpos)
+    resumeonkey("down")
+    wait(500000000000000)
+    hidemsg()
+    hide(keydown)
+
+    setstimuli([
+          {item:item1 answer:"1" com:"1"}
+          {item:item2 answer:"1" com:"2"}
+          {item:item3 answer:"1" com:"3"}
+          {item:item4 answer:"1" com:"4"}
+          {item:item5 answer:"1" com:"5"}
+    ])
+
+    wait(500)
+
+    starttimer()
+
+  end
+
+  leavephase
+    showmsg("Thank you for completing the test! You may now close your web browser.")
+  end
+
+  beforeiteration
+    plus(1 1)
+  end
+
+
+  afteriteration
+    newrow()
+  end
+
+
+  iteration
+    helptext(stimulus())
+    show(stimulus().item)
+    resumeonkey()
+    wait(5000000000000000)
+
+    responsekey <- getlastkey()
+
+    if eq(responsekey stimulus().answer)
+    then
+      storerow(stimulus() 1)
+    else
+      storerow(stimulus() 0)
+    end
+
+    if eq(1 2)
+    then
+      helptext("1 equals 2")
+    else
+      helptext("nope")
+    end
+
+    hide(stimulus().item)
+
+    helptext("Next iterationi")
+
+    wait(1000)
+
+  end
+end
+
+intermezzo-phase finalphase
+  plus(1 1)
+  if eq(1 2)
+  then
+    helptext("1 equals 2")
+  else
+    helptext("nope")
+  end
+
+end
+
+
+#Transition definitions
+transition
+  start(Start),
+  Start -> Demo,
+  Demo -> Practice,
+  Practice -> Test,
+  #Practice -> Practice if(eq(answerWrong 1)),
+  #Practice -> Test if(eq(answerWrong 0)),
+  Test -> finalphase,
+  final(finalphase)
+end

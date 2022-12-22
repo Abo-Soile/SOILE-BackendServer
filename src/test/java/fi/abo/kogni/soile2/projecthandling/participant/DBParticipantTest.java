@@ -23,7 +23,7 @@ public class DBParticipantTest extends GitTest{
 
 	@Test
 	public void testCreationAndExp(TestContext context) {
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(dataLakeDir, mongo_client, vertx.eventBus());
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		JsonObject smokerOutput = new JsonObject()
 				.put("name", "smoker")
@@ -80,7 +80,7 @@ public class DBParticipantTest extends GitTest{
 											mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"),new JsonObject().put("_id", participant.getID()),null)
 											.onSuccess( json -> {
 												System.out.println(json.encodePrettily());
-												context.assertTrue(participant.isParticipantFinished());
+												context.assertTrue(participant.isFinished());
 												context.assertTrue(json.getBoolean("finished"));
 												context.assertEquals(6,json.getInteger("currentStep"));
 												projTestAsync.complete();	

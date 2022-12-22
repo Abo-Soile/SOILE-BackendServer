@@ -18,6 +18,7 @@
 		"soileGitFolder" : "/tmp/soile/git",
 		"soileGitDataLakeFolder" : "/tmp/soile/gitLake",
 		"soileResultDirectory" : "/tmp/soile/resultLake"
+		
 	},
 
 	"db": {
@@ -29,16 +30,19 @@
 		"projectInstanceCollection" : "projectInstances",
 		"projectCollection": "projects",
 		"taskCollection": "tasks",	
-		"experimentCollection" : "experiments"
+		"experimentCollection" : "experiments",
+		"downloadCollection" : "downloads"
 	},
 	
 	"verticles": {
-		"elangAddress" : "soile.experiment.lang",
+		"elangAddress" : "soile.experimentlang.compile",
 		"code-gen-template": "templates/elang.stg",
 		"questionaireTemplates" : "templates/questionnaire_embedded.stg",
-		"questionnaireAddress": "soile.workbench.questionnaire.render",
+		"questionnaireAddress": "soile.questionnaire.compile",
 		"compilationAddress" : "soile.codeRetrieval.compile",
-		"gitCompilationAddress" : "soile.codeRetrieval.gitCompile"
+		"gitCompilationAddress" : "soile.codeRetrieval.gitCompile",
+		"taskInformationAddress" : "soile.task.information"
+		
 	},
 	
 	"db_user_fields": {

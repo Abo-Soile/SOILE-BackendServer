@@ -26,6 +26,15 @@ public class DatedDataMap<K,T>
 		return data.get(key);
 	}	
 	
+	public TimeStampedData<T> getLatestTimeStampedElement(Object key)
+	{
+		List<TimeStampedData<T>> dataOptions = data.get(key);
+		if(dataOptions == null)
+		{
+			return null;
+		}
+		return ObjectUtils.max(dataOptions.toArray(new TimeStampedData[dataOptions.size()])); 
+	}
 	public T addDatedEntry(K key, TimeStampedData<T> value)
 	{
 		if(!this.containsKey(key))
