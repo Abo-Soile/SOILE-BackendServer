@@ -3,15 +3,12 @@ package fi.abo.kogni.soile2.http_server;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.http_server.verticles.ExperimentLanguageVerticle;
-import fi.abo.kogni.soile2.http_server.verticles.SoileAuthenticationVerticle;
-import fi.abo.kogni.soile2.http_server.verticles.SoileExperimentPermissionVerticle;
 import fi.abo.kogni.soile2.http_server.verticles.SoileUserManagementVerticle;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.config.ConfigRetriever;
@@ -24,12 +21,9 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
-import io.vertx.ext.web.Router;
-import io.vertx.ext.web.sstore.LocalSessionStore;
-import io.vertx.ext.web.sstore.SessionStore;
 public class SoileServerVerticle extends AbstractVerticle {
 
-	static final Logger LOGGER = LogManager.getLogger(SoileExperimentPermissionVerticle.class);
+	static final Logger LOGGER = LogManager.getLogger(SoileServerVerticle.class);
 	private JsonObject soileConfig = new JsonObject();
 	SoileRouteBuilding soileRouter;
 	ConcurrentLinkedQueue<String> deployedVerticles;
@@ -88,12 +82,9 @@ public class SoileServerVerticle extends AbstractVerticle {
 		DeploymentOptions opts = new DeploymentOptions().setConfig(soileConfig);
 		List<Future> deploymentFutures = new LinkedList<Future>();
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new SoileUserManagementVerticle(), opts)));
-		//deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileExperimentPermissionVerticle(), opts, promise)));				
-		// deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle(new SoileAuthenticationVerticle(), opts, promise)));
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(soileRouter, opts)));
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), SoileConfigLoader.getServerProperty("soileGitFolder")), opts )));
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new ExperimentLanguageVerticle(), opts)));
-		//deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
 		return CompositeFuture.all(deploymentFutures).mapEmpty();
 	}
 	

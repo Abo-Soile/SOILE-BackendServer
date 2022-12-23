@@ -10,6 +10,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
@@ -23,8 +24,10 @@ import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
+import io.vertx.ext.web.validation.RequestParameters;
+import io.vertx.ext.web.validation.ValidationHandler;
 
-public class ElementRouter<T extends ElementBase> {
+public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	ElementManager<T> elementManager;
 	EventBus eb;
@@ -45,10 +48,13 @@ public class ElementRouter<T extends ElementBase> {
 
 	public void getElement(RoutingContext context)
 	{
-		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.READ,true)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String elementID = params.pathParameter("id").getString();
+		String elementVersion = params.pathParameter("version").getString();
+		checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{
-			elementManager.getAPIElementFromDB(context.pathParam("id"), context.pathParam("version"))
+			elementManager.getAPIElementFromDB(elementID, elementVersion)
 			.onSuccess(apielement -> {
 				context.response()
 				.setStatusCode(200)
@@ -63,11 +69,13 @@ public class ElementRouter<T extends ElementBase> {
 
 	public void writeElement(RoutingContext context)
 	{
-		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.READ_WRITE,true)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String elementID = params.pathParameter("id").getString();		
+		checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{
-
-			elementManager.getAPIElementFromJson(context.body().asJsonObject())
+			
+			elementManager.getAPIElementFromJson(params.body().getJsonObject())
 			.onSuccess(apiElement -> {
 				elementManager.updateElement(apiElement)
 				.onSuccess(version -> {
@@ -86,6 +94,7 @@ public class ElementRouter<T extends ElementBase> {
 
 	public void getElementList(RoutingContext context)
 	{				
+		//TODO: Add skip + limit + query here.		
 		checkAccess(context.user(),null, Roles.Researcher,null,true)
 		.onSuccess(Void -> 
 		{
@@ -109,10 +118,12 @@ public class ElementRouter<T extends ElementBase> {
 
 	public void getVersionList(RoutingContext context)
 	{		
-		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.READ,true)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String elementID = params.pathParameter("id").getString();	
+		checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{
-			elementManager.getVersionListForElement(context.pathParam("id"))
+			elementManager.getVersionListForElement(elementID)
 			.onSuccess(versionList -> {			
 				context.response()
 				.setStatusCode(200)
@@ -126,11 +137,13 @@ public class ElementRouter<T extends ElementBase> {
 	}
 
 	public void getTagList(RoutingContext context)
-	{		
-		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.READ,true)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String elementID = params.pathParameter("id").getString();	
+		checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{
-			elementManager.getTagListForElement(context.pathParam("id"))
+			elementManager.getTagListForElement(elementID)
 			.onSuccess(tagList -> {			
 				context.response()
 				.setStatusCode(200)
@@ -149,12 +162,25 @@ public class ElementRouter<T extends ElementBase> {
 		.onSuccess(Void -> 
 		{
 			List<String> nameParams = context.queryParam("name");
+			List<String> typeParams = context.queryParam("codeType");
+			String type;
+			if(typeParams.size() == 0) {
+				type = null; 
+				}
+			else{
+				type = typeParams.get(0);
+				if(!Task.allowedTypes.contains(type))
+				{
+					context.fail(400, new HttpException(400, "Invalid codeType Parameter"));
+					return;
+				}
+			}
 			if(nameParams.size() != 1)
 			{
 				context.fail(400, new HttpException(400, "Invalid name  query parameter"));
 				return;
 			}		
-			elementManager.createElement(nameParams.get(0))
+			elementManager.createElement(nameParams.get(0), type)
 			.onSuccess(element -> {			
 				JsonObject permissionChangeRequest = new JsonObject()
 						.put("username", context.user().principal().getString("username"))
@@ -176,24 +202,6 @@ public class ElementRouter<T extends ElementBase> {
 		})
 		.onFailure(err -> handleError(err, context));
 
-	}
-
-
-	protected void handleError(Throwable err, RoutingContext context)
-	{
-		if(err instanceof ObjectDoesNotExist)
-		{
-			context.fail(410, err);
-			return;
-		}
-		if(err instanceof HttpException)
-		{
-			HttpException e = (HttpException) err;
-			context.fail(e.getStatusCode(),e);
-			return;
-		}
-
-		context.fail(400, err);
 	}
 
 	private String getTypeID(String typeID)

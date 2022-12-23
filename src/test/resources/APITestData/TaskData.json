@@ -3,38 +3,38 @@
 		"name": "FirstTask",
 		"resources": ["apple.jpeg"],
 		"private": true,
-		"codetype": "elang",
+		"codeType": "elang",
 		"codeFile": "FirstTask.elang"
 	},
 	"Initial_Questionaire": {
 		"name": "Initial Questionaire",
-		"codetype": "qmarkup",
+		"codeType": "qmarkup",
 		"private": false,
 		"codeFile": "pilotform.qmarkup"
 		
 	},  			
 	"Test1": {
 		"name": "Test1",
-		"codetype": "javascript",
+		"codeType": "javascript",
 		"private": false,
 		"codeFile": "Test.js"		
 	},
-	"Test2": {
-		
+	"Test2": {		
 		"name": "Test2",
 		"resources": ["apple.jpeg"],									
-		"codetype": "javascript",
-		"codeFile": "Test.js"
+		"codeType": "elang",
+		"codeFile": "FirstTask.elang"
 	},  				
 	"Test3": {							
 		"name": "Test3",
-		"codetype": "javascript",
+		"codeType": "javascript",
 		"codeFile": "Test.js"
 	},
 	"Test4": {							
 		"name": "Test4",
 		"resources": ["apple.jpeg"],
-		"codeFile": "Test.js"
+		"codeFile": "Test.js",
+		"codeType": "javascript"
 	}
 }
 	

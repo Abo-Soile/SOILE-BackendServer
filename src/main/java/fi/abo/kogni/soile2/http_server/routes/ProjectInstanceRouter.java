@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import fi.aalto.scicomp.zipper.FileDescriptor;
 import fi.aalto.scicomp.zipper.Zipper;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
@@ -21,7 +22,9 @@ import fi.abo.kogni.soile2.projecthandling.data.DataBundleGenerator.DownloadStat
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
@@ -37,10 +40,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
+import io.vertx.ext.web.validation.RequestParameters;
+import io.vertx.ext.web.validation.ValidationHandler;
 
-public class ProjectInstanceRouter  {
+public class ProjectInstanceRouter extends SoileRouter {
 
 	ProjectInstanceHandler instanceHandler;
 	SoileIDBasedAuthorizationHandler<AccessElement> instanceIDAccessHandler;
@@ -49,9 +55,12 @@ public class ProjectInstanceRouter  {
 	SoileAuthorization authorizationRertiever;
 	ParticipantHandler partHandler;
 	TargetElementType instanceType = TargetElementType.INSTANCE;
-	MongoAuthorization mongoAuth; 
+	ElementManager<Task> taskManager;
+	MongoAuthorization mongoAuth;
+	DataLakeManager dataLakeManager;
 	EventBus eb;
 	Vertx vertx;
+	
 	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);
 
 
@@ -59,20 +68,21 @@ public class ProjectInstanceRouter  {
 		eb = vertx.eventBus();
 		this.vertx = vertx;
 		authorizationRertiever = auth;
-		instanceHandler = new ProjectInstanceHandler(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder"), client, eb);
+		instanceHandler = new ProjectInstanceHandler(client, eb);
 		partHandler = new ParticipantHandler(client, instanceHandler, vertx);
 		mongoAuth = auth.getAuthorizationForOption(instanceType);
 		roleHandler = new SoileRoleBasedAuthorizationHandler();
 		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler<AccessElement>(AccessProjectInstance::new, client);
 		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler<AccessElement>(Project::new, client);
-
+		dataLakeManager = new DataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
 	}
 
 	public void startProject(RoutingContext context)
 	{
-		String id = context.pathParam("id");
-		String version = context.pathParam("version");		
-		JsonObject projectData = context.body().asJsonObject().put("uuid", id).put("version", version).mergeIn(context.body().asJsonObject());
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String id = params.pathParameter("id").getString();
+		String version = params.pathParameter("version").getString();		
+		JsonObject projectData = params.body().getJsonObject().put("uuid", id).put("version", version).mergeIn(context.body().asJsonObject());
 		// we need to check, whether the user has access to the actual project indicated.
 		mongoAuth.getAuthorizations(context.user())
 		.onSuccess(Void -> {
@@ -129,10 +139,13 @@ public class ProjectInstanceRouter  {
 
 	public void stopProject(RoutingContext context)
 	{				
-		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.FULL,true)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+				
+		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadProject(context.pathParam("id"))
+			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {	
 				// this list needs to be filtered by access
 				project.deactivate()
@@ -150,10 +163,13 @@ public class ProjectInstanceRouter  {
 
 	public void restartProject(RoutingContext context)
 	{				
-		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.FULL,true)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		
+		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadProject(context.pathParam("id"))
+			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {	
 				// this list needs to be filtered by access
 				project.activate()
@@ -171,10 +187,12 @@ public class ProjectInstanceRouter  {
 
 	public void deleteProject(RoutingContext context)
 	{				
-		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.FULL,true)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadProject(context.pathParam("id"))
+			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
 				// this list needs to be filtered by access
 				project.delete()
@@ -192,10 +210,12 @@ public class ProjectInstanceRouter  {
 
 	public void submitJob(RoutingContext context)
 	{				
-		checkAccess(context.user(),context.pathParam("id"), Roles.Participant,PermissionType.READ,false)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadProject(context.pathParam("id"))
+			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
 				// this list needs to be filtered by access
 				getParticpantForUser(context.user(), project)				
@@ -218,9 +238,12 @@ public class ProjectInstanceRouter  {
 
 	public void listDownloadData(RoutingContext context)
 	{
-		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.READ,false)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		
+		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> {
-			instanceHandler.loadProject(context.pathParam("id"))
+			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -243,13 +266,15 @@ public class ProjectInstanceRouter  {
 
 	public void getProjectResults(RoutingContext context)
 	{				
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
 		//TODO: not implemented properly yet
-		checkAccess(context.user(),context.pathParam("id"), Roles.Researcher,PermissionType.READ,false)
+		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{			
 			// this list needs to be filtered by access
 			JsonObject requestBody = context.body().asJsonObject();
-			requestBody.put("projectID", context.pathParam("id"));
+			requestBody.put("projectID", requestedInstanceID);
 			eb.request("fi.abo.soile.DLCreate", requestBody)
 			.onSuccess(response -> {
 				String dlID = response.body().toString();
@@ -265,9 +290,10 @@ public class ProjectInstanceRouter  {
 
 	public void downloadTest(RoutingContext context)
 	{				
-		String projectID = context.pathParam("id");
-		String dlID = context.pathParam("downloadid");
-		checkAccess(context.user(),projectID, Roles.Researcher,PermissionType.READ,false)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		String dlID = params.pathParameter("downloadid").getString();
+		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{
 			// this list needs to be filtered by access
@@ -286,9 +312,11 @@ public class ProjectInstanceRouter  {
 	
 	public void downloadResults(RoutingContext context)
 	{				
-		String projectID = context.pathParam("id");
-		String dlID = context.pathParam("downloadid");
-		checkAccess(context.user(),projectID, Roles.Researcher,PermissionType.READ,false)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		String dlID = params.pathParameter("downloadid").getString();
+		
+		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{
 			// this list needs to be filtered by access
@@ -343,9 +371,11 @@ public class ProjectInstanceRouter  {
 
 	public void getTaskType(RoutingContext context)
 	{
-		checkAccess(context.user(),context.pathParam("id"), Roles.Participant,PermissionType.READ,false)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
 		.onSuccess(Void -> {
-			instanceHandler.loadProject(context.pathParam("id"))
+			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -362,7 +392,7 @@ public class ProjectInstanceRouter  {
 					{
 						try {
 							TaskObjectInstance currentTask = (TaskObjectInstance)project.getElement(participant.getProjectPosition());
-							eb.request(SoileConfigLoader.getVerticleProperty("taskInformationAddress"), new JsonObject().put("taskID", currentTask.getUUID()))
+							eb.request(SoileConfigLoader.getVerticleProperty("getTaskInformationAddress"), new JsonObject().put("taskID", currentTask.getUUID()))
 							.onSuccess(response -> {								
 								JsonObject responseBody = (JsonObject) response.body();
 								context.response()
@@ -392,9 +422,12 @@ public class ProjectInstanceRouter  {
 	
 	public void runTask(RoutingContext context)
 	{
-		checkAccess(context.user(),context.pathParam("id"), Roles.Participant,PermissionType.READ,false)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		
+		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
 		.onSuccess(Void -> {
-			instanceHandler.loadProject(context.pathParam("id"))
+			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -409,11 +442,19 @@ public class ProjectInstanceRouter  {
 					else
 					{
 						// Try catch block.
-						TaskObjectInstance currentTask = instanceHandler.
-								//TODO: Implement
-								// Need to obtain Version/UUID for Task from instance
-								// Need to find a clean way how to get the git Repository (i.e. add the elementIdentifier) 
-								// to obtain the code.
+						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
+						eb.request(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"),
+							   new JsonObject().put("taskID", currentTask.getUUID())
+									   		   .put("type", currentTask.getCodeType())
+									   		   .put("version", currentTask.getVersion()))
+						.onSuccess(response -> {
+							JsonObject responseBody = (JsonObject) response.body();
+							context.response()
+							.setStatusCode(200)
+							.putHeader(HttpHeaders.CONTENT_TYPE, "application/javascript")
+							.end(responseBody.getString("code"));
+						})
+						.onFailure(err -> handleError(err, context));
 					}
 				})
 				.onFailure(err -> handleError(err, context));
@@ -423,21 +464,38 @@ public class ProjectInstanceRouter  {
 		.onFailure(err -> handleError(err, context));		
 	}
 	
-	private void handleError(Throwable err, RoutingContext context)
+	
+	public void uploadData(RoutingContext context)
 	{
-		if(err instanceof ObjectDoesNotExist)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		
+		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,true)
+		.onSuccess(Void -> 
 		{
-			context.fail(410, err);
-			return;
-		}
-		if(err instanceof HttpException)
-		{
-			HttpException e = (HttpException) err;
-			context.fail(e.getStatusCode(),e);
-			return;
-		}
-
-		context.fail(400, err);
+			if(context.fileUploads().size() != 1)
+			{
+				handleError(new HttpException(400, "Only one Upload allowed at a time"), context);
+				return;
+			}
+			FileUpload currentUpload = context.fileUploads().get(0);
+			instanceHandler.loadProject(requestedInstanceID)
+			.onSuccess(project -> {				
+				//JsonArray taskData = project.getTasksWithNames();
+				// this list needs to be filtered by access
+				getParticpantForUser(context.user(), project)				
+				.onSuccess(participant-> {
+					participant.getCurrentStep()
+					.onSuccess(step -> {
+						dataLakeManager.storeParticipantData(participant.getID(), step, participant.getProjectPosition(), currentUpload);
+					})
+					.onFailure(err -> handleError(err, context));
+				})
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));
 	}
 
 
@@ -462,10 +520,9 @@ public class ProjectInstanceRouter  {
 		});
 		return accessPromise.future();
 	}
-	
-	
-	
+			
 
+	
 	/**
 	 * Get the participant for the current user. 
 	 * @param user the authenticated {@link User} from a routing context
@@ -476,7 +533,7 @@ public class ProjectInstanceRouter  {
 	{
 		Promise<Participant> partPromise = Promise.promise();
 		JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("projectInstanceID", project.getID());
-		eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantForUser"), request)
+		eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantForUserInProject"), request)
 		.onSuccess(response -> {
 			JsonObject responseObject = (JsonObject) response;
 			if(responseObject.getString("participantID") != null)

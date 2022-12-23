@@ -140,13 +140,15 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	/**
 	 * Delete a participant from the participant database. 
 	 * This does NOT remove other data associated with the participant.
-	 * @param id
-	 * @return 
+	 * @param id the ID of the participant.
+	 * @return A Future that indicates the project the deleted participant was in.
 	 */
-	public Future<Void> deleteParticipant(String id)
-	{				
-		return client.findOneAndDelete(participantCollection, new JsonObject().put("_id", id)).mapEmpty();
+	public Future<String> deleteParticipant(String id)
+	{					
+		return client.findOneAndDelete(participantCollection, new JsonObject().put("_id", id)).map(res -> {return res.getString("project");});
 	}
+	
+	
 	/**
 	 * Get The files stored for a specific participant. 
 	 * @param resultJson a {@link JsonObject} that contains at least a "resultData" array from a participant along with the "_id" field.

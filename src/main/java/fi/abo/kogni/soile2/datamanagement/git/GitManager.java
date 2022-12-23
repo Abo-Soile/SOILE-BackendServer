@@ -318,7 +318,7 @@ public class GitManager {
 	 */
 	public static JsonObject buildBasicGitTask(String name)
 	{
-		return buildBasicGitObject(name).put("code", "").put("codetype", "").put("resources", new JsonArray());
+		return buildBasicGitObject(name).put("code", "").put("codeType", "").put("resources", new JsonArray());
 	}
 	
 	/**

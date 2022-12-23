@@ -117,7 +117,12 @@ public abstract class ParticipantImpl implements Participant{
 			}
 		}					
 
-
+		@Override
+		public String getProjectID()
+		{
+			return project;
+		}
+		
 		/**
 		 * Get the map of Outputs to provide to a Math-parser. This is generated once per user on request and only updated afterwards.
 		 * @return a Map of all t<TaskUUID>.<output> -> value mappings. 

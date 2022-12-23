@@ -306,7 +306,7 @@ paths:
             schema:
               $ref: '#/components/schemas/User'
         description: Body only needs to contain the username to activate.
-  /user/setaccess:
+  /user/setrole:
     post:
       security:
         - cookieAuth: []
@@ -314,7 +314,7 @@ paths:
       tags:
         - user
       summary: Set the access groups of a user account. 
-      operationId: permissionOrRoleChange
+      operationId: roleChange
       description: Set the roles and permissions of a user account. Admins can set all groups/permissions, users can set permissions for Experiments they own.
       responses:
         '200':
@@ -332,9 +332,40 @@ paths:
           application/json:
             schema:
               type: object
-              required: 
-                - command
-                - username
+              properties:
+                username:
+                  type: string
+                  example: MyUser
+                  description: Must not include any @ symbols
+                role:
+                  type: string
+                  example: "Admin"
+  /user/setpermissions:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - user
+      summary: Set the access groups of a user account. 
+      operationId: permissionChange
+      description: Set the roles and permissions of a user account. Admins can set all groups/permissions, users can set permissions for Experiments they own.
+      responses:
+        '200':
+          description: Roles updated
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: 'User has no authorization to make this call'
+        '410':
+          $ref: '#/components/responses/UserDoesNotExist'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
               properties:
                 username:
                   type: string
@@ -344,16 +375,27 @@ paths:
                   type: string
                   example: 'setCommand'
                   description: the type of change. setCommand will replace any permissions currently present, addCommand will add permissions, removeCommand will remove them.
-                roles:
-                  type: array
-                  items:
-                    type: string
-                    example: "Admin"
                 permissions:
-                  type: array
-                  items:
-                    type: string
-                    example: "d290f1ee-6c54-4b01-90e6-d701748f0851Read"
+                  type: object
+                  properties:
+                    elementType: 
+                      type: string
+                      description: "whether the permission is a 'task', 'project', 'experiment' or 'instance'"
+                      example: "instance"
+                    permissions:
+                      type: array
+                      items:
+                        type: object
+                        properties: 
+                          type: 
+                            type: string
+                            description: "What type of permission, can be one of READ, READ_WRITE, FULL, READ access to instances allows executing the project but doesn't allow access to the data (except your own data)"
+                          target: 
+                            type: string
+                            example: "d290f1ee-6c54-4b01-90e6-d701748f0851"
+                            description: the uuid of the target item.
+                      
+                    
         description: With command set to setCommand, body needs both permissions and roles and will replace permissions, if the requestor has the permissions to do so.
                      With add/delete Command only the added or deleted Roles/permissions need to be supplied.
   /user/getaccess:
@@ -460,6 +502,15 @@ paths:
           schema:
             type : string
             minimum: 1
+        - name: codeType
+          in: query
+          required: true
+          description: Name of the Task
+          schema:
+            type : string
+            minimum: 1
+            example: "javascript"
+            description: The type of code used for this task. This is not changeable after creation.
       responses:
         '200':
           description: New Task created
@@ -849,7 +900,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataScheme'    
+                $ref: '#/components/schemas/AvailableDataScheme'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -894,7 +945,7 @@ paths:
                 properties:
                   projectID: 
                     type: string
-                    description: The projectid of the active project, to be used with all end-points that have {projectid} path names
+                    description: The projectid of the active project, to be used with all end-points that have {id} path names
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -946,8 +997,8 @@ paths:
         '403':
           description: User has no authorization to make this call 
           
-  /projectexec/{projectid}/stop:
-    get:
+  /projectexec/{id}/stop:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -957,7 +1008,7 @@ paths:
       operationId: stopProject
       description: Stop a project, disabling the project from execution.
       parameters:
-        - name: projectid
+        - name: id
           in: path
           required: true
           description: UUID of the Project
@@ -975,8 +1026,8 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
-  /projectexec/{projectid}/restart:
-    get:
+  /projectexec/{id}/restart:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -986,7 +1037,7 @@ paths:
       operationId: restartProject
       description: Restarting a previously stopped project. 
       parameters:
-        - name: projectid
+        - name: id
           in: path
           required: true
           description: UUID of the Project
@@ -1004,7 +1055,7 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
-  /projectexec/{projectid}/delete:
+  /projectexec/{id}/delete:
     get:
       security:
         - cookieAuth: []
@@ -1017,7 +1068,7 @@ paths:
                     It will stop the project from execution and will irreversibly delete all participant 
                     information currently stored for this project instance."
       parameters:
-        - name: projectid
+        - name: id
           in: path
           required: true
           description: UUID of the Project
@@ -1035,7 +1086,7 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
-  /projectexec/{projectid}/data:
+  /projectexec/{id}/data:
     post:
       security:
         - cookieAuth: []
@@ -1044,9 +1095,9 @@ paths:
         - projectexecution
       summary: Get the result data for a project  
       operationId: getProjectResults
-      description: "This is the general access point for data retrieval for projects. A simple request without any body will generate one huge tar file with all data while individual files can be requested using the same scheme as returned under the   /project/{id}/data/list endpoint. This post will return an ID that can then be downloaded via /project/{projectid}/download/{downloadid}, where a tar file is waiting for download."
+      description: "This is the general access point for data retrieval for projects. A simple request without any body will generate one huge tar file with all data while individual files can be requested using the same scheme as returned under the   /project/{id}/data/list endpoint. This post will return an ID that can then be downloaded via /project/{id}/download/{downloadid}, where a tar file is waiting for download."
       parameters:
-        - name: projectid
+        - name: id
           in: path
           required: true
           description: UUID of the Project
@@ -1063,7 +1114,7 @@ paths:
                 properties:
                   downloadID: 
                     type: string
-                    description: An id that can be used with the /project/{projectid}/download/{downloadid} endpoint. Has to have the form of a uuid
+                    description: An id that can be used with the /project/{id}/download/{downloadid} endpoint. Has to have the form of a uuid
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -1074,9 +1125,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DataScheme'    
+              $ref: '#/components/schemas/ObtainDataScheme'    
         description: This can be an empty body, then the whole data is requested.  
-  /projectexec/{projectid}/download/{downloadid}:  
+  /projectexec/{id}/download/{downloadid}:  
     get:
       security:
         - cookieAuth: []
@@ -1084,10 +1135,10 @@ paths:
       tags:
         - projectexecution
       summary: Download the collected results from a request.
-      operationId: downlodResults
+      operationId: downloadResults
       description: "This request will make a zipped data file available for download. NOTE: Upon request, the file might not exist yet, and is just being created. Files will be cleared reguarily to avoid massive buildup of intermediary tar files."
       parameters:
-        - name: projectid
+        - name: id
           in: path
           required: true
           description: UUID of the Project
@@ -1115,7 +1166,7 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call                     
-  /projectexec/{projectid}/download/{downloadid}/check:  
+  /projectexec/{id}/download/{downloadid}/check:  
     get:
       security:
         - cookieAuth: []
@@ -1123,10 +1174,10 @@ paths:
       tags:
         - projectexecution
       summary: Check, whether the specified download is ready.
-      operationId: downlodTest
+      operationId: downloadTest
       description: This Request tests, whether the specified download is ready. A Json will be replied to indicate whether the download creation was successfull/failed or is still in progress.
       parameters:
-        - name: projectid
+        - name: id
           in: path
           required: true
           description: UUID of the Project
@@ -1142,19 +1193,30 @@ paths:
             minimum: 1            
       responses:
         '200':
-          description: A tar file containing the requested data
+          description: Status of the download
           content:
-            application/tar:
+            application/json:
               schema:
-                type: string
-                format: binary
+                type: object
+                required:
+                  - status
+                properties:
+                  status: 
+                    type: string
+                  problems:
+                    type: array
+                    items: 
+                      type: string
+                      description: Textual descriptions of issues that arose during creation of this download.
+                    description: can be empty or not existant in which case no issues happened
+                    
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call            
-  /projectexec/{projectid}/submit:  
+  /projectexec/{id}/submit:  
     post:
       security:
         - cookieAuth: []
@@ -1165,7 +1227,7 @@ paths:
       operationId: submitJob
       description: "Submit results for a job using a json, containing both output data and result data. Result data needs to point to file ids generated from the uploaddata endpoint or be contained in a flat json object depth 1). Output data needs to be provided in a flat json object as well. Calling this will finish this task and proceed the user to the next task. The reply contains the new task for this user. "
       parameters:
-        - name: projectid
+        - name: id
           in: path
           required: true
           description: UUID of the Project
@@ -1187,7 +1249,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskData'
-  /projectexec/{projectid}/getTask:  
+  /projectexec/{id}/getTaskType:  
     get:
       security:
         - cookieAuth: []
@@ -1195,10 +1257,10 @@ paths:
       tags:
         - projectexecution
       summary: Get the next unfinished task for the authorized user. 
-      operationId: getNextTask
+      operationId: getTaskType
       description: "Get the ID of the current task for the authorized user."
       parameters:
-        - name: projectid
+        - name: id
           in: path
           required: true
           description: UUID of the Project
@@ -1213,16 +1275,10 @@ paths:
               schema:
                 type: object
                 properties: 
-                  code:
-                    type: string  
-                    description: the code for the next task
                   codeType:
                     type: string
                     description: the code type (javascript for psychoJS, qmarkup or elang for soile questionaire markup and experiment language)
                     example: "qmarkup"
-                  next: 
-                    type: string
-                    description: the ID of the current task to be used. Has to have the form of a uuid, if next is undefined, this project is finished.
                   finished:
                     type: boolean
                     description: Whether this project is finished. clear indicator that this is finished in addition to the next property being undefined.
@@ -1231,8 +1287,44 @@ paths:
         '400':
           description: 'invalid input, object invalid'
         '403':
-          description: User has no authorization to make this call            
-  /projectexec/{projectid}/uploaddata:  
+          description: User has no authorization to make this call
+  /projectexec/{id}/execute:  
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - projectexecution
+      summary: Get the next unfinished task for the authorized user. 
+      operationId: runTask
+      description: >-
+                   Get the code for the current Task for the user (calling this repeatedly will return the same code multiple times.
+                   The codeType for the task needs to be obtained from the getNextTaskType end-point before running this task
+                   in order to know how to interpret the returned code. 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project instance
+          schema:
+            type : string
+            minimum: 1
+      responses:
+        '200':
+          description: Success
+          content:
+            application/javascript:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call
+        '406':
+          description: User is finished.
+  /projectexec/{id}/uploaddata:  
     post:
       security:
         - cookieAuth: []
@@ -1241,9 +1333,9 @@ paths:
         - projectexecution
       summary: Upload large result data for a project
       operationId: uploaddata
-      description: "Upload large content for a project, e.g. audio or video files. "
+      description: "Upload large content for a participant. The data will be associated with the project indicated by the ID and the participant ID this user has in the project"
       parameters:
-        - name: projectid
+        - name: id
           in: path
           required: true
           description: UUID of the Project
@@ -1257,7 +1349,7 @@ paths:
             application/json:
               schema:
                 type: string
-                description: the UUID of the uploaded file to be resupplied to /project/{projectid}/submit. Has to have the form of a uuid
+                description: the UUID of the uploaded file to be resupplied to /project/{id}/submit. Has to have the form of a uuid
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -1483,7 +1575,7 @@ components:
             properties:
               uuid: 
                 type: string
-                description: the uuid of the project. Has to have the form of a uuid
+                description: the uuid of the project instance. Has to have the form of a uuid
               participantID:
                 type: string
                 description: The users ID within a Project. Has to have the form of a uuid
@@ -1498,31 +1590,52 @@ components:
         properties: 
           fileformat:
             type: string
-            description: The file format of the stored file.
+            description: The (mime) format of the stored file.
           filename: 
             type: string
             description: the supposed file name of a supplied file.
           targetid:
              type: string
-             description: The ID of the file. This is the value returned by the /project/{projectid}/uploadData endpoint.
+             description: The ID of the file. This is the value returned by the /project/{id}/uploadData endpoint.
     dbData:
       type: array
       items:
-        type: object
-        required: 
-          - name
-          - value
-        properties:
-          name: 
-            type: string
-            description: the name of the output, the format is "[0-9A-Za-z]+"
-            example: "smoker"
-          value:
-            type: number
-            description: The value of an output                
-          timestamp:
-            type: string
-            format: date
+        oneOf:
+          - $ref: '#/components/schemas/stringDBData'
+          - $ref: '#/components/schemas/outputData'
+    stringDBData:
+      type: object
+      required: 
+        - name
+        - value
+      properties:
+        name: 
+          type: string
+          description: the name of the output, the format is "[0-9A-Za-z]+"
+          example: "smoker"
+        value:
+          type: string
+          description: The value of an output (within outputData this can only be a number)
+        timestamp:
+          type: string
+          format: date
+    outputData:
+      type: object
+      required: 
+        - name
+        - value
+      properties:
+        name: 
+          type: string
+          description: the name of the output, the format is "[0-9A-Za-z]+"
+          example: "smoker"
+        value:
+          type: number 
+          description: The value of an output (within outputData this can only be a number)
+        timestamp:
+          type: string
+          format: date
+            
     Participant:
       description: An Entry in this database represents one participant in one project.
                    Data relevant for this project is stored in each document e.g. the position in the project, data from the project etc. 
@@ -1583,8 +1696,7 @@ components:
                 type: string
                 description: The task for which data is being stored. Contains one entry for each defined output of a task.
               outputs:
-                $ref: '#/components/schemas/dbData'
-                      
+                $ref: '#/components/schemas/outputData'
         resultData: 
           type: array
           description: an array of output data. 
@@ -1602,7 +1714,90 @@ components:
                 $ref: '#/components/schemas/dbData'
               fileData:
                 $ref:  '#/components/schemas/fileData'
-
+    ParticipantResults:
+      type: object
+      description: All data for one particpant
+      properties:
+        participantID: 
+          type: string
+        resultData:
+          type: array
+          description: an array of output data. 
+          items:
+            type: object
+            description: The task for which data is being stored. Data from this task.  
+            properties:
+              task: 
+                type: string
+                description: "Has to follow the format t[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]+-[a-z0-9]"
+              step:
+                type: integer
+                description: "Indicator of which step this was for the user in the project"
+              dbData:
+                 $ref: '#/components/schemas/dbData'
+              files:
+                type: array
+                items: 
+                  type: string
+                  description: names of the files in the zip.
+    ResultData:
+      oneOf:
+        - $ref: '#/components/schemas/TaskResults'
+        - $ref: '#/components/schemas/ParticipantResults'
+        - type: object
+          description: All Data for all Tasks in a project
+          properties:
+            project: 
+              type: object
+              properties: 
+                id: 
+                  type: string
+                name: 
+                  type: string
+            taskResults:
+              type: array
+              items:
+                $ref: '#/components/schemas/TaskResults'
+        - type: object
+          description: All Data for all Participants in a project
+          properties:
+            project: 
+              type: object
+              properties: 
+                id: 
+                  type: string
+                name: 
+                  type: string
+            participantResults:
+              type: array
+              items:
+                $ref: '#/components/schemas/ParticipantResults'
+    TaskResults:
+      type: object
+      description: ResultData for ONE task
+      properties:
+        taskID: 
+          type: string
+        taskName:
+          type: string
+        resultData:
+          description: NOTE! A participant can occur multiple times in this array if they happened to do this task in multiple different steps.
+          type: array
+          items:
+            type: object
+            properties:
+              step: 
+                type: integer
+                description: The step in which the participant got result.
+              particpantID: 
+                type: string
+              dbData:
+                $ref: '#/components/schemas/dbData'
+              files: 
+                type: array
+                items: 
+                  type: string
+                  description: names of the files in the zip.
     TaskData:
       type: object
       required:
@@ -1685,6 +1880,11 @@ components:
               example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
               description: Which element to perform after this task, cannot point back to itself! And will only be present in instances not in the generation step. This has the same
                 This will need to opint to an instanceID of another task or experiment. 
+            codeType:
+              type: string
+              example: qlang
+              description: What kind of code this task has, either elang (soile experiment language), qlang (soile questionaire language), or javascript (PsychoJS code)
+              
     DBTask:
       allOf: 
         - $ref: '#/components/schemas/DBElement'
@@ -1693,7 +1893,7 @@ components:
     TaskProperties:
       type: object
       properties:
-        codetype:
+        codeType:
           type: string
           example: qlang
           description: What kind of code this task has, either elang (soile experiment language), qlang (soile questionaire language), or (PsychoPy)javascript
@@ -1937,9 +2137,20 @@ components:
             description: Has to have the form of a uuid
           name:
             type: string
-    DataScheme:
+    AvailableDataScheme:
       type: object
       properties:
+        participants:
+          type: array
+          items: 
+            type: object
+            properties:
+              participantID: 
+                type: string
+              finished:
+                type: boolean
+                description: whether the participant has finished the project
+            description: The participants who are part of this project
         tasks:
           type: array
           items:
@@ -1948,23 +2159,78 @@ components:
               taskID:
                 type: string
                 description: this is the UUID of the specified task WITHIN the Project. It is NOT the UUID of the task in the task library!
-              dataType:
+              taskName: 
                 type: string
-                example: video, audio, data
-              participantData:
-                type: array
-                items: 
-                  type: object
-                  required:
-                    - id
-                    - dataID
-                  properties:
-                    id: 
-                      type: string
-                      description: participant ID in this project
-                    dataID: 
-                      type: string
-                      description: Has to have the form of a uuid
+                description: the name of the task in the project. This might NOT be unique!
+    ObtainDataScheme:
+      oneOf:
+        - type: object
+          properties:
+            participants:
+              type: array
+              items:
+                type: string
+                description: the IDs of the participant for which to download data
+          description: download all available data for these participants
+        - type: object
+          properties:
+            participant:
+              type: string
+              description: the IDs of the participant for which to download data
+          description: download all available data for this participant
+        - type: object
+          properties:
+            tasks:
+              type: array
+              items:
+                type: string
+                description: The instance UUID of the task 
+          description: Download data for all participants for the given task.
+        - type: object
+          properties:
+            task:
+              type: string
+              description: The instance UUID of the task 
+          description: Download data for all participants for the given task.
+      description: TODO, Allow individual file download for users and tasks.
+    DBDownloadScheme:
+      type: object
+      properties:
+        resultFiles: 
+          type: array
+          items:
+            type: object
+            properties:
+              absolutePath:
+                type: string
+              originalFileName:
+                type: string
+              mimeType:
+                type: string
+        jsonDataLocation:
+          type: object
+          properties:
+            filename:
+              type: string
+            nameInZip:
+              type: string
+            mimeType:
+              type: string
+        timeStamp:
+          type: integer
+          description: the time point at which this was created
+        status:
+          type: string
+        errors: 
+          type: array
+          items:
+            type: string
+        activeDownloads:
+          type: integer
+        project:
+          type: string
+          description: the project for which this download was generated.
+        
   securitySchemes:
     JWTAuth:
       type: http
@@ -1976,7 +2242,7 @@ components:
       name: SoileAuthCookie
   responses:
     UnauthorizedError:
-      description: Access token is missing or invalid      
+      description: User is not authenticated.      
     UserExists:  
       description: User already exists
       content:

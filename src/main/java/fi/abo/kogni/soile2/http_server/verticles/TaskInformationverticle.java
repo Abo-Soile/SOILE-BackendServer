@@ -28,8 +28,10 @@ public class TaskInformationverticle extends AbstractVerticle{
 	{
 		
 		LOGGER.debug("Deploying TaskInformation with id : " + deploymentID());
-		vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("taskInformationAddress"), this::getTaskInfo);					
+		vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("getTaskInformationAddress"), this::getTaskInfo);
 	}
+					
+
 	
 	
 	@Override

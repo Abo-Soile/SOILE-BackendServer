@@ -109,7 +109,7 @@ public class TaskTest extends MongoTest {
 			Task tempTask = new Task();
 			tempTask.loadfromJson(taskDef);
 			System.out.println(tempTask.toJson().encodePrettily());
-			taskFactory.createElement(mongo_client, "TestTask")
+			taskFactory.createElement(mongo_client, "TestTask", taskDef.getString("codeType"))
 			.onSuccess(task -> 
 			{
 				tempTask.setUUID(task.getUUID());

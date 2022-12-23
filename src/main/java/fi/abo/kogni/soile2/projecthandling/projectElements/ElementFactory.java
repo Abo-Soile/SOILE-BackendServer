@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoileCookieAuth;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
@@ -24,20 +25,23 @@ import io.vertx.ext.mongo.MongoClient;
 public class ElementFactory<T extends ElementBase> {	
 	
 	Supplier<T> DBObjectSupplier;
+	TargetElementType type;
 	public static final Logger log = LogManager.getLogger(ElementFactory.class);
 
 	public ElementFactory(Supplier<T> supplier)
 	{		
 		DBObjectSupplier = supplier;
+		type = supplier.get().getElementType();
 	}
 	
 	/**
 	 * Generic generator (as in creates an element and saves it to the 
 	 * @param client
 	 * @param element
+	 * @param type Is Nullable, mainly for tasks codeType.
 	 * @return
 	 */
-	public Future<T> createElement(MongoClient client, String name)
+	public Future<T> createElement(MongoClient client, String name, String type)
 	{		
 		Promise<T> elementPromise = Promise.<T>promise();
 		T element = DBObjectSupplier.get();
@@ -49,7 +53,11 @@ public class ElementFactory<T extends ElementBase> {
 			{
 				log.debug("No element with the given name existed. Creating a new one");
 				// otherwise, we can set the name and save the element.
-				element.setName(name);
+				element.setName(name);	
+				if(element.getElementType().equals(TargetElementType.TASK))
+				{
+					((Task)element).setCodetype(type);
+				}
 				element.save(client)						
 				.onSuccess( id -> {					
 					element.setUUID(id);					
@@ -72,7 +80,21 @@ public class ElementFactory<T extends ElementBase> {
 
 		return elementPromise.future();
 	}
-	
+	/**
+	 * Generic generator (as in creates an element and saves it to the 
+	 * @param client
+	 * @param element
+	 * @param type Is Nullable, mainly for tasks codeType.
+	 * @return
+	 */
+	public Future<T> createElement(MongoClient client, String name)	
+	{		
+		if(type == TargetElementType.TASK)
+		{
+			return Future.failedFuture("Need a codeType to create a Task");
+		}
+		return createElement(client, name, null);
+	}
 	
 	/**
 	 * Load a project as specified by the UUID. This UUID is the mongoDB id. if no project could be loaded, the promise fails.

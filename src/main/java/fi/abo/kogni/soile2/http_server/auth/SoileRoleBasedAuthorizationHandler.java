@@ -17,6 +17,7 @@ public class SoileRoleBasedAuthorizationHandler{
 	{
 	}
 
+	
 	/**
 	 * This requires the authorizations to be loaded for the USER PRE testing!
 	 * @param user The user with the authorizations loaded.

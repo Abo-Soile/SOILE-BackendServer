@@ -12,7 +12,7 @@ import io.vertx.core.json.JsonObject;
 
 public class APITask extends APIElementBase<Task> {
 
-	private String[] gitFields = new String[] {"name", "codetype", "resources"};
+	private String[] gitFields = new String[] {"name", "codeType", "resources"};
 	private Object[] gitDefaults = new Object[] {"", "javascript", new JsonArray()};
 	
 	public APITask() {
@@ -25,13 +25,13 @@ public class APITask extends APIElementBase<Task> {
 		loadGitJson(data);
 	}
 
-	@JsonProperty("codetype")
+	@JsonProperty("codeType")
 	public String getCodetype() {
-		return data.getString("codetype", "");
+		return data.getString("codeType", "");
 	}
-	@JsonProperty("codetype")
-	public void setCodetype(String codetype) {
-		data.put("codetype", codetype);
+	@JsonProperty("codeType")
+	public void setCodetype(String codeType) {
+		data.put("codeType", codeType);
 	}
 
 	/**

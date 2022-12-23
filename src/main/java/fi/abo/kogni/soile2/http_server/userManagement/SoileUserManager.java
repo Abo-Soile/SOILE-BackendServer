@@ -2,8 +2,8 @@ package fi.abo.kogni.soile2.http_server.userManagement;
 
 import static io.vertx.ext.auth.impl.Codec.base64Encode;
 
+import java.net.HttpURLConnection;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -12,10 +12,13 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.mongodb.client.model.IndexOptions;
+
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.EmailAlreadyInUseException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -29,10 +32,13 @@ import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
 import io.vertx.ext.auth.mongo.MongoUserUtil;
 import io.vertx.ext.mongo.BulkOperation;
+import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.mongo.MongoClientDeleteResult;
 import io.vertx.ext.mongo.MongoClientUpdateResult;
 
+
+//TODO: Reactor this to actually create futures. 
 
 /**
  * This class encapsulates all activity correlating to user management interaction with the MongoDB database. 
@@ -49,7 +55,7 @@ public class SoileUserManager implements MongoUserUtil{
 	private final MongoAuthenticationOptions authnOptions;
 	private final MongoAuthorizationOptions authzOptions;
 	private final String hashingAlgorithm;
-	private HashMap<PermissionChange, String> permissionMap;
+	private HashMap<PermissionChange, String> permissionMap;	
 	public static enum PermissionChange{
 		Remove,
 		Add,
@@ -69,20 +75,13 @@ public class SoileUserManager implements MongoUserUtil{
 		permissionMap.put(PermissionChange.Add, "$push");
 		permissionMap.put(PermissionChange.Replace, "$set");
 	}
-
-	public SoileUserManager getUserList(int startpos)
-	{
-		return this;
+	
+	public Future<Void> setupDB()
+	{		
+		IndexOptions options = new IndexOptions();
+		options.unique(true);		
+		return client.createIndex(authnOptions.getCollectionName(), new JsonObject().put(authnOptions.getUsernameField(), "text")).mapEmpty();
 	}
-
-	public SoileUserManager removeUser(String username , Handler<AsyncResult<MongoClientDeleteResult>> resultHandler)
-	{
-		client.removeDocument(authnOptions.getCollectionName(),
-				new JsonObject().put(authnOptions.getUsernameField(), username),
-				resultHandler);
-		return this;
-	}
-
 	/**
 	 * Check whether the Email listed is present in the email list of the database.
 	 * The handler needs to handle the AsyncResult that is the number of entries with that email.
@@ -98,7 +97,62 @@ public class SoileUserManager implements MongoUserUtil{
 		
 		return this;
 	}
-		
+
+	/**
+	 * Get the list of users, 
+	 * @param skip how many results to skip
+	 * @param limit how many results at most to return
+	 * @param query a search query to look up in the usernames
+	 * @param partsInProject restricts search to users who participate in this project
+	 * @return A List of JsonObjects with the results.
+	 */
+	public Future<JsonArray> getUserList(Integer skip, Integer limit, String query, boolean namesOnly)
+	{
+		JsonObject fields = new JsonObject().put("_id", 0)
+											.put(authnOptions.getUsernameField(), 1);
+		if(!namesOnly)
+		{
+		   fields
+		  .put(SoileConfigLoader.getdbField("userEmailField"), 1)
+		  .put(SoileConfigLoader.getdbField("userFullNameField"),1)		  
+		  .put(authzOptions.getRoleField(), 1);
+		}
+		JsonObject Query = new JsonObject();
+		if(query != null)
+		{
+			Query.put("$text", new JsonObject().put("$search", query));
+		}
+		FindOptions options = new FindOptions();
+		if(limit != null)
+		{
+			options.setLimit(limit);
+		}
+		if(skip != null)
+		{
+			options.setSkip(skip);
+		}
+		options.setFields(fields);
+		Promise<JsonArray> resultsPromise = Promise.promise();
+		client.findWithOptions(authnOptions.getCollectionName(), Query, options)
+		.onSuccess(result -> {
+			resultsPromise.complete(new JsonArray(result));
+		})
+		.onFailure(err -> resultsPromise.fail(err));
+		return resultsPromise.future();
+	}
+
+	/**
+	 * Get the list of users, 
+	 * @param skip how many results to skip
+	 * @param limit how many results at most to return
+	 * @param query a search query to look up in the usernames
+	 * @return A List of JsonObjects with the results.
+	 */
+	public SoileUserManager getUserList(Integer skip, Integer limit, String query, boolean namesOnly, Handler<AsyncResult<JsonArray>> handler)
+	{
+		handler.handle(getUserList(skip, limit, query, namesOnly));
+		return this;
+	}
 	
 	/**
 	 * Set Full name and Email address of a user.
@@ -336,20 +390,44 @@ public class SoileUserManager implements MongoUserUtil{
 
 	/**
 	 * Delete a user from the database
-	 * @param username
+	 * @param username - 
+	 * @param cleanupFiles - whether to remove all data from experiments. 
 	 * @param resultHandler
-	 * @return this {@link MongoUserUtil}
+	 * @return this {@link SoileUserManager}
 	 */	
-	public SoileUserManager deleteUser(String username, Handler<AsyncResult<MongoClientDeleteResult>> resultHandler)
+	public SoileUserManager deleteUser(String username, Handler<AsyncResult<Void>> resultHandler)
 	{
-		client.removeDocument(
-				authnOptions.getCollectionName(),
-				new JsonObject().
-				put(authnOptions.getUsernameField(), username),
-				resultHandler);
+		resultHandler.handle(deleteUser(username));		
 		return this;
 	}
-
+	
+	public Future<Void> deleteUser(String username)
+	{
+		// CleanUp of the users data needs to be done elsewhere, and this needs to be done after the cleanup.
+		Promise<Void> deletionPromise = Promise.promise();	
+		client.removeDocuments(
+				authnOptions.getCollectionName(),
+				new JsonObject().
+				put(authnOptions.getUsernameField(), username))
+		.onSuccess(res -> { 						
+					if( res.getRemovedCount() >= 1)
+					{							
+						deletionPromise.complete();					
+					}
+					else
+					{
+						deletionPromise.fail(new UserDoesNotExistException(username));						
+					}				
+			}).onFailure(err -> deletionPromise.fail(err));
+		return deletionPromise.future();
+	}
+	
+	/**
+	 * Retrieve the participant ID of this user in the given project. 
+	 * @param username
+	 * @param project
+	 * @return
+	 */
 	public Future<String> getParticipantIDForUserInProject(String username, String project)
 	{
 		Promise<String> participantPromise = Promise.promise();
@@ -359,6 +437,7 @@ public class SoileUserManager implements MongoUserUtil{
 			String particpantID = null;
 			for(int i = 0; i < participantInfo.size(); i++)
 			{
+				// TODO: Use an aggregation to retrieve this (that's probably faster).
 				if(participantInfo.getJsonObject(i).getString("uuid").equals(project))
 				{
 					particpantID = participantInfo.getJsonObject(i).getString("participantID");
@@ -370,11 +449,34 @@ public class SoileUserManager implements MongoUserUtil{
 		})
 		.onFailure(err -> participantPromise.fail(err));
 		
-		return participantPromise.future();
-																				  													  
-																																					 
+		return participantPromise.future();																				  													 																																					
 	}
 	
+	/**
+	 * Get all project/participant ID combinations for the given user.
+	 * @param username The user for which data is requested.
+	 * @return A {@link Future} of a {@link JsonArray} containing objects  with { uuid: <projectInstanceID>, participantID : <IDofParticipantInPRoject> }. 
+	 */
+	public Future<JsonArray> getParticipantInfoForUser(String username)
+	{
+		Promise<JsonArray> participantInfoPromise = Promise.promise();
+		client.findOne(authnOptions.getCollectionName(),new JsonObject().put(authnOptions.getUsernameField(), username), new JsonObject().put(SoileConfigLoader.getdbField("participantField"),1 ))
+		.onSuccess(participantJson -> {
+			JsonArray participantInfo = participantJson.getJsonArray(SoileConfigLoader.getdbField("participantField"), new JsonArray());
+			participantInfoPromise.complete(participantInfo);
+		})
+		.onFailure(err -> participantInfoPromise.fail(err));
+		
+		return participantInfoPromise.future();																																				
+	}
+	
+	/**
+	 * Assign the given participantID to the user in the projectInstance indicated by the projectInstanceID.
+	 * @param username The username for whom to assign a participantID
+	 * @param projectInstanceID the projectinstance in which to assign the id
+	 * @param participantID the participantID.
+	 * @return A successfull future if this call worked.
+	 */
 	public Future<Void> makeUserParticpantInProject(String username, String projectInstanceID, String participantID)
 	{
 		JsonObject query = new JsonObject().put(authnOptions.getUsernameField(), username);

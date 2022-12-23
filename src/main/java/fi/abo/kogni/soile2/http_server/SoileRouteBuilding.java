@@ -118,7 +118,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	
 	Future<RouterBuilder> setupLogin(RouterBuilder builder)
 	{
-		builder.operation("addUser").handler(handleUserManagerCommand("addUser", MessageResponseHandler.createDefaultHandler(201)));
+		builder.operation("addUser").handler(handleUserManagerCommand("registerUser", MessageResponseHandler.createDefaultHandler(201)));
 		SoileFormLoginHandler formLoginHandler = new SoileFormLoginHandler(new SoileAuthentication(client), "username", "password",new JWTTokenCreator(handler,vertx), cookieHandler);
 		builder.operation("loginUser").handler(formLoginHandler::handle);
 		builder.operation("testAuth").handler(this::testAuth);

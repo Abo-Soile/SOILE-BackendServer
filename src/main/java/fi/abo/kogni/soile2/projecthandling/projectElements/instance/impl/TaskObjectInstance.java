@@ -30,6 +30,16 @@ public class TaskObjectInstance extends ElementInstanceBase {
 	  public void setFilter(String filter) {
 		  data.put("filter",filter);
 	  }
+
+	  @JsonProperty("codeType")
+	  public String getCodeType() {
+	    return data.getString("codeType");
+	  }
+	  
+	  public void setCodeType(String type) {
+		  data.put("codeType",type);
+	  }
+
 	  
 	  private boolean hasFilter() {
 		  String elementFilter = data.getString("filter", null);

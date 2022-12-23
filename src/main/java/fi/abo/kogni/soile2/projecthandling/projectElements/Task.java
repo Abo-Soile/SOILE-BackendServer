@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
@@ -24,12 +26,12 @@ public class Task extends ElementBase {
 		}
 	}
 
-	@JsonProperty("codetype")
+	@JsonProperty("codeType")
 	public String getCodetype() {
-		return data.getString("codetype");
+		return data.getString("codeType");
 	}
-	public void setCodetype(String codetype) {
-		data.put("codetype", codetype);
+	public void setCodetype(String codeType) {
+		data.put("codeType", codeType);
 	}
 
 	/**
@@ -52,12 +54,12 @@ public class Task extends ElementBase {
 	{		
 		super.loadfromJson(json);
 		setResources(json.getJsonArray("resources",new JsonArray()));
-		setCodetype(json.getString("codetype", "javascript"));
+		setCodetype(json.getString("codeType", "javascript"));
 	}
 	@Override
 	public JsonObject toJson(boolean provideUUID)
 	{		
-		return super.toJson(provideUUID).put("resources", getResources()).put("codetype", getCodetype()); 
+		return super.toJson(provideUUID).put("resources", getResources()).put("codeType", getCodetype()); 
 	}
 	@Override
 	public JsonObject getUpdates()
@@ -81,4 +83,7 @@ public class Task extends ElementBase {
 		// TODO Auto-generated method stub
 		return TargetElementType.TASK;
 	}
+	
+	public static List<String> allowedTypes = List.of("javascript", "qlang", "elang");
+	
 }

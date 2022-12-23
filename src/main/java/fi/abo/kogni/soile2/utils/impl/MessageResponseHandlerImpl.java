@@ -2,6 +2,7 @@ package fi.abo.kogni.soile2.utils.impl;
 
 import fi.abo.kogni.soile2.utils.MessageResponseHandler;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
@@ -39,6 +40,11 @@ public class MessageResponseHandlerImpl implements MessageResponseHandler{
 				{
 					context.response().putHeader("content-type","text/plain");
 					context.response().write(responseData.getString("data"));				
+				}
+				else if ( data instanceof JsonArray)
+				{
+					context.response().putHeader("content-type","application/json");
+					context.response().write(responseData.getJsonArray("data").encode());				
 				}
 			}
 		}

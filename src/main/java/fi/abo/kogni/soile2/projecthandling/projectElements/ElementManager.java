@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIElement;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
@@ -41,6 +42,7 @@ public class ElementManager<T extends ElementBase> {
 	MongoClient client;
 	GitManager gitManager;
 	String typeID;
+	TargetElementType type;
 	public static final Logger log = LogManager.getLogger(ElementManager.class);
 	private static DateFormat dateFormatter = new SimpleDateFormat("MM/dd/yyyy - HH:SS");
 
@@ -49,12 +51,13 @@ public class ElementManager<T extends ElementBase> {
 		this.apisupplier = apisupplier;
 		this.supplier = supplier;		
 		typeID = supplier.get().getTypeID();
+		type = supplier.get().getElementType();
 		this.factory = new ElementFactory<T>(supplier);
 		this.client = client;
 		gitManager = manager;
 	}
 	
-	private String getGitID(String uuid)
+	public String getGitIDForUUID(String uuid)
 	{
 		return typeID + uuid;
 	}
@@ -65,20 +68,20 @@ public class ElementManager<T extends ElementBase> {
 	 * @param name
 	 * @return
 	 */
-	public Future<T> createElement(String name)
+	public Future<T> createElement(String name, String type)
 	{
 		Promise<T> elementPromise = Promise.<T>promise();
 		// now we need to create a unique UUID. This should (normally) not cause any clashes, but lets be sure...
-		factory.createElement(client, name)
+		factory.createElement(client, name, type)
 		.onSuccess(element -> {
 			element.setName(name);	
 			log.debug(element.toJson().encodePrettily());
-			gitManager.initRepo(getGitID(element.getUUID()))
+			gitManager.initRepo(getGitIDForUUID(element.getUUID()))
 			.onSuccess(initVersion -> 
 			{
 				//create an empty project file.
 				JsonObject gitData = GitManager.buildBasicGitElement(name, element.getClass());
-				gitManager.writeGitFile(new GitFile("Object.json", getGitID(element.getUUID()), initVersion), gitData)
+				gitManager.writeGitFile(new GitFile("Object.json", getGitIDForUUID(element.getUUID()), initVersion), gitData)
 				.onSuccess(version -> {
 					log.debug("Created a new element with name: " + name);
 					element.addVersion(version);
@@ -101,15 +104,30 @@ public class ElementManager<T extends ElementBase> {
 	}
 
 	/**
+	 * Create a new element.
+	 * This future can fail with an {@link ElementNameExistException} with id = name, which indicates that an element with this name already exists.
+	 * @param name
+	 * @return
+	 */
+	public Future<T> createElement(String name)
+	{
+		if(type == TargetElementType.TASK)
+		{
+			return Future.failedFuture("Need a codeType to create a Task");
+		}
+		return createElement(name, null);
+	}
+	
+	/**
 	 * Load or Create an element. This should not normally be called but might be necessary for some tests. 
 	 * @param name
 	 * @return
 	 */
-	public Future<T> createOrLoadElement(String name)
+	public Future<T> createOrLoadElement(String name, String type)
 	{
 		Promise<T> elementPromise = Promise.<T>promise();
 		// We will try to create the element with this name but if it already exists, return the element with the name.
-		createElement(name)
+		createElement(name, type)
 		.onSuccess(element -> 
 		{
 			elementPromise.complete(element);
@@ -133,12 +151,25 @@ public class ElementManager<T extends ElementBase> {
 		});		
 		return elementPromise.future();
 	}
-	
+	/**
+	 * Create or load an Element
+	 * This future can fail with an {@link ElementNameExistException} with id = name, which indicates that an element with this name already exists.
+	 * @param name The name of the element
+	 * @return
+	 */
+	public Future<T> createOrLoadElement(String name)
+	{
+		if(type == TargetElementType.TASK)
+		{
+			return Future.failedFuture("Need a codeType to create a Task");
+		}
+		return createOrLoadElement(name, null);
+	}
 	
 	public Future<JsonObject> getGitJson(String elementID, String elementVersion)
 	{
-		GitFile target = new GitFile("Object.json", getGitID(elementID), elementVersion);
-		log.debug("Requesting Data for Repo: "  + getGitID(elementID));
+		GitFile target = new GitFile("Object.json", getGitIDForUUID(elementID), elementVersion);
+		log.debug("Requesting Data for Repo: "  + getGitIDForUUID(elementID));
 		return gitManager.getGitFileContentsAsJson(target);
 	}
 	
@@ -160,7 +191,7 @@ public class ElementManager<T extends ElementBase> {
 	public Future<String> updateElement(APIElement<T> newData)
 	{
 		Promise<String> elementPromise = Promise.<String>promise();
-		GitFile currentVersion = new GitFile("Object.json", getGitID(newData.getUUID()), newData.getVersion());
+		GitFile currentVersion = new GitFile("Object.json", getGitIDForUUID(newData.getUUID()), newData.getVersion());
 		// This will return an updated Element given the newData object, so we don't need to update the internals of the object
 		// but can directly go on to write and save the data. 
 		newData.getDBElement(client, factory).onSuccess(element -> 
@@ -171,7 +202,7 @@ public class ElementManager<T extends ElementBase> {
 				if(newData.hasAdditionalGitContent())
 				{
 					// this has additional data that we need to save in git.
-					newData.storeAdditionalData(version, gitManager, getGitID(newData.getUUID()))
+					newData.storeAdditionalData(version, gitManager, getGitIDForUUID(newData.getUUID()))
 					.onSuccess(newVersion -> {
 						element.addVersion(newVersion);				
 						element.save(client).onSuccess(res -> {
@@ -342,14 +373,14 @@ public class ElementManager<T extends ElementBase> {
 	{
 		Promise<APIElement<T>> elementPromise = Promise.<APIElement<T>>promise();
 		APIElement<T> apiElement = apisupplier.get();
-		GitFile currentVersion = new GitFile("Object.json", getGitID(uuid), version);
+		GitFile currentVersion = new GitFile("Object.json", getGitIDForUUID(uuid), version);
 
 		factory.loadElement(client, uuid).
 		onSuccess(element -> {
 			apiElement.loadFromDBElement(element);
 			// the version cannot be extracted from the db element, as the db element stores all versions, and this is a specific request. 
 			apiElement.setVersion(version);
-			apiElement.loadAdditionalData(gitManager, getGitID(apiElement.getUUID()))
+			apiElement.loadAdditionalData(gitManager, getGitIDForUUID(apiElement.getUUID()))
 			.onSuccess(Void -> {
 				gitManager.getGitFileContentsAsJson(currentVersion)
 				.onSuccess(gitJson -> {

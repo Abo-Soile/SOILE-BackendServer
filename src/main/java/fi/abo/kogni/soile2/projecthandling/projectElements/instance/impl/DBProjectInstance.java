@@ -142,10 +142,6 @@ public class DBProjectInstance extends ProjectInstance{
 	@Override
 	public synchronized Future<Void> deleteParticipant(Participant p)
 	{
-		if(!isActive)
-		{
-			return Future.failedFuture(new ProjectIsInactiveException(name));
-		}
 		
 		Promise<Void> updatePromise = Promise.promise();
 		JsonObject update = new JsonObject().put("$pull", new JsonObject().put("participants",p.getID()));
@@ -153,7 +149,7 @@ public class DBProjectInstance extends ProjectInstance{
 		.onSuccess(res -> {
 			if(res.getDocModified() != 1)
 			{
-				LOGGER.error("Modified multiple objects while only one ID was provided! Project was: " + instanceID );
+				LOGGER.error("Modified multiple objects or none while only one ID was provided! Project was: " + instanceID );
 				updatePromise.fail("Mongo Error");
 				
 			}

@@ -41,7 +41,8 @@
 		"questionnaireAddress": "soile.questionnaire.compile",
 		"compilationAddress" : "soile.codeRetrieval.compile",
 		"gitCompilationAddress" : "soile.codeRetrieval.gitCompile",
-		"taskInformationAddress" : "soile.task.information"
+		"getTaskInformationAddress" : "soile.task.information",
+		"getTaskGitAddress" : "soile.task.gitAddress"
 		
 	},
 	
@@ -131,7 +132,8 @@
 			"getUserInfo" : "getUserInfo",
 			"setUserInfo" : "getUserInfo",
 			"makeUserParticipantInProject" : "addParticipantToUser",
-			"getParticipantForUser" : "getParticipantForUser"
+			"getParticipantForUserInProject" : "getParticipantForUser",
+			"getParticipantsForUser" : "getParticipantsForUser"
 			}
 	},
 

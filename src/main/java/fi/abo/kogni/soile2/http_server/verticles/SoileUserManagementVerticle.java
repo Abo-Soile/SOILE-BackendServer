@@ -21,6 +21,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
@@ -46,11 +47,11 @@ import io.vertx.ext.mongo.MongoClientDeleteResult;
  */
 public class SoileUserManagementVerticle extends SoileBaseVerticle {
 
-	SoileUserManager userManager;
-	SoileUserManager participantManager;
+	SoileUserManager userManager;	
 	MongoClient mongo;
 	private static final Logger LOGGER = LogManager.getLogger(SoileUserManagementVerticle.class);
 	private JsonObject sessionFields;
+	private List<MessageConsumer> consumers;
 	
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
@@ -59,11 +60,17 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		setupConfig(SoileConfigLoader.USERMGR_CFG);		
 		sessionFields = config().getJsonObject(SoileConfigLoader.SESSION_CFG);
 		userManager = new SoileUserManager(mongo);		
-
+		consumers = new LinkedList<>();
 		setupChannels();
 		LOGGER.info("User Management Verticle Started");
 		//LOGGER.debug("\n\nUser Management Verticle Started\n\n");
-		startPromise.complete();
+		
+		userManager.setupDB()
+		.onSuccess(suceeded -> {
+			startPromise.complete();	
+		})
+		.onFailure(err -> startPromise.fail(err));
+		
 	}
 
 	/**
@@ -73,19 +80,21 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	{				
 		LOGGER.debug("Setting up channels");
 		LOGGER.debug("Adding channel: " + getEventbusCommandString("addUser"));
-		vertx.eventBus().consumer(getEventbusCommandString("addUser"), this::addUser);
-		vertx.eventBus().consumer(getEventbusCommandString("addUserWithEmail"), this::addUserWithEmail);
-		vertx.eventBus().consumer(getEventbusCommandString("removeUser"), this::removeUser);		
-		vertx.eventBus().consumer(getEventbusCommandString("permissionOrRoleChange"), this::permissionOrRoleChange);		
-		vertx.eventBus().consumer(getEventbusCommandString("setUserFullNameAndEmail"), this::setUserFullNameAndEmail);
-		vertx.eventBus().consumer(getEventbusCommandString("getUserData"), this::getUserData);
+		
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("addUser"), this::addUser));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("addUserWithEmail"), this::addUserWithEmail));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("removeUser"), this::removeUser));		
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("permissionOrRoleChange"), this::permissionOrRoleChange));		
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("setUserFullNameAndEmail"), this::setUserFullNameAndEmail));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getUserData"), this::getUserData));
 		LOGGER.debug("Reistering eventbus consumer for:" + getEventbusCommandString("checkUserSessionValid")); 
-		vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid);
-		vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession);
-		vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession);
-		vertx.eventBus().consumer(getEventbusCommandString("makeUserParticpantInProject"), this::makeUserParticpantInProject);
-		vertx.eventBus().consumer(getEventbusCommandString("getParticipantForUser"), this::getParticipantForUser);
-
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("makeUserParticpantInProject"), this::makeUserParticpantInProject));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getParticipantForUserInProject"), this::getParticipantForUser));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getParticipantsForUser"), this::getParticipantsForUser));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("listUsers"), this::listUsers));
 	}	
 		
 	
@@ -93,16 +102,10 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	public void stop(Promise<Void> stopPromise)
 	{
 		List<Future> undeploymentFutures = new LinkedList<Future>();
-		
-		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("addUser"), this::addUser).unregister());
-		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("addUserWithEmail"), this::addUserWithEmail).unregister());
-		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("removeUser"), this::removeUser).unregister());		
-		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("permissionOrRoleChange"), this::permissionOrRoleChange).unregister());		
-		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("setUserFullNameAndEmail"), this::setUserFullNameAndEmail).unregister());
-		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("getUserData"), this::getUserData).unregister());		 
-		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid).unregister());
-		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession).unregister());
-		undeploymentFutures.add(vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession).unregister());
+		for(MessageConsumer consumer : consumers)
+		{
+			undeploymentFutures.add(consumer.unregister());
+		}				
 		CompositeFuture.all(undeploymentFutures).mapEmpty().
 		onSuccess(v -> stopPromise.complete())
 		.onFailure(err -> stopPromise.fail(err));			
@@ -153,6 +156,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid Request");
 		}
 	}
+	
 	
 	/**
 	 * Remove a session from a user
@@ -371,16 +375,27 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 */
 	void getParticipantForUser(Message<JsonObject> msg)
 	{
-		//make sure we actually get the right thing
-		JsonObject answer = new JsonObject();
-
 		JsonObject command = msg.body();			
-
 		userManager.getParticipantIDForUserInProject(command.getString(getDBField("usernameField")), command.getString("projectInstanceID"))
 		.onSuccess(res -> {
 			msg.reply(new JsonObject().put("participantID", res));
 		})
-		.onFailure(err -> msg.fail(HttpURLConnection.HTTP_BAD_REQUEST,"Invalid Request"));						    							
+		.onFailure(err -> handleErrorResponse(err, msg));						    							
+
+	}
+
+	/**
+	 * Get the participant for the provided user in the given project. 
+	 * @param msg
+	 */
+	void getParticipantsForUser(Message<JsonObject> msg)
+	{
+		JsonObject command = msg.body();			
+		userManager.getParticipantInfoForUser(command.getString(getDBField("usernameField")))
+		.onSuccess(res -> {
+			msg.reply(new JsonObject().put("participantID", res));
+		})
+		.onFailure(err -> handleErrorResponse(err, msg));						    							
 
 	}
 	
@@ -392,15 +407,13 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	{
 		//TODO Implement
 		//make sure we actually get the right thing
-		JsonObject answer = new JsonObject();
-
 		JsonObject command = msg.body();			
 
 		userManager.makeUserParticpantInProject(command.getString(getDBField("usernameField")), command.getString("projectInstanceID"), command.getString("participantID"))
 		.onSuccess(res -> {
-			msg.reply("success");
+			msg.reply(SoileCommUtils.successObject());
 		})
-		.onFailure(err -> msg.fail(HttpURLConnection.HTTP_BAD_REQUEST,"Invalid Request"));						    							
+		.onFailure(err -> handleErrorResponse(err, msg));						    							
 
 	}
 
@@ -417,23 +430,12 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		{
 			JsonObject command = (JsonObject)msg.body();			
 				
-			userManager.deleteUser(command.getString(getDBField("usernameField")), res -> {
-				if(res.succeeded())
-				{
-					MongoClientDeleteResult delRes = res.result();
-					if( delRes.getRemovedCount() >= 1)
-					{
-						msg.reply(SoileCommUtils.successObject());	
-					}
-					else
-					{
-						msg.fail(UserDoesNotExistException.ERRORCODE, "User does not exist");
-					}
-				}
-				else
-				{
-					msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR,res.cause().getMessage());				}
-			});						    							
+			userManager.deleteUser(command.getString(getDBField("usernameField")))
+			.onSuccess(success -> {
+				msg.reply(SoileCommUtils.successObject());
+			})
+			.onFailure(err -> handleErrorResponse(err, msg));
+				
 		}	
 		else
 		{
@@ -589,6 +591,41 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 						});
 		}
 	}	
+	
+	private void handleErrorResponse(Throwable err, Message response)
+	{
+		if(err instanceof UserDoesNotExistException)
+		{
+			response.fail(410, err.getMessage());
+		}
+		else
+		{
+			response.fail(500, err.getMessage());
+		}
+	}
+	
+	/**
+	 * Get a list of Users based on some information
+	 * {
+	 *  "limit" : how many entries to return at most,
+	 *  "skip" : how many results to skip,
+	 *  "query" : a search string to use,
+	 *  }
+	 * @param msg
+	 */
+	void listUsers(Message<JsonObject> msg)
+	{		
+		//make sure we actually get the right thing			
+		JsonObject command = msg.body();		
+		userManager.getUserList(command.getInteger("skip"),command.getInteger("limit"), command.getString("query"), command.getBoolean("namesOnly", false))
+		.onSuccess(list -> {					
+			msg.reply(SoileCommUtils.successObject().put("Data", list));					
+		})
+		.onFailure(err -> 
+		{
+			msg.fail(400, "Error fetching Data");									
+		});		
+	}
 	
 	private JsonArray convertPermissionsArray(JsonArray sourceArray) throws InvalidPermissionTypeException
 	{

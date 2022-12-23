@@ -34,38 +34,57 @@ public class ObjectGeneratorTest extends GitTest {
 	public void testBuildExperiment(TestContext context)
 	{		
 		Async expAsync = context.async();
-		JsonArray Permissions1 = new JsonArray();
+		JsonArray permissionsForAccess = new JsonArray();
 		ObjectGenerator.buildAPIExperiment(expManager, taskManager,mongo_client, "TestExperiment1")
 		.onSuccess(apiexp -> {
 			Async listAsync = context.async();
 			context.assertEquals("tabcdefg2",apiexp.getElements().getJsonObject(0).getJsonObject("data").getString("instanceID"));
-			Permissions1.add(apiexp.getUUID());
+			permissionsForAccess.add(apiexp.getUUID());
 			System.out.println(apiexp.getElements().encodePrettily());
 			for(int i = 0; i < apiexp.getElements().size(); i++)
 			{
-				Permissions1.add(apiexp.getElements().getJsonObject(i).getJsonObject("data").getString("UUID"));
+				permissionsForAccess.add(apiexp.getElements().getJsonObject(i).getJsonObject("data").getString("UUID"));
 			}
 			// check, that the created Elements actually exist.
-			taskManager.getElementList(Permissions1).onSuccess(list -> {
+			taskManager.getElementList(permissionsForAccess).onSuccess(list -> {
 				System.out.println(list.encodePrettily());
 				context.assertEquals(2,list.size());					
 				Async expAsync2 = context.async();				
 				ObjectGenerator.buildAPIExperiment(expManager, taskManager,mongo_client, "TestExperiment2")
 				.onSuccess(apiexp2 -> {
-					Permissions1.add(apiexp2.getUUID());
+					permissionsForAccess.add(apiexp2.getUUID());
 					Async listAsync2 = context.async();
 					System.out.println(apiexp2.getJson().encodePrettily());
 					context.assertEquals("tabcdefg4",apiexp2.getElements().getJsonObject(0).getJsonObject("data").getString("instanceID"));
 					for(int i = 0; i < apiexp2.getElements().size(); i++)
 					{
-						Permissions1.add(apiexp2.getElements().getJsonObject(i).getJsonObject("data").getString("UUID"));
+						permissionsForAccess.add(apiexp2.getElements().getJsonObject(i).getJsonObject("data").getString("UUID"));
 					}
-					taskManager.getElementList(Permissions1).onSuccess(list2 -> {
+					taskManager.getElementList(permissionsForAccess).onSuccess(list2 -> {
 						context.assertEquals(4,list2.size());				
 						listAsync2.complete();
+						for(int j = 0; j <list2.size(); ++j)
+						{
+							Async taskDataAsync = context.async();
+							taskManager.getElement(list2.getJsonObject(j).getString("uuid"))
+							.onSuccess(currentTask -> {
+								System.out.println("Current Task: \n" + currentTask.toJson().encodePrettily());
+								switch(currentTask.getName())
+								{
+								case "Test1": context.assertEquals("javascript", currentTask.getCodetype());break;
+								case "Test2": context.assertEquals("elang", currentTask.getCodetype());break;
+								case "Test3": context.assertEquals("javascript", currentTask.getCodetype());break;
+								case "Test4": context.assertEquals("javascript", currentTask.getCodetype());break;
+								default: context.fail("Found unexpected Task with name: " + currentTask.getName());
+								}
+								taskDataAsync.complete();
+							})
+							.onFailure(err -> context.fail(err));								
+						}
 					});
+					
 					Async listAsync3 = context.async();
-					expManager.getElementList(Permissions1).onSuccess(list2 -> {
+					expManager.getElementList(permissionsForAccess).onSuccess(list2 -> {
 						context.assertEquals(2,list2.size());				
 						listAsync3.complete();
 					});

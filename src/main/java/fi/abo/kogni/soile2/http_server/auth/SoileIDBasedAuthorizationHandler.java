@@ -9,6 +9,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
@@ -32,7 +33,7 @@ public class SoileIDBasedAuthorizationHandler<T extends AccessElement>{
 		baseElement = supplier.get();
 		this.client = client;
 	}
-		
+
 	public Future<Void> authorize(User user, String id, boolean adminAllowed, PermissionType requiredAccess) {	
 		Promise<Void> authorizationPromise = Promise.<Void>promise();
 		if(requiredAccess == null)

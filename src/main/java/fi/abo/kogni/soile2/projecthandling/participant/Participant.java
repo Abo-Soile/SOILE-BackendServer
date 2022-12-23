@@ -33,6 +33,12 @@ public interface Participant {
 	String getProjectPosition();
 
 	/**
+	 * Get the ID of the project this participant is in.
+	 * @return
+	 */
+	String getProjectID();
+
+	/**
 	 * Get all tasks done for a given experiment
 	 * @return
 	 */
