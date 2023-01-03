@@ -161,6 +161,16 @@ public interface Participant {
 	 */
 	Future<String> save();
 	
+	/**
+	 * Indicate whether this participant has a token associated with it.
+	 * @return
+	 */
+	boolean hasToken();
 	
-	
+	/**
+	 * Get the token associated with this participant.
+	 * @return
+	 */
+	String getToken();
+
 }

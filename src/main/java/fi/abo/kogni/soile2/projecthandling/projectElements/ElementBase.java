@@ -120,9 +120,7 @@ public abstract class ElementBase implements Element {
 	public void setVersions(JsonArray versions) {
 		HashMap<String,Date> newVersions = new HashMap<>();
 		String latestVersion = null;
-		Date latestDate = new Date(0);
-		LOGGER.debug("CurrentVersion is : ");
-		System.out.println(currentVersion);
+		Date latestDate = new Date(0);		
 		for(int i = 0; i < versions.size(); i++)
 		{
 			JsonObject cVersion = versions.getJsonObject(i);

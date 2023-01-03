@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.http_server.authentication;
+package fi.abo.kogni.soile2.http_server.auth;
 
 import static io.vertx.ext.auth.impl.Codec.base64Encode;
 
@@ -81,8 +81,8 @@ public class SoileCookieCreationHandler {
 		String token = CookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
 		String username = CookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());		
 		eb.send(SoileCommUtils.getUserEventBusCommand("invalidateUserSession")
-			   ,new JsonObject().put(SoileCommUtils.getCommunicationField("sessionID"),token)
-				 				.put(SoileCommUtils.getCommunicationField("usernameField"),username));		
+			   ,new JsonObject().put("sessionID",token)
+				 				.put("username",username));		
 		
 	}
 	
@@ -97,8 +97,8 @@ public class SoileCookieCreationHandler {
 	    JsonObject cuser = user.principal();
 	    // pause this request until we are sure, that the session is stored. Otherwise we could return before the session is processed, which can lead to unauthorized requests.	    
 	    eb.request(SoileCommUtils.getUserEventBusCommand("addSession")
-				   ,new JsonObject().put(SoileCommUtils.getCommunicationField("sessionID"),token)
-					 				.put(SoileCommUtils.getCommunicationField("usernameField"),cuser.getString(SoileConfigLoader.getdbField("usernameField"))))
+				   ,new JsonObject().put("sessionID",token)
+					 				.put("username",cuser.getString(SoileConfigLoader.getUserdbField("usernameField"))))
 	    		.onComplete(reply ->
 	    		{
 	    			cookieHandled.complete();	    				    				
@@ -108,7 +108,7 @@ public class SoileCookieCreationHandler {
 	    			}
 	    		});
 		// now build the cookie to store on the remote system. 		
-		String cookiecontent = CookieStrategy.buildCookieContent(cuser.getString(SoileCommUtils.getCommunicationField("usernameField")),token);
+		String cookiecontent = CookieStrategy.buildCookieContent(cuser.getString("username"),token);
  
 		Cookie cookie = Cookie.cookie(SoileConfigLoader.getSessionProperty("sessionCookieID"),cookiecontent)
 							  .setDomain(SoileConfigLoader.getServerProperty(("domain")))

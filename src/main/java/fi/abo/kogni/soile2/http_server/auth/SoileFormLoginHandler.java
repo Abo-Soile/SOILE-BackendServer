@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.http_server.auth;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.http_server.authentication.SoileCookieCreationHandler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -73,9 +72,7 @@ public class SoileFormLoginHandler extends AuthenticationHandlerImpl<Authenticat
 		User user = ctx.user(); 		
 		HttpServerRequest req = ctx.request();
 		MultiMap params = req.formAttributes();
-		LOGGER.debug(params);
-		LOGGER.debug(SoileConfigLoader.getCommunicationField("rememberLoginField"));
-		Boolean remember = params.get(SoileConfigLoader.getCommunicationField("rememberLoginField")).equals("1");		
+		Boolean remember = params.get("remember").equals("1");		
 		user.principal().put("storeCookie", remember);
 		cookieHandler.updateCookie(ctx, user).onComplete(cookieDone ->
 		{

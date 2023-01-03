@@ -7,9 +7,7 @@ import org.apache.logging.log4j.Logger;
 
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -20,6 +18,7 @@ import io.vertx.core.json.JsonArray;
 /**
  * This class manages access to the {@link gitProviderVerticle}s via the eventbus..
  * It only communicates with the gitProviderVerticle providing some utility functions.
+ * TODO: Create Tags for an active save command. 
  * @author Thomas Pfau
  *
  */
@@ -272,21 +271,20 @@ public class GitManager {
 	}
 	
 	
-	public static JsonObject buildBasicGitElement(String name, Class type)
+	/**
+	 * Create a basic git element for different types of elements.
+	 * @param name Name of the element 
+	 * @param type Class 
+	 * @return
+	 */
+	public static JsonObject buildBasicGitElement(String name, TargetElementType type)
 	{
-		if( Project.class.equals(type)) {
-			return buildBasicGitProject(name);
-		}
-		else if(Task.class.equals(type)) {
-			return buildBasicGitTask(name);
-		}
-		else if(Experiment.class.equals(type))
+		switch(type)
 		{
-			return buildBasicGitExperiment(name);
-		}
-		else
-		{
-			return buildBasicGitObject(name);
+			case PROJECT: return buildBasicGitProject(name);
+			case TASK: return buildBasicGitTask(name);
+			case EXPERIMENT: return buildBasicGitExperiment(name);
+			default: return buildBasicGitObject(name);
 		}
 	}
 	

@@ -14,7 +14,7 @@ public class SoileConfigLoader {
 	
 	public static final String SESSION_CFG = "session";
 	public static final String COMMUNICATION_CFG = "communication";
-	public static final String DB_FIELDS = "db_user_fields";
+	public static final String USER_DB_FIELDS = "db_user_fields";	
 	public static final String DB_CFG = "db";
 	public static final String USERMGR_CFG = "UManagement";
 	public static final String EXPERIMENT_CFG = "experiments";
@@ -35,7 +35,7 @@ public class SoileConfigLoader {
 	
 	
 	private static JsonObject dbCfg;
-	private static JsonObject dbFields;
+	private static JsonObject userdbFields;
 	private static JsonObject sessionCfg;
 	private static JsonObject commCfg;
 	private static JsonObject userCfg;
@@ -62,7 +62,7 @@ public class SoileConfigLoader {
 	public static Future<Void> setConfigs(JsonObject config)
 	{
 		dbCfg = config.getJsonObject(DB_CFG);
-		dbFields = config.getJsonObject(DB_FIELDS);
+		userdbFields = config.getJsonObject(USER_DB_FIELDS);
 		sessionCfg = config.getJsonObject(SESSION_CFG);
 		commCfg = config.getJsonObject(COMMUNICATION_CFG);
 		userCfg = config.getJsonObject(USERMGR_CFG);
@@ -134,8 +134,8 @@ public class SoileConfigLoader {
 				return sessionCfg;
 		case COMMUNICATION_CFG :
 				return commCfg;
-		case DB_FIELDS :
-				return dbFields;
+		case USER_DB_FIELDS :
+				return userdbFields;
 		case DB_CFG :
 				return dbCfg;
 		case USERMGR_CFG :
@@ -240,9 +240,9 @@ public class SoileConfigLoader {
 	 * @param fieldType the field to retrieve
 	 * @return the field name
 	 */
-	public static String getdbField(String fieldType)
+	public static String getUserdbField(String fieldType)
 	{
-		return dbFields.getString(fieldType);
+		return userdbFields.getString(fieldType);
 	}
 	
 
@@ -292,10 +292,10 @@ public class SoileConfigLoader {
 	{
 		MongoAuthenticationOptions res = new MongoAuthenticationOptions();
 		res.setCollectionName(dbCfg.getString("userCollection"));
-		res.setPasswordCredentialField(getdbField("passwordCredentialField"));
-		res.setPasswordField(getdbField("passwordField"));
-		res.setUsernameCredentialField(getdbField("usernameCredentialField"));
-		res.setUsernameField(getdbField("usernameField"));				
+		res.setPasswordCredentialField(getUserdbField("passwordCredentialField"));
+		res.setPasswordField(getUserdbField("passwordField"));
+		res.setUsernameCredentialField(getUserdbField("usernameCredentialField"));
+		res.setUsernameField(getUserdbField("usernameField"));				
 		return res;
 	}
 	
@@ -303,9 +303,9 @@ public class SoileConfigLoader {
 	{
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
 		res.setCollectionName(dbCfg.getString("userCollection"));
-		res.setPermissionField(getdbField("userPermissionsField"));
-		res.setRoleField(getdbField("userRolesField"));
-		res.setUsernameField(getdbField("usernameField"));				
+		res.setPermissionField(getUserdbField("userPermissionsField"));
+		res.setRoleField(getUserdbField("userRolesField"));
+		res.setUsernameField(getUserdbField("usernameField"));				
 		return res;
 	}
 	
@@ -313,9 +313,9 @@ public class SoileConfigLoader {
 	{
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
 		res.setCollectionName(dbCfg.getString("userCollection"));
-		res.setPermissionField(getdbField("taskPermissionsField"));
-		res.setRoleField(getdbField("userRolesField"));
-		res.setUsernameField(getdbField("usernameField"));				
+		res.setPermissionField(getUserdbField("taskPermissionsField"));
+		res.setRoleField(getUserdbField("userRolesField"));
+		res.setUsernameField(getUserdbField("usernameField"));				
 		return res;
 	}
 	
@@ -323,9 +323,9 @@ public class SoileConfigLoader {
 	{
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
 		res.setCollectionName(dbCfg.getString("userCollection"));
-		res.setPermissionField(getdbField("experimentPermissionsField"));
-		res.setRoleField(getdbField("userRolesField"));
-		res.setUsernameField(getdbField("usernameField"));				
+		res.setPermissionField(getUserdbField("experimentPermissionsField"));
+		res.setRoleField(getUserdbField("userRolesField"));
+		res.setUsernameField(getUserdbField("usernameField"));				
 		return res;
 	}
 	
@@ -333,9 +333,9 @@ public class SoileConfigLoader {
 	{
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
 		res.setCollectionName(dbCfg.getString("userCollection"));
-		res.setPermissionField(getdbField("projectPermissionsField"));
-		res.setRoleField(getdbField("userRolesField"));
-		res.setUsernameField(getdbField("usernameField"));				
+		res.setPermissionField(getUserdbField("projectPermissionsField"));
+		res.setRoleField(getUserdbField("userRolesField"));
+		res.setUsernameField(getUserdbField("usernameField"));				
 		return res;
 	}
 	
@@ -343,9 +343,9 @@ public class SoileConfigLoader {
 	{
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
 		res.setCollectionName(dbCfg.getString("userCollection"));
-		res.setPermissionField(getdbField("instancePermissionsField"));
-		res.setRoleField(getdbField("userRolesField"));
-		res.setUsernameField(getdbField("usernameField"));				
+		res.setPermissionField(getUserdbField("instancePermissionsField"));
+		res.setRoleField(getUserdbField("userRolesField"));
+		res.setUsernameField(getUserdbField("usernameField"));				
 		return res;
 	}
 }

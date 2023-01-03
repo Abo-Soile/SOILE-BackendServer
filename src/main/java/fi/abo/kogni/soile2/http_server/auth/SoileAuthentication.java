@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.http_server.authentication;
+package fi.abo.kogni.soile2.http_server.auth;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,8 +47,8 @@ public class SoileAuthentication implements AuthenticationProvider{
 			        resultHandler.handle((Future.failedFuture("Invalid Credentials.")));
 			        return;
 			      }
-			      if (credentials.getString(SoileConfigLoader.getdbField("passwordField")) == null 
-			    	  ||credentials.getString(SoileConfigLoader.getdbField("passwordField")).isEmpty())
+			      if (credentials.getString(SoileConfigLoader.getUserdbField("passwordField")) == null 
+			    	  ||credentials.getString(SoileConfigLoader.getUserdbField("passwordField")).isEmpty())
 			    	  
 			      {
 			    	  resultHandler.handle((Future.failedFuture("Invalid Password.")));
@@ -95,9 +95,9 @@ public class SoileAuthentication implements AuthenticationProvider{
 
 	private User getUser(JsonObject dbEntry, JsonObject credentials)
 		      throws InvalidLoginException {
-    	String username = credentials.getString(SoileConfigLoader.getdbField("usernameField"));
+    	String username = credentials.getString(SoileConfigLoader.getUserdbField("usernameField"));
 		User user = UserUtils.buildUserForDBEntry(dbEntry,username);		
-	    if(strategy.verify(dbEntry.getString(SoileConfigLoader.getdbField("passwordField")),
+	    if(strategy.verify(dbEntry.getString(SoileConfigLoader.getUserdbField("passwordField")),
 	    		credentials.getString(SoileConfigLoader.getSessionProperty("passwordField"))))
 	    {
 	    	//User authenticated!!

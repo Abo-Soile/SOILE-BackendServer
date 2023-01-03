@@ -47,8 +47,11 @@
 	},
 	
 	"db_user_fields": {
-		"userPermissionField" : "permissions",
-		"userTypeField" : "type",
+		"experimentPermissionsField" : "experimentPermissions",
+		"projectPermissionsField" : "projectPermissions",
+		"instancePermissionsField" : "instancePermissions",
+		"userPermissionsField" : "permissions",
+		"taskPermissionsField" : "taskpermissions",
 		"usernameField" : "username",
 		"userEmailField" : "email",
 		"userFullNameField" : "fullname",
@@ -82,26 +85,8 @@
 		"userRoles" : "roles" 
 	},
 
-	"communication" : {
-		"setCommand" : "set", 
-		"addCommand" : "add",
-		"removeCommand" : "remove",	
+	"communication" : {		
 		"Fields" : {
-			"privateField" : "isPrivate",
-			"permissionField" : "permissions",
-			"userListField" : "userList",
-			"logonRequireField" : "logonRequired",
-			"readRolesField" : "readRoles",
-			"writeRolesField" : "writeRoles",
-			"readPermissionsField" : "readPermissions",
-			"operationField" : "command",
-			"userTypeField" : "type",
-			"usernameField" : "username",
-			"userEmailField" : "email",
-			"userFullNameField" : "fullname",
-			"passwordField" : "password",
-			"userRolesField" : "userRoles",
-			"rememberLoginField" : "remember",
 			"sessionID" : "sessionID",
 			"experimentID" : "experimentID",			
 			"roleChanged" : "roleChanged",	
@@ -122,6 +107,7 @@
 			"addUser" : "adduser",
 			"removeUser" : "removeuser",
 			"permissionOrRoleChange" : "permissionOrRoleChange",
+			"getAccessRequest" : "getAccessOfUser",
 			"setUserFullNameAndEmail" :"setNameAndEmail",
 			"getUserData" : "getUserData",
 			"addSession" : "addUserSession",
@@ -130,7 +116,8 @@
 			"invalidateUserSession" : "invalidateSession",
 			"activateUser" : "activateUser",
 			"getUserInfo" : "getUserInfo",
-			"setUserInfo" : "getUserInfo",
+			"setUserInfo" : "setUserInfo",
+			"setPassword" : "setPassword",
 			"makeUserParticipantInProject" : "addParticipantToUser",
 			"getParticipantForUserInProject" : "getParticipantForUser",
 			"getParticipantsForUser" : "getParticipantsForUser"

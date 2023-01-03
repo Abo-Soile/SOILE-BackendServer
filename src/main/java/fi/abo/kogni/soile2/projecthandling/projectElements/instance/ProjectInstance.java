@@ -455,4 +455,10 @@ public abstract class ProjectInstance implements AccessElement{
 	 * @return A Future of a Jsonarray with all participant ids.
 	 */
 	public abstract Future<JsonArray> getParticipants();
+	
+	public abstract Future<JsonArray> createAccessTokens(int count);
+	
+	public abstract Future<String> createPermanentAccessToken();
+	
+	public abstract Future<Void> useToken(String token);
 }

@@ -28,25 +28,26 @@ public class MessageResponseHandlerImpl implements MessageResponseHandler{
 		if(responseData.getString(SoileCommUtils.RESULTFIELD).equals(SoileCommUtils.SUCCESS))
 		{
 			context.response().setStatusCode(successStatusCode);
-			Object data = responseData.getValue("data", null);
+			Object data = responseData.getValue(SoileCommUtils.DATAFIELD, null);
 			if(data != null)
 			{
 				if(data instanceof JsonObject)
 				{
 					context.response().putHeader("content-type","application/json");
-					context.response().write(responseData.getJsonObject("data").encode());
+					context.response().write(responseData.getJsonObject(SoileCommUtils.DATAFIELD).encode());
 				}
 				else if ( data instanceof String)
 				{
 					context.response().putHeader("content-type","text/plain");
-					context.response().write(responseData.getString("data"));				
+					context.response().write(responseData.getString(SoileCommUtils.DATAFIELD));				
 				}
 				else if ( data instanceof JsonArray)
 				{
 					context.response().putHeader("content-type","application/json");
-					context.response().write(responseData.getJsonArray("data").encode());				
+					context.response().write(responseData.getJsonArray(SoileCommUtils.DATAFIELD).encode());				
 				}
 			}
+
 		}
 		
 		

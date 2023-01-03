@@ -6,6 +6,7 @@ public class SoileCommUtils {
 
 	public static String SUCCESS = "Success";
 	public static String RESULTFIELD = "Result";
+	public static String DATAFIELD = "DATA";
 	public static String FAILED = "Error";
 	public static String REASONFIELD = "Reason";
 	public static String FIELDID = "Fields";

@@ -14,8 +14,8 @@ public interface UserManagementTest {
 	
 	public default Future<String> createUser(JsonObject userdata, TestContext context, SoileUserManager uManager)
 	{			
-		String username = userdata.getString(SoileConfigLoader.getdbField("usernameField"));
-		String password = userdata.getString(SoileConfigLoader.getdbField("passwordField"));
+		String username = userdata.getString(SoileConfigLoader.getUserdbField("usernameField"));
+		String password = userdata.getString(SoileConfigLoader.getUserdbField("passwordField"));
 		System.out.println("Creating user with name " + username + " and password " + password);
 		return uManager.createUser(username, password);
 	}

@@ -1,5 +1,8 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,10 +50,10 @@ public class UserRouter extends SoileRouter {
 	MongoAuthorization experimentAuth;
 	MongoAuthorization taskAuth;
 	MongoAuthorization instanceAuth;
-	SoileIDBasedAuthorizationHandler<AccessElement> taskIDAccessHandler;
-	SoileIDBasedAuthorizationHandler<AccessElement> projectIDAccessHandler;
-	SoileIDBasedAuthorizationHandler<AccessElement> experimentIDAccessHandler;
-	SoileIDBasedAuthorizationHandler<AccessElement> instanceIDAccessHandler;
+	SoileIDBasedAuthorizationHandler taskIDAccessHandler;
+	SoileIDBasedAuthorizationHandler projectIDAccessHandler;
+	SoileIDBasedAuthorizationHandler experimentIDAccessHandler;
+	SoileIDBasedAuthorizationHandler instanceIDAccessHandler;
 
 	private static Logger LOGGER = LogManager.getLogger(UserRouter.class.getName()); 
 
@@ -62,10 +65,10 @@ public class UserRouter extends SoileRouter {
 		experimentAuth = auth.getAuthorizationForOption(TargetElementType.EXPERIMENT);
 		taskAuth = auth.getAuthorizationForOption(TargetElementType.TASK);
 		instanceAuth = auth.getAuthorizationForOption(TargetElementType.INSTANCE);		
-		taskIDAccessHandler = new SoileIDBasedAuthorizationHandler<AccessElement>(Task::new, client);
-		experimentIDAccessHandler = new SoileIDBasedAuthorizationHandler<AccessElement>(Experiment::new, client);
-		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler<AccessElement>(Project::new, client);
-		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler<AccessElement>(AccessProjectInstance::new, client);
+		taskIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Task().getTargetCollection(), client);
+		experimentIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Experiment().getTargetCollection(), client);
+		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Project().getTargetCollection(), client);
+		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client);
 
 		roleHandler = new SoileRoleBasedAuthorizationHandler();
 		this.eb = vertx.eventBus();
@@ -95,6 +98,11 @@ public class UserRouter extends SoileRouter {
 		
 		
 	}
+	
+	/**
+	 * Register a user according to the API command
+	 * @param context
+	 */
 	public void registerUser(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
@@ -102,6 +110,11 @@ public class UserRouter extends SoileRouter {
 		handleUserManagerCommand(context, "addUser", body, MessageResponseHandler.createDefaultHandler(201));
 	}
 
+	/**
+	 * Route for user deletion. 
+	 * TODO: If deleteFiles is false/unassigned report a unique id that can be used to reassociate data and allow deletion of the data.  
+	 * @param context
+	 */
 	public void removeUser(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
@@ -135,6 +148,140 @@ public class UserRouter extends SoileRouter {
 
 	}
 	
+	/**
+	 * This allows setting the user information (except the password)
+	 * @param context
+	 */
+	public void setUserInfo(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
+		JsonObject body = params.body().getJsonObject();				
+		String username = body.getString("username");
+		JsonObject userData = new JsonObject();
+		userData.put("username", username);
+		userData.put("fullname", body.getString("fullname"));
+		userData.put("email", body.getString("email"));
+		if(body.containsKey("userRole") )
+		{
+			userData.put("userRole", body.getString("userRole"));
+		}				
+		checkSameUserOrAdmin(context.user(), username, experimentAuth)
+		.onSuccess(allowed -> {
+			// we are setting a role.
+			if(body.containsKey("userRole"))
+			{
+				checkAccess(context.user(), Roles.Admin, experimentAuth)
+				.onSuccess(isAdmin -> {
+					handleUserManagerCommand(context, "setUserInfo", userData, MessageResponseHandler.createDefaultHandler(200));
+				});			
+			}
+			else
+			{
+				handleUserManagerCommand(context, "setUserInfo", userData, MessageResponseHandler.createDefaultHandler(200));
+			}
+			
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+	
+	/**
+	 * This allows setting the user information (except the password)
+	 * @param context
+	 */
+	public void setPassword(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
+		JsonObject body = params.body().getJsonObject();				
+		String username = body.getString("username");
+		JsonObject userData = new JsonObject();
+		userData.put("username", username);
+		userData.put("password", body.getString("password"));		
+		checkSameUserOrAdmin(context.user(), username, experimentAuth)
+		.onSuccess(allowed -> {
+			// we are setting a role.
+			handleUserManagerCommand(context, "setPassword", userData, MessageResponseHandler.createDefaultHandler(200));			
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+	
+	/**
+	 * Set the Role of a specified user (only Admins are allowed to do this)
+	 * @param context
+	 */
+	public void setRole(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
+		JsonObject body = params.body().getJsonObject();				
+		String username = body.getString("username");
+		JsonObject userData = new JsonObject();
+		userData.put("username", username);
+		userData.put("role", body.getString("role"));		
+		checkAccess(context.user(), Roles.Admin, experimentAuth)
+		.onSuccess(allowed -> {
+			// we are setting a role.
+			handleUserManagerCommand(context, "permissionOrRoleChange", userData, MessageResponseHandler.createDefaultHandler(200));			
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+	
+	/**
+	 * Set the permissions of a specified user.
+	 * @param context
+	 */
+	public void permissionChange(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
+		JsonObject body = params.body().getJsonObject();				
+		String username = body.getString("username");
+		JsonObject permissionProps = body.getJsonObject("permissionsProperties");
+		JsonObject userData = new JsonObject();
+		userData.put("username", username);
+		userData.put("command", body.getString("command"));
+		userData.put("permissions", permissionProps);		
+		checkUserHasAllPermissions(context.user(),permissionProps.getJsonArray("permissionsSettings"), getAuthForType(body.getString("ElementType")),getHandlerForType(body.getString("ElementType")))
+		.onSuccess(allowed -> {			
+			handleUserManagerCommand(context, "permissionOrRoleChange", userData, MessageResponseHandler.createDefaultHandler(200));			
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+	
+	/**
+	 * Set the permissions of a specified user.
+	 * @param context
+	 */
+	public void permissionOrRoleRequest(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
+		JsonObject body = params.body().getJsonObject();				
+		String username = body.getString("username");		
+		JsonObject userData = new JsonObject();
+		userData.put("username", username);			
+		checkSameUserOrAdmin(context.user(), username, experimentAuth)
+		.onSuccess(allowed -> {			
+			handleUserManagerCommand(context, "getAccessRequest", userData, MessageResponseHandler.createDefaultHandler(200));			
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+	
+	/**
+	 * Get the use userinfo
+	 * @param context
+	 */
+	public void getUserInfo(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
+		JsonObject body = params.body().getJsonObject();				
+		String username = body.getString("username");
+		JsonObject userData = new JsonObject();
+		userData.put("username", username);
+		checkSameUserOrAdmin(context.user(), username, experimentAuth)
+		.onSuccess(allowed -> {
+			// we are setting a role.
+			handleUserManagerCommand(context, "getUserInfo", userData, MessageResponseHandler.createDefaultHandler(200));				
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+	
 	
 	public void createUser(RoutingContext context)
 	{
@@ -147,7 +294,6 @@ public class UserRouter extends SoileRouter {
 		{
 			if(response.body() instanceof JsonObject)
 			{
-
 				messageHandler.handle(((JsonObject)response.body()), routingContext);
 				routingContext.response().end();
 			}
@@ -173,7 +319,7 @@ public class UserRouter extends SoileRouter {
 	}
 
 	protected Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission,
-			boolean adminAllowed, MongoAuthorization authProvider, SoileIDBasedAuthorizationHandler<AccessElement> IDAccessHandler)
+			boolean adminAllowed, MongoAuthorization authProvider, SoileIDBasedAuthorizationHandler IDAccessHandler)
 	{
 		Promise<Void> accessPromise = Promise.<Void>promise();
 		authProvider.getAuthorizations(user)
@@ -230,4 +376,61 @@ public class UserRouter extends SoileRouter {
 		return accessPromise.future();
 	}
 	
+	/**
+	 * Check if a user has all permissions required for the given permissions array (the permissions array has object with a field target and for all of those 
+	 * the user needs to have full permissions.
+	 * @param user The user to check
+	 * @param permissions the permissions required
+	 * @param authProvider the auth provider that provides the authorizations to the user
+	 * @param IDAccessHandler the Access handler that can build the authorizations.
+	 * @return a succeeded future if authorizated or a failed future if not. 
+	 */
+	protected Future<Void> checkUserHasAllPermissions(User user, JsonArray permissions, MongoAuthorization authProvider, SoileIDBasedAuthorizationHandler IDAccessHandler )
+	{
+		Promise<Void> accessPromise = Promise.<Void>promise();
+		authProvider.getAuthorizations(user)
+		.onSuccess(Void -> {			
+			List<String> IDsToCheck = new LinkedList<>();
+			for(int i = 0; i < permissions.size(); i++)
+			{
+				IDsToCheck.add(permissions.getJsonObject(i).getString("target"));
+			}
+			if(IDAccessHandler.checkMultipleFullAuthorizations(user, IDsToCheck, true))
+			{
+				accessPromise.complete();
+			}
+			else
+			{
+				accessPromise.fail(new HttpException(403, "Missing Full access to at least some of the provided objects"));
+			}
+			})		
+		.onFailure(err -> {
+			accessPromise.fail(new HttpException(500,err.getMessage()));
+		});
+
+		return accessPromise.future();
+	}
+	
+	SoileIDBasedAuthorizationHandler getHandlerForType(String type)
+	{		
+		switch(type)
+		{
+			case SoileConfigLoader.PROJECT: return projectIDAccessHandler;
+			case SoileConfigLoader.EXPERIMENT: return experimentIDAccessHandler;
+			case SoileConfigLoader.TASK: return taskIDAccessHandler;
+			case SoileConfigLoader.INSTANCE: return instanceIDAccessHandler;
+			default: return taskIDAccessHandler;
+		}
+	}
+	MongoAuthorization getAuthForType(String type)
+	{		
+		switch(type)
+		{
+			case SoileConfigLoader.PROJECT: return projectAuth;
+			case SoileConfigLoader.EXPERIMENT: return experimentAuth;
+			case SoileConfigLoader.TASK: return taskAuth;
+			case SoileConfigLoader.INSTANCE: return instanceAuth;
+			default: return taskAuth;
+		}
+	}
 }

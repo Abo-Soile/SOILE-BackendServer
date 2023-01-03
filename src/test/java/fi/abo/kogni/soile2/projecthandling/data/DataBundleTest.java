@@ -33,7 +33,7 @@ public class DataBundleTest extends ElementTester {
 	public void runBeforeTests(TestContext context)
 	{
 		super.runBeforeTests(context);	
-		projHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());
+		projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
 		partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		dbg = new DataBundleGenerator(mongo_client, projHandler, partHandler);
 		vertx.deployVerticle(dbg);

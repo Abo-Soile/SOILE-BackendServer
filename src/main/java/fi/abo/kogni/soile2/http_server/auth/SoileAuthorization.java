@@ -23,33 +23,17 @@ public class SoileAuthorization{
 	
 	public enum PermissionType
 	{
-		READ
-		{
-			public String toString()
-			{
-				return "READ";
-			}
-		},
-		READ_WRITE
-		{
-			public String toString()
-			{
-				return "READ_WRITE";
-			}
-		},
-		FULL {
-			public String toString()
-			{
-				return "FULL";
-			}
-		}
+		EXECUTE,
+		READ,
+		READ_WRITE,
+		FULL
 	}
 	
 	public enum Roles
 	{
 		Admin,		
 		Researcher,
-		Participant 
+		Participant, 
 	}
 	
 	MongoAuthorization taskAuthorization;
@@ -135,7 +119,35 @@ public class SoileAuthorization{
 			JsonArray result = new JsonArray();
 			for(int i = 0; i < permissions.size(); ++i)
 			{				
-				result.add(permissions.getString(i).substring(permissions.getString(i).indexOf("$")));				
+				result.add(SoilePermissionProvider.getTargetFromPermission(permissions.getString(i)));				
+			}
+			permissionPromise.complete(result);
+		})
+		.onFailure(err -> permissionPromise.fail(err));
+		return permissionPromise.future();
+	}
+
+	/**
+	 * Get the Element IDs of the given type for which the user has read permissions (only return the actual ids not the permission strings)
+	 * @param user - The user for which to obtain the permissions
+	 * @param permissionType The type of permissions one of 
+	 * @return
+	 */
+	public Future<JsonArray> getReadPermissions(User user, TargetElementType permissionType)
+	{
+		Promise<JsonArray> permissionPromise = Promise.promise();		
+		getPermissions(user, permissionType)
+		.onSuccess(permissions -> {
+			JsonArray result = new JsonArray();
+			for(int i = 0; i < permissions.size(); ++i)
+			{		
+				String type = SoilePermissionProvider.getTypeFromPermission(permissions.getString(i));
+				if(type.equals(PermissionType.FULL.toString()) 
+				|| type.equals(PermissionType.READ_WRITE.toString()) 
+				|| type.equals(PermissionType.READ.toString()) )
+						{
+							result.add(SoilePermissionProvider.getTargetFromPermission(permissions.getString(i)));
+						}
 			}
 			permissionPromise.complete(result);
 		})
@@ -157,9 +169,9 @@ public class SoileAuthorization{
 			JsonArray result = new JsonArray();
 			for(int i = 0; i < permissions.size(); ++i)
 			{				
-				if(permissions.getString(i).substring(0,permissions.getString(i).indexOf("$")).equals(PermissionType.FULL.toString()))
+				if(SoilePermissionProvider.getTypeFromPermission(permissions.getString(i)).equals(PermissionType.FULL.toString()))
 				{
-					result.add(permissions.getString(i).substring(permissions.getString(i).indexOf("$")));
+					result.add(SoilePermissionProvider.getTargetFromPermission(permissions.getString(i)));
 				}
 			}
 			permissionPromise.complete(result);
@@ -182,10 +194,11 @@ public class SoileAuthorization{
 			JsonArray result = new JsonArray();
 			for(int i = 0; i < permissions.size(); ++i)
 			{				
-				if(permissions.getString(i).substring(0,permissions.getString(i).indexOf("$")).equals(PermissionType.FULL.toString()) 
-				   || permissions.getString(i).substring(0,permissions.getString(i).indexOf("$")).equals(PermissionType.READ_WRITE.toString()) )
+				String type = SoilePermissionProvider.getTypeFromPermission(permissions.getString(i));
+				if(type.equals(PermissionType.FULL.toString()) 
+				|| type.equals(PermissionType.READ_WRITE.toString())  )
 				{
-					result.add(permissions.getString(i).substring(permissions.getString(i).indexOf("$")));
+					result.add(SoilePermissionProvider.getTargetFromPermission(permissions.getString(i)));
 				}
 			}
 			permissionPromise.complete(result);

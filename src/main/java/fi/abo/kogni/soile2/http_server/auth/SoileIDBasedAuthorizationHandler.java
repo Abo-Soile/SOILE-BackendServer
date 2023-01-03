@@ -1,39 +1,69 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
-import java.util.function.Supplier;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
-import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
+import io.vertx.ext.auth.authorization.AndAuthorization;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.auth.authorization.OrAuthorization;
-import io.vertx.ext.auth.authorization.PermissionBasedAuthorization;
 import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
-import io.vertx.ext.auth.authorization.WildcardPermissionBasedAuthorization;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.handler.HttpException;
 
 
-public class SoileIDBasedAuthorizationHandler<T extends AccessElement>{
+public class SoileIDBasedAuthorizationHandler{
 			
 	static final Logger LOGGER = LogManager.getLogger(SoileIDBasedAuthorizationHandler.class);
 	MongoClient client;
-	AccessElement baseElement;
-	public SoileIDBasedAuthorizationHandler(Supplier<T> supplier, MongoClient client )
+	String targetCollection;
+	public SoileIDBasedAuthorizationHandler(String targetCollection, MongoClient client)
 	{
-		baseElement = supplier.get();
+		this.targetCollection = targetCollection;
 		this.client = client;
 	}
 
+	/**
+	 * Check if the given user has full authorization for the given list of IDs
+	 * @param user The user to check
+	 * @param IDs the ids to check
+	 * @param AdminAllowed whether it would be sufficient if the user is an admin.
+	 * @return
+	 */
+	public boolean checkMultipleFullAuthorizations(User user, List<String> IDs, boolean AdminAllowed)
+	{
+		AndAuthorization auth = AndAuthorization.create();
+		for(String id : IDs)
+		{
+			auth.addAuthorization(getPermissionBasedAuth(id, PermissionType.FULL));
+		}
+		Authorization finalAuth;
+		if(AdminAllowed)
+		{
+			finalAuth = OrAuthorization.create().addAuthorization(auth).addAuthorization(RoleBasedAuthorization.create(Roles.Admin.toString()));
+		}
+		else
+		{
+			finalAuth = auth;
+		}
+		if(finalAuth.match(user))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
 	public Future<Void> authorize(User user, String id, boolean adminAllowed, PermissionType requiredAccess) {	
 		Promise<Void> authorizationPromise = Promise.<Void>promise();
 		if(requiredAccess == null)
@@ -41,48 +71,46 @@ public class SoileIDBasedAuthorizationHandler<T extends AccessElement>{
 			authorizationPromise.complete();
 			return authorizationPromise.future();
 		}
-		// TODO Auto-generated method stub	
-			client.findOne(baseElement.getTargetCollection(),new JsonObject().put("_id", id),new JsonObject().put("private", 1))
-			.onSuccess( res -> {
-				if( res == null)
+		client.findOne(targetCollection,new JsonObject().put("_id", id),new JsonObject().put("private", 1))
+		.onSuccess( res -> {
+			if( res == null)
+			{
+				authorizationPromise.fail(new ObjectDoesNotExist(id));
+				return;
+			}
+			else
+			{
+				// if it is private we need explicit access to it.
+				// and for any access point that needs full permissions, 
+				if(res.getBoolean("private") || requiredAccess == PermissionType.FULL)
 				{
-					authorizationPromise.fail(new ObjectDoesNotExist(id));
-					return;
-				}
-				else
-				{
-					// if it is private we need explicit access to it.
-					// and for any access point that needs full permissions, 
-					if(res.getBoolean("private") || requiredAccess == PermissionType.FULL)
+
+					Authorization auth;
+					if(adminAllowed)
 					{
-
-						Authorization auth;
-						if(adminAllowed)
-						{
-							auth = OrAuthorization.create().addAuthorization(getPermissionBasedAuth(id, requiredAccess))
-									.addAuthorization(RoleBasedAuthorization.create(Roles.Admin.toString()));
-						}
-						else
-						{
-							auth = getPermissionBasedAuth(id, requiredAccess);
-						}
-						if(auth.match(user))
-						{
-							authorizationPromise.complete();
-						}
-						else
-						{
-							authorizationPromise.fail(new HttpException(403));
-						}						
-
+						auth = OrAuthorization.create().addAuthorization(getPermissionBasedAuth(id, requiredAccess))
+								.addAuthorization(RoleBasedAuthorization.create(Roles.Admin.toString()));
 					}
 					else
 					{
-						// this is not private and no full access is required, so access can be granted without explicit permissions.
-						authorizationPromise.complete();
-
+						auth = getPermissionBasedAuth(id, requiredAccess);
 					}
+					if(auth.match(user))
+					{
+						authorizationPromise.complete();
+					}
+					else
+					{
+						authorizationPromise.fail(new HttpException(403));
+					}						
+
 				}
+				else
+				{					
+					// this is not private and no full access is required, so access can be granted without explicit permissions.
+					authorizationPromise.complete();					
+				}
+			}
 		})
 		.onFailure(err -> failPromise(err,authorizationPromise,500));		
 		return authorizationPromise.future();
@@ -93,18 +121,18 @@ public class SoileIDBasedAuthorizationHandler<T extends AccessElement>{
 		
 		if(requiredAccess == PermissionType.FULL)
 		{
-			return PermissionBasedAuthorization.create(requiredAccess.toString() + "$" + id);
+			return SoilePermissionProvider.buildPermission(id,requiredAccess);
 		}
 		else
 		{
 			if(requiredAccess == PermissionType.READ_WRITE)
 			{
-				return OrAuthorization.create().addAuthorization(PermissionBasedAuthorization.create(PermissionType.FULL.toString() + "$" + id))
-											   .addAuthorization(PermissionBasedAuthorization.create(PermissionType.READ_WRITE.toString() + "$" + id));	
+				return OrAuthorization.create().addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.FULL))
+											   .addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.READ_WRITE));	
 			}
 			else
 			{
-				return WildcardPermissionBasedAuthorization.create("*$" + id);
+				return SoilePermissionProvider.getWildCardPermission(id);
 			}
 			
 		}
@@ -118,4 +146,5 @@ public class SoileIDBasedAuthorizationHandler<T extends AccessElement>{
 		}
 		p.fail(new HttpException(StatusCode,err.getMessage()));
 	}
+	
 }

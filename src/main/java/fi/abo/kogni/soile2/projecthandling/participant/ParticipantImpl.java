@@ -377,4 +377,14 @@ public abstract class ParticipantImpl implements Participant{
 			outputMap = new DatedDataMap<>();
 			return Future.succeededFuture();
 		}
+		
+		public boolean hasToken()
+		{
+			return false;
+		}
+		
+		public String getToken()
+		{
+			return null;
+		}
 }

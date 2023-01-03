@@ -7,13 +7,11 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidLoginException;
-import fi.abo.kogni.soile2.http_server.verticles.SoileAuthenticationVerticle;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
-import io.vertx.ext.auth.authorization.AuthorizationProvider;
 import io.vertx.ext.mongo.MongoClient;
 
 public class UserUtils {
@@ -51,16 +49,9 @@ public class UserUtils {
 	 */
 	public static User buildUserForDBEntry(JsonObject userJson, String username)
 	{
-	    	User user = User.fromName(userJson.getString(SoileConfigLoader.getdbField("usernameField")));
+	    	User user = User.fromName(userJson.getString(SoileConfigLoader.getUserdbField("usernameField")));
 	    	LOGGER.error(userJson.encodePrettily());
-	    	// set properties of the user that are needed for session handling
-	    	user.principal().put(SoileConfigLoader.getSessionProperty("userTypeField"), userJson.getValue(SoileConfigLoader.getdbField("userTypeField")));
-	    	user.principal().put(SoileConfigLoader.getSessionProperty("validSessionCookies"), userJson.getValue(SoileConfigLoader.getdbField("storedSessions")));
-	    	user.principal().put(SoileConfigLoader.getSessionProperty("userOwnes"), userJson.getString(SoileConfigLoader.getdbField("ownerField")));
-	    	user.principal().put(SoileConfigLoader.getSessionProperty("userCollaborates"), userJson.getString(SoileConfigLoader.getdbField("collaboratorField")));
-	    	user.principal().put(SoileConfigLoader.getSessionProperty("userParticipates"), userJson.getString(SoileConfigLoader.getdbField("participantField")));
-	    	user.principal().put(SoileConfigLoader.getSessionProperty("userRoles"),  userJson.getString(SoileConfigLoader.getdbField("userRolesField")));
-	    	//AuthorizationProvider prov = AuthorizationProvider.create("this", null);	    	
+	    	user.principal().put(SoileConfigLoader.getSessionProperty("validSessionCookies"), userJson.getValue(SoileConfigLoader.getUserdbField("storedSessions")));
 	    	return user;					
 	}
 	
@@ -72,8 +63,8 @@ public class UserUtils {
 	 */
 	public static void getUserDataFromCollection(MongoClient dbclient, String username, Handler<Future<JsonObject>> resultHandler)
 	{
-	   	  String unameField = SoileConfigLoader.getdbField("usernameField");
-	   	  String emailField = SoileConfigLoader.getdbField("emailField");
+	   	  String unameField = SoileConfigLoader.getUserdbField("usernameField");
+	   	  String emailField = SoileConfigLoader.getUserdbField("emailField");
 	      JsonObject query;
 	      
 	      if(username.contains("@"))

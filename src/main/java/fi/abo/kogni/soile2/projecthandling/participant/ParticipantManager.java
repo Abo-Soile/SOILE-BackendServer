@@ -12,7 +12,9 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.utils.DirtyDataRetriever;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
+import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.DBParticipantFactory;
+import fi.abo.kogni.soile2.projecthandling.participant.impl.TokenParticipantFactory;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
@@ -25,10 +27,12 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.VertxContextPRNG;
 import io.vertx.ext.mongo.BulkOperation;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.mongo.WriteOption;
+import io.vertx.ext.web.handler.HttpException;
 
 /**
  * This class provides functionalities to interact with the Participant db, creating, saving and deleting participants.
@@ -40,6 +44,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	MongoClient client;
 	// should go to the constructor.	
 	private ParticipantFactory factory;
+	private ParticipantFactory tokenfactory;
 	private HashMap<String, Long> dirtyTimeStamps; 
 	//TODO: needs constructor.
 	private String participantCollection = SoileConfigLoader.getdbProperty("participantCollection");
@@ -50,6 +55,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	{
 		this.client  = client;
 		this.factory = new DBParticipantFactory(this);
+		this.tokenfactory = new TokenParticipantFactory(this);
 		dirtyTimeStamps = new HashMap<>();
 	}
 	
@@ -74,7 +80,15 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			else
 			{
 				JsonObject partObject = res.get(0);
-				Participant p = factory.createParticipant(partObject);
+				Participant p;
+				if(partObject.getString("token") != null)
+				{
+					p = tokenfactory.createParticipant(partObject);
+				}
+				else
+				{
+					p = factory.createParticipant(partObject);
+				}
 				dirtyTimeStamps.put(key,System.currentTimeMillis());
 				participantPromise.complete(p);				
 			}
@@ -114,6 +128,34 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		{
 			defaultParticipant.put("_id", res);
 			Participant part = factory.createParticipant(defaultParticipant);
+			p.addParticipant(part).onSuccess( Void -> 
+			{
+					participantPromise.complete(part);
+			})
+			.onFailure(err -> participantPromise.fail(err));
+			
+		}).onFailure(err -> {
+			participantPromise.fail(err.getCause());
+		});
+		return participantPromise.future();
+	}
+	
+	/**
+	 * Create a new Token Participant with empty information and retrieve a new ID from the 
+	 * database.
+	 * @param handler the handler to handle the created participant
+	 */
+	public Future<Participant> createTokenParticipant(ProjectInstance p)
+	{	
+		Promise<Participant> participantPromise = Promise.<Participant>promise();
+		JsonObject defaultParticipant = getDefaultParticipantInfo(p.getID());
+		VertxContextPRNG rng = VertxContextPRNG.current();		
+		String Token = rng.nextString(35);
+		defaultParticipant.put("token", Token);
+		client.save(participantCollection,defaultParticipant).onSuccess(res ->
+		{		
+			defaultParticipant.put("_id", res);			
+			Participant part = tokenfactory.createParticipant(defaultParticipant);
 			p.addParticipant(part).onSuccess( Void -> 
 			{
 					participantPromise.complete(part);
@@ -252,7 +294,11 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		Promise<String> savePromise = Promise.<String>promise();
 		p.toJson()
 		.onSuccess(update -> {
-			update.put("modifiedStamp", System.currentTimeMillis());			
+			update.put("modifiedStamp", System.currentTimeMillis());
+			if(p.hasToken())
+			{
+				update.put("token", p.getToken());
+			}
 			//TODO Correct this call. Needs to be upsert. 
 			client.save(participantCollection,update)
 			.onSuccess(res -> {
@@ -454,7 +500,31 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		JsonObject dataProj = new JsonObject().put("$project", new JsonObject().put("participantData", "$resultData").put("_id", 0));
 		return MongoAggregationHandler.aggregate(client, participantCollection, new JsonArray().add(query).add(dataAddReArr).add(dataProj));		
 	}
-	
+
+	/**
+	 * Get the participant ID associated with the provided Token.
+	 * @param token - the provided token
+	 * @param projectID the project ID (as check that ID and project match).
+	 * @return
+	 */
+	public Future<String> getParticipantIDForToken(String token, String projectID)
+	{
+		Promise<String> IDPromise = Promise.promise();
+		
+		client.findOne(participantCollection, new JsonObject().put("token", token).put("project", projectID), null)
+		.onSuccess(res -> {
+			if(res == null)
+			{
+				IDPromise.fail(new UserDoesNotExistException(token));
+			}
+			else
+			{
+				IDPromise.complete(res.getString("_id"));
+			}							
+		})
+		.onFailure(err -> IDPromise.fail(err));
+		return IDPromise.future();
+	}
 	
 	
 }

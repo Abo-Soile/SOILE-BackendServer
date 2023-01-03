@@ -7,12 +7,14 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
+import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.netty.util.internal.shaded.org.jctools.queues.MessagePassingQueue.Supplier;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
@@ -31,16 +33,17 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	ElementManager<T> elementManager;
 	EventBus eb;
-	SoileIDBasedAuthorizationHandler<T> IDAccessHandler;
+	SoileIDBasedAuthorizationHandler IDAccessHandler;
 	SoileRoleBasedAuthorizationHandler roleHandler;
 	SoileAuthorization authorizationRertiever;
 	MongoAuthorization mongoAuth; 
 	public ElementRouter(ElementManager<T> manager, SoileAuthorization auth, EventBus eb, MongoClient client)
 	{		
 		authorizationRertiever = auth;
-		mongoAuth = auth.getAuthorizationForOption(manager.getElementSupplier().get().getElementType());
-		roleHandler = new SoileRoleBasedAuthorizationHandler();
-		IDAccessHandler = new SoileIDBasedAuthorizationHandler<T>(manager.getElementSupplier(), client);
+		T tempElement = manager.getElementSupplier().get();
+		mongoAuth = auth.getAuthorizationForOption(tempElement.getElementType());
+		roleHandler = new SoileRoleBasedAuthorizationHandler();		
+		IDAccessHandler = new SoileIDBasedAuthorizationHandler(tempElement.getTargetCollection(), client);
 		elementManager = manager;
 		this.eb = eb;
 	}

@@ -10,6 +10,8 @@ import org.apache.logging.log4j.Logger;
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.http_server.verticles.ExperimentLanguageVerticle;
 import fi.abo.kogni.soile2.http_server.verticles.SoileUserManagementVerticle;
+import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.core.AbstractVerticle;
@@ -34,8 +36,8 @@ public class SoileServerVerticle extends AbstractVerticle {
 		deployedVerticles = new ConcurrentLinkedQueue<>();
 		getConfig()
 		.compose(this::storeConfig)
-		.compose(this::setupFolders)
-		.compose(this::deployVerticles)
+		.compose(this::setupFolders)		
+		.compose(this::deployVerticles)		
 		.compose(this::startHttpServer).onComplete(res ->
 		{
 			if(res.succeeded())

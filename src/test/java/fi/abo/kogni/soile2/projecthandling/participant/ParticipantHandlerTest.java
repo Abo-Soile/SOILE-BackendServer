@@ -25,7 +25,7 @@ public class ParticipantHandlerTest extends GitTest{
 
 	@Test
 	public void testGetParticipantStatus(TestContext context) {
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
 		ObjectGenerator.buildAPIProject(ElementManager.getProjectManager(mongo_client, gitManager), ElementManager.getExperimentManager(mongo_client, gitManager), ElementManager.getTaskManager(mongo_client, gitManager), mongo_client, "Testproject")
@@ -62,7 +62,7 @@ public class ParticipantHandlerTest extends GitTest{
 
 	@Test
 	public void testParticipantStatus(TestContext context) {
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		JsonObject smokerOutput = new JsonObject()
 				.put("name", "smoker")
@@ -168,7 +168,7 @@ public class ParticipantHandlerTest extends GitTest{
 
 	@Test
 	public void testCreateAndGet(TestContext context) {
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
 		ElementManager<Project> projectManager = ElementManager.getProjectManager(mongo_client, gitManager);
@@ -189,12 +189,12 @@ public class ParticipantHandlerTest extends GitTest{
 						System.out.println("Starting Project");
 						projectInstance.startProject(participant)
 						.onSuccess(position -> {
-							partHandler.getParticpant(participant.getID())
+							partHandler.getParticipant(participant.getID())
 							.onSuccess(participant2 -> 
 							{
 								context.assertEquals(participant, participant2);
 								context.assertFalse(participant == participant2);
-								partHandler.getParticpant(participant.getID())
+								partHandler.getParticipant(participant.getID())
 								.onSuccess(participant3 -> 
 								{
 									context.assertEquals(participant, participant3);
@@ -205,7 +205,7 @@ public class ParticipantHandlerTest extends GitTest{
 									System.out.println("Finishing current step");
 									projectInstance.finishStep(participant, new JsonObject().put("taskID", position))
 									.onSuccess(res -> {
-										partHandler.getParticpant(participant.getID())
+										partHandler.getParticipant(participant.getID())
 										.onSuccess(participant4 ->
 										{
 											//this should be a new object, as the participant should have been made "dirty"

@@ -45,16 +45,6 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	{
 		return SoileConfigLoader.getCommand(mainField, command);
 	}
-		
-	/**
-	 * Request the communication command.
-	 * @param field The requested field name
-	 * @return the field name
-	 */
-	public String getCommunicationField(String field)
-	{
-		return SoileConfigLoader.getCommunicationField(field);	
-	}
 	
 	/**
 	 * Get the DB Field for this string
@@ -63,7 +53,7 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	 */
 	public String getDBField(String entry)
 	{
-		return SoileConfigLoader.getdbField(entry);
+		return SoileConfigLoader.getUserdbField(entry);
 	}
 	
 	

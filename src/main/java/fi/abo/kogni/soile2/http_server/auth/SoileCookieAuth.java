@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.http_server.auth;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.http_server.authentication.SoileCookieCreationHandler;
 import fi.abo.kogni.soile2.http_server.authentication.utils.CookieStrategy;
 import fi.abo.kogni.soile2.http_server.authentication.utils.UserUtils;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
@@ -60,8 +59,8 @@ public class SoileCookieAuth {
 				{
 					String token = CookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
 					String username = CookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());
-					JsonObject command = new JsonObject().put(SoileCommUtils.getCommunicationField("usernameField"), username)
-							.put(SoileCommUtils.getCommunicationField("sessionID"), token);
+					JsonObject command = new JsonObject().put("username", username)
+							.put("sessionID", token);
 
 					log.debug("Trying to validate token:\n" + command.encodePrettily());
 					log.debug("Requesting: " + SoileCommUtils.getUserEventBusCommand("checkUserSessionValid") + " from eventbus");
@@ -76,7 +75,7 @@ public class SoileCookieAuth {
 							if(SoileCommUtils.isResultSuccessFull(result)) 
 							{
 								JsonObject query = new JsonObject()
-										.put(SoileConfigLoader.getdbField("usernameField"), username);
+										.put(SoileConfigLoader.getUserdbField("usernameField"), username);
 								client.find(SoileConfigLoader.getdbProperty("userCollection"), query, dbRes -> 
 								{
 									//only resume the request, if we have finished loading everything here.							

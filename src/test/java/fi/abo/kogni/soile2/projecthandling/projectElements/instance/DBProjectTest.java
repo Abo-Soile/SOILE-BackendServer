@@ -29,7 +29,7 @@ public class DBProjectTest extends GitTest{
 		ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, mongo_client, gitManager);		 
 		ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, mongo_client, gitManager);
 		Async APIProjectCreationAsync = context.async();		 
-		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());		 
+		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());		 
 
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager, mongo_client, "Testproject")
 		.onSuccess(existingApiProject -> 
@@ -72,7 +72,7 @@ public class DBProjectTest extends GitTest{
 		ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, mongo_client, gitManager);		 
 		ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, mongo_client, gitManager);
 		Async APIProjectCreationAsync = context.async();		 
-		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(gitDataLakeDir, mongo_client, vertx.eventBus());		 
+		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());		 
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projInstHandler, vertx);
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager, mongo_client, "Testproject")
 		.onSuccess(existingApiProject -> 

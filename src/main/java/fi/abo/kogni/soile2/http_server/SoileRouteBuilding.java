@@ -7,22 +7,26 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
 import fi.abo.kogni.soile2.http_server.auth.JWTTokenCreator;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthentication;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthenticationBuilder;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
+import fi.abo.kogni.soile2.http_server.auth.SoileCookieCreationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileFormLoginHandler;
-import fi.abo.kogni.soile2.http_server.authentication.SoileAuthentication;
-import fi.abo.kogni.soile2.http_server.authentication.SoileCookieCreationHandler;
 import fi.abo.kogni.soile2.http_server.routes.ElementRouter;
+import fi.abo.kogni.soile2.http_server.routes.ProjectInstanceRouter;
 import fi.abo.kogni.soile2.http_server.routes.TaskRouter;
+import fi.abo.kogni.soile2.http_server.routes.UserRouter;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
+import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.utils.DebugRouter;
 import fi.abo.kogni.soile2.utils.MessageResponseHandler;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
@@ -57,6 +61,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private SoileAuthorization soileAuthorization;
 	private GitManager gitManager;
 	private GitResourceManager resourceManager;
+	private ParticipantHandler partHandler;
+	private ProjectInstanceHandler projHandler;
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
 		cookieHandler = new SoileCookieCreationHandler(vertx.eventBus());	
@@ -64,12 +70,18 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		gitManager = new GitManager(vertx.eventBus());
 		resourceManager = new GitResourceManager(vertx.eventBus());
 		soileAuthorization = new SoileAuthorization(client);
+		projHandler = new ProjectInstanceHandler(client, vertx.eventBus());
+		partHandler = new ParticipantHandler(client, projHandler, vertx);
 		LOGGER.debug("Starting Routerbuilder");
 		RouterBuilder.create(vertx, config().getString("api"))
 					 .compose(this::setupAuth)
 					 .compose(this::setupLogin)
 					 .compose(this::addHandlers)
 					 .compose(this::setupTaskAPI)
+					 .compose(this::setupExperimentAPI)
+					 .compose(this::setupProjectAPI)
+					 .compose(this::setupProjectexecutionAPI)
+					 .compose(this::setupUserAPI)
 					 .onSuccess( routerBuilder ->
 					 {
 						// add Debug, Logger and Session Handlers.						
@@ -78,6 +90,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 					 })
 					 .onFailure(fail ->
 					 {
+						 LOGGER.error("Failed Starting router with error:");
+						 LOGGER.error(fail);
 						 startPromise.fail(fail.getCause());
 					 }
 					 );
@@ -103,7 +117,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	{	
 		handler = new SoileAuthenticationBuilder();
 		builder.securityHandler("cookieAuth",handler.getCookieAuthProvider(vertx, client, cookieHandler))
-			   .securityHandler("JWTAuth", JWTAuthHandler.create(handler.getJWTAuthProvider(vertx)));
+			   .securityHandler("JWTAuth", JWTAuthHandler.create(handler.getJWTAuthProvider(vertx)))
+			   .securityHandler("tokenAuth", handler.getTokenAuthProvider(partHandler));
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
@@ -118,7 +133,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	
 	Future<RouterBuilder> setupLogin(RouterBuilder builder)
 	{
-		builder.operation("addUser").handler(handleUserManagerCommand("registerUser", MessageResponseHandler.createDefaultHandler(201)));
+		builder.operation("registerUser").handler(handleUserManagerCommand("registerUser", MessageResponseHandler.createDefaultHandler(201)));
 		SoileFormLoginHandler formLoginHandler = new SoileFormLoginHandler(new SoileAuthentication(client), "username", "password",new JWTTokenCreator(handler,vertx), cookieHandler);
 		builder.operation("loginUser").handler(formLoginHandler::handle);
 		builder.operation("testAuth").handler(this::testAuth);
@@ -221,6 +236,40 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("createProject").handler(router::create);
 		builder.operation("getProject").handler(router::getElement);
 		builder.operation("updateProject").handler(router::writeElement);
+		return Future.<RouterBuilder>succeededFuture(builder);
+	}
+		
+	public Future<RouterBuilder> setupProjectexecutionAPI(RouterBuilder builder)
+	{
+		ProjectInstanceRouter router = new ProjectInstanceRouter(soileAuthorization, vertx, client, partHandler, projHandler);
+		builder.operation("listDownloadData").handler(router::listDownloadData);
+		builder.operation("startProject").handler(router::startProject);
+		builder.operation("getRunningProjectList").handler(router::getRunningProjectList);
+		builder.operation("stopProject").handler(router::stopProject);
+		builder.operation("deleteProject").handler(router::deleteProject);
+		builder.operation("getProjectResults").handler(router::getProjectResults);
+		builder.operation("downloadResults").handler(router::downloadResults);
+		builder.operation("downloadTest").handler(router::downloadTest);
+		builder.operation("submitResults").handler(router::submitResults);
+		builder.operation("getTaskType").handler(router::getTaskType);
+		builder.operation("runTask").handler(router::runTask);
+		builder.operation("signUpForProject").handler(router::signUpForProject);
+		builder.operation("uploadData").handler(router::uploadData);			
+		return Future.<RouterBuilder>succeededFuture(builder);
+	}
+	
+	public Future<RouterBuilder> setupUserAPI(RouterBuilder builder)
+	{
+		UserRouter router = new UserRouter(soileAuthorization, vertx, client);
+		builder.operation("listUsers").handler(router::listUsers);
+		builder.operation("createUser").handler(router::createUser);
+		builder.operation("removeUser").handler(router::removeUser);
+		builder.operation("getUserInfo").handler(router::getUserInfo);
+		builder.operation("setUserInfo").handler(router::setUserInfo);
+		builder.operation("setPassword").handler(router::setPassword);
+		builder.operation("setRole").handler(router::setRole);
+		builder.operation("permissionChange").handler(router::permissionChange);
+		builder.operation("permissionOrRoleRequest").handler(router::permissionOrRoleRequest);				
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 }

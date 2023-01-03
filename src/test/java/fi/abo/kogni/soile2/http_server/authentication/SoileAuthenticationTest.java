@@ -5,6 +5,7 @@ import org.junit.runner.RunWith;
 
 import fi.abo.kogni.soile2.MongoTest;
 import fi.abo.kogni.soile2.UserManagementTest;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthentication;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonObject;
@@ -34,8 +35,8 @@ public class SoileAuthenticationTest extends MongoTest implements UserManagement
 		JsonObject invalidUser = new JsonObject().put("username", "user1")
 				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password2");
 
-		JsonObject DB_User = new JsonObject().put(SoileConfigLoader.getdbField("usernameField"), "participant")
-				.put(SoileConfigLoader.getdbField("passwordField"), "password"); 
+		JsonObject DB_User = new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), "participant")
+				.put(SoileConfigLoader.getUserdbField("passwordField"), "password"); 
 		Async overall = context.async();
 		// Lets create two users.
 		createUser(DB_User, context, uManager ).onComplete(x1 -> 
@@ -72,8 +73,8 @@ public class SoileAuthenticationTest extends MongoTest implements UserManagement
 		JsonObject invalidUser = new JsonObject().put("username", "user1")
 				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password2");
 
-		JsonObject DB_User = new JsonObject().put(SoileConfigLoader.getdbField("usernameField"), "participant")
-				.put(SoileConfigLoader.getdbField("passwordField"), "password"); 
+		JsonObject DB_User = new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), "participant")
+				.put(SoileConfigLoader.getUserdbField("passwordField"), "password"); 
 
 		
 		Async overall = context.async();

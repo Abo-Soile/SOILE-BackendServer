@@ -80,7 +80,7 @@ public class ElementManager<T extends ElementBase> {
 			.onSuccess(initVersion -> 
 			{
 				//create an empty project file.
-				JsonObject gitData = GitManager.buildBasicGitElement(name, element.getClass());
+				JsonObject gitData = GitManager.buildBasicGitElement(name, this.type);
 				gitManager.writeGitFile(new GitFile("Object.json", getGitIDForUUID(element.getUUID()), initVersion), gitData)
 				.onSuccess(version -> {
 					log.debug("Created a new element with name: " + name);

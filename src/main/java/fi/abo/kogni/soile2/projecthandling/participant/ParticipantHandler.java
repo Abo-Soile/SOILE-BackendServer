@@ -63,7 +63,15 @@ public class ParticipantHandler {
 	{
 		return manager.createParticipant(p);
 	}
-	
+
+	/**
+	 * Create a participant in the database
+	 * @param handler
+	 */
+	public Future<Participant> createTokenUser(ProjectInstance p)
+	{
+		return manager.createTokenParticipant(p);
+	}
 	
 	/**
 	 * Clean up the data currently stored by this Participant handler. 
@@ -71,7 +79,7 @@ public class ParticipantHandler {
 	 */
 	public void cleanup()
 	{
-		Collection<Participant> partsToClean = activeparticipants.cleanup();
+		activeparticipants.cleanup();
 	}
 	
 	/**
@@ -91,9 +99,30 @@ public class ParticipantHandler {
 	 * @param id the uid of the participant
 	 * @param handler the handler that requested the participant.
 	 */
-	public Future<Participant> getParticpant(String id)
+	public Future<Participant> getParticipant(String id)
 	{
 		return activeparticipants.getData(id);		
+	}
+	
+	/**
+	 * Retrieve a participant from the database (or memory) and return the participant
+	 * based on the participants uID.
+	 * @param id the uid of the participant
+	 * @param handler the handler that requested the participant.
+	 */
+	public Future<Participant> getParticipantForToken(String token, String projectID)
+	{
+		Promise<Participant> partPromise = Promise.<Participant>promise();
+		manager.getParticipantIDForToken(token, projectID)
+		.onSuccess(id -> {
+			getParticipant(id)
+			.onSuccess(participant -> {
+				partPromise.complete(participant);
+			})
+			.onFailure(err -> partPromise.fail(err));
+		})
+		.onFailure(err -> partPromise.fail(err));
+		return partPromise.future();
 	}
 	
 	/**
@@ -124,7 +153,7 @@ public class ParticipantHandler {
 	{
 		Promise<Void> deletionPromise = Promise.<Void>promise();
 		// all Files for a participant are stored in the folder: datalake/PARTICIPANTID
-		getParticpant(id)
+		getParticipant(id)
 		.onSuccess( participant -> {
 			vertx.fileSystem().deleteRecursive(Path.of(dataLakeFolder, id).toString(), true)
 			.onSuccess(filesDeleted -> 			

@@ -1,6 +1,6 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
-import fi.abo.kogni.soile2.http_server.authentication.SoileCookieCreationHandler;
+import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Vertx;
 import io.vertx.ext.auth.KeyStoreOptions;
@@ -20,6 +20,7 @@ public class SoileAuthenticationBuilder {
 	
 	private JWTAuth authProvider;
 	private SimpleAuthenticationHandler cookieHandler;
+	private SimpleAuthenticationHandler tokenHandler;
 	public synchronized JWTAuth getJWTAuthProvider(Vertx vertx)
 	{
 		if(authProvider == null)
@@ -42,6 +43,17 @@ public class SoileAuthenticationBuilder {
 			cookieHandler.authenticate(soileHandler::authenticate);		
 		}
 		return cookieHandler;
+	}	
+	
+	public synchronized SimpleAuthenticationHandler getTokenAuthProvider(ParticipantHandler partHandler)
+	{
+		if(tokenHandler == null)
+		{		
+			tokenHandler = SimpleAuthenticationHandler.create();
+			TokenAuthProvider tokenAuth= new TokenAuthProvider(partHandler);
+			tokenHandler.authenticate(tokenAuth::authenticate);		
+		}
+		return tokenHandler;
 	}	
 	
 	public ChainAuthHandler create(Vertx vertx, MongoClient client, SoileCookieCreationHandler cookieCreationHandler)

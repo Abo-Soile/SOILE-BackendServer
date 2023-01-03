@@ -17,9 +17,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
-import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.projecthandling.data.DataBundleGenerator.DownloadStatus;
-import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
@@ -29,6 +27,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjec
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -49,8 +48,8 @@ import io.vertx.ext.web.validation.ValidationHandler;
 public class ProjectInstanceRouter extends SoileRouter {
 
 	ProjectInstanceHandler instanceHandler;
-	SoileIDBasedAuthorizationHandler<AccessElement> instanceIDAccessHandler;
-	SoileIDBasedAuthorizationHandler<AccessElement> projectIDAccessHandler;
+	SoileIDBasedAuthorizationHandler instanceIDAccessHandler;
+	SoileIDBasedAuthorizationHandler projectIDAccessHandler;
 	SoileRoleBasedAuthorizationHandler roleHandler;
 	SoileAuthorization authorizationRertiever;
 	ParticipantHandler partHandler;
@@ -64,16 +63,17 @@ public class ProjectInstanceRouter extends SoileRouter {
 	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);
 
 
-	public ProjectInstanceRouter(SoileAuthorization auth, Vertx vertx, MongoClient client) {
+	public ProjectInstanceRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, ProjectInstanceHandler projHandler) {
 		eb = vertx.eventBus();
 		this.vertx = vertx;
+		
 		authorizationRertiever = auth;
-		instanceHandler = new ProjectInstanceHandler(client, eb);
-		partHandler = new ParticipantHandler(client, instanceHandler, vertx);
+		instanceHandler = projHandler;
+		this.partHandler = partHandler;
 		mongoAuth = auth.getAuthorizationForOption(instanceType);
 		roleHandler = new SoileRoleBasedAuthorizationHandler();
-		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler<AccessElement>(AccessProjectInstance::new, client);
-		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler<AccessElement>(Project::new, client);
+		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client);
+		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Project().getTargetCollection(), client);
 		dataLakeManager = new DataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
 	}
 
@@ -90,7 +90,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 			.onSuccess(canCreate -> {
 				instanceHandler.createProjectInstance(projectData)
 				.onSuccess(instance -> {
-					JsonObject permissionChange = new JsonObject().put("command", SoileConfigLoader.getCommunicationField("addCommand"))
+					JsonObject permissionChange = new JsonObject().put("command", "addCommand")
 							.put("username", context.user().principal().getString("username"))
 							.put("permissions", new JsonObject().put("elementType", SoileConfigLoader.INSTANCE)
 									.put("permissions", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
@@ -208,7 +208,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		.onFailure(err -> handleError(err, context));			
 	}
 
-	public void submitJob(RoutingContext context)
+	public void submitResults(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
@@ -487,7 +487,16 @@ public class ProjectInstanceRouter extends SoileRouter {
 				.onSuccess(participant-> {
 					participant.getCurrentStep()
 					.onSuccess(step -> {
-						dataLakeManager.storeParticipantData(participant.getID(), step, participant.getProjectPosition(), currentUpload);
+						dataLakeManager.storeParticipantData(participant.getID(), step, participant.getProjectPosition(), currentUpload)
+						.onSuccess(id -> {
+							context.response()
+							.setStatusCode(200)						
+							.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+							.end(new JsonObject().put("id", id).encode());
+							
+						})
+						.onFailure(err -> handleError(err, context));
+
 					})
 					.onFailure(err -> handleError(err, context));
 				})
@@ -497,7 +506,51 @@ public class ProjectInstanceRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));
 	}
-
+	
+	
+	public void signUpForProject(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		String token = params.queryParameter("token").getString();
+		instanceHandler.loadProject(requestedInstanceID)
+		.onSuccess(project -> {				
+			project.useToken(token)
+			.onSuccess( tokenUsed -> {
+				if(context.user() != null)
+				{
+					// we will add execute access to the current user.					
+					
+					JsonObject userData = new JsonObject();
+					userData.put("username", context.user().principal().getString("username"));
+					userData.put("command", "add");
+					userData.put("permissions", new JsonArray().add(new JsonObject().put("target", requestedInstanceID).put("type", PermissionType.EXECUTE.toString())));							
+					eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"),userData).onSuccess( response ->
+					{
+						// all done;
+						context.response()
+						.setStatusCode(200)						
+						.end();
+					})
+					.onFailure(err -> handleError(err, context));
+				}
+				else
+				{
+					// we don't have a user, so we set up a oken user.
+					partHandler.createTokenUser(project)
+					.onSuccess(participant -> {
+						context.response()
+						.setStatusCode(200)						
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+						.end(new JsonObject().put("token", participant.getToken()).encode());
+					})
+					.onFailure(err -> handleError(err, context));
+				}
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));
+	}
 
 	protected Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission, boolean adminAllowed)
 	{
@@ -520,8 +573,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		});
 		return accessPromise.future();
 	}
-			
-
+				
 	
 	/**
 	 * Get the participant for the current user. 
@@ -531,39 +583,50 @@ public class ProjectInstanceRouter extends SoileRouter {
 	 */
 	Future<Participant> getParticpantForUser(User user, ProjectInstance project)
 	{
-		Promise<Participant> partPromise = Promise.promise();
-		JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("projectInstanceID", project.getID());
-		eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantForUserInProject"), request)
-		.onSuccess(response -> {
-			JsonObject responseObject = (JsonObject) response;
-			if(responseObject.getString("participantID") != null)
-			{
-				partHandler.getParticpant(responseObject.getString("participantID"))
-				.onSuccess(particpant -> {
-					partPromise.complete(particpant);
-				})
-				.onFailure(err -> partPromise.fail(err));
-			}
-			// doesn't have one in this project yet, so we create one.
-			else
-			{
-				partHandler.create(project)
-				.onSuccess(particpant -> {
-					// update the user.
-					request.put("participantID", particpant.getID());
-					eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInProject"), request)
-					.onSuccess( success -> {
+		
+		if(user.principal().getString("username") == null)
+		{
+			// This is a Token User!
+			return partHandler.getParticipantForToken(user.principal().getString("access_token"), project.getID());
+			
+		}
+		else
+		{
+			Promise<Participant> partPromise = Promise.promise();
+			JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("projectInstanceID", project.getID());
+			eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantForUserInProject"), request)
+			.onSuccess(response -> {
+				JsonObject responseObject = (JsonObject) response;
+				if(responseObject.getString("participantID") != null)
+				{
+					partHandler.getParticipant(responseObject.getString("participantID"))
+					.onSuccess(particpant -> {
 						partPromise.complete(particpant);
 					})
 					.onFailure(err -> partPromise.fail(err));
-				})
-				.onFailure(err -> partPromise.fail(err));
-			}
-		})
-		.onFailure(err -> partPromise.fail(err));
-		return partPromise.future();
+				}
+				// doesn't have one in this project yet, so we create one.
+				else
+				{
+					partHandler.create(project)
+					.onSuccess(particpant -> {
+						// update the user.
+						request.put("participantID", particpant.getID());
+						eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInProject"), request)
+						.onSuccess( success -> {
+							partPromise.complete(particpant);
+						})
+						.onFailure(err -> partPromise.fail(err));
+					})
+					.onFailure(err -> partPromise.fail(err));
+				}
+			})
+			.onFailure(err -> partPromise.fail(err));
+			return partPromise.future();
+		}
+		
 	}
-
+	
 	/**
 	 * Start preparing a download for the indicated data.
 	 * @param participants the participants to prepare a download for.

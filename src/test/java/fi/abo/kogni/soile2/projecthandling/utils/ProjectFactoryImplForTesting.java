@@ -79,6 +79,24 @@ public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
 		public Future<Void> activate() {
 			// TODO Auto-generated method stub
 			return Future.succeededFuture();
+		}
+
+		@Override
+		public Future<JsonArray> createAccessTokens(int count) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public Future<String> createPermanentAccessToken() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public Future<Void> useToken(String token) {
+			// TODO Auto-generated method stub
+			return null;
 		}		
 	}
 	
