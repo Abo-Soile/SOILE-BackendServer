@@ -8,13 +8,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
-import de.flapdoodle.embed.mongo.MongodExecutable;
-import de.flapdoodle.embed.mongo.MongodProcess;
-import de.flapdoodle.embed.mongo.MongodStarter;
-import de.flapdoodle.embed.mongo.config.ImmutableMongodConfig;
 import de.flapdoodle.embed.mongo.config.Net;
 import de.flapdoodle.embed.mongo.distribution.Version;
+import de.flapdoodle.embed.mongo.transitions.Mongod;
+import de.flapdoodle.embed.mongo.transitions.RunningMongodProcess;
+import de.flapdoodle.embed.process.io.ProcessOutput;
 import de.flapdoodle.embed.process.runtime.Network;
+import de.flapdoodle.reverse.TransitionWalker.ReachedState;
+import de.flapdoodle.reverse.transitions.Start;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.unit.Async;
@@ -25,20 +26,28 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 public abstract class MongoTest extends SoileBaseTest {
 
 	
-	static MongodProcess MONGO;
+	static Mongod MONGO;
+	static ReachedState<RunningMongodProcess> state;
 	static int MONGO_PORT = 27022;
 	public MongoClient mongo_client;
 	
 	@BeforeClass
 	public static void initialize() throws IOException {
-		MongodStarter starter = MongodStarter.getDefaultInstance();	
+		//MONGO = Mongod.builder();
+		Net net = Net.of(Network.getLocalHost().getHostAddress(), MONGO_PORT, Network.localhostIsIPv6());				
+		MONGO = Mongod.builder()				
+				.net(Start.to(Net.class).initializedWith(net))
+				.processOutput(Start.to(ProcessOutput.class).initializedWith(ProcessOutput.silent()).withTransitionLabel("no output"))
+				.build();		
+		/*MongodStarter starter = MongodStarter.getDefaultInstance();	
 		
 		ImmutableMongodConfig mongodConfig = ImmutableMongodConfig.builder()
 				.version(Version.Main.PRODUCTION)
 				.net(new Net(MONGO_PORT, Network.localhostIsIPv6()))				
 				.build();
 		MongodExecutable mongodExecutable = starter.prepare(mongodConfig);
-		MONGO = mongodExecutable.start();
+		MONGO = mongodExecutable.start();*/
+		state = MONGO.start(Version.Main.V5_0);		
 	}	
 
 	@Override
@@ -82,7 +91,7 @@ public abstract class MongoTest extends SoileBaseTest {
 	
 	@AfterClass
 	public static void shutdown() {
-		MONGO.stop();
+		state.close();
 	}
 
 }

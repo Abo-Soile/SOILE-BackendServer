@@ -59,16 +59,26 @@ public class SoileServerVerticle extends AbstractVerticle {
 	}
 	@Override
 	public void stop(Promise<Void> stopPromise) throws Exception {
+		LOGGER.debug("Trying to stop Server Verticle");
 		List<Future> unDeploymentFutures = new LinkedList<Future>();		
 		for(String deploymentID : deployedVerticles)
 		{
 			LOGGER.debug("Trying to undeploy : " + deploymentID);
-			unDeploymentFutures.add(vertx.undeploy(deploymentID));
+			unDeploymentFutures.add(vertx.undeploy(deploymentID).onFailure(err -> {
+				LOGGER.debug("Couldn't undeploy " + deploymentID);
+			}).onSuccess(res -> {
+				LOGGER.debug("Successfully undeployed " + deploymentID);
+			}));
 		}
 		//deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
 		CompositeFuture.all(unDeploymentFutures).mapEmpty()
-		.onSuccess(v -> stopPromise.complete())
-		.onFailure(err -> stopPromise.fail(err));
+		.onSuccess(v -> {			
+			stopPromise.complete();			
+		})
+		.onFailure(err -> {
+			LOGGER.debug("Could not stop all child verticles");
+			stopPromise.complete();
+		});
 		
 	}
 	

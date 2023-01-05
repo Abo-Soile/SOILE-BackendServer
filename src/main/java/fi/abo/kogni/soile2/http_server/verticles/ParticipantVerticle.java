@@ -48,7 +48,10 @@ public class ParticipantVerticle extends AbstractVerticle {
 			undeploymentFutures.add(consumer.unregister());
 		}				
 		CompositeFuture.all(undeploymentFutures).mapEmpty().
-		onSuccess(v -> stopPromise.complete())
+		onSuccess(v -> {
+			LOGGER.debug("Successfully undeployed DataBundleGenerator with id : " + deploymentID());
+			stopPromise.complete();
+		})
 		.onFailure(err -> stopPromise.fail(err));			
 	}
 	

@@ -62,7 +62,10 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 		undeploymentFutures.add(vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"), this::compileGitCode).unregister());
 		undeploymentFutures.add(vertx.eventBus().consumer("soile.tempData.Cleanup", this::cleanUP).unregister());	
 		CompositeFuture.all(undeploymentFutures).mapEmpty().
-		onSuccess(v -> stopPromise.complete())
+		onSuccess(v -> {
+			LOGGER.debug("Successfully undeployed CodeRetriever with id : " + deploymentID());
+			stopPromise.complete();
+		})
 		.onFailure(err -> stopPromise.fail(err));			
 	}
 	

@@ -131,12 +131,17 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		}	
 		for(String deploymentID : deployedVerticles)
 		{
-			LOGGER.debug("Trying to undeploy : " + deploymentID);
-			undeploymentFutures.add(vertx.undeploy(deploymentID));
+			LOGGER.debug("Trying to undeploy : " + deploymentID);			
+			undeploymentFutures.add(vertx.undeploy(deploymentID).onFailure(err -> {
+				LOGGER.debug("Couldn't undeploy " + deploymentID);
+			}));
 		}
 		CompositeFuture.all(undeploymentFutures).mapEmpty().
 		onSuccess(v -> stopPromise.complete())
-		.onFailure(err -> stopPromise.fail(err));		
+		.onFailure(err -> {
+			LOGGER.error("Couldn't undeploy all child verticles");
+			stopPromise.complete();
+		});		
 	}
 	
 	/**

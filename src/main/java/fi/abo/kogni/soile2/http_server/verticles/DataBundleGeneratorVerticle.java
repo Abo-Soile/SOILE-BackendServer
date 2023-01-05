@@ -62,7 +62,10 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		consumerdeactivateFutures.add(vertx.eventBus().consumer("fi.abo.soile.DLFiles", this::getDownloadFiles).unregister());
 		consumerdeactivateFutures.add(vertx.eventBus().consumer("fi.abo.soile.DLCreate", this::createDownload).unregister());
 		CompositeFuture.all(consumerdeactivateFutures)
-		.onSuccess(success -> stopPromise.complete())
+		.onSuccess(success -> {
+			LOGGER.debug("Successfully undeployed DataBundleGenerator with id : " + deploymentID());
+			stopPromise.complete();
+		})
 		.onFailure(err -> stopPromise.fail(err));
 	}
 

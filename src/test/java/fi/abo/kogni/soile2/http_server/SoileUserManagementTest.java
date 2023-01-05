@@ -24,22 +24,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
  * Unit tests for the User Management code (i.e. permission setting/removing, user addition etc pp)
  */
 @RunWith(VertxUnitRunner.class)
-public class SoileUserManagementTest extends MongoTest{
-
-	/**
-	 * Before executing our test, let's deploy our verticle.
-	 * <p/>
-	 * This method instantiates a new Vertx and deploy the verticle. Then, it waits in the verticle has successfully
-	 * completed its start sequence (thanks to `context.asyncAssertSuccess`).
-	 *
-	 * @param context the test context.
-	 */
-	@Override
-	public void runBeforeTests(TestContext context){		
-		// We pass the options as the second parameter of the deployVerticle method.
-		super.runBeforeTests(context);
-		vertx.deployVerticle(SoileServerVerticle.class.getName(), new DeploymentOptions(), context.asyncAssertSuccess());
-	}
+public class SoileUserManagementTest extends SoileVerticleTest{
 
 	@Test
 	public void testUserAddition(TestContext context) {
