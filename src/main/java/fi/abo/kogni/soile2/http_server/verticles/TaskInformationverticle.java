@@ -6,6 +6,8 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.datamanagement.git.GitManager;
+import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -15,18 +17,19 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.MongoClient;
 
 public class TaskInformationverticle extends AbstractVerticle{
 
 	
-	ElementManager<Task> taskManager;
+	ElementManager<Task> taskManager;	
 	public static final Logger LOGGER = LogManager.getLogger(TaskInformationverticle.class);
 
 	
 	@Override
-	public void start(Promise<Void> startPromise)
+	public void start()
 	{
-		
+		taskManager = new ElementManager<Task>(Task::new, APITask::new, MongoClient.createShared(vertx, config().getJsonObject("db")), new GitManager(vertx.eventBus()));
 		LOGGER.debug("Deploying TaskInformation with id : " + deploymentID());
 		vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("getTaskInformationAddress"), this::getTaskInfo);
 	}
@@ -38,7 +41,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 	public void stop(Promise<Void> stopPromise)
 	{
 		List<Future> undeploymentFutures = new LinkedList<Future>();
-		undeploymentFutures.add(vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("taskInformationAddress"), this::getTaskInfo).unregister());		
+		undeploymentFutures.add(vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("getTaskInformationAddress"), this::getTaskInfo).unregister());		
 		CompositeFuture.all(undeploymentFutures).mapEmpty().
 		onSuccess(v -> stopPromise.complete())
 		.onFailure(err -> stopPromise.fail(err));			

@@ -312,7 +312,7 @@ public class UserRouter extends SoileRouter {
 				.setStatusCode(500)
 				.end();
 				LOGGER.error("Something went wrong when trying to register a new user");					
-				LOGGER.error(failure.getCause());
+				LOGGER.error(failure);
 			}
 		});
 

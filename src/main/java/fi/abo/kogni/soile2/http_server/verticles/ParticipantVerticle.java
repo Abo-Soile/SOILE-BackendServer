@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
@@ -15,18 +16,20 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
+import io.vertx.ext.mongo.MongoClient;
 
 
 public class ParticipantVerticle extends AbstractVerticle {
 
 	ParticipantHandler partHandler;
+	ProjectInstanceHandler projHandler;
 	static final Logger LOGGER = LogManager.getLogger(ParticipantVerticle.class);
 	private List<MessageConsumer> consumers;
 	
-	public ParticipantVerticle(ParticipantHandler handler)
+	public ParticipantVerticle(ParticipantHandler partHandler, ProjectInstanceHandler projHandler)
 	{
-		this.partHandler = handler;
-		consumers = new LinkedList<>();
+		this.partHandler = partHandler;
+		this.projHandler = projHandler;
 	}
 	
 	@Override
@@ -35,7 +38,6 @@ public class ParticipantVerticle extends AbstractVerticle {
 		consumers = new LinkedList<>();
 		consumers.add(vertx.eventBus().consumer(("soile.participant.delete"), this::deleteParticipants));
 	}	
-	
 
 	@Override
 	public void stop(Promise<Void> stopPromise)

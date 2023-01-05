@@ -27,7 +27,7 @@ public final class QuestionnaireRenderVerticle extends SoileBaseVerticle {
 	static final Logger LOGGER = LogManager.getLogger(QuestionnaireRenderVerticle.class);
 
 	@Override
-	public void start(Promise<Void> startPromise) {
+	public void start() {
 		LOGGER.debug("Deploying ExperimentLanguageVerticle with id : " + deploymentID());
 		template = SoileConfigLoader.getVerticleProperty("questionaireTemplates");
 		generator = IdGenerator.shortIdGenerator();
@@ -35,8 +35,8 @@ public final class QuestionnaireRenderVerticle extends SoileBaseVerticle {
 		generator.seed(1024);
 		generator.init();
 		String address = SoileConfigLoader.getVerticleProperty("questionnaireAddress");
-		vertx.eventBus().consumer(address, this::handle);
-		startPromise.complete();
+    	LOGGER.debug("Registering Questionaire Verticle at address " + address);
+		vertx.eventBus().consumer(address, this::handle);		
 	}
 	// only one of this should ever be called simultaneously.
 	// we might want to put in a few of these as worker verticles.

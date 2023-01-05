@@ -2,9 +2,7 @@ package fi.abo.kogni.soile2;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedList;
 
-import org.apache.commons.collections4.map.HashedMap;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -33,10 +31,11 @@ public abstract class MongoTest extends SoileBaseTest {
 	
 	@BeforeClass
 	public static void initialize() throws IOException {
-		MongodStarter starter = MongodStarter.getDefaultInstance();		
+		MongodStarter starter = MongodStarter.getDefaultInstance();	
+		
 		ImmutableMongodConfig mongodConfig = ImmutableMongodConfig.builder()
 				.version(Version.Main.PRODUCTION)
-				.net(new Net(MONGO_PORT, Network.localhostIsIPv6()))
+				.net(new Net(MONGO_PORT, Network.localhostIsIPv6()))				
 				.build();
 		MongodExecutable mongodExecutable = starter.prepare(mongodConfig);
 		MONGO = mongodExecutable.start();
@@ -53,6 +52,7 @@ public abstract class MongoTest extends SoileBaseTest {
 	@After
 	public void tearDown(TestContext context)
 	{		
+		super.tearDown(context);
 		final Async oasync = context.async();
 		mongo_client.getCollections(cols ->{
 			if(cols.succeeded())

@@ -1,8 +1,7 @@
 package fi.abo.kogni.soile2.http_server.verticles;
 
 import java.io.StringReader;
-import java.util.LinkedList;
-import java.util.List;
+import java.nio.charset.Charset;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,28 +10,27 @@ import org.stringtemplate.v4.STGroupFile;
 
 import fi.abo.kogni.soile2.elang.CodeGenerator;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 
-public class ExperimentLanguageVerticle extends SoileBaseVerticle {
+public class ExperimentLanguageVerticle extends AbstractVerticle {
 
 	private STGroup template1;	
 	private String address;
 	static final Logger LOGGER = LogManager.getLogger(ExperimentLanguageVerticle.class);
 	
     @Override
-    public void start(Promise<Void> startPromise) {
+    public void start() {
         
 		LOGGER.debug("Deploying ExperimentLanguageVerticle with id : " + deploymentID());
     	address = SoileConfigLoader.getVerticleProperty("elangAddress");
+    	LOGGER.debug("Registering Elang Verticle at address " + address);
         String templateFile = SoileConfigLoader.getVerticleProperty("code-gen-template");
         String fullFileName = ExperimentLanguageVerticle.class.getClassLoader().getResource(templateFile).getFile();
 	        template1 = new STGroupFile(fullFileName);        
-        vertx.eventBus().consumer(address, this::getCodeTemplate);        
-        startPromise.complete();
+        vertx.eventBus().consumer(address, this::getCodeTemplate);                
     }
 
 	@Override
@@ -51,9 +49,14 @@ public class ExperimentLanguageVerticle extends SoileBaseVerticle {
     	StringBuilder errors = new StringBuilder();
     	codeGen.codeOutputTo(code);
     	codeGen.errorMessagesTo(errors);
-    	StringReader input = new StringReader(json.getString("code"));
+    	
+    	String temp = json.getString("code");
+    	byte[] decoded = temp.getBytes();
+    	String encoded = new String(decoded, Charset.defaultCharset());     	
+    	StringReader input = new StringReader(encoded);
     	codeGen.generate(input);
     	if (errors.length() > 0) {
+    		LOGGER.debug(errors.toString());
     		reply.put("errors", errors.toString());
     	}
     	else {

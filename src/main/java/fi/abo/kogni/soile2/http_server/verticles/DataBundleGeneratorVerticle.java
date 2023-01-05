@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.projecthandling.data;
+package fi.abo.kogni.soile2.http_server.verticles;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -25,7 +25,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
-public class DataBundleGenerator extends AbstractVerticle{
+public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	MongoClient client;
 	ParticipantHandler partHandler;
@@ -33,10 +33,10 @@ public class DataBundleGenerator extends AbstractVerticle{
 	DataLakeManager dlmgr;
 	String dataLakeFolder;
 	String downloadCollection;
-	static final Logger LOGGER = LogManager.getLogger(DataBundleGenerator.class);
+	static final Logger LOGGER = LogManager.getLogger(DataBundleGeneratorVerticle.class);
 
 
-	public DataBundleGenerator(MongoClient client, ProjectInstanceHandler projHandler, ParticipantHandler partHandler)
+	public DataBundleGeneratorVerticle(MongoClient client, ProjectInstanceHandler projHandler, ParticipantHandler partHandler)
 	{
 		dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
 		downloadCollection = SoileConfigLoader.getdbProperty("downloadCollection");
@@ -47,12 +47,11 @@ public class DataBundleGenerator extends AbstractVerticle{
 	}
 
 	@Override
-	public void start(Promise<Void> startPromise)
+	public void start()
 	{
 		vertx.eventBus().consumer("fi.abo.soile.DLStatus", this::getStatus);
 		vertx.eventBus().consumer("fi.abo.soile.DLFiles", this::getDownloadFiles);
-		vertx.eventBus().consumer("fi.abo.soile.DLCreate", this::createDownload);
-		startPromise.complete();
+		vertx.eventBus().consumer("fi.abo.soile.DLCreate", this::createDownload);		
 	}
 
 	@Override

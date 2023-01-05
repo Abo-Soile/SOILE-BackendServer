@@ -6,6 +6,7 @@ import java.nio.file.Files;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Level;
+import org.junit.After;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -32,7 +33,13 @@ public abstract class GitTest extends MongoTest {
 			context.fail(err);
 			gitInit.complete();
 		});
-		gitManager = new GitManager(vertx.eventBus());
+		gitManager = new GitManager(vertx.eventBus());			
+	}
+	
+	@Override
+	public void setupTestConfig(TestContext context)
+	{
+		super.setupTestConfig(context);
 		try {
 			gitDataLakeDir = Files.createTempDirectory("gitdataLakeDir").toFile().getAbsolutePath();
 			resultDataLakeDir = Files.createTempDirectory("resultdataLakeDir").toFile().getAbsolutePath();
@@ -46,10 +53,9 @@ public abstract class GitTest extends MongoTest {
 		{
 			context.fail(e);
 		}
-		
-		
 	}
-	
+
+	@Override
 	public void tearDown(TestContext context)
 	{
 		super.tearDown(context);

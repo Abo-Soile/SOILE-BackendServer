@@ -1,0 +1,2067 @@
+/title
+TAUSTATIEDOT
+
+
+
+/p
+Esitämme aluksi erilaisia kysymyksiä, joihin toivomme, että vastaat niin rehellisesti ja tarkasti kuin mahdollista. Kysymykset koskettavat laajalti erilaisia yleisiä taustatekijöitä kuten ikä, koulutus, sosioekonominen tausta, elintavat ja terveydentila,  jotka on
+aiemmissa tutkimuksissa yhdistetty suoriutumiseen tiedonkäsittelyyn ja muistiin liittyvissä tehtävissä. Osioiden välillä voi esiintyä päällekkäisyyttä, koska käytämme tiettyjä standardoituja kyselylomakkeita alkuperäisessä muodossaan, mutta vastaa silti kaikkiin kysymyksiin huolellisesti ja totuudenmukaisesti. Vastauksesi käsitellään täysin luottamuksellisesti, eikä niitä yhdistetä nimeesi tai yhteystietoihisi.
+
+/pb
+
+/numberfield {
+    dbcolumn: "ikä",
+    numeric: true,
+    label: "Ikä",
+    value: 0,
+    minimum: 1,
+    maximum: 120,
+    increment: 1
+}
+
+/p
+/ts + large
+Sukupuoli:
+/singleselect {
+  default_value: "",
+  dbcolumn: "sukupuoli",
+
+  options:
+  [[
+    {
+      dbvalue: "mies",
+      text: "mies",
+      checked: false
+    },
+    {
+      dbvalue: "nainen",
+      text: "nainen",
+      checked: false
+    },
+              {
+      dbvalue: "muu",
+      text: "muu",
+      checked: false
+    }
+  ]]
+}
+
+/subtitle
+Koulutus (valitse korkein saavutettu taso):
+/singleselect {
+  default_value: "",
+  dbcolumn: "koulutus",
+  options: [[
+    {dbvalue:"kansakoulu", text:"kansakoulu", checked:false},
+    {dbvalue:"keskikoulu", text:"keskikoulu", checked:false},
+    {dbvalue:"peruskoulu", text:"peruskoulu", checked:false},
+    {dbvalue:"ammattikoulu", text:"ammattikoulu/-instituutti", checked:false},
+    {dbvalue:"ylioppilas", text:"ylioppilastutkinto", checked:false},
+    {dbvalue:"amattikorkekoulu", text:"ammattikorkeakoulu", checked:false},
+    {dbvalue:"yliopisto-alempi", text:"yliopisto: alempi korkeakoulututkinto (kandidaatti)", checked:false},
+     {dbvalue:"yliopisto-ylempi", text:"yliopisto: ylempi korkeakoulututkinto (maisteri)", checked:false},
+    {dbvalue:"tohtori", text:"lisensiaatti/tohtori", checked:false}
+  ]]
+}
+
+Muu mikä
+/textbox {
+   dbcolumn: "name",
+   label: "",
+   linebreak: true,
+   length: 40,
+   text: "Muu, mikä"
+}
+
+/pb
+Montako vuotta olet yhteensä opiskellut (aloita peruskoulun ensimmäiseltä luokalta):
+
+/numberfield {
+    dbcolumn: "oppiskellu_v",
+    numeric: true,
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 30,
+    increment: 1
+}
+
+/p
+Seuraavista kohdista voit tarvittaessa valita useamman vaihtoehdon.
+/p
+a. Oletko tällä hetkellä työelämässä?
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "työelämässä",
+   options: [[{dbvalue: "1", text: "Kyllä"}],
+             [{dbvalue: "0", text: "Ei"}]
+          ]
+}
+
+/p
+
+b. Oletko tällä hetkellä opiskelija?
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "opiskelija",
+   options: [[{dbvalue: "1", text: "Kyllä"}],
+             [{dbvalue: "0", text: "Ei"}]
+          ]
+}
+
+/p
+c. Oletko työtön?
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "työtön",
+   options: [[{dbvalue: "1", text: "Kyllä"}],
+             [{dbvalue: "0", text: "Ei"}]
+          ]
+}
+
+/p
+d. Oletko eläkeläinen?
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "eläkeläinen",
+   options: [[{dbvalue: "1", text: "Kyllä"}],
+             [{dbvalue: "0", text: "Ei"}]
+          ]
+}
+
+/p
+e. Onko sinulla jokin ammatti:
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "ammatti",
+   options: [[{dbvalue: "1", text: "Kyllä"}],
+             [{dbvalue: "0", text: "Ei"}]
+          ]
+}
+
+/p
+Jos vastasit kyllä, kirjoita ammatti tähän:
+/textbox {
+   dbcolumn: "ammatti_freeform",
+   label: "",
+   linebreak: true,
+   length: 40,
+   text: ""
+}
+/pb
+(Kerro ammattisi, vaikka olisit tällä hetkellä eläkkeellä tai työtön.)
+
+/p
+Jos sinulla on ammatti, valitse sitä parhaiten kuvaava kategoria listasta.
+(Muussa tapauksessa voit siirtyä seuraavaan kysymykseen.)
+
+/p
+
+Yhteenlasketut vuositulosi (brutto):
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "tulot",
+   options: [[
+      {dbvalue: "10000", text: "<10 000€"},
+      {dbvalue: "10-20", text: "10 000 – 20 000 €"},
+      {dbvalue: "20-30", text: "20 000 – 30 000 €"},
+      {dbvalue: "30-50", text: "30 000 – 50 000 €"},
+      {dbvalue: "50+", text: "50 000 – "}
+   ]]
+}
+
+
+/textbox {
+   dbcolumn: "asuinpaikka",
+   label: "Asuinpaikka (maakunta; maa)",
+   linebreak: false,
+   length: 60,
+   text: "maakunta; maa"
+}
+
+/subtitle
+KIELITAUSTA
+
+
+/p
+Listaa kaikki kielet, joita puhut tai olet oppinut/opiskellut (sisältäen äidinkielesi) ja oppimisen aloitusikä. Arvioi myös kielitaitosi taso kussakin kielessä.
+Kieli         Oppimisikä           Kielitaitoarvio
+
+/pb
+Suomi
+
+/numberfield {
+    dbcolumn: "suomi_ikä",
+    label: "Oppimisikä",
+    value: 0,
+    minimum: 0,
+    maximum: 100,
+    increment: 1
+}
+
+/dropdownmenu {
+    dbcolumn: "suomi_skill",
+    numeric: true,
+    label: "Kielitaitoarvio",
+    options:
+      [
+        {
+          dbvalue: "Hyvin Heikko",
+          text: "Hyvin Heikko"
+        },
+        {
+          dbvalue: "Heikko",
+          text: "Heikko"
+        },
+        {
+          dbvalue: "Välttävää",
+          text: "Välttävää"
+        },
+        {
+          dbvalue: "Toimiva",
+          text: "Toimiva"
+        },
+        {
+          dbvalue: "Hyvä",
+          text: "Hyvä"
+        },
+        {
+          dbvalue: "Erittäin Hyvä",
+          text: "Erittäin Hyvä"
+        },
+        {
+          dbvalue: "Erinomainen (vastaa äidinkieli)",
+          text: "Erinomainen (vastaa äidinkieli)"
+        }
+      ]
+}
+
+
+/textbox {
+   dbcolumn: "kieli2",
+   label: "Kieli2",
+   linebreak: false,
+   length: 30,
+   text: "Kieli 2"
+}
+
+/numberfield {
+    dbcolumn: "kieli2_ikä",
+    label: "Oppimisikä",
+    value: 0,
+    minimum: 0,
+    maximum: 100,
+    increment: 1
+}
+
+/dropdownmenu {
+    dbcolumn: "kieli2_skill",
+    numeric: true,
+    label: "Kielitaitoarvio",
+    options:
+      [
+        {
+          dbvalue: "Hyvin Heikko",
+          text: "Hyvin Heikko"
+        },
+        {
+          dbvalue: "Heikko",
+          text: "Heikko"
+        },
+        {
+          dbvalue: "Välttävää",
+          text: "Välttävää"
+        },
+        {
+          dbvalue: "Toimiva",
+          text: "Toimiva"
+        },
+        {
+          dbvalue: "Hyvä",
+          text: "Hyvä"
+        },
+        {
+          dbvalue: "Erittäin Hyvä",
+          text: "Erittäin Hyvä"
+        },
+        {
+          dbvalue: "Erinomainen (vastaa äidinkieli)",
+          text: "Erinomainen (vastaa äidinkieli)"
+        }
+      ]
+}
+
+/textbox {
+   dbcolumn: "kieli3",
+   label: "Kieli3",
+   linebreak: false,
+   length: 30,
+   text: "Kieli 3"
+}
+
+/numberfield {
+    dbcolumn: "kieli3_ikä",
+    label: "Oppimisikä",
+    value: 0,
+    minimum: 0,
+    maximum: 100,
+    increment: 1
+}
+
+/dropdownmenu {
+    dbcolumn: "kieli3_skill",
+    numeric: true,
+    label: "Kielitaitoarvio",
+    options:
+      [
+        {
+          dbvalue: "Hyvin Heikko",
+          text: "Hyvin Heikko"
+        },
+        {
+          dbvalue: "Heikko",
+          text: "Heikko"
+        },
+        {
+          dbvalue: "Välttävää",
+          text: "Välttävää"
+        },
+        {
+          dbvalue: "Toimiva",
+          text: "Toimiva"
+        },
+        {
+          dbvalue: "Hyvä",
+          text: "Hyvä"
+        },
+        {
+          dbvalue: "Erittäin Hyvä",
+          text: "Erittäin Hyvä"
+        },
+        {
+          dbvalue: "Erinomainen (vastaa äidinkieli)",
+          text: "Erinomainen (vastaa äidinkieli)"
+        }
+      ]
+}
+
+/textbox {
+   dbcolumn: "kieli4",
+   label: "Kieli4",
+   linebreak: false,
+   length: 30,
+   text: "Kieli 4"
+}
+
+/numberfield {
+    dbcolumn: "kieli4_ikä",
+    label: "Oppimisikä",
+    value: 0,
+    minimum: 0,
+    maximum: 100,
+    increment: 1
+}
+
+/dropdownmenu {
+    dbcolumn: "kieli4_skill",
+    numeric: true,
+    label: "",
+    options:
+      [
+        {
+          dbvalue: "Hyvin Heikko",
+          text: "Hyvin Heikko"
+        },
+        {
+          dbvalue: "Heikko",
+          text: "Heikko"
+        },
+        {
+          dbvalue: "Välttävää",
+          text: "Välttävää"
+        },
+        {
+          dbvalue: "Toimiva",
+          text: "Toimiva"
+        },
+        {
+          dbvalue: "Hyvä",
+          text: "Hyvä"
+        },
+        {
+          dbvalue: "Erittäin Hyvä",
+          text: "Erittäin Hyvä"
+        },
+        {
+          dbvalue: "Erinomainen (vastaa äidinkieli)",
+          text: "Erinomainen (vastaa äidinkieli)"
+        }
+      ]
+}
+
+/p
+Merkitse ao. taulukkoon kielet, joita olet säännöllisesti käyttänyt viimeisen kahden vuoden aikana, sekä se, kuinka suuri osuus viikottaisesta kielenkäytöstäsi on keskimäärin tapahtunut kullakin kielellä (sisältäen puhumisen, kuuntelemisen, lukemisen ja kirjoittamisen).
+/pb
+
+Suomi
+
+/numberfield {
+    dbcolumn: "suomi_%",
+    label: "% viikossa",
+    value: 0,
+    minimum: 0,
+    maximum: 100,
+    increment: 1
+}
+/pb
+
+/textbox {
+   dbcolumn: "kieli2_v",
+   label: "Kieli2",
+   linebreak: false,
+   length: 30,
+   text: "Kieli 2"
+}
+
+/numberfield {
+    dbcolumn: "kieli2_%",
+    label: "% viikossa",
+    value: 0,
+    minimum: 0,
+    maximum: 100,
+    increment: 1
+}
+
+/p
+/textbox {
+   dbcolumn: "kieli3_v",
+   label: "Kieli3",
+   linebreak: false,
+   length: 30,
+   text: "Kieli 3"
+}
+
+/numberfield {
+    dbcolumn: "kieli3_%",
+    label: "% viikossa",
+    value: 0,
+    minimum: 0,
+    maximum: 100,
+    increment: 1
+}
+
+/p
+/textbox {
+   dbcolumn: "kieli4_v",
+   label: "Kieli4",
+   linebreak: false,
+   length: 30,
+   text: "Kieli 4"
+}
+
+/numberfield {
+    dbcolumn: "kieli4_%",
+    label: "% viikossa",
+    value: 0,
+    minimum: 0,
+    maximum: 100,
+    increment: 1
+}
+Kieli 2:_____________
+Kieli 3: _____________
+Kieli 4: _____________
+
+
+/p
+Keskimäärin vaihdan kieltä yhden päivän aikana
+/pb
+
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "kielivaihto",
+   options: [[{dbvalue: "0-2 krt", text: "0-2"}],
+             [{dbvalue: "3-10krt", text: "3-10"}],
+             [{dbvalue: "11-30 krt", text: "11-30"}],
+             [{dbvalue: "31-60 krt", text: "31-60"}],
+             [{dbvalue: "yli 60 krt", text: "60+"}]
+          ]
+}
+
+/p
+Keskimäärin teen monta lyhyttä kielenvaihtoa yhden päivän aikana
+/pb
+
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "kielivaihto2",
+   options: [[{dbvalue: "täysin eri mieltä", text: "0"}],
+             [{dbvalue: "jossain määrin eri mieltä", text: "1"}],
+             [{dbvalue: "ei eri eikä sama mieltä", text: "2"}],
+             [{dbvalue: "jossain määrin samaa mieltä", text: "3"}],
+             [{dbvalue: "täysin samaa mieltä", text: "4"}]
+          ]
+}
+
+/subtitle
+TERVEYDENTILA JA ELINTAVAT
+
+/numberfield {
+    dbcolumn: "pituus",
+    label: "Pituus:",
+    value: 0,
+    minimum: 0,
+    maximum: 250,
+    increment: 1
+} cm
+
+/numberfield {
+    dbcolumn: "paino",
+    label: "Paino:",
+    value: 0,
+    minimum: 0,
+    maximum: 250,
+    increment: 1
+} kg
+
+/p
+Onko sinulla
+/p
+
+-normaali kuulo
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "kuulo",
+    options: [[
+    {
+      dbcolumn: "kuulo",
+      dbvalue: "normaali",
+      text: "",
+      checked:
+    }
+    ],[]]
+}
+/p
+Jos vastasit ei, ole hyvä ja tarkenna (esim. minkäikäisestä lähtien ongelmaa; korjattu vai ei):
+/textbox {
+    dbcolumn: "kuulo_tarkenna",
+    label: "",
+    linebreak: false,
+    length: 100,
+    text: ""
+}
+
+/p
+-normaali näkö
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "näkö",
+    options: [[
+    {
+      dbcolumn: "näkö",
+      dbvalue: "normaali",
+      text: ""
+    }
+    ]]
+}
+/p
+Jos vastasit ei, ole hyvä ja tarkenna (esim. minkäikäisestä lähtien ongelmaa; korjattu esim. silmälaseilla vai ei):
+/textbox {
+    dbcolumn: "näkö_tarkenna_tarkenna",
+    label: "",
+    linebreak: false,
+    length: 100,
+    text: ""
+}
+
+/p
+Onko sinulla diagnosoituja oppimisvaikeuksia tai kehityksellisiä häiriöitä?
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "näkö",
+    options: [[
+    {
+      dbcolumn: "oppimisvaikeuksia",
+      dbvalue: "kyllä",
+      text: ""
+    }
+    ]]
+}
+Jos vastasit kyllä, mitä seuraavista:
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "oppimisvaikeuksia_",
+    options: [[
+    {
+      dbcolumn: "lukivaikeus (lukihäiriö)",
+      dbvalue: "1",
+      text: "Lukivaikeus (lukihäiriö)"
+    },
+    {
+      dbcolumn: "matemaattisten taitojen vaikeudet",
+      dbvalue: "1",
+      text: "Matemaattisten taitojen vaikeudet"
+    },
+    {
+      dbcolumn: "kielellinen erityisvaikeus (SLI)",
+      dbvalue: "1",
+      text: "Kielellinen erityisvaikeus (SLI)"
+    },
+    {
+      dbcolumn: "hahmotushäiriö",
+      dbvalue: "1",
+      text: "hahmotushäiriö"
+    },
+    {
+      dbcolumn: "tarkkaavuushäiriö (esim. ADHD)",
+      dbvalue: "1",
+      text: "tarkkaavuushäiriö (esim. ADHD)"
+    },
+   {
+      dbcolumn: "Aspergerin oireyhtymä",
+      dbvalue: "1",
+      text: "Aspergerin oireyhtymä"
+    }
+    ]]
+}
+
+/textbox {
+   dbcolumn: "muu oppimisvaikeus",
+   label: "Muu; mikä?",
+   linebreak: false,
+   length: 70,
+   text: "Muu; mikä"
+}
+
+/subtitle
+Sairaudet
+/p
+Onko sinulla diagnosoitu jokin tai joitakin seuraavista sairauksista tai oireista:
+
+/pb
+
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "sairaudet",
+    options: [[
+    {
+      dbcolumn: "Ei mitään allaolevista",
+      dbvalue: "1",
+      text: "Ei mitään allaolevista"
+    },
+    {
+      dbcolumn: "Ahdistushäiriö",
+      dbvalue: "1",
+      text: "Ahdistushäiriö"
+    },
+    {
+      dbcolumn: "Aivoinfarkti (stroke) tai aivoverenvuoto",
+      dbvalue: "1",
+      text: "Aivoinfarkti (stroke) tai aivoverenvuoto"
+    },
+    {
+      dbcolumn: "Aivokasvain",
+      dbvalue: "1",
+      text: "Aivokasvain"
+    },
+    {
+      dbcolumn: "Aivokuumetta, infektio aivoissa ",
+      dbvalue: "1",
+      text: "Aivokuumetta, infektio aivoissa "
+    },
+    {
+      dbcolumn: "Aivokuumetta, infektio aivoissa ",
+      dbvalue: "1",
+      text: "Aivokuumetta, infektio aivoissa "
+    },
+    {
+      dbcolumn: "Aneurysma",
+      dbvalue: "1",
+      text: "Aneurysma"
+    },
+    {
+      dbcolumn: "Autismi",
+      dbvalue: "1",
+      text: "Autismi"
+    },
+    {
+      dbcolumn: "B-vitamiinivajaus ",
+      dbvalue: "1",
+      text: "B-vitamiinivajaus "
+    },
+    {
+      dbcolumn: "CP-vamma",
+      dbvalue: "1",
+      text: "CP-vamma"
+    },
+    {
+      dbcolumn: "Diabetes",
+      dbvalue: "1",
+      text: "Diabetes"
+    },
+    {
+      dbcolumn: "Epilepsia",
+      dbvalue: "1",
+      text: "Epilepsia"
+    },
+    {
+      dbcolumn: "Fibromyalgia",
+      dbvalue: "1",
+      text: "Fibromyalgia"
+    },
+    {
+      dbcolumn: "Hypertyreoosi",
+      dbvalue: "1",
+      text: "Hypertyreoosi"
+    },
+    {
+      dbcolumn: "Hypotyreoosi",
+      dbvalue: "1",
+      text: "Hypotyreoosi"
+    },
+    {
+      dbcolumn: "Keliakia",
+      dbvalue: "1",
+      text: "Keliakia"
+    },{
+      dbcolumn: "Keuhkoahtaumatauti ",
+      dbvalue: "1",
+      text: "Keuhkoahtaumatauti "
+    },
+    {
+      dbcolumn: "Kohonnut kokonaiskolesteroli",
+      dbvalue: "1",
+      text: "Kohonnut kokonaiskolesteroli"
+    },
+    {
+      dbcolumn: "Korkea verenpaine ",
+      dbvalue: "1",
+      text: "Korkea verenpaine "
+    },
+    {
+      dbcolumn: "Masennus",
+      dbvalue: "1",
+      text: "Masennus"
+    },
+    {
+      dbcolumn: "Multippeliskleroosi (MS)",
+      dbvalue: "1",
+      text: "Multippeliskleroosi (MS)"
+    },
+    {
+      dbcolumn: "Muu dementia",
+      dbvalue: "1",
+      text: "Muu dementia"
+    },
+    {
+      dbcolumn: "Ohimenevä aivoverenkiertohäiriö (TIA-kohtaus)",
+      dbvalue: "1",
+      text: "Ohimenevä aivoverenkiertohäiriö (TIA-kohtaus)"
+    },
+    {
+      dbcolumn: "Pakko-oireinen häiriö (OCD, Tourette)",
+      dbvalue: "1",
+      text: "Pakko-oireinen häiriö (OCD, Tourette)"
+    },
+    {
+      dbcolumn: "Parkinsonin tauti",
+      dbvalue: "1",
+      text: "Parkinsonin tauti"
+    },
+    {
+      dbcolumn: "Päihteiden väärinkäyttö",
+      dbvalue: "1",
+      text: "Päihteiden väärinkäyttö"
+    },
+    {
+      dbcolumn: "Raudanpuuteanemia",
+      dbvalue: "1",
+      text: "Raudanpuuteanemia"
+    },
+    {
+      dbcolumn: "Sepelvaltimotauti",
+      dbvalue: "1",
+      text: "Sepelvaltimotauti"
+    },
+    {
+      dbcolumn: "Struuma",
+      dbvalue: "1",
+      text: "Struuma"
+    },
+    {
+      dbcolumn: "Sydäninfarkti ",
+      dbvalue: "1",
+      text: "Sydäninfarkti "
+    },
+    {
+      dbcolumn: "Uniapnea",
+      dbvalue: "1",
+      text: "Uniapnea"
+    }
+    ]]
+}
+
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "sairaudet",
+    options: [[
+    {
+      dbcolumn: "Muu mielenterveydellinen sairaus",
+      dbvalue: "1",
+      text: "Muu mielenterveydellinen sairaus; mikä:"
+      }
+    ]]
+  }
+/textbox {
+   dbcolumn: "Muu mielenterveydellinen sairaus, mikä",
+   label: "",
+   linebreak: false,
+   length: 60,
+   text: "Muu mielenterveydellinen sairaus"
+}
+
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "sairaudet",
+    options: [[
+    {
+      dbcolumn: "Muu sydänsairaus",
+      dbvalue: "1",
+      text: "Muu sydänsairaus; mikä:"
+      }
+    ]]
+  }
+/textbox {
+   dbcolumn: "Muu sydänsairaus mikä",
+   label: "",
+   linebreak: false,
+   length: 60,
+   text: "Muu sydänsairaus"
+}
+
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "sairaudet",
+    options: [[
+    {
+      dbcolumn: "Reumaattinen sairaus:",
+      dbvalue: "1",
+      text: "Reumaattinen sairaus; mikä:"
+      }
+    ]]
+  }
+/textbox {
+   dbcolumn: "Reumaattinen sairaus; mikä:",
+   label: "",
+   linebreak: false,
+   length: 60,
+   text: "Reumaattinen sairaus"
+}
+
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "sairaudet",
+    options: [[
+    {
+      dbcolumn: "syöpä:",
+      dbvalue: "1",
+      text: "Syöpä;mikä:"
+      }
+    ]]
+  }
+/textbox {
+   dbcolumn: "Syöpä - mikä",
+   label: "",
+   linebreak: false,
+   length: 60,
+   text: "Mikä syöpä;"
+}
+
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "sairaudet",
+    options: [[
+    {
+      dbcolumn: "Unihäiriö",
+      dbvalue: "1",
+      text: "Unihäiriö; mikä:"
+      }
+    ]]
+  }
+/textbox {
+   dbcolumn: "Unihäiriö - mikä",
+   label: "",
+   linebreak: false,
+   length: 60,
+   text: "Unihäiriö"
+}
+
+/pb
+/textbox {
+   dbcolumn: "Muu sairaus, mikä?",
+   label: "Muu sairaus, mikä?",
+   linebreak: false,
+   length: 60,
+   text: "Sairaus"
+}
+
+/p
+Onko päähäsi kohdistunut iskuja, jotka ovat johtaneet tajuttomuuteen tai aiheuttaneet jälkioireita (esim. muistiin, keskittymiseen, aistien toimintaan)?
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "päähäsi kohdistunut iskuja",
+    options: [[
+    {
+      dbcolumn: "päähäsi kohdistunut iskuja",
+      dbvalue: "1",
+      text: "Kyllä"
+      }
+    ]]
+  }
+/p
+Jos vastasit kyllä, mitä ja milloin
+
+/textbox {
+   dbcolumn: "pää_mitä?",
+   label: "?",
+   linebreak: false,
+   length: 90,
+   text: "Mitä ja milloin"
+}
+/pb
+/subtitle
+Lääkitys
+/p
+Onko sinulla tällä hetkellä käytössäsi jokin tilapäinen lääkitys?
+
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "tilapäinen_lääkity",
+    options: [[
+    {
+      dbcolumn: "tilapäinen_lääkitys",
+      dbvalue: "1",
+      text: "Kyllä"
+      }
+    ]]
+  }
+
+
+Jos vastasit kyllä, mikä ja mihin sairauteen/oireeseen:
+/textarea {
+    dbcolumn: "tilapäinen_lääkitys_mihin",
+    label: "",
+    linebreak: false,
+    length: 200,
+    text: "",
+    columns:60
+
+}
+/p
+Onko sinulla tällä hetkellä käytössäsi jokin säännöllinen lääkitys?
+
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "lääkity",
+    options: [[
+    {
+      dbcolumn: "lääkitys",
+      dbvalue: "1",
+      text: "Kyllä"
+      }
+    ]]
+  }
+/p
+Jos vastasit kyllä, merkitse alle, minkätyyppistä lääkitystä käytät sekä lääkkeen merkki tai tyyppi sekä annos:
+/pb
+
+/textbox {
+   dbcolumn: "lääkitys_Kolesterolilääke",
+   label: "Kolesterolilääke",
+   linebreak: false,
+   length: 90,
+   text: "Kolesterolilääke"
+}
+/p
+/textbox {
+   dbcolumn: "lääkitys_Verenpainelääke",
+   label: "Verenpainelääke",
+   linebreak: false,
+   length: 90,
+   text: "Verenpainelääke"
+}
+/p
+/textbox {
+   dbcolumn: "lääkitys_Masennuslääke",
+   label: "Masennuslääke",
+   linebreak: false,
+   length: 90,
+   text: "Masennuslääke"
+}
+
+/p
+/textbox {
+   dbcolumn: "lääkitys_Ahdistuslääke",
+   label: "Ahdistuslääke",
+   linebreak: false,
+   length: 90,
+   text: "Ahdistuslääke"
+}
+
+/p
+/textbox {
+   dbcolumn: "lääkitys_Muu psyykenlääke",
+   label: "Muu psyykenlääke",
+   linebreak: false,
+   length: 90,
+   text: "Muu psyykenlääke"
+}
+
+/p
+/textbox {
+   dbcolumn: "lääkitys_Unilääke",
+   label: "Unilääke",
+   linebreak: false,
+   length: 90,
+   text: "Unilääke"
+}
+
+/p
+/textbox {
+   dbcolumn: "lääkitys_Muu kolmiolääke",
+   label: "Muu kolmiolääke",
+   linebreak: false,
+   length: 90,
+   text: "Muu kolmiolääke"
+}
+
+/p
+/textbox {
+   dbcolumn: "lääkitys_Muu; mikä:",
+   label: "Muu; mikä:",
+   linebreak: false,
+   length: 90,
+   text: "Muu; mikä:"
+}
+
+/subtitle
+Alkoholi
+
+/p
+Valitse kussakin kysymyksessä omaa tilannettasi lähinnä vastaava vaihtoehto. Testin kysymykset (lukuunottamatta viimeistä kysymystä) koskevat viimeksi kulunutta vuoden jaksoa.
+
+/p
+/pb
+/p
+Kuinka usein olet juonut kerralla kuusi tai useampia annoksia?
+
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "alkoholi +6 annosta",
+   options: [[{dbvalue: "0", text: "En koskaan"},
+             {dbvalue: "1", text: "Harvemmin kuin kerran kuussa"},
+             {dbvalue: "2", text: "Kerran kuussa"},
+             {dbvalue: "3", text: "Kerran viikossa"},
+             {dbvalue: "4", text: "Päivittäin tai lähes päivittäin"}
+            ]]
+}
+
+/p
+Kuinka usein viimeisen vuoden aikana et ole juomisesi vuoksi saanut tehtyä jotain, mikä tavallisesti kuuluu tehtäviisi?
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "alkoholi-tehtävä",
+   options: [[{dbvalue: "0", text: "En koskaan"},
+             {dbvalue: "1", text: "Harvemmin kuin kerran kuussa"},
+             {dbvalue: "2", text: "Kerran kuussa"},
+             {dbvalue: "3", text: "Kerran viikossa"},
+             {dbvalue: "4", text: "Päivittäin tai lähes päivittäin"}
+            ]]
+}
+
+/p
+Kuinka usein viime vuoden aikana sinulle kävi niin, että et juomisen vuoksi pystynyt muistamaan edellisen illan tapahtumia?
+
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "alkoholi-muistaminen",
+   options: [[{dbvalue: "0", text: "En koskaan"},
+             {dbvalue: "1", text: "Harvemmin kuin kerran kuussa"},
+             {dbvalue: "2", text: "Kerran kuussa"},
+             {dbvalue: "3", text: "Kerran viikossa"},
+             {dbvalue: "4", text: "Päivittäin tai lähes päivittäin"}
+            ]]
+}
+
+/p
+Onko joku läheisesi tai ystäväsi, lääkäri tai joku muu ollut huolissaan alkoholinkäytöstäsi tai ehdottanut että vähentäisit juomista?
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "alkoholi-huolissa",
+   options: [[{dbvalue: "0", text: "En koskaan"},
+             {dbvalue: "1", text: "Harvemmin kuin kerran kuussa"},
+             {dbvalue: "2", text: "Kerran kuussa"},
+             {dbvalue: "3", text: "Kerran viikossa"},
+             {dbvalue: "4", text: "Päivittäin tai lähes päivittäin"}
+            ]]
+}
+/pb
+Oletko juonut alkoholia viimeisen vuorokauden aikana? Jos olet, niin kuinka monta annosta?
+/numberfield {
+    dbcolumn: "alkoholi-annoksia",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 100,
+    increment: 1
+}
+/pb
+
+/subtitle
+Huumausaineet
+
+/p
+Oletko käyttänyt viimeisen vuoden aikana jotakin huumausainetta:
+/multiselect {
+    default_value: "ei",
+    dbcolumn: "huumasusaineita",
+    options: [[
+    {
+      dbcolumn: "huumausaineira",
+      dbvalue: "Kyllä",
+      text: ""
+    }
+    ]]
+}
+/p
+Jos vastasit kyllä, mitä
+/textbox {
+   dbcolumn: "huumausaineita-mikä",
+   label: "",
+   linebreak: false,
+   length: 60,
+   text: "Huumausaine"
+}
+/p
+Kuinka usein?
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "huumaus_kuinka_usein",
+   options: [[{dbvalue: "0", text: "En koskaan"},
+             {dbvalue: "1", text: "kerran kuussa tai harvemmin"},
+             {dbvalue: "2", text: "2-4 kertaa kuussa"},
+             {dbvalue: "3", text: "2-3 kertaa viikossa"},
+             {dbvalue: "4", text: "4 kertaa viikossa tai useammin"}
+            ]]
+  }
+
+/p
+Oletko käyttänyt jotakin huumausainetta viimeisen vuorokauden aikana; mitä:
+/textbox {
+   dbcolumn: "huumausaineita-24h",
+   label: "",
+   linebreak: false,
+   length: 60,
+   text: "Huumausaine"
+}
+
+/subtitle
+Uni
+/p
+
+/p
+Seuraavat kysymykset liittyvät tavallisiin nukkumistapoihisi viimeisen kuukauden aikana.
+/pb
+Nukun keskimäärin noin
+/numberfield {
+    dbcolumn: "uni_nukun_h",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 24,
+    increment: 1
+}
+tuntia ja
+/pb
+/numberfield {
+    dbcolumn: "uni_nukun_min",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 60,
+    increment: 1
+}
+ minuuttia vuorokaudessa
+
+/p
+Kuinka monta tuntia unta tarvitset vuorokaudessa (kuinka monta tuntia nukkuisit jos voisit nukkua niin pitkään kuin haluat)? Toisin sanoen, kuinka pitkän unen tarvitset ollaksesi seuraavana päivänä virkeä ja hyvässä toiminta- ja työvireessä?
+/pb
+
+Tarvitsen noin
+/numberfield {
+    dbcolumn: "uni_tarvitsen_h",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 24,
+    increment: 1
+} tuntia ja
+/numberfield {
+    dbcolumn: "uni_tarvitsen_min",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 60,
+    increment: 1
+}
+minuuttia unta vuorokaudessa.
+Miten arvioit nukkuneesi kaiken kaikkiaan viimeisen kuukauden aikana? (Erittäin hyvin, Melko hyvin, Melko huonosti, Erittäin huonosti)
+
+/subtitle
+Ruokavalio
+
+/p
+Kuinka paljon juot tavallisesti seuraavia juomia?
+/pb
+- Kahvia:
+/numberfield {
+    dbcolumn: "kahvi_vko",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 100,
+    increment: 1
+}
+
+kuppia viikossa. Jos olet juonut tänään kahvia, milloin viimeksi:
+/numberfield {
+    dbcolumn: "kahvi_viimeksi",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 24,
+    increment: 1
+} tuntia sitten.
+teetä:
+/numberfield {
+    dbcolumn: "tee_vko",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 60,
+    increment: 1
+} kuppia viikossa. Jos olet juonut tänään teetä, milloin viimeksi:
+/numberfield {
+    dbcolumn: "tee_viimeksi",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 60,
+    increment: 1
+} tuntia sitten.
+kuinka suuri osuus viikottaisesta teenkulutuksestasi on vihreää teetä:
+/numberfield {
+    dbcolumn: "tee_%_vihreä",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 60,
+    increment: 1
+} %
+energiajuomia:
+/numberfield {
+    dbcolumn: "energiajuoma_vko",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 60,
+    increment: 1
+} tölkkiä viikossa. Jos olet juonut tänään energiajuomaa, milloin viimeksi:
+/numberfield {
+    dbcolumn: "energiajuoma_viimaksi",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 60,
+    increment: 1
+} tuntia sitten.
+punaviiniä:
+/numberfield {
+    dbcolumn: "punaviini_vko",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 60,
+    increment: 1
+} annosta viikossa.
+
+/p
+Kuinka usein syöt tavallisesti seuraavia ruoka-aineita (en juuri koskaan; harvemmin kuin kerran viikossa; 1-2 krt/vko; 2-4 krt/vko; 5-6 krt/vko; päivittäin; useammin kuin kerran päivässä):
+/pb
+Marjoja
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "marjoja_kuinka_usein",
+   options: [[{dbvalue: "0", text: "En juuri koskaan"},
+             {dbvalue: "1", text: "harvemmin kuin kerran viikossa"},
+             {dbvalue: "2", text: "1-2 krt/vko"},
+             {dbvalue: "3", text: "3-4 krt/vko"},
+             {dbvalue: "4", text: "5-6 krt/vko"},
+             {dbvalue: "4", text: "päivittäin"},
+             {dbvalue: "4", text: "useammin kuin kerran päivässä"}
+            ]]
+  }
+Pähkinöitä
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "pähkinä_kuinka_usein",
+   options: [[{dbvalue: "0", text: "En juuri koskaan"},
+             {dbvalue: "1", text: "harvemmin kuin kerran viikossa"},
+             {dbvalue: "2", text: "1-2 krt/vko"},
+             {dbvalue: "3", text: "3-4 krt/vko"},
+             {dbvalue: "4", text: "5-6 krt/vko"},
+             {dbvalue: "4", text: "päivittäin"},
+             {dbvalue: "4", text: "useammin kuin kerran päivässä"}
+            ]]
+  }
+Kasviöljyä (esim. oliivi-, rypsiöljy):
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "kasviöljy_kuinka_usein",
+   options: [[{dbvalue: "0", text: "En juuri koskaan"},
+             {dbvalue: "1", text: "harvemmin kuin kerran viikossa"},
+             {dbvalue: "2", text: "1-2 krt/vko"},
+             {dbvalue: "3", text: "3-4 krt/vko"},
+             {dbvalue: "4", text: "5-6 krt/vko"},
+             {dbvalue: "4", text: "päivittäin"},
+             {dbvalue: "4", text: "useammin kuin kerran päivässä"}
+            ]]
+  }
+Kalaa
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "kala_kuinka_usein",
+   options: [[{dbvalue: "0", text: "En juuri koskaan"},
+             {dbvalue: "1", text: "harvemmin kuin kerran viikossa"},
+             {dbvalue: "2", text: "1-2 krt/vko"},
+             {dbvalue: "3", text: "3-4 krt/vko"},
+             {dbvalue: "4", text: "5-6 krt/vko"},
+             {dbvalue: "4", text: "päivittäin"},
+             {dbvalue: "4", text: "useammin kuin kerran päivässä"}
+            ]]
+  }
+Soijatuotteita
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "soija_kuinka_usein",
+   options: [[{dbvalue: "0", text: "En juuri koskaan"},
+             {dbvalue: "1", text: "harvemmin kuin kerran viikossa"},
+             {dbvalue: "2", text: "1-2 krt/vko"},
+             {dbvalue: "3", text: "3-4 krt/vko"},
+             {dbvalue: "4", text: "5-6 krt/vko"},
+             {dbvalue: "4", text: "päivittäin"},
+             {dbvalue: "4", text: "useammin kuin kerran päivässä"}
+            ]]
+  }
+Suklaata
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "suklaa_kuinka_usein",
+   options: [[{dbvalue: "0", text: "En juuri koskaan"},
+             {dbvalue: "1", text: "harvemmin kuin kerran viikossa"},
+             {dbvalue: "2", text: "1-2 krt/vko"},
+             {dbvalue: "3", text: "3-4 krt/vko"},
+             {dbvalue: "4", text: "5-6 krt/vko"},
+             {dbvalue: "4", text: "päivittäin"},
+             {dbvalue: "4", text: "useammin kuin kerran päivässä"}
+            ]]
+  }
+Muita makeisia, makeita leivonnaisia, jäätelöä yms.
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "makeisia_kuinka_usein",
+   options: [[{dbvalue: "0", text: "En juuri koskaan"},
+             {dbvalue: "1", text: "harvemmin kuin kerran viikossa"},
+             {dbvalue: "2", text: "1-2 krt/vko"},
+             {dbvalue: "3", text: "3-4 krt/vko"},
+             {dbvalue: "4", text: "5-6 krt/vko"},
+             {dbvalue: "4", text: "päivittäin"},
+             {dbvalue: "4", text: "useammin kuin kerran päivässä"}
+            ]]
+  }
+
+Vihanneksia, juureksia
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "vihannes_kuinka_usein",
+   options: [[{dbvalue: "0", text: "En juuri koskaan"},
+             {dbvalue: "1", text: "harvemmin kuin kerran viikossa"},
+             {dbvalue: "2", text: "1-2 krt/vko"},
+             {dbvalue: "3", text: "3-4 krt/vko"},
+             {dbvalue: "4", text: "5-6 krt/vko"},
+             {dbvalue: "4", text: "päivittäin"},
+             {dbvalue: "4", text: "useammin kuin kerran päivässä"}
+            ]]
+  }
+Eineksiä, valmisaterioita, take-away-ruokaa
+/singleselect {
+   default_value: "-1",
+   dbcolumn: "eines_kuinka_usein",
+   options: [[{dbvalue: "0", text: "En juuri koskaan"},
+             {dbvalue: "1", text: "harvemmin kuin kerran viikossa"},
+             {dbvalue: "2", text: "1-2 krt/vko"},
+             {dbvalue: "3", text: "3-4 krt/vko"},
+             {dbvalue: "4", text: "5-6 krt/vko"},
+             {dbvalue: "4", text: "päivittäin"},
+             {dbvalue: "4", text: "useammin kuin kerran päivässä"}
+            ]]
+  }
+
+/pb
+Käytätkö omega-3-lisäravinteita (esim. kalaöljykapseleita)?
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "omega3",
+    options: [
+    [{ dbvalue: "Kyllä",text: "Kyllä"}],
+    [{ dbvalue: "Kyllä",text: "Ei"}
+    ]]
+}
+
+/p
+Noudatatko jotain erityistä ruokavaliota?
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "ruokavalio",
+    options: [
+    [{ dbvalue: "Kyllä",text: "Kyllä"}],
+    [{ dbvalue: "Kyllä",text: "Ei"}
+    ]]
+}
+/p
+
+Jos vastasit kyllä, mitä ruokavaliota ja kuinka tiukasti (1 = lähes poikkeuksetta; 2 = pääsääntöisesti mutta en kovin tiukasti)
+/pb
+
+/p
+Vähähiilihydraattinen ruokavalio (LCHF, Atkins, ”karppaus”, paleoruokavalio)
+/pb
+/numberfield {
+    dbcolumn: "lhcf",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 2,
+    increment: 1
+}
+/p
+
+Kasvisruokavalio (+ mahd. maitotuotteet ja muna)
+/numberfield {
+    dbcolumn: "lhcf",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 2,
+    increment: 1
+}
+
+Vegaaniruokavalio (ei eläinperäisiä ruoka-aineita):
+/numberfield {
+    dbcolumn: "lhcf",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 2,
+    increment: 1
+}
+Painonvartijat
+/numberfield {
+    dbcolumn: "lhcf",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 2,
+    increment: 1
+}
+Välimeren ruokavalio
+/numberfield {
+    dbcolumn: "lhcf",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 2,
+    increment: 1
+}
+Gluteeniton ruokavalio
+/numberfield {
+    dbcolumn: "lhcf",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 2,
+    increment: 1
+}
+5:2-ruokavalio
+/numberfield {
+    dbcolumn: "lhcf",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 2,
+    increment: 1
+}
+
+/textbox {
+   dbcolumn: "muu_ruokavalio",
+   label: "Muu, mikä",
+   linebreak: false,
+   length: 40,
+   text: "Muu, mikä"
+}
+
+
+/title
+PERSOONALLISUUS JA STRESSI
+
+/subtitle
+Persoonallisuus
+Tässä on joukko persoonallisuuspiirteitä, jotka saattavat sopia sinuun tai eivät. Valitse väittämien vieressä olevista numeroista sopivin sen mukaan, missä määrin olet samaa tai eri mieltä väittämän kanssa. Sinun tulisi arvioida missä määrin kunkin kohdan molemmat piirteet pätevät sinuun, vaikka yksi piirteistä sopisi sinuun paremmin kuin toinen.
+
+/p
+1 = Täysin eri mieltä; 2 = Jokseenkin eri mieltä; 3 = Hieman eri mieltä; 4 = Ei samaa eikä eri mieltä; 5 = Hieman samaa mieltä; 6 = Jokseenkin samaa mieltä; 7 = Täysin samaa mieltä
+/p
+Omasta mielestäni olen:
+/p
+1. Ulospäin suuntautunut, innostunut
+/slider {
+   dbcolumn: "Ulospäin suuntautunut, innostunut",
+   numeric: true,
+   dbtype: "int",
+   labels: [1,2,3,4,5,6,7],
+   minimum: 1,
+   maximum: 7,
+   increment: 1,
+   select: 4
+}
+/p
+2. Kriittinen, riidanhaluinen
+/slider {
+   dbcolumn: "kriittinen",
+   numeric: true,
+   dbtype: "int",
+   labels: [1,2,3,4,5,6,7],
+   minimum: 1,
+   maximum: 7,
+   increment: 1,
+   select: 4
+}
+/p
+3. Luotettava, kurinalainen
+/slider {
+   dbcolumn: "luotettava",
+   numeric: true,
+   dbtype: "int",
+   labels: [1,2,3,4,5,6,7],
+   minimum: 1,
+   maximum: 7,
+   increment: 1,
+   select: 4
+}
+/p
+4. Huolestunut, helposti järkyttyvä
+/slider {
+   dbcolumn: "huolestunut",
+   numeric: true,
+   dbtype: "int",
+   labels: [1,2,3,4,5,6,7],
+   minimum: 1,
+   maximum: 7,
+   increment: 1,
+   select: 4
+}
+/p
+5. Avoin uusille kokemuksille, monipuolinen
+/slider {
+   dbcolumn: "avoin",
+   numeric: true,
+   dbtype: "int",
+   labels: [1,2,3,4,5,6,7],
+   minimum: 1,
+   maximum: 7,
+   increment: 1,
+   select: 4
+}
+/p
+6. Varautunut, hiljainen
+/slider {
+   dbcolumn: "varautunut",
+   numeric: true,
+   dbtype: "int",
+   labels: [1,2,3,4,5,6,7],
+   minimum: 1,
+   maximum: 7,
+   increment: 1,
+   select: 4
+}
+/p
+7. Sympaattinen, lämmin
+/slider {
+   dbcolumn: "sympaattinen",
+   numeric: true,
+   dbtype: "int",
+   labels: [1,2,3,4,5,6,7],
+   minimum: 1,
+   maximum: 7,
+   increment: 1,
+   select: 4
+}
+/p
+8. Epäjärjestelmällinen, huoleton
+/slider {
+   dbcolumn: "epärärjestelmällinen",
+   numeric: true,
+   dbtype: "int",
+   labels: [1,2,3,4,5,6,7],
+   minimum: 1,
+   maximum: 7,
+   increment: 1,
+   select: 4
+}
+/p
+9. Rauhallinen, tunteissani vakaa
+/slider {
+   dbcolumn: "rauhallinen",
+   numeric: true,
+   dbtype: "int",
+   labels: [1,2,3,4,5,6,7],
+   minimum: 1,
+   maximum: 7,
+   increment: 1,
+   select: 4
+}
+/p
+10. Sovinnainen, ei-luova
+/slider {
+   dbcolumn: "sovinnainen",
+   numeric: true,
+   dbtype: "int",
+   labels: [1,2,3,4,5,6,7],
+   minimum: 1,
+   maximum: 7,
+   increment: 1,
+   select: 4
+}
+
+/subtitle
+Ahdistus
+/p
+Alla näet väittämiä, joita ihmiset ovat käyttäneet kuvaillakseen itseään. Lue jokainen väittämä ja valitse väittämän oikealla puolella olevista numeroista se, joka mielestäsi kuvaa tunteitasi parhaiten juuri nyt, tällä hetkellä. Ei ole oikeita tai vääriä vastauksia. Älä käytä liikaa aikaa väittämiin, vaan vastaa sen perusteella, mikä vaikuttaa kuvaavan tämänhetkisiä tunteitasi parhaiten.
+/p
+1. Tunnen itseni rauhalliseksi (en lainkaan; jonkin verran; kohtalaisen paljon, hyvin paljon)
+2. Olen jännittynyt
+3. Olen poissa tolaltani
+4. Tunnen itseni rentoutuneeksi
+5. Tunnen itseni tyytyväiseksi
+6. Olen huolestunut
+
+/subtitle
+Masennus
+
+/p
+MERKITSE JOKAISEN KYSYMYKSEN VASTAUSVAIHTOEHDOISTA SE (YKSI VAIHTOEHTO), JOKA PARHAITEN KUVAA SINUA ITSEÄSI VIIMEKSI KULUNEEN 7 PÄIVÄN AIKANA.
+/p
+
+1. Nukahtaminen:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Nukahtaminen",
+    options: [[
+    { dbvalue: "0",text: "Olen aina nukahtanut 30 minuutin kuluessa."},
+    { dbvalue: "1",text: "Harvemmin kuin joka toinen kerta on nukahtaminen kestänyt 30 minuuttia tai kauemmin."},
+    { dbvalue: "2",text: "Useammin kuin joka toinen kerta on nukahtaminen kestänyt 30 minuuttia tai kauemmin."},
+    { dbvalue: "3",text: "Useammin kuin joka toinen kerta on nukahtaminen kestänyt yli tunnin."}
+    ]]
+}
+
+
+2. Yöuni:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Töuni",
+    options: [[
+    { dbvalue: "0",text: "En ole herännyt yöllä."},
+    { dbvalue: "1",text: "Uneni on ollut levotonta ja kevyttä ja olen havahtunut hetkeksi hereille muutamia kertoja joka yö."},
+    { dbvalue: "2",text: "Olen herännyt vähintään kerran yössä, mutta olen nukahtanut helposti uudelleen."},
+    { dbvalue: "3",text: "Useammin kuin joka toinen kerta olen herännyt useammin kuin kerran yössä ja olen ollut hereillä vähintään 20 minuuttia."}
+    ]]
+}
+
+3. Liian varhainen herääminen:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "varhainen herääminen",
+    options: [[
+    { dbvalue: "0",text: "Useimmiten olen herännyt aikaisintaan 30 minuuttia ennen kuin minun tarvitsee nousta ylös."},
+    { dbvalue: "1",text: "Useammin kuin joka toinen kerta olen herännyt yli 30 minuuttia aikaisemmin kuin minun tarvitsee
+nousta ylös."},
+    { dbvalue: "2",text: "Olen herännyt lähes aina vähintään noin tuntia ennen kuin minun tarvitsisi, mutta olen nukahtanut
+lopulta uudelleen."},
+    { dbvalue: "3",text: "Olen herännyt vähintään tunnin liian aikaisin enkä ole pystynyt nukahtamaan uudelleen."}
+    ]]
+}
+
+4. Liiallinen nukkuminen:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Liiallinen nukkuminen",
+    options: [[
+    { dbvalue: "0",text: "Olen nukkunut enintään 7-8 tuntia yössä enkä ole ottanut päiväunia."},
+    { dbvalue: "1",text: "Olen nukkunut enintään 10 tuntia vuorokaudessa (24 tunnin jakson aikana) päiväunet mukaan lukien."},
+    { dbvalue: "2",text: "Olen nukkunut enintään 12 tuntia vuorokaudessa (24 tunnin jakson aikana) päiväunet mukaan lukien."},
+    { dbvalue: "3",text: "Olen nukkunut enemmän kuin 12 tuntia vuorokaudessa (24 tunnin jakson aikana) päiväunet mukaan lukien."}
+    ]]
+}
+
+5. Surullisuuden tunne:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Surullisuuden tunne",
+    options: [[
+    { dbvalue: "0",text: "En ole tuntenut itseäni surulliseksi."},
+    { dbvalue: "1",text: "Olen tuntenut itseni surulliseksi alle puolet ajasta."},
+    { dbvalue: "2",text: "Olen tuntenut itseni surulliseksi yli puolet ajasta."},
+    { dbvalue: "3",text: "Olen tuntenut itseni surulliseksi lähes koko ajan."}
+    ]]
+}
+
+Täytä joko 6 tai 7 (ei molempia)
+6. Heikentynyt ruokahalu:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Heikentynyt ruokahalu:",
+    options: [[
+    { dbvalue: "0",text: "Ruokahaluni ei ole muuttunut normaalista."},
+    { dbvalue: "1",text: "Olen syönyt jonkun verran tavallista harvemmin tai pienempiä määriä kuin tavallisesti."},
+    { dbvalue: "2",text: "Olen syönyt selvästi vähemmän kuin tavallisesti ja joudun pakottamaan itseni syömään."},
+    { dbvalue: "3",text: "Olen syönyt vuorokauden aikana (24 tunnin jakson aikana) vain harvoin ja vain erittäin suurin ponnistuksin tai kun muut suostuttelevat minut syömään."}
+    ]]
+}
+
+7. Lisääntynyt ruokahalu:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Lisääntynyt ruokahalu",
+    options: [[
+    { dbvalue: "0",text: "Ruokahaluni ei ole muuttunut normaalista."},
+    { dbvalue: "1",text: "Minulla on ollut tarve syödä tavallista useammin."},
+    { dbvalue: "2",text: "Olen syönyt jatkuvasti useammin ja/tai suurempia määriä kuin tavallisesti."},
+    { dbvalue: "3",text: "Olen tuntenut voimakasta tarvetta syödä liikaa sekä aterioilla että aterioiden välillä."}
+    ]]
+}
+
+Täytä joko 8 tai 9 (ei molempia)
+8. Painon lasku (kahden viime viikon aikana):
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Painon lasku",
+    options: [[
+    { dbvalue: "0",text: "Painoni ei ole muuttunut."},
+    { dbvalue: "1",text: "Minusta tuntuu, että painoni on hieman laskenut."},
+    { dbvalue: "2",text: "Painoni on laskenut vähintään kilon."},
+    { dbvalue: "3",text: "Painoni on laskenut yli kaksi kiloa."}
+    ]]
+}
+
+9. Painon nousu (kahden viime viikon aikana):
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Painon nousu ",
+    options: [[
+    { dbvalue: "0",text: "Painoni ei ole muuttunut."},
+    { dbvalue: "1",text: "Minusta tuntuu, että painoni on hieman noussut."},
+    { dbvalue: "2",text: "Painoni on noussut vähintään kilon."},
+    { dbvalue: "3",text: "Painoni on noussut yli kaksi kiloa."}
+    ]]
+}
+
+
+10. Keskittyminen/päätöksenteko:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Keskittyminen/päätöksenteko:",
+    options: [[
+    { dbvalue: "0",text: "Tavanomaisessa kyvyssäni keskittyä tai tehdä päätöksiä ei ole tapahtunut muutoksia."},
+    { dbvalue: "1",text: "Minun on toisinaan ollut vaikea tehdä päätöksiä tai olen huomannut, että tarkkaavaisuuteni herpaantuu."},
+    { dbvalue: "2",text: "Minun on ollut lähes koko ajan vaikea keskittää tarkkaavaisuuteni tai tehdä päätöksiä."},
+    { dbvalue: "3",text: "En ole pystynyt keskittymään tarpeeksi hyvin lukeakseni enkä ole saanut tehdyksi edes pieniä päätöksiä."}
+    ]]
+}
+
+
+11. Minäkuva:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Minäkuva",
+    options: [[
+    { dbvalue: "0",text: "Mielestäni olen yhtä arvokas ja ansioitunut kuin muutkin ihmiset"},
+    { dbvalue: "1",text: "Olen syyttänyt itseäni tavallista enemmän."},
+    { dbvalue: "2",text: "Enimmäkseen olen ajatellut, että aiheutan ongelmia muille."},
+    { dbvalue: "3",text: "Olen ajatellut lähes jatkuvasti suurempia ja pienempiä puutteitani."}
+    ]]
+}
+
+
+12. Kuolema- tai itsemurha-ajatukset:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "uolema- tai itsemurha",
+    options: [[
+    { dbvalue: "0",text: "En ole ajatellut itsemurhaa tai kuolemaa."},
+    { dbvalue: "1",text: "Minusta on tuntunut, että elämä on tyhjää tai olen pohtinut, onko se elämisen arvoista."},
+    { dbvalue: "2",text: "Olen ajatellut itsemurhaa tai kuolemaa useita minuutteja monta kertaa viikossa."},
+    { dbvalue: "3",text: "Olen ajatellut itsemurhaa tai kuolemaa useita kertoja päivässä yksityiskohtaisesti tai olen tehnyt tarkkoja itsemurhasuunnitelmia tai jopa yrittänyt itsemurhaa."}
+    ]]
+}
+
+13. Yleinen mielenkiinto:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Yleinen mielenkiinto",
+    options: [[
+    { dbvalue: "0",text: "Ei ole tapahtunut muutoksia sen suhteen, kuinka kiinnostunut olen ollut muista ihmisistä tai tekemisistä."},
+    { dbvalue: "1",text: "Olen huomannut olevani vähemmän kiinnostunut muista ihmisistä tai tekemisistä."},
+    { dbvalue: "2",text: "Olen huomannut olevani kiinnostunut vain parista sellaisesta asiasta, joita aikaisemmin tein."},
+    { dbvalue: "3",text: "En ole ollut juuri lainkaan kiinnostunut asioista, joita aikaisemmin tein."}
+    ]]
+}
+
+14. Energiataso:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Energiataso",
+    options: [[
+    { dbvalue: "0",text: "Tavanomaisessa energiatasossani ei ole tapahtunut muutoksia."},
+    { dbvalue: "1",text: "Väsyn tavallista helpommin."},
+    { dbvalue: "2",text: "Minun on pitänyt ponnistella saadakseni aloitetuksi tai lopetetuksi tavanomaiset päivittäiset
+askareeni (esimerkiksi kaupassa käynnin, läksyjen teon, ruuan laiton tai töihin menon)."},
+    { dbvalue: "3",text: "En selviä useimmista päivittäisistä toimistani, koska minulla ei yksinkertaisesti ole ollut voimia siihen."}
+    ]]
+}
+
+15. Hidastumisen tunne:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Hidastumisen tunne",
+    options: [[
+    { dbvalue: "0",text: "Olen ajatellut, puhunut ja liikkunut normaaliin tahtiini."},
+    { dbvalue: "1",text: "Minusta on tuntunut, että ajatteluni on hidastunut tai ääneni on kuulostanut vaimealta tai yksitoikkoiselta."},
+    { dbvalue: "2",text: "Suurimpaan osaan kysymyksistä vastaaminen kestää useita sekunteja ja olen varma, että ajatteluni on hidastunut."},
+    { dbvalue: "3",text: "Kysymyksiin vastaaminen on vaatinut minulta usein erittäin suuria ponnistuksia."}
+    ]]
+}
+
+
+16. Levottomuuden tunne:
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "Levottomuuden tunne",
+    options: [[
+    { dbvalue: "0",text: "En ole tuntenut itseäni levottomaksi."},
+    { dbvalue: "1",text: "Olen liikehtinyt usein levottomasti, väännellyt käsiäni tai joutunut vaihtamaan istuma-asentoa."},
+    { dbvalue: "2",text: "Minulle on tullut toisinaan äkillinen tarve liikkua ja olen ollut melko levoton"},
+    { dbvalue: "3",text: "Toisinaan en ole pystynyt istumaan aloillani ja minun on pakko kävellä ympäriinsä."}
+    ]]
+}
+
+
+/subtitle
+Stressi
+1. Kuinka usein viimeisen kuukauden aikana olet tuntenut, että et ole kyennyt hallitsemaan tärkeitä asioita elämässäsi?
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "stressi_1",
+    options: [[
+    { dbvalue: "0",text: "en koskaan"},
+    { dbvalue: "1",text: "en juuri koskaan."},
+    { dbvalue: "2",text: "silloin tällöin"},
+    { dbvalue: "3",text: "melko usein"},
+    { dbvalue: "4",text: "hyvin usein"}
+    ]]
+}
+
+2. Kuinka usein viimeisen kuukauden aikana olet ollut luottavainen kykyysi käsitellä henkilökohtaisia ongelmiasi?
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "stressi_2",
+    options: [[
+    { dbvalue: "0",text: "en koskaan"},
+    { dbvalue: "1",text: "en juuri koskaan."},
+    { dbvalue: "2",text: "silloin tällöin"},
+    { dbvalue: "3",text: "melko usein"},
+    { dbvalue: "4",text: "hyvin usein"}
+    ]]
+}
+3. Kuinka usein viimeisen kuukauden aikana olet tuntenut, että asiat ovat menneet toivomallasi tavalla?
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "stressi_3",
+    options: [[
+    { dbvalue: "0",text: "en koskaan"},
+    { dbvalue: "1",text: "en juuri koskaan."},
+    { dbvalue: "2",text: "silloin tällöin"},
+    { dbvalue: "3",text: "melko usein"},
+    { dbvalue: "4",text: "hyvin usein"}
+    ]]
+}
+4. Kuinka usein viimeisen kuukauden aikana olet kokenut, että ongelmasi ovat kasaantuneet niin suuriksi, että et ole kyennyt selviytymään niistä?
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "stressi_4",
+    options: [[
+    { dbvalue: "0",text: "en koskaan"},
+    { dbvalue: "1",text: "en juuri koskaan."},
+    { dbvalue: "2",text: "silloin tällöin"},
+    { dbvalue: "3",text: "melko usein"},
+    { dbvalue: "4",text: "hyvin usein"}
+    ]]
+}
+
+
+
+/title
+HARRASTUKSET
+
+/subtitle
+Musiikki
+Soitatko/laulatko/harjoitteletko musiikkia päivittäin?
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "musiikki",
+    options: [[
+    { dbvalue: "0",text: "kyllä"}],
+    [{ dbvalue: "1",text: "ei"}
+    ]]
+}
+
+/p
+Kuinka monta tuntia tavallisesti soitat/laulat/harjoittelet musiikkia päivässä?
+
+/numberfield {
+    dbcolumn: "musiikki/päivä",
+    label: "H/päivä",
+    value: 0,
+    minimum: 0,
+    maximum: 24,
+    increment: 1
+}
+
+/p
+
+Jos soitat/laulat/harjoittelet musiikkia harvemmin kuin päivittäin, kuinka usein arvioisit tavallisesti soittavasi/laulavasi/harjoittelevasi musiikkia?
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "stressi_4",
+    options: [[
+    { dbvalue: "0",text: "en koskaan"},
+    { dbvalue: "1",text: "kerran vuodessa"},
+    { dbvalue: "2",text: "kerran kuukaudessa"},
+    { dbvalue: "3",text: "2-3 kertaa kuukaudessa"},
+    { dbvalue: "4",text: "kerran viikossa"},
+    { dbvalue: "5",text: "2-3 kertaa viikossa"},
+    { dbvalue: "6",text: "useammin kuin 3 kertaa viikossa mutta harvemmin kuin päivittäin "}
+    ]]
+}
+
+
+/subtitle
+Liikunta
+
+/p
+Kuormittava fyysinen aktiivisuus tarkoittaa sellaista aktiivisuutta, joka vaatii kohtuullisen voimakasta fyysistä ponnistelua ja aiheuttaa hengästymisen (esim. raskas kuntosaliharjoittelu, aerobic, vauhdikas pyöräily tai lapiointi puutarhassa).
+
+/p
+Kohtuullisen kuormittava fyysinen aktiivisuus tarkoittaa sellaista aktiivisuutta, joka vaatii keskinkertaista fyysistä ponnistelua ja aiheuttaa lievän hengästymisen (esim. kevyiden taakkojen kantaminen, normaalivauhtinen pyöräily ja hölkkä, jonka aikana pystyy puhumaan; tähän kohtaan ei sisälly normaalivauhtinen kävely).
+
+/p
+Ajattele kolmea viime kuukautta ja kaikkea fyysistä aktiivisuutta, joka on kestänyt kerrallaan vähintään 20 minuuttia. Kuinka usein olit fyysisesti aktiivinen?
+
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "liikunta",
+    options: [[
+    { dbvalue: "0",text: "harvemmin kuin kerran viikossa"},
+    { dbvalue: "1",text: "ei kuormittavaa fyysistä aktiivisuutta mutta kevyttä tai kohtuullisesti kuormittavaa aktiivisuutta ainakin kerran viikossa"},
+    { dbvalue: "2",text: "kuormittavaa fyysistä aktiivisuutta kerran viikossa"},
+    { dbvalue: "3",text: "kuormittavaa fyysistä aktiivisuutta kaksi kertaa viikossa"},
+    { dbvalue: "4",text: " kuormittavaa fyysistä aktiivisuutta kolme kertaa viikossa"},
+    { dbvalue: "5",text: "kuormittavaa fyysistä aktiivisuutta vähintään neljä kertaa viikossa"}
+    ]]
+}
+1) harvemmin kuin kerran viikossa
+2) ei kuormittavaa fyysistä aktiivisuutta mutta kevyttä tai kohtuullisesti kuormittavaa aktiivisuutta ainakin kerran viikossa
+3) kuormittavaa fyysistä aktiivisuutta kerran viikossa
+4) kuormittavaa fyysistä aktiivisuutta kaksi kertaa viikossa
+5) kuormittavaa fyysistä aktiivisuutta kolme kertaa viikossa
+6) kuormittavaa fyysistä aktiivisuutta vähintään neljä kertaa viikossa
+
+/subtitle
+Tietokonepelit
+/p
+Pelaatko säännöllisesti tietokone-, konsoli- tai muita vastaavia pelejä?
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "tietokonepelit",
+    options: [[
+    { dbvalue: "0",text: "Kyllä"},
+    { dbvalue: "1",text: "Ei"}
+    ]]
+}
+/pb
+Jos vastasit kyllä, kuinka monta tuntia pelaat tällaisia pelejä tyypillisen viikon aikana
+/numberfield {
+    dbcolumn: "palit/vko",
+    label: "",
+    value: 0,
+    minimum: 0,
+    maximum: 24,
+    increment: 1
+}
+
+ h / vko
+
+/p
+
+
+Kuinka suuren osan (%) tästä ajasta käytät keskimäärin kunkin alla olevan pelityypin parissa (yht. 100 %)? Merkitse myös, pelaatko kutakin pelityyppiä yleensä yksin (Y; "single player") vai monen pelaajan (M; "multiplayer") pelinä?
+____ % Korttipelit, nettipokeri (esim. Windows Pasianssi/Solitaire; RAY-nettirahapelit);  ____ (Y / M)
+____ % Kännykkäpelit (esim. Matopeli, Angry Birds, Tetris, Candy Crush Saga);  ____ (Y / M)
+____ % Toimintapelit (esim. taistelupelit, tasohyppelyt, autopelit) (Mortal Combat, Super Mario Galaxy,
+Tomb Raider, NFL/NHL/FIFA, Gran Turismo, MOBA; World of Warcraft);  ____ (Y / M)
+____ %  Ampumispelit (“First Person Shooter”) (esim. Call of Duty, Battlefield, Halo);  ____ (Y / M)
+____ %  Liikunta-, musiikki ja seurapelit (esim. Wii Sports, SingStar, GuitarHero, DanceCentral);  ____ (Y / M)
+____ %  Seikkailupelit, pulmanratkontapelit, roolipelit (esim. Monkey Island, Elder Scrolls, Portal);  ____ (Y / M)
+____ %  Simulaatiopelit (esim. Flight Simulator, IL-2 Sturmovik, Silent Hunter);  ____ (Y / M)
+____ %  Strategiapelit (esim. Civilization, Total War, Command and Conquer, SimCity);  ____ (Y / M)
+____ %  Aivojumppa- ja opetuspelit;  ____ (Y / M)
+Yht. 100 %
+
+
+/title
+MOTIVAATIO:
+   (-> 4 vaihtoehtoa)
+
+
+/title
+VIREYSTILA:
+Kuinka virkeäksi tunnet itsesi tällä hetkellä?
+/singleselect {
+    default_value: "ei",
+    dbcolumn: "vireystile",
+    options: [[
+    { dbvalue: "0",text: " hyvin virkeäksi"},
+    { dbvalue: "1",text: "melko virkeäksi"},
+    { dbvalue: "2",text: "melko väsyneeksi"},
+    { dbvalue: "3",text: "hyvin väsyneeksi"}
+
+    ]]
+}

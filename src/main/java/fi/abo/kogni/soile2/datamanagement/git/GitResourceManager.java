@@ -19,7 +19,7 @@ import io.vertx.ext.web.FileUpload;
 public class GitResourceManager extends GitDataRetriever<DataLakeFile> {
 
 	private String dataLakeBaseFolder;
-	private TimeStampedMap<GitFile,DataLakeFile> elements;
+	
 	
 	public GitResourceManager(EventBus bus)
 	{

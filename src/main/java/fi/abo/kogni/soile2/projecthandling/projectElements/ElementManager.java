@@ -1,8 +1,8 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements;
 
-import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.function.Supplier;
 
@@ -12,13 +12,11 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
-import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIElement;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;

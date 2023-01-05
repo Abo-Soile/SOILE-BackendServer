@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.projecthandling.data;
+package fi.abo.kogni.soile2.http_server.verticles;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,7 +12,7 @@ import org.junit.Test;
 
 import fi.abo.kogni.soile2.ElementTester;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeManager;
-import fi.abo.kogni.soile2.projecthandling.data.DataBundleGenerator.DownloadStatus;
+import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.utils.DataProvider;
@@ -28,14 +28,14 @@ public class DataBundleTest extends ElementTester {
 
 	ProjectInstanceHandler projHandler;
 	ParticipantHandler partHandler;
-	DataBundleGenerator dbg;
+	DataBundleGeneratorVerticle dbg;
 	@Override
 	public void runBeforeTests(TestContext context)
 	{
 		super.runBeforeTests(context);	
 		projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
 		partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
-		dbg = new DataBundleGenerator(mongo_client, projHandler, partHandler);
+		dbg = new DataBundleGeneratorVerticle(mongo_client, projHandler, partHandler);
 		vertx.deployVerticle(dbg);
 	}
 
@@ -423,7 +423,7 @@ public class DataBundleTest extends ElementTester {
 		});
 	}
 
-	private Future<Void> awaitReady(DataBundleGenerator dbg, String dlID, Promise<Void> readyPromise)
+	private Future<Void> awaitReady(DataBundleGeneratorVerticle dbg, String dlID, Promise<Void> readyPromise)
 	{		
 		dbg.getDownloadStatus(dlID).onSuccess(status -> 
 		{

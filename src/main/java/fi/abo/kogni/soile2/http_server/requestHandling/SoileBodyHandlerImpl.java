@@ -280,7 +280,7 @@ public class SoileBodyHandlerImpl implements BodyHandler {
 				cancelAndCleanupFileUploads();
 				if (t instanceof DecoderException) {
 					// bad request
-					context.fail(400, t.getCause());
+					context.fail(400, t);
 				} else {
 					context.fail(t);
 				}

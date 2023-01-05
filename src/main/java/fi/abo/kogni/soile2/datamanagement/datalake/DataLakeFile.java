@@ -1,7 +1,6 @@
 package fi.abo.kogni.soile2.datamanagement.datalake;
 
 import java.io.File;
-import java.io.Serializable;
 
 import fi.aalto.scicomp.zipper.FileDescriptor;
 import io.vertx.core.json.JsonObject;

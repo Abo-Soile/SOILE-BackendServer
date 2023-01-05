@@ -57,7 +57,13 @@ public class ProjectInstanceHandler {
 		projects = new TimeStampedMap<String, ProjectInstance>(manager, 1000*60*60);
 	}
 
-	
+	/**
+	 * Clean up the data in the Data Maps
+	 */
+	public void cleanup()
+	{
+		projects.cleanup();
+	}
 	/**
 	 * Get a list of all Files associated with the specified {@link DBParticipant} within this {@link ProjectInstance}.
 	 * @param p the {@link DBParticipant} for which to retrieve the file results.

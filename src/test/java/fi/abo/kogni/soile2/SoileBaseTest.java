@@ -3,11 +3,13 @@ package fi.abo.kogni.soile2;
 
 import static io.vertx.ext.auth.impl.Codec.base64Encode;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -60,23 +62,15 @@ public abstract class SoileBaseTest {
 			vertx = Vertx.vertx();
 		}
 		
-		ConfigRetriever retriever = SoileConfigLoader.getRetriever(vertx);
 		final Async CFGAsync = context.async();
-		retriever.getConfig().onComplete(res -> 
+		SoileConfigLoader.setupConfig(vertx)
+		.onSuccess(cfg_loaded -> 
 		{
-			if(res.succeeded())
-			{
-				SoileBaseTest.storeConfig(res.result());
-			}
-			else {
-				System.out.println("Error loading Config");
-				System.out.println(res.cause());
-			}
+			
 			hashStrat = new SoileHashing(SoileConfigLoader.getUserProperty("serverSalt"));
 			hashingAlgo = SoileConfigLoader.getUserProperty("hashingAlgorithm");
-			
+			setupTestConfig(context);
 			runBeforeTests(context);
-
 			CFGAsync.complete();	
 		});
 
@@ -84,6 +78,12 @@ public abstract class SoileBaseTest {
 
 	// start 
 	public void runBeforeTests(TestContext context)
+	{	
+		System.out.println("Starting new test");
+	}
+
+	// start 
+	public void setupTestConfig(TestContext context)
 	{	
 		System.out.println("Starting new test");
 	}
@@ -129,11 +129,6 @@ public abstract class SoileBaseTest {
 		return result;
 	}
 
-	static Future<Void> storeConfig(JsonObject configLoadResult)
-	{	
-		return SoileConfigLoader.setConfigs(configLoadResult);		
-	}	
-	
 	public void startGitVerticle(TestContext context)
 	{
 		Async gitVerticleAsync = context.async();
@@ -163,6 +158,17 @@ public abstract class SoileBaseTest {
 		context.fail(err);
 	}
 	
+	public void tearDown(TestContext context)
+	{				
+		try
+		{
+			FileUtils.deleteDirectory(new File(tmpDir));
+		}
+		catch(Exception e)
+		{
+			context.fail(e);
+		}
+	}
 }
 
 

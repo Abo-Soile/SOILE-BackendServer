@@ -94,7 +94,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			}
 		}).onFailure(err -> 
 		{
-			participantPromise.fail(err.getCause());
+			participantPromise.fail(err);
 		});			
 		return participantPromise.future();
 	}
@@ -135,7 +135,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			.onFailure(err -> participantPromise.fail(err));
 			
 		}).onFailure(err -> {
-			participantPromise.fail(err.getCause());
+			participantPromise.fail(err);
 		});
 		return participantPromise.future();
 	}
@@ -163,7 +163,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			.onFailure(err -> participantPromise.fail(err));
 			
 		}).onFailure(err -> {
-			participantPromise.fail(err.getCause());
+			participantPromise.fail(err);
 		});
 		return participantPromise.future();
 	}

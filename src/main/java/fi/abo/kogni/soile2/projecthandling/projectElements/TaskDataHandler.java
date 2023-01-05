@@ -6,10 +6,7 @@ import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.FileUpload;
-import io.vertx.ext.web.RoutingContext;
 
 public class TaskDataHandler{
 

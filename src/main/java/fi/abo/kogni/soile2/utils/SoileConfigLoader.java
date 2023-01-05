@@ -4,6 +4,7 @@ import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.future.SucceededFuture;
 import io.vertx.core.json.JsonObject;
@@ -31,8 +32,7 @@ public class SoileConfigLoader {
 	public static final String EXPERIMENT = "experiment";
 	public static final String PROJECT = "project";
 	public static final String TASK = "task";
-	public static final String INSTANCE = "instance";
-	
+	public static final String INSTANCE = "instance";	
 	
 	private static JsonObject dbCfg;
 	private static JsonObject userdbFields;
@@ -44,8 +44,18 @@ public class SoileConfigLoader {
 	private static JsonObject taskCfg;
 	private static JsonObject verticleCfg;
 	
-	public static ConfigRetriever getRetriever(Vertx vertx)
+	private static JsonObject fullConfig;
+	
+	private static boolean isSetup = false;
+	
+	public static Future<Void> setupConfig(Vertx vertx)
 	{
+		if(isSetup)
+		{
+			return Future.succeededFuture();
+		}
+		Promise<Void> configPromise = Promise.promise();
+		
 		ConfigStoreOptions soileOptions = new ConfigStoreOptions()
 				.setType("file")
 				.setFormat("json")
@@ -53,13 +63,21 @@ public class SoileConfigLoader {
 		
 		ConfigRetrieverOptions opts = new ConfigRetrieverOptions()
 										   .addStore(soileOptions);
-										   //.addStore(userManagementOptions);		
-		ConfigRetriever cfgRetriever = ConfigRetriever.create(vertx,opts);
-		return cfgRetriever;
+										   //.addStore(userManagementOptions);
+		
+		ConfigRetriever retriever = ConfigRetriever.create(vertx,opts);
+		retriever.getConfig()
+		.onSuccess(configObject -> {
+			SoileConfigLoader.setConfigs(configObject);
+			isSetup = true;
+			configPromise.complete();
+		})
+		.onFailure(err -> configPromise.fail(err));
+		return configPromise.future();
 	}
 	
 	
-	public static Future<Void> setConfigs(JsonObject config)
+	public static void setConfigs(JsonObject config)
 	{
 		dbCfg = config.getJsonObject(DB_CFG);
 		userdbFields = config.getJsonObject(USER_DB_FIELDS);
@@ -70,9 +88,17 @@ public class SoileConfigLoader {
 		serverCfg = config.getJsonObject(HTTP_SERVER_CFG);
 		taskCfg = config.getJsonObject(TASK_CFG);
 		verticleCfg = config.getJsonObject(VERTICLE_CFG);
-		return Future.succeededFuture();
+		fullConfig = config;
 	}
 	
+	/**
+	 * Get the complete configuration
+	 * @return
+	 */
+	public static JsonObject config()
+	{
+		return fullConfig;				
+	}
 	/**
 	 * Get a property from the Session config.
 	 * @param property - the property to obtain.
@@ -144,6 +170,8 @@ public class SoileConfigLoader {
 				return expCfg;				
 		case HTTP_SERVER_CFG :
 				return serverCfg;
+		case VERTICLE_CFG :
+			return verticleCfg;
 		default:
 				return null;
 		}

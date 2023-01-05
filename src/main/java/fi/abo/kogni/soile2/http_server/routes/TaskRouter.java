@@ -25,8 +25,7 @@ public class TaskRouter extends ElementRouter<Task> {
 	{
 		super(ElementManager.getTaskManager(client,gitManager),auth, eb, client);
 		dataHandler = new TaskDataHandler(resManager);
-	}
-	
+	}		
 	
 	public void postResource(RoutingContext context)
 	{
@@ -73,5 +72,11 @@ public class TaskRouter extends ElementRouter<Task> {
 			.onFailure(err -> handleError(err, context));
 		})
 		.onFailure(err -> handleError(err, context));
+	}
+	
+	
+	public void cleanup()
+	{
+		dataHandler.cleanUp();
 	}
 }

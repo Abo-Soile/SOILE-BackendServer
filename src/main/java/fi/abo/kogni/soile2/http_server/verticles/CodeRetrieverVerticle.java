@@ -7,7 +7,6 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.codeProvider.CodeProvider;
@@ -31,21 +30,27 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 	public final static String QMARKUP = "qmarkup";
 	private CodeProvider elangProvider;
 	private CodeProvider qmarkupProvider;
-	private CodeProvider psychoJsProvider;	
-	public CodeRetrieverVerticle(GitManager manager)
-	{
-		elangProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("elangAddress"),vertx.eventBus(),manager);
-		qmarkupProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("questionnaireAddress"),vertx.eventBus(),manager);
-		psychoJsProvider = new JSCodeProvider(manager);
-	}
+	private CodeProvider psychoJsProvider;
+	GitManager gitManager;	
 	
 	@Override
-	public void start(Promise<Void> startPromise)
+	public void start()
 	{
-		
+		gitManager = new GitManager(vertx.eventBus()); 
+		elangProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("elangAddress"),vertx.eventBus(),gitManager);
+		qmarkupProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("questionnaireAddress"),vertx.eventBus(),gitManager);
+		psychoJsProvider = new JSCodeProvider(gitManager);		
 		LOGGER.debug("Deploying CodeRetriever with id : " + deploymentID());
 		vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("compilationAddress"), this::compileCode);
 		vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"), this::compileGitCode);				
+		vertx.eventBus().consumer("soile.tempData.Cleanup", this::cleanUP);		
+	}
+	
+	public void cleanUP(Message<Object> cleanUpRequest)
+	{
+		elangProvider.cleanup();
+		psychoJsProvider.cleanup();
+		qmarkupProvider.cleanup();
 	}
 	
 	
@@ -55,6 +60,7 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 		List<Future> undeploymentFutures = new LinkedList<Future>();
 		undeploymentFutures.add(vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("compilationAddress"), this::compileCode).unregister());
 		undeploymentFutures.add(vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"), this::compileGitCode).unregister());
+		undeploymentFutures.add(vertx.eventBus().consumer("soile.tempData.Cleanup", this::cleanUP).unregister());	
 		CompositeFuture.all(undeploymentFutures).mapEmpty().
 		onSuccess(v -> stopPromise.complete())
 		.onFailure(err -> stopPromise.fail(err));			

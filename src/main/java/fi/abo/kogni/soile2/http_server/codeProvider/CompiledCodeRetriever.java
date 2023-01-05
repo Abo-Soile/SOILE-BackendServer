@@ -1,6 +1,9 @@
 package fi.abo.kogni.soile2.http_server.codeProvider;
 
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.datamanagement.utils.DataRetriever;
@@ -17,7 +20,8 @@ public class CompiledCodeRetriever implements DataRetriever<GitFile, String> {
 	GitManager gitManager;
 	EventBus eb;
 	String targetAddress;		
-	
+	static final Logger LOGGER = LogManager.getLogger(CompiledCodeRetriever.class);
+
 	public CompiledCodeRetriever(GitManager gitManager, EventBus eb, String targetAddress) {
 		super();
 		this.gitManager = gitManager;
@@ -55,12 +59,14 @@ public class CompiledCodeRetriever implements DataRetriever<GitFile, String> {
 		}
 		Promise<String> codePromise = Promise.promise();
 		JsonObject message = new JsonObject().put("code",code);
+		LOGGER.debug("Requesting response from address: " + targetAddress);
 		eb.request(targetAddress, message)
 		.onSuccess(res -> {
 			JsonObject response = (JsonObject) res.body();
-			if(response.containsKey("error"))
+			LOGGER.debug("Response was:\n" + response.encodePrettily());
+			if(response.containsKey("errors"))
 			{
-				codePromise.fail(new CompilationException(response.getString("error")));
+				codePromise.fail(new CompilationException(response.getString("errors")));
 			}
 			else
 			{
