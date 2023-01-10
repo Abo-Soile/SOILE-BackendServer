@@ -16,7 +16,6 @@ public interface UserManagementTest {
 	{			
 		String username = userdata.getString(SoileConfigLoader.getUserdbField("usernameField"));
 		String password = userdata.getString(SoileConfigLoader.getUserdbField("passwordField"));
-		System.out.println("Creating user with name " + username + " and password " + password);
 		return uManager.createUser(username, password);
 	}
 	

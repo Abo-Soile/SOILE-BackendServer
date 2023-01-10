@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.http_server.userManagement;
 import static io.vertx.ext.auth.impl.Codec.base64Encode;
 
 import java.security.SecureRandom;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,7 +21,6 @@ import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExis
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -177,190 +175,48 @@ public class SoileUserManager implements MongoUserUtil{
 		return this;
 	}
 
-	/**
-	 * Set Full name and Email address of a user.
-	 * @param username username of the user
-	 * @param email email address of the user
-	 * @param fullName full name of the user
-	 * @param resultHandler handler to handle the resulting MongoClientUpdateResult
-	 * @return this
-	 */
-	public SoileUserManager setEmailAndFullName(String username, String email, String fullName, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
-	{
-
-		JsonObject targetQuery = new JsonObject()						
-				.put(authzOptions.getUsernameField(), username);
-
-		JsonObject update = new JsonObject()						
-				.put("$set", new JsonObject()
-						.put(SoileConfigLoader.getUserdbField("userEmailField"),email.toLowerCase())
-						.put(SoileConfigLoader.getUserdbField("userFullNameField"),fullName));						
-
-		isEmailInUse(email)
-		.onSuccess(present -> { 
-			// if the email is not yet set, we can use it. 
-			if(!present)
-			{
-				// Otherwise there is  no user with that username, so don't just add it!				
-				client.updateCollection(
-						authzOptions.getCollectionName(),
-						targetQuery,
-						update,										
-						ares -> {
-							if(ares.succeeded())
-							{
-								long docsMatched = ares.result().getDocMatched(); 
-								if(docsMatched == 1L)
-								{
-									resultHandler.handle(ares);
-								}
-								else
-								{
-									if(docsMatched == 0L)
-									{
-										//the requested username was not in the database
-										resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture(new UserDoesNotExistException(username)));
-									}
-									else
-									{
-										resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture("Multiple users with the same username in the database!!"));
-									}
-								}
-
-							}
-							else
-							{
-								resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture(ares.cause()));
-							}
-						});		
-			}
-			else
-			{
-				resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture(new EmailAlreadyInUseException(email)));	
-			}
-		})
-		.onFailure(err -> resultHandler.handle(Future.<MongoClientUpdateResult>failedFuture(err)));
-		return this;
-	}
-
-
-	/**
-	 * Set Full name and Email address of a user.
-	 * @param username username of the user
-	 * @param email email address of the user
-	 * @param resultHandler handler to handle the resulting MongoClientUpdateResult
-	 * @return this
-	 */
-	public Future<Void> setEmail(String username, String email)
-	{
-
-		JsonObject targetQuery = new JsonObject()						
-				.put(authzOptions.getUsernameField(), username);
-
-		JsonObject update = new JsonObject()						
-				.put("$set", new JsonObject()
-						.put(SoileConfigLoader.getUserdbField("userEmailField"),email.toLowerCase()));							
-		Promise<Void> emailSetPromise = Promise.promise();
-		isEmailInUse(email)
-		.onSuccess(present ->
-		{
-			// if the email is not yet set, we can use it. 
-			if(!present)
-			{
-				// Otherwise there is  no user with that username, so don't just add it!				
-				client.updateCollection(
-						authzOptions.getCollectionName(),
-						targetQuery,
-						update)
-				.onSuccess( updated -> {							
-								long docsMatched = updated.getDocMatched(); 
-								if(docsMatched == 1L)
-								{
-									emailSetPromise.complete();
-								}
-								else
-								{
-									if(docsMatched == 0L)
-									{
-										//the requested username was not in the database
-										emailSetPromise.fail(new UserDoesNotExistException(username));
-									}
-									else
-									{
-										LOGGER.error("Multiple objects updated by a single query. Query was: " + targetQuery.encode());
-										// it was changed BUT we have a problem!
-										emailSetPromise.complete();
-									}
-								}
-
-							})
-				.onFailure(err -> emailSetPromise.fail(err));		
-			}
-			else
-			{
-				emailSetPromise.fail(new EmailAlreadyInUseException(email));	
-			}
-		})
-		.onFailure(err -> emailSetPromise.fail(err));
-		return emailSetPromise.future();
-	}
-
-	/**
-	 * Get the user data
-	 * @param username - the id of the user
-	 * @param resultHandler - a result handler to handle the results.
-	 * @return
-	 */
-	public SoileUserManager getUserData(String username, Handler<AsyncResult<JsonObject>> resultHandler)
-	{
-		JsonObject query = new JsonObject().put(authnOptions.getUsernameField(), username);
-
-		client.find(authzOptions.getCollectionName(),query, res ->
-		{
-			if(res.succeeded())
-			{
-				if(res.result().size() == 1)
-				{
-					JsonObject result = res.result().get(0);
-					result.put("Result","Success").remove("password");
-					resultHandler.handle(Future.succeededFuture(result));
-				}
-				else
-				{
-					resultHandler.handle(Future.failedFuture("No Unique entry ( " + res.result().size() + " entries found ) for user " + username));
-				}
-			}
-			else
-			{
-				resultHandler.handle(Future.failedFuture(res.cause()));	
-			}
-		});
-		return this;
-	}		 
 
 
 	/**
 	 * Change roles or permissions indicating the correct field of the database. 
 	 * @param username - the id to add the roles/permissions for.
 	 * @param options - the roles or permissions database field
-	 * @param rolesOrPermissions - the list of roles or permissions to change
+	 * @param permissions - the list of roles or permissions to change
 	 * @param alterationFlag - Whether to add, remove or replace the indicated permissions. 
 	 * @param resultHandler - the handler for the results.	 
 	 * @return this
 	 */
-	public SoileUserManager changePermissions(String username, MongoAuthorizationOptions options, JsonArray rolesOrPermissions, PermissionChange alterationFlag, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
+	public SoileUserManager changePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, PermissionChange alterationFlag, Handler<AsyncResult<MongoClientUpdateResult>> resultHandler)
 	{
 
 		JsonObject queryObject = new JsonObject().put(options.getUsernameField(), username);		
-		JsonObject updateObject = new JsonObject().put(permissionMap.get(alterationFlag), new JsonObject().put(options.getPermissionField(), rolesOrPermissions));
+		JsonObject updateObject = new JsonObject().put(permissionMap.get(alterationFlag), 
+													new JsonObject().put(options.getPermissionField(), getPermissionChange(alterationFlag,permissions)));
 		client.updateCollection(options.getCollectionName(), queryObject, updateObject)
 		.onComplete(res -> {
 			resultHandler.handle(res);
 
 		});		
 		return this;
+	}	
+	
+	/**
+	 * This function creates the correct Update object for the different settings.
+	 * Essentially, it will add an "$each" for pushing. 
+	 * @param flag
+	 * @param permissions
+	 */
+	private Object getPermissionChange(PermissionChange flag, JsonArray permissions)
+	{
+		switch(flag)
+		{
+		case Add:	return new JsonObject().put("$each", permissions);
+		case Remove: return new JsonObject().put("$in", permissions);
+		default: return permissions;
+		}
 	}
-
+	
+	
 	/**
 	 * Update the permissions for a given user, replacing the old ones by the new ones.
 	 * @param username - the id of the user to remove permissions
@@ -511,7 +367,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * Retrieve the participant ID of this user in the given project. 
 	 * @param username
 	 * @param project
-	 * @return
+	 * @return A Future of the ID of the participant for this user in the project.If the user has no participant in the project, the Future will be <code>null</code>. 
 	 */
 	public Future<String> getParticipantIDForUserInProject(String username, String project)
 	{
@@ -585,7 +441,7 @@ public class SoileUserManager implements MongoUserUtil{
 			resultHandler.handle(Future.failedFuture("username or password hash are null"));
 			return this;
 		}
-		if (username.contains("@"))
+		if (username.contains("@") || username.contains(" "))
 		{
 			resultHandler.handle(Future.failedFuture("@ not allowed in usernames"));	
 		}
@@ -604,9 +460,10 @@ public class SoileUserManager implements MongoUserUtil{
 						else {
 							client.save(
 									authnOptions.getCollectionName(),
-									new JsonObject()
+									getDefaultFields()
 									.put(authnOptions.getUsernameField(), username)
-									.put(authnOptions.getPasswordField(), hash),
+									.put(authnOptions.getPasswordField(), hash)									
+									,									
 									resultHandler
 									);							
 						}
@@ -621,35 +478,7 @@ public class SoileUserManager implements MongoUserUtil{
 		return this;
 	}
 
-	public SoileUserManager getUserSalt(String username, Handler<AsyncResult<String>> handler)
-	{
-		client.find(authzOptions.getCollectionName(),
-				new JsonObject()
-				.put(authzOptions.getUsernameField(), username),ar ->{
-					if(ar.succeeded())
-					{
-						List<JsonObject> res = ar.result();
-						if(res.size() == 0)
-						{
-							handler.handle(Future.failedFuture(new UserDoesNotExistException(username)));
-						}
-						else if(res.size() == 1)
-						{							
-							HashString pwstring = new HashString(res.get(0).getString(authnOptions.getPasswordField()));
-							handler.handle(Future.succeededFuture(pwstring.salt()));
-						}
-						else
-						{
-							handler.handle(Future.failedFuture(new DuplicateUserEntryInDBException(username)));
-						}					
-					}
-					else
-					{
-						handler.handle(Future.failedFuture(ar.cause().getMessage()));
-					}					
-				});				
-		return this;
-	}	
+
 
 	public SoileUserManager removeUserSession(String username, String sessionID, Handler<AsyncResult<MongoClientUpdateResult>> handler)	
 	{
@@ -760,7 +589,7 @@ public class SoileUserManager implements MongoUserUtil{
 									.get(0)
 									.getJsonObject(SoileConfigLoader.getUserdbField("storedSessions"));
 							if(validSessions != null)
-							{	//if it's not initialized.
+							{	//if it's initialized.
 								//check for sessions that are too old;
 								for(String session : validSessions.fieldNames())
 								{								
@@ -822,8 +651,8 @@ public class SoileUserManager implements MongoUserUtil{
 				null,
 				SoileConfigLoader.getSessionProperty("sessionStoreSecret"),
 				sessionID);
-		LOGGER.debug("sessionID is :" + sessionID);
-		LOGGER.debug("hashed ID is :" + hashedSessionID);
+		LOGGER.debug("sessionID is: " + sessionID);
+		LOGGER.debug("hashed ID is: " + hashedSessionID);
 		JsonObject query = new JsonObject()
 				.put(authnOptions.getUsernameField(), username); 
 		client.find(
@@ -835,12 +664,12 @@ public class SoileUserManager implements MongoUserUtil{
 						if(res.result().size() == 1)
 						{
 							LOGGER.debug(res.result().get(0).encodePrettily());
-							// Adding the current session ID as valid session for the user.
+							// Getting the currently stored session ids
 							JsonObject storedSessions = res.result()
 									.get(0)
 									.getJsonObject(SoileConfigLoader.getUserdbField("storedSessions"));
 							Long startTime = storedSessions.getLong(hashedSessionID);
-							// if this is not present, then (i.e. the result is null, then it's not a stored ID.					
+							// if this is not present (i.e. the result is null) then it's not a stored ID.					
 							LOGGER.debug("Current Time: " + System.currentTimeMillis() +  "; StartTime was: " + startTime + "; Max Age is: " + SoileConfigLoader.getSessionLongProperty("maxTime"));
 							if(startTime != null && (System.currentTimeMillis() - startTime < SoileConfigLoader.getSessionLongProperty("maxTime")))
 							{
@@ -908,12 +737,13 @@ public class SoileUserManager implements MongoUserUtil{
 		Promise<Void> userUpdatedPromise = Promise.promise();
 		JsonObject updates = new JsonObject();
 		JsonObject updateCommand = new JsonObject().put("$set", updates);
+		LOGGER.debug("Setting User information:" + command.encode());
 		for(String key : command.fieldNames())
 		{			
 			String target = "";
 			switch(key)
 			{
-			case "email": target = SoileConfigLoader.getUserdbField("emailField");
+			case "email": target = SoileConfigLoader.getUserdbField("userEmailField");
 						  if(!UserUtils.isValidEmail(command.getString(key)))
 						  {
 							  return Future.failedFuture(new InvalidEmailAddress(target));
@@ -937,11 +767,12 @@ public class SoileUserManager implements MongoUserUtil{
 				updates.put(target, command.getString(key));
 			}
 		}
+		LOGGER.debug("Updates are:" + updates.encode());
 		if(updates.size() == 0)
 		{
 			// nothing to do... 
 			return Future.succeededFuture();
-		}	
+		}			
 		JsonObject query = new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), username);	
 		isEmailInUse(command.getString("email"))
 		.onSuccess(inUse -> {
@@ -951,6 +782,7 @@ public class SoileUserManager implements MongoUserUtil{
 			}
 			else
 			{
+				LOGGER.debug("Updating");
 				client.updateCollection(authnOptions.getCollectionName(), query, updateCommand)
 				.onSuccess(res -> {
 					if(res.getDocMatched() != 1)
@@ -991,5 +823,18 @@ public class SoileUserManager implements MongoUserUtil{
 											.put(SoileConfigLoader.getUserdbField("taskPermissionsField"), 1)
 											.put("_id", 0);
 		return client.findOne(authnOptions.getCollectionName(),query,fields);
+	}
+	
+	private JsonObject getDefaultFields()
+	{
+		return new JsonObject().put(SoileConfigLoader.getUserdbField("userRolesField"), Roles.Participant.toString())
+								.put(SoileConfigLoader.getUserdbField("experimentPermissionsField"), new JsonArray())
+								.put(SoileConfigLoader.getUserdbField("instancePermissionsField"), new JsonArray())
+								.put(SoileConfigLoader.getUserdbField("projectPermissionsField"), new JsonArray())
+								.put(SoileConfigLoader.getUserdbField("taskPermissionsField"), new JsonArray())
+								.put(SoileConfigLoader.getUserdbField("userEmailField"), "")
+								.put(SoileConfigLoader.getUserdbField("userFullNameField"), "")
+								.put(SoileConfigLoader.getUserdbField("participantField"), new JsonArray())
+								.put(SoileConfigLoader.getUserdbField("storedSessions"), new JsonObject());		 		
 	}
 }

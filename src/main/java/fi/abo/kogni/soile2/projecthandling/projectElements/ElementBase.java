@@ -361,8 +361,6 @@ public abstract class ElementBase implements Element {
 			.onSuccess(exists -> {
 				if(exists != null)
 				{
-					System.out.println("Query\n" + differingIDQuery.encodePrettily());
-					System.out.println("Result\n" + exists.encodePrettily());
 					saveSuccess.fail(new ElementNameExistException(getName(), exists.getString("_id")));	
 				}
 				else
@@ -385,7 +383,6 @@ public abstract class ElementBase implements Element {
 			// since the item did not exist in the db (i.e. did not have a UUID yet, we can simply return it.			
 			client.save(collectionToUse,toJson(false))
 			.onSuccess(res -> {
-				System.out.println(res);
 				setUUID(res);
 				saveSuccess.complete(res);
 			})

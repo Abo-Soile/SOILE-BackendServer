@@ -134,8 +134,6 @@ public class SoileCookieAuth {
 				{
 					log.error("Problem processing cookies: " + e.getMessage() );
 					log.error(e);
-					System.out.println(context.request().isEnded());
-					e.printStackTrace(System.out);
 					userPromise.fail(new HttpException(401));				}
 			}
 			else

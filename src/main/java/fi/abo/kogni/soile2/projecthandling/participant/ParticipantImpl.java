@@ -99,7 +99,7 @@ public abstract class ParticipantImpl implements Participant{
 			{
 				JsonObject outputElement = (JsonObject)output;
 				String task = outputElement.getString("task");
-				JsonArray outputs = outputElement.getJsonArray("outputs");
+				JsonArray outputs = outputElement.getJsonArray("outputs", new JsonArray());
 				for( Object taskOutput : outputs)
 				{
 					JsonObject taskOutputData = (JsonObject) taskOutput;

@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 
 import fi.abo.kogni.soile2.MongoTest;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.http.HttpClient;
@@ -60,10 +61,9 @@ public abstract class SoileVerticleTest extends MongoTest {
 		}
 	}
 	
-	@Override
-	public void tearDown(TestContext context)
-	{
-		super.tearDown(context);
+	@After
+	public void clearGitFolders(TestContext context)
+	{		
 		try
 		{
 			FileUtils.deleteDirectory(new File(gitDataLakeDir));
@@ -95,4 +95,13 @@ public abstract class SoileVerticleTest extends MongoTest {
 		return session;
 	}
 	
+	protected String getUsermanagerEventBusAddress(String command)
+	{
+		return SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, command);
+	}
+	
+	protected String getEventBusAddress(String address)
+	{
+		return SoileConfigLoader.getVerticleProperty(address);
+	}
 }

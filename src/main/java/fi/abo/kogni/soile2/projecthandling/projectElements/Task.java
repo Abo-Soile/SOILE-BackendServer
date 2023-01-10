@@ -69,7 +69,6 @@ public class Task extends ElementBase {
 			JsonObject updateResources = new JsonObject().put("resources", new JsonObject().put("$each", getResources()));
 			JsonObject updates = new JsonObject().put("$addToSet", new JsonObject().mergeIn(updateVersions).mergeIn(updateResources).mergeIn(updateTags))
 												 .put("$set", new JsonObject().put("private", getPrivate()).put("name", getName()));
-			System.out.println(updates.encodePrettily());
 			return updates;
 	}
 

@@ -39,7 +39,6 @@ public abstract class GitTest extends MongoTest {
 	@Override
 	public void setupTestConfig(TestContext context)
 	{
-		super.setupTestConfig(context);
 		try {
 			gitDataLakeDir = Files.createTempDirectory("gitdataLakeDir").toFile().getAbsolutePath();
 			resultDataLakeDir = Files.createTempDirectory("resultdataLakeDir").toFile().getAbsolutePath();
@@ -55,10 +54,9 @@ public abstract class GitTest extends MongoTest {
 		}
 	}
 
-	@Override
-	public void tearDown(TestContext context)
+	@After
+	public void clearGitFolders(TestContext context)
 	{
-		super.tearDown(context);
 		try
 		{
 			FileUtils.deleteDirectory(new File(gitDataLakeDir));

@@ -135,7 +135,7 @@ public class ProjectInstanceHandler {
 	 * Start a project with the given Project Information.
 	 * The information must contain:
 	 * 1. "UUID" of the project from which this was started
-	 * 2. "Version" of the project from which this was started
+	 * 2. "version" of the project from which this was started
 	 * 3. "private" field wrt access for this 
 	 * 4. "name" a name field.
 	 * 5. "shortcut" (optional), that can be used as a shortcut to the project.

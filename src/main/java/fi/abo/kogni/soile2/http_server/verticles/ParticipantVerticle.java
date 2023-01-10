@@ -57,11 +57,11 @@ public class ParticipantVerticle extends AbstractVerticle {
 	
 	public void deleteParticipants(Message<JsonArray> message)
 	{
-		JsonArray projectInfo = message.body();
+		JsonArray participantInformation = message.body();
 		List<Future> deletionFutures = new LinkedList<>();
-		for(int i = 0; i< projectInfo.size(); ++i)
+		for(int i = 0; i< participantInformation.size(); ++i)
 		{
-			deletionFutures.add(partHandler.deleteParticipant(projectInfo.getJsonObject(i).getString("participantID")));			
+			deletionFutures.add(partHandler.deleteParticipant(participantInformation.getJsonObject(i).getString("participantID")));			
 		}
 		CompositeFuture.all(deletionFutures)
 		.onSuccess(succeeded -> 

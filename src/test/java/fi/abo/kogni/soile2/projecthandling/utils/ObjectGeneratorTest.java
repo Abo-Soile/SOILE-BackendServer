@@ -95,12 +95,12 @@ public class ObjectGeneratorTest extends GitTest {
 					});
 					expAsync2.complete();
 				})
-				.onFailure(err -> failContext(err,context));
+				.onFailure(err -> context.fail(err));
 				listAsync.complete();
 			});
 			expAsync.complete();
 		})
-		.onFailure(err -> failContext(err,context));
+		.onFailure(err -> context.fail(err));
 	}
 	
 	@Test
@@ -120,21 +120,21 @@ public class ObjectGeneratorTest extends GitTest {
 				context.assertEquals(1, expList.size()); // one private experiment
 				elistAsync.complete(); 
 			})
-			.onFailure(err -> failContext(err,context));
+			.onFailure(err -> context.fail(err));
 			
 			projManager.getElementList(new JsonArray()).onSuccess(list -> {
 				context.assertEquals(1,list.size()); // no private data
 				plistAsync.complete();
 			})
-			.onFailure(err -> failContext(err,context));
+			.onFailure(err -> context.fail(err));
 
 			taskManager.getElementList(new JsonArray()).onSuccess(list -> {
 				context.assertEquals(5,list.size()); // one private task
 				tlistAsync.complete();
 			})
-			.onFailure(err -> failContext(err,context));
+			.onFailure(err -> context.fail(err));
 			projAsync.complete();
 		})
-		.onFailure(err -> failContext(err,context));
+		.onFailure(err -> context.fail(err));
 	}
 }

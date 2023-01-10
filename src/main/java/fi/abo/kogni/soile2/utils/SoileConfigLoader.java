@@ -316,6 +316,8 @@ public class SoileConfigLoader {
 		return dbCfg.getString(collection); 
 	}	
 	
+	
+	// TODO: Move these to SioleAuthorization!
 	public static MongoAuthenticationOptions getMongoAuthNOptions()
 	{
 		MongoAuthenticationOptions res = new MongoAuthenticationOptions();

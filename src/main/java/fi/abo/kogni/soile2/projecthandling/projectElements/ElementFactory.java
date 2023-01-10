@@ -109,10 +109,8 @@ public class ElementFactory<T extends ElementBase> {
 		client.findOne(temp.getTargetCollection(), new JsonObject().put("_id", UUID), null)
 		.onSuccess(currentElement ->
 				{					
-					System.out.println(UUID);
 					if(currentElement != null)
 					{
-						System.out.println("Found an existing project");
 						
 						T element = DBObjectSupplier.get();
 						element.loadfromJson(currentElement);

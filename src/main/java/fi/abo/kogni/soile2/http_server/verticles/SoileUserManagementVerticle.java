@@ -3,6 +3,7 @@ package fi.abo.kogni.soile2.http_server.verticles;
 import java.net.HttpURLConnection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +23,7 @@ import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -86,9 +88,9 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("addUserWithEmail"), this::addUserWithEmail));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("removeUser"), this::removeUser));		
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("permissionOrRoleChange"), this::permissionOrRoleChange));		
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("setUserFullNameAndEmail"), this::setUserFullNameAndEmail));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getUserData"), this::getUserData));
-		LOGGER.debug("Reistering eventbus consumer for:" + getEventbusCommandString("checkUserSessionValid")); 
+		//consumers.add(vertx.eventBus().consumer(getEventbusCommandString("setUserFullNameAndEmail"), this::setUserFullNameAndEmail));
+		//consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getUserData"), this::getUserData));
+		//LOGGER.debug("Reistering eventbus consumer for:" + getEventbusCommandString("checkUserSessionValid")); 
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession));
@@ -100,8 +102,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getUserInfo"), this::getUserInfo));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getAccessRequest"), this::getUserAccessInfo));
 	}
-	
-
+		
 
 	@Override
 	public void stop(Promise<Void> stopPromise)
@@ -119,6 +120,28 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		.onFailure(err -> stopPromise.fail(err));			
 	}
 
+	// This might be an option to address unexpected errors. not sure whether we want to go this way yet.
+	private Handler<Message<JsonObject>> handleRequest(Handler<Message<JsonObject>> call)
+	{
+		
+		return new Handler<Message<JsonObject>>() {
+
+			@Override
+			public void handle(Message<JsonObject> t) {
+				// TODO Auto-generated method stub
+				try {
+					call.handle(t);
+				}				
+				catch(Exception e)
+				{
+					t.fail(HttpURLConnection.HTTP_BAD_REQUEST, e.getMessage());
+					return;
+				}				
+			}
+			
+		};
+	}
+	
 	/**
 	 * Add a session to a user
 	 * {
@@ -164,7 +187,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid Request");
 		}
 	}
-
 
 	/**
 	 * Remove a session from a user
@@ -248,7 +270,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 					if(res.result())
 					{		
 						LOGGER.debug("Session Valid. Replying accordingly");
-						msg.reply(SoileCommUtils.successObject().put(sessionFields.getString("sessionIsValid"), true));
+						msg.reply(SoileCommUtils.successObject());
 					}
 					else
 					{
@@ -269,45 +291,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, "Request Invalid" );
 		}
 	}
-
-
-	/**
-	 * Get the data user information for the given user name
-	 * {
-	 *  <usernameField> : username,
-	 *  <userTypeField> : userType,
-	 *  <userPasswordField> : userPassword,
-	 *  }
-	 * @param msg
-	 */
-	void getUserData(Message<Object> msg)
-	{		
-		//make sure we actually get the right thing
-
-		if (msg.body() instanceof JsonObject)
-		{
-			JsonObject command = (JsonObject)msg.body();						
-
-			userManager.getUserData(command.getString(getDBField("usernameField")), userRes ->{
-				if(userRes.succeeded())
-				{
-					msg.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, userRes.result()));
-					return;
-				}
-				else
-				{
-					handleError(userRes.cause(), msg);		
-					return;
-				}
-
-			});
-		}	
-		else
-		{
-			msg.fail(HttpURLConnection.HTTP_INTERNAL_ERROR, "Request Invalid" );
-		}
-	}
-
 
 	/**
 	 * Add a user with given email address
@@ -335,17 +318,32 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			msg.fail(400, "Invalid Email address");
 			return;
 		}
+		LOGGER.debug("Adding user with name:" + command.getString("username"));
 		String userName = command.getString("username");
 		//LOGGER.debug("Verticle: Creating user");
 		userManager.createUser(userName,
 				command.getString("password"))
 		.onSuccess(created -> {
-			userManager.setEmail(userName, email)
+			LOGGER.debug("User with name:" + command.getString("username") + " added. Trying to set email address");
+			userManager.setUserInfo(userName, command)
 			.onSuccess(set -> {
+				LOGGER.debug("Email for user " + command.getString("username") +  " set to " + email);
 				msg.reply(SoileCommUtils.successObject());	
 			})
 			.onFailure(err -> {
-				handleError(err, msg);	
+				LOGGER.debug("Failed setting Email for user " + command.getString("username") +  " to " + email + ", removing it");
+
+				userManager.deleteUser(userName)				
+				.onSuccess(res -> {
+					LOGGER.debug("Removed user " + command.getString("username"));
+
+					handleError(err, msg);	
+				})
+				.onFailure(crit -> {
+					LOGGER.error("Created a user but couldn't remove it after email addition failed. Username: " + command.getString(userName));
+					handleError(crit, msg);	
+				});
+				
 			});
 		})
 		.onFailure(err -> {
@@ -385,7 +383,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 				}
 				else
 				{
-					handleError(id.cause(),msg);
+					handleError(id.cause(),msg);					
 				}
 			});
 		}	
@@ -405,7 +403,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		JsonObject command = msg.body();			
 		userManager.getParticipantIDForUserInProject(command.getString(getDBField("usernameField")), command.getString("projectInstanceID"))
 		.onSuccess(res -> {
-			msg.reply(new JsonObject().put("participantID", res));
+			msg.reply(SoileCommUtils.successObject().put("participantID", res));
 		})
 		.onFailure(err -> handleError(err, msg));						    							
 
@@ -420,7 +418,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		JsonObject command = msg.body();			
 		userManager.getParticipantInfoForUser(command.getString(getDBField("usernameField")))
 		.onSuccess(res -> {
-			msg.reply(new JsonObject().put("participantID", res));
+			msg.reply(SoileCommUtils.successObject().put("participantIDs", res));
 		})
 		.onFailure(err -> handleError(err, msg));						    							
 
@@ -462,7 +460,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 * 			 permissionsSettings:
 	 * 				[
 	 * 					{
-	 * 						type: "READ"/"READ_WRITE"/"FULL"
+	 * 						type: "READ"/"READ_WRITE"/"FULL"/"EXECUTE"
 	 * 						target: idOftargetElement (e.g. abcdefg12345)
 	 * 					}
 	 * 				]    
@@ -480,7 +478,10 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			String userName = command.getString("username");			
 			String changeType = command.getString("command");			
 			String role = command.getString("role");
-			JsonObject permissions = command.getJsonObject("permissionsProperties");			
+			JsonObject permissions = command.getJsonObject("permissionsProperties");
+			LOGGER.debug(permissions);
+			LOGGER.debug(role);
+			
 			if(permissions != null && role != null) 
 			{
 				msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Cannot change permission and role settings at the same time");
@@ -546,13 +547,14 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		.onSuccess(res -> {
 			// in case, we translate to the actual json Object
 			// translate back into PermissionSettings
-			JsonObject response = new JsonObject();
-			response.put("role", res.getString(SoileConfigLoader.getUserdbField("userRolesField")))
+			JsonObject response = new JsonObject();			
+			response.put("username",username)
+					.put("role", res.getString(SoileConfigLoader.getUserdbField("userRolesField")))
 					.put("permissions", new JsonObject()
-										.put("tasks", convertOnStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("taskPermissionsField"))))
-										.put("projects", convertOnStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("projectPermissionsField"))))
-										.put("experiments", convertOnStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("experimentPermissionsField"))))
-										.put("instances", convertOnStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField"))))
+										.put("tasks", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("taskPermissionsField"))))
+										.put("projects", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("projectPermissionsField"))))
+										.put("experiments", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("experimentPermissionsField"))))
+										.put("instances", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField"))))
 							);
 			msg.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, response));
 		})
@@ -626,6 +628,11 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		String username = (String) command.remove("username");
 		userManager.getUserInfo(username)
 		.onSuccess(res -> {
+			if(res == null)
+			{
+				handleError(new UserDoesNotExistException(username), msg);
+				return;
+			}
 			// in case, we translate to the actual json Object
 			JsonObject response = new JsonObject();
 			response.put("username", res.getString(SoileConfigLoader.getUserdbField("usernameField")))
@@ -637,33 +644,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		.onFailure(err -> handleError(err, msg));						    							
 	}
 	
-	void setUserFullNameAndEmail(Message<JsonObject> msg)
-	{
-		//make sure we actually get the right thing
-		if (msg.body() instanceof JsonObject)
-		{
-			JsonObject command = (JsonObject)msg.body();
-
-			//LOGGER.debug("Found fitting UserManager for type " + command.getString("type"));
-
-
-			//LOGGER.debug("Verticle: Set Email and Full Name from data");
-			userManager.setEmailAndFullName(command.getString(getDBField("usernameField")), 
-					command.getString(getDBField("userEmailField")), 
-					command.getString(getDBField("userFullNameField")), 
-					res -> {
-						if(res.succeeded())
-						{
-							msg.reply(SoileCommUtils.successObject()); 			    					
-						}
-						else
-						{								
-							handleError(res.cause(), msg, "Something went wrong when setting username and email");
-						}
-
-					});
-		}
-	}	
 
 	
 	/**
@@ -746,7 +726,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	{
 		switch(type)
 		{
-		case SoileConfigLoader.TASK: return SoileConfigLoader.getMongoExperimentAuthorizationOptions();
+		case SoileConfigLoader.TASK: return SoileConfigLoader.getMongoTaskAuthorizationOptions();
 		case SoileConfigLoader.EXPERIMENT: return SoileConfigLoader.getMongoExperimentAuthorizationOptions();
 		case SoileConfigLoader.PROJECT: return SoileConfigLoader.getMongoProjectAuthorizationOptions();
 		case SoileConfigLoader.INSTANCE: return SoileConfigLoader.getMongoInstanceAuthorizationOptions();				
@@ -764,16 +744,21 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 */
 	private JsonArray convertPermissionsArray(JsonArray sourceArray) throws InvalidPermissionTypeException
 	{
+		LOGGER.debug(sourceArray);
 		JsonArray result = new JsonArray();
 		for(int i = 0; i < sourceArray.size(); ++i)
 		{
 			JsonObject currentPermission = sourceArray.getJsonObject(i);
 			String permissionType = currentPermission.getString("type");
-			if(!(permissionType.equals(PermissionType.FULL.toString()) || permissionType.equals(PermissionType.READ_WRITE.toString())|| permissionType.equals(PermissionType.READ.toString())))
+			try
+			{
+				PermissionType.valueOf(permissionType);
+			}
+			catch(IllegalArgumentException | NullPointerException e)
 			{
 				throw new InvalidPermissionTypeException(permissionType + " is not a valid type for permissions");
 			}
-			result.add(SoilePermissionProvider.buildPermissionStringFromAPIPermission(currentPermission));
+			result.addAll(SoilePermissionProvider.buildPermissionStringFromAPIPermission(currentPermission));
 		}
 		return result;
 	}
@@ -786,7 +771,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 * @return A list of concatenated strings.
 	 * @throws InvalidPermissionTypeException if the type is not one of the types indicated above.
 	 */
-	private JsonArray convertOnStringPermissions(JsonArray sourceArray)
+	private JsonArray convertStringPermissions(JsonArray sourceArray)
 	{		
 		JsonArray result = new JsonArray();
 		for(int i = 0; i < sourceArray.size(); ++i)

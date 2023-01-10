@@ -10,6 +10,7 @@ import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
@@ -55,10 +56,10 @@ public class TaskInformationverticle extends AbstractVerticle{
 		String taskID = request.body().getString("taskID");
 		taskManager.getElement(taskID)
 		.onSuccess(task -> {
-			request.reply(task.toJson().put("success", true));
+			request.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, task.toJson()));
 		})
 		.onFailure(err -> {			
-			request.reply(new JsonObject().put("success", false).put("reason", err.getMessage()));
+			request.fail(500, err.getMessage());
 		});
 	}
 }

@@ -128,8 +128,8 @@ public class UserRouter extends SoileRouter {
 			{
 				eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantsForUser"),new JsonObject().put("username", username))
 				.onSuccess(response -> {
-					JsonArray participants = (JsonArray) response.body();
-					eb.request("soile.participant.delete", participants)
+					JsonObject reply = (JsonObject) response.body();
+					eb.request("soile.participant.delete", reply.getJsonArray("participantIDs"))
 					.onSuccess(success -> {
 							handleUserManagerCommand(context, "removeUser", body, MessageResponseHandler.createDefaultHandler(202));			
 					})
@@ -288,6 +288,8 @@ public class UserRouter extends SoileRouter {
 		registerUser(context);
 	}
 
+	
+	
 	void handleUserManagerCommand(RoutingContext routingContext, String command, JsonObject commandContent, MessageResponseHandler messageHandler)
 	{		
 		eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, command),commandContent).onSuccess( response ->
@@ -298,9 +300,9 @@ public class UserRouter extends SoileRouter {
 				routingContext.response().end();
 			}
 		}).onFailure( failure -> {
-			if(failure.getCause() instanceof ReplyException)
+			if(failure instanceof ReplyException)
 			{
-				ReplyException err = (ReplyException)failure.getCause();
+				ReplyException err = (ReplyException)failure;
 				routingContext.response()
 				.setStatusCode(err.failureCode())
 				.setStatusMessage(err.getMessage())

@@ -5,16 +5,16 @@
 	
 		{
 			"taskID" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", 
-			"outputdata" : 
+			"outputData" : 
 			[
 				{ 
 					"name" : "smoker",
 					"value" : 1											 
 				}
 			],
-			"resultdata" : 
+			"resultData" : 
 			{
-				"jsondata" : 
+				"jsonData" : 
 				[
 					{
 						"name" : "smoker",
@@ -25,7 +25,7 @@
 						"value" : "yes"
 					} 
 				],
-				"filedata" : 
+				"fileData" : 
 				[
 					{				
 						"filename" : "testData.txt",
@@ -39,12 +39,12 @@
 		},
 		{
 			"taskID" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",
-			"outputdata" : [
+			"outputData" : [
 				]
 			,
-			"resultdata" :
+			"resultData" :
 			{ 
-				"jsondata":
+				"jsonData":
 					[
 						{
 							"name" : "result1",
@@ -59,16 +59,16 @@
 		},
 		{
 			"taskID" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",
-			"outputdata" : 
+			"outputData" : 
 			[
 				{
 					"name": "clicktimes",
 					"value" : 0.23
 				}	
 			],
-			"resultdata" :
+			"resultData" :
 			{ 
-				"jsondata":
+				"jsonData":
 					[
 						{
 							"name" : "clicktimes",
@@ -79,12 +79,12 @@
 		},
 				{
 			"taskID" : "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b5",
-			"outputdata" : [
+			"outputData" : [
 				]
 			,
-			"resultdata" :
+			"resultData" :
 			{ 
-				"jsondata":
+				"jsonData":
 					[
 						{
 							"name" : "result1",

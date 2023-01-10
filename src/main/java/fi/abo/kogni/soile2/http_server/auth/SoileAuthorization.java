@@ -26,7 +26,8 @@ public class SoileAuthorization{
 		EXECUTE,
 		READ,
 		READ_WRITE,
-		FULL
+		FULL,
+		ALL
 	}
 	
 	public enum Roles

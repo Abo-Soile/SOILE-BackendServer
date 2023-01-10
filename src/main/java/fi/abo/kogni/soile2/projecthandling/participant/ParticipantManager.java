@@ -31,6 +31,7 @@ import io.vertx.ext.auth.VertxContextPRNG;
 import io.vertx.ext.mongo.BulkOperation;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.UpdateOptions;
 import io.vertx.ext.mongo.WriteOption;
 import io.vertx.ext.web.handler.HttpException;
 
@@ -299,10 +300,12 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			{
 				update.put("token", p.getToken());
 			}
+			update.remove("_id");
+			JsonObject dataUpdate = new JsonObject().put("$set", update); 
 			//TODO Correct this call. Needs to be upsert. 
-			client.save(participantCollection,update)
+			client.updateCollectionWithOptions(participantCollection,new JsonObject().put("_id", p.getID()),dataUpdate, new UpdateOptions().setUpsert(true))
 			.onSuccess(res -> {
-				savePromise.complete(res);
+				savePromise.complete(p.getID());
 			})
 			.onFailure(err -> savePromise.fail(err));
 		})
@@ -437,7 +440,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 																		  				 .put("task", taskID)));
 																		  						 				  	
 		JsonObject pushUpdate = new JsonObject().put("$push", new JsonObject()
-				  .put("outputData", new JsonObject().put("task", taskID).put("outputData",Outputs)));
+				  .put("outputData", new JsonObject().put("task", taskID).put("outputs",Outputs)));
 		JsonObject setUpdate = new JsonObject().put("$set", new JsonObject()
 				  .put("modifiedStamp", System.currentTimeMillis()));		
 		JsonObject itemQuery = new JsonObject().put("_id", p.getID());
@@ -448,7 +451,10 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		pullAndPut.add(pullOp);
 		pullAndPut.add(pushOp);				
 		pullAndPut.add(setOp);
-		return client.bulkWrite(participantCollection, pullAndPut).mapEmpty();
+		return client.bulkWrite(participantCollection, pullAndPut).onSuccess(res -> {
+			log.debug(res.toJson());
+		}).mapEmpty();
+		
 	}
 	
 	/**

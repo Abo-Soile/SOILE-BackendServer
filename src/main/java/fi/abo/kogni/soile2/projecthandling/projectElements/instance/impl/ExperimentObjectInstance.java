@@ -79,7 +79,6 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 		{
 			// we got a callback while we were in the experiment.
 			// Return the next element
-			System.out.println("Already in Experiment, finishing up, due to non-random");
 			return getNext(user);
 		}
 		else
@@ -91,7 +90,6 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 			}
 			if(!getRandom())
 			{
-				System.out.println("Already in Experiment, finishing up, due to non-random");
 				// we are non random, so give the first task.
 				return getNextIfThereIsOne(user, getStart());	
 			}
@@ -102,19 +100,16 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 				// this indicates, that we got a callback from a task in our list.
 				if(elements.remove(user.getProjectPosition()))
 				{
-					System.out.println("Removing element from options");
 					// we add the task to the finished tasks for this experiment.				
 					user.addFinishedExpTask(getInstanceID(), user.getProjectPosition());
 				}
 				// we still have elements, so we return the next element as specified in one random element of this task.
 				if(elements.size() > 0)
 				{
-					System.out.println("Returning a random element");
 					return sourceProject.getNextTask(elements.get(rand.nextInt(elements.size())),user);
 				}
 				else
 				{
-					System.out.println("Everything done in random experiment, returning next");
 					// get the the next element in the project.
 					return getNext(user);
 				}			

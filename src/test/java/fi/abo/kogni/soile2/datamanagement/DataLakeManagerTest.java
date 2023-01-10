@@ -30,7 +30,6 @@ public class DataLakeManagerTest extends SoileBaseTest{
 	@Override
 	public void runBeforeTests(TestContext context)
 	{	
-		super.runBeforeTests(context);
 		try 
 		{
 			String dataDir = DataLakeManagerTest.class.getClassLoader().getResource("FileTestData").getPath();
@@ -45,7 +44,6 @@ public class DataLakeManagerTest extends SoileBaseTest{
 	@After
 	public void cleanUp(TestContext context)
 	{	
-		super.runBeforeTests(context);
 		try 
 		{
 			FileUtils.deleteDirectory(new File(tempDataDir));

@@ -22,6 +22,7 @@ import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -31,7 +32,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 public abstract class SoileBaseTest {
 
 	public Vertx vertx;
-
+	protected EventBus eb;
 	private SoileHashing hashStrat;	
 	private String hashingAlgo;
 	private SecureRandom random = new SecureRandom();
@@ -52,16 +53,14 @@ public abstract class SoileBaseTest {
 		getInputArguments().toString().indexOf("jdwp") >= 0;
 		if(isDebug)
 		{
-			System.out.println("Creating new Vertx instance");
 			VertxOptions opts = new VertxOptions().setBlockedThreadCheckInterval(1000*60*60);
 			vertx = Vertx.vertx(opts);
 		}
 		else
 		{
-			System.out.println("Creating new Vertx instance");
 			vertx = Vertx.vertx();
 		}
-		
+		eb = vertx.eventBus();
 		final Async CFGAsync = context.async();
 		SoileConfigLoader.setupConfig(vertx)
 		.onSuccess(cfg_loaded -> 
@@ -77,18 +76,24 @@ public abstract class SoileBaseTest {
 	}
 
 	// start 
-	public void runBeforeTests(TestContext context)
-	{	
-		System.out.println("Starting new test");
-	}
+	public abstract void runBeforeTests(TestContext context);
 
 	// start 
 	public void setupTestConfig(TestContext context)
-	{	
-		System.out.println("Starting new test");
+	{
+		
 	}
 
-
+	public MultiMap createFormFromJson(JsonObject json)
+	{
+		MultiMap result = MultiMap.caseInsensitiveMultiMap();
+		for(String key : json.fieldNames())
+		{
+			result.set(key,json.getString(key));
+		}
+		return result;
+	}
+	
 	/**
 	 * This method, called after our test, just cleanup everything by closing the vert.x instance
 	 *
@@ -102,66 +107,16 @@ public abstract class SoileBaseTest {
 		{
 			System.out.println("Close completed.");
 			vertxClosed.complete();
-			context.asyncAssertSuccess();
+			context.asyncAssertSuccess(); 
 		});		
-
 	}
 
-	public String createHash(String password)
-	{
-		final byte[] salt = new byte[32];
-		random.nextBytes(salt);
-
-		return hashStrat.hash(hashingAlgo,
-				null,
-				base64Encode(salt),
-				password);
-
-	}
-
-	public MultiMap createFormFromJson(JsonObject json)
-	{
-		MultiMap result = MultiMap.caseInsensitiveMultiMap();
-		for(String key : json.fieldNames())
-		{
-			result.set(key,json.getString(key));
-		}
-		return result;
-	}
-
-	public void startGitVerticle(TestContext context)
-	{
-		Async gitVerticleAsync = context.async();
-		Path gitPath = Path.of(tmpDir, "gitRepo");
-		try {
-			Files.createDirectories(gitPath);
-		}
-		catch(IOException e)
-		{
-			context.fail(e);
-			gitVerticleAsync.complete();
-			return;
-		}
-		vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitPath.toFile().getAbsolutePath()))
-		.onSuccess(Void -> {
-			gitVerticleAsync.complete();
-		})
-		.onFailure(fail -> {
-			context.fail(fail);
-			gitVerticleAsync.complete();
-		});
-	}
-	
-	public void failContext(Throwable err, TestContext context)
-	{
-		System.out.println("Test failed due to: " +  err.getMessage());
-		context.fail(err);
-	}
-	
-	public void tearDown(TestContext context)
+	@After 
+	public void clearTmpDir(TestContext context)
 	{				
 		try
 		{
+			System.out.println("Cleaning directory");
 			FileUtils.deleteDirectory(new File(tmpDir));
 		}
 		catch(Exception e)

@@ -230,7 +230,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	
 	Future<RouterBuilder> setupLogin(RouterBuilder builder)
 	{
-		builder.operation("registerUser").handler(handleUserManagerCommand("registerUser", MessageResponseHandler.createDefaultHandler(201)));
+		
 		SoileFormLoginHandler formLoginHandler = new SoileFormLoginHandler(new SoileAuthentication(client), "username", "password",new JWTTokenCreator(handler,vertx), cookieHandler);
 		builder.operation("loginUser").handler(formLoginHandler::handle);
 		builder.operation("testAuth").handler(this::testAuth);
@@ -238,46 +238,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	}
 	
 	
-	Handler<RoutingContext> handleUserManagerCommand(String command, MessageResponseHandler messageHandler)
-	{
-		Handler<RoutingContext> handler = new Handler<RoutingContext>() {
 
-			@Override
-			public void handle(RoutingContext routingContext) {
-				RequestParameters params = routingContext.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-				JsonObject body = params.body().getJsonObject();
-				vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, command),body).onSuccess( response ->
-				{
-					if(response.body() instanceof JsonObject)
-					{
-						
-						messageHandler.handle(((JsonObject)response.body()), routingContext);
-						routingContext.response().end();
-					}
-				}).onFailure( failure -> {
-					
-					if(failure.getCause() instanceof ReplyException)
-					{
-						ReplyException err = (ReplyException)failure.getCause();
-						routingContext.response()
-							.setStatusCode(err.failureCode())
-							.setStatusMessage(err.getMessage())
-							.end();
-					}
-					else
-					{
-						routingContext.response()
-						.setStatusCode(500)
-						.end();
-						LOGGER.error("Something went wrong when trying to register a new user");					
-						LOGGER.error(failure);
-					}
-				});
-				
-			}
-		};		
-		return handler;			
-	}
 	
 	public void testAuth(RoutingContext ctx)
 	{
@@ -358,6 +319,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	public Future<RouterBuilder> setupUserAPI(RouterBuilder builder)
 	{
 		UserRouter router = new UserRouter(soileAuthorization, vertx, client);
+		builder.operation("registerUser").handler(router::registerUser);
 		builder.operation("listUsers").handler(router::listUsers);
 		builder.operation("createUser").handler(router::createUser);
 		builder.operation("removeUser").handler(router::removeUser);

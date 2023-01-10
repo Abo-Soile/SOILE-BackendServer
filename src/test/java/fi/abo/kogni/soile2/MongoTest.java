@@ -53,16 +53,15 @@ public abstract class MongoTest extends SoileBaseTest {
 	@Override
 	public void runBeforeTests(TestContext context)
 	{	
-		super.runBeforeTests(context);
 		mongo_client = MongoClient.createShared(vertx, SoileConfigLoader.getDbCfg());
 		System.out.println("initialized mongo Client as : " + mongo_client);
 	}
 	
 	@After
-	public void tearDown(TestContext context)
+	public void cleanCollections(TestContext context)
 	{		
-		super.tearDown(context);
 		final Async oasync = context.async();
+		System.out.println("Cleaning up Collections");
 		mongo_client.getCollections(cols ->{
 			if(cols.succeeded())
 			{
@@ -70,12 +69,12 @@ public abstract class MongoTest extends SoileBaseTest {
 				for(String col : cols.result())
 				{
 					final Async async = context.async();
+					
 					asyncMap.put(col, async);					
 				}			
 				for(String col : cols.result())
 				{
-					mongo_client.dropCollection(col).onComplete(res ->
-				
+					mongo_client.dropCollection(col).onComplete(res ->				
 					{
 						asyncMap.get(col).complete();
 					});
@@ -91,7 +90,9 @@ public abstract class MongoTest extends SoileBaseTest {
 	
 	@AfterClass
 	public static void shutdown() {
-		state.close();
+		System.out.println("Shutting down Mongo");
+		state.current().stop();
+		
 	}
 
 }

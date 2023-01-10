@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.http_server.verticles;
+package fi.abo.kogni.soile2.http_server.codeProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;

@@ -19,19 +19,14 @@ public class MongoAggregationHandler {
 		ReadStream<JsonObject> stream = client.aggregate(targetCollection, pipeline);
 		stream.handler(object -> {
 			// we will pause until we have finished this, this should avoid .
-			System.out.println("Got a new Object: \n" + object.toString());
 			stream.pause();
 			result.add(object);
 			stream.resume();
 		});
 		stream.endHandler(success -> {
-			System.out.println("Finished reading");
-			System.out.println(resultPromise);
-			System.out.println(result);
 			resultPromise.complete(result);
 		});		
 		stream.exceptionHandler(err -> {
-			System.out.println(err);
 			resultPromise.fail(err);
 		});
 		return resultPromise.future();

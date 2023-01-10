@@ -6,9 +6,13 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import fi.abo.kogni.soile2.datamanagement.utils.DatedDataMap;
 import fi.abo.kogni.soile2.projecthandling.participant.DataParticipantImpl;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -84,6 +88,7 @@ public class DBParticipant extends ParticipantImpl{
 	
 	private ParticipantManager manager;
 	private String participantCollection = SoileConfigLoader.getdbProperty("participantCollection");
+	static final Logger LOGGER = LogManager.getLogger(DBParticipant.class);
 	public DBParticipant(JsonObject data, ParticipantManager manager)
 	{
 		super(data);
@@ -122,23 +127,32 @@ public class DBParticipant extends ParticipantImpl{
 	@Override
 	public Future<Void> setOutputDataForTask(String taskID, JsonArray taskOutputData)
 	{		
+		Promise<Void> outputsSetPromise = Promise.promise();
 		if(taskOutputData != null && taskOutputData.size() > 0)
 		{			
-			return manager.updateOutputsForTask(this, taskID, taskOutputData)
-			.compose(v-> {
+			manager.updateOutputsForTask(this, taskID, taskOutputData)
+			.onSuccess(v-> {				
+				LOGGER.debug("Updated the db outputs");
 				for(Object output : taskOutputData)
 				{
 					JsonObject dataElement = (JsonObject) output;				
-					super.addOutput(taskID, dataElement.getString("name"), dataElement.getNumber("value"));
-				}
+					super.addOutput(taskID, dataElement.getString("name"), dataElement.getNumber("value"));					
+				}				
+				manager.getElement(this.getID())
+				.onSuccess(part -> {					
+					outputsSetPromise.complete();	
+				})
+				.onFailure(err -> outputsSetPromise.fail(err));
 				
-				return Future.succeededFuture();
-			});
+			})
+			.onFailure(err -> outputsSetPromise.fail(err));
 		}
 		else
 		{
-			return Future.succeededFuture();
+			outputsSetPromise.complete();
 		}
+		return outputsSetPromise.future();
+		
 	}
 
 	

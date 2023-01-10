@@ -44,7 +44,7 @@ public class FilterObjectInstance extends ElementInstanceBase {
 	@Override
 	public String nextTask(Participant user) {
 		for(String exp : options)
-		{
+		{			
 			double val = MathHandler.evaluate(exp, user.getOutputs());
 			if(Math.abs(val - 1) < 0.0001)
 			{

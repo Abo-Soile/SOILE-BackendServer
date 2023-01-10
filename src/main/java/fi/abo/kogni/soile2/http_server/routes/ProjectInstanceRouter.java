@@ -394,7 +394,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 							TaskObjectInstance currentTask = (TaskObjectInstance)project.getElement(participant.getProjectPosition());
 							eb.request(SoileConfigLoader.getVerticleProperty("getTaskInformationAddress"), new JsonObject().put("taskID", currentTask.getUUID()))
 							.onSuccess(response -> {								
-								JsonObject responseBody = (JsonObject) response.body();
+								JsonObject responseBody = ((JsonObject) response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
 								context.response()
 								.setStatusCode(200)	
 								.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")

@@ -15,7 +15,6 @@ import io.vertx.core.json.JsonObject;
 public class SoileBaseVerticle extends AbstractVerticle {
 	
 	private String mainField;
-	private JsonObject typeSpecificConfig; 	
 	
 	/**
 	 * Set up the individual config for this verticle. The field refers to the field in the general config.  

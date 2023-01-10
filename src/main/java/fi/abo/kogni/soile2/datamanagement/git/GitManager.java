@@ -227,7 +227,6 @@ public class GitManager {
 	 */
 	public Future<String> writeGitFile(GitFile file, JsonObject data)
 	{
-		System.out.println(data);
 		return writeGitFile(file, data.encodePrettily());
 	}
 		

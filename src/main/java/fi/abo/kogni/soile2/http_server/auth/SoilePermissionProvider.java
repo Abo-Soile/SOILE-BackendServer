@@ -1,6 +1,7 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.auth.authorization.PermissionBasedAuthorization;
@@ -32,15 +33,32 @@ public class SoilePermissionProvider {
 		return permissionString.substring(permissionString.indexOf("$")+1);			
 	}
 	
-	public static String buildPermissionStringFromAPIPermission(JsonObject apiPermission)
+	public static JsonArray buildPermissionStringFromAPIPermission(JsonObject apiPermission)
 	{
-		return buildPermissionString(apiPermission.getString("target"), apiPermission.getString("type"));
+		PermissionType type = PermissionType.valueOf(apiPermission.getString("type"));
+		if(type == PermissionType.ALL)
+		{
+			JsonArray result = new JsonArray();
+			for(PermissionType p : PermissionType.values())
+			{
+				if(p.equals(PermissionType.ALL))
+				{
+					continue;
+				}
+				result.add(buildPermissionString(apiPermission.getString("target"), apiPermission.getString("type")));
+			}
+			return result;
+		}
+		else
+		{
+			return new JsonArray().add(buildPermissionString(apiPermission.getString("target"), type.toString()));
+		}
 	}
 	
 	public static String buildPermissionString(String targetID, PermissionType type)
 	{
 		return buildPermissionString(targetID, type.toString());
-	}
+	}	
 	
 	public static String buildPermissionString(String targetID, String type)
 	{

@@ -8,16 +8,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
-import fi.abo.kogni.soile2.http_server.verticles.CodeRetrieverVerticle;
-import fi.abo.kogni.soile2.http_server.verticles.ExperimentLanguageVerticle;
-import fi.abo.kogni.soile2.http_server.verticles.ParticipantVerticle;
-import fi.abo.kogni.soile2.http_server.verticles.QuestionnaireRenderVerticle;
 import fi.abo.kogni.soile2.http_server.verticles.SoileUserManagementVerticle;
-import fi.abo.kogni.soile2.http_server.verticles.TaskInformationverticle;
-import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.config.ConfigRetriever;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;

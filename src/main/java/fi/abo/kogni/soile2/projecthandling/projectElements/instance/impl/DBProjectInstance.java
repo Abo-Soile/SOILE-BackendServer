@@ -88,11 +88,11 @@ public class DBProjectInstance extends ProjectInstance{
 					instanceJson.mergeIn(projectData);
 					LOGGER.debug(instanceJson.encodePrettily());	
 					loadSuccess.complete(instanceJson);					
-				}
-						).onFailure(fail -> {
-							LOGGER.debug("Loading git File failed");	
-							loadSuccess.fail(fail);
-						});
+				}).onFailure(fail -> {
+					LOGGER.debug("Loading git File failed");
+					LOGGER.trace("Could no load");
+					loadSuccess.fail(fail);							
+				});
 			}
 		}).onFailure(fail -> {
 			loadSuccess.fail(fail);

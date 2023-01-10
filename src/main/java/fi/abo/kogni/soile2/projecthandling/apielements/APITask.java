@@ -40,7 +40,6 @@ public class APITask extends APIElementBase<Task> {
 	 */
 	@JsonProperty("resources")
 	public JsonArray getResources() {
-		System.out.println(data.getValue("resources"));
 		return data.getJsonArray("resources", new JsonArray());
 	}
 	@JsonProperty("resources")

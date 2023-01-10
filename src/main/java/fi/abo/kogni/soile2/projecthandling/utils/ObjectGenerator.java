@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
@@ -68,17 +69,13 @@ public class ObjectGenerator {
 		{
 			JsonObject ExperimentDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/ExperimentData.json").getPath()))).getJsonObject(experimentName);
 			APIExperiment apiExperiment = new APIExperiment();
-			System.out.println("The initial API experiment looks as follows: " + apiExperiment.getJson().encodePrettily() );			
 			apiExperiment.setPrivate(ExperimentDef.getBoolean("private"));
-			System.out.println("Creating Experiment with name " + ExperimentDef.getString("name") );
-			System.out.println(ExperimentDef.encodePrettily());
 			experimentManager.createOrLoadElement(ExperimentDef.getString("name"))
 			.onSuccess(experiment -> {	
 				experiment.setPrivate(apiExperiment.getPrivate());
 				apiExperiment.setName(experiment.getName());
 				apiExperiment.setVersion(experiment.getCurrentVersion());
 				apiExperiment.setUUID(experiment.getUUID());				
-				System.out.println("The Experiment Manager Returned an experiment with the following data: \n"  + experiment.toJson().encodePrettily());
 
 				ConcurrentHashMap<String, JsonObject> elements = new ConcurrentHashMap();
 				List<Future> partFutures = new LinkedList<Future>();
@@ -129,7 +126,6 @@ public class ObjectGenerator {
 					}
 				}
 				//deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
-				System.out.println("There are " + partFutures.size() + " Elements in the experiment ");
 				CompositeFuture.all(partFutures).mapEmpty().onSuccess(Void -> {
 					// once all is done, we put it in in the right order.
 					for(Object item : ExperimentDef.getJsonArray("items"))
@@ -171,7 +167,6 @@ public class ObjectGenerator {
 		try
 		{
 			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/ProjectData.json").getPath()))).getJsonObject(projectName);
-			System.out.println(projectDef.encodePrettily());
 			APIProject apiProject = new APIProject();		
 			apiProject.setStart(projectDef.getString("start"));
 			projectManager.createOrLoadElement(projectDef.getString("name"))
@@ -200,7 +195,6 @@ public class ObjectGenerator {
 							})
 							);
 				}
-				System.out.println("There are " + taskFutures.size() + " Elements in the experiment ");
 				CompositeFuture.all(taskFutures).mapEmpty().onSuccess(Void -> {
 					LinkedList<JsonObject> taskList = new LinkedList<JsonObject>();
 					taskList.addAll(tasks.values());
@@ -221,7 +215,6 @@ public class ObjectGenerator {
 						experimentFutures.add(
 								buildAPIExperiment(expManager, taskManager, client, current.getString("name"))
 								.onSuccess(experiment -> {
-									System.out.println("Constructed experiment as: \n" + experiment.getJson());
 									project.addElement(experiment.getUUID());						
 									JsonObject expinstance = experiment.getJson();
 									expinstance.put("instanceID",current.getString("instanceID"))
@@ -238,12 +231,10 @@ public class ObjectGenerator {
 						expList.addAll(experiments.values());
 						JsonArray expArray = new JsonArray(expList);
 						apiProject.setExperiments(expArray);
-						System.out.println("Saving the project: \n"  + project.toJson().encodePrettily());
 						projectManager.updateElement(apiProject)
 						.onSuccess( newVersion -> {
 								apiProject.setVersion(newVersion);
 								// Saving the associated project.								
-								System.out.println("And Returning the project:\n "  + apiProject.getJson().encodePrettily());
 								projectPromise.complete(apiProject);															
 							})
 							.onFailure(err -> projectPromise.fail(err));
@@ -264,5 +255,13 @@ public class ObjectGenerator {
 			projectPromise.fail(e);
 		}
 		return projectPromise.future();
+	}
+	
+	public static Future<JsonObject> createProject(MongoClient client, GitManager manager, String projectName)
+	{
+		ElementManager<Project> projectManager = new ElementManager<>(Project::new, APIProject::new, client, manager); 
+		 ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, client, manager);
+		 ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, client, manager);
+		 return buildAPIProject(projectManager, expManager, taskManager, client, projectName).map(res -> { return new JsonObject().put("UUID", res.getUUID()).put("version", res.getVersion());});
 	}
 }

@@ -1,16 +1,14 @@
-package fi.abo.kogni.soile2.http_server;
+package fi.abo.kogni.soile2.http_server.userManagement;
 
 import java.net.HttpURLConnection;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import fi.abo.kogni.soile2.MongoTest;
+import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.Message;
@@ -46,7 +44,7 @@ public class SoileUserManagementTest extends SoileVerticleTest{
 									}
 									else
 									{							
-										;
+										
 										ReplyException ex = (ReplyException)invRes.cause();
 										context.assertEquals(HttpURLConnection.HTTP_CONFLICT,ex.failureCode());
 										context.assertEquals("User already exists", invRes.cause().getMessage());

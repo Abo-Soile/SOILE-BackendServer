@@ -218,7 +218,8 @@ public abstract class ProjectInstance implements AccessElement{
 	/**
 	 * Finish a step for a particular participant storing the supplied output information obtained for the user.
 	 * @param participant the participant for whom to finish the step
-	 * @param taskData the participants data for this task 
+	 * @param taskData the participants data for this task
+	 * @return A Future of the next step for the given participant (which is also set if this is completed). 
 	 */
 	public Future<String> finishStep(Participant participant, JsonObject taskData)
 	{
@@ -228,14 +229,15 @@ public abstract class ProjectInstance implements AccessElement{
 		}		
 		Promise<String> finishedPromise = Promise.promise();
 		LOGGER.debug(taskData.encodePrettily());
-		if(!taskData.getString("taskID").equals(participant.getProjectPosition()))
+		if(taskData.getString("taskID") == null || !taskData.getString("taskID").equals(participant.getProjectPosition()))
 		{
 			finishedPromise.fail( new InvalidPositionException(participant.getProjectPosition(), taskData.getString("taskID")));			
 		}
 		else
 		{
-			participant.setOutputDataForTask(participant.getProjectPosition(),taskData.getJsonArray("outputdata",new JsonArray()))
+			participant.setOutputDataForTask(participant.getProjectPosition(),taskData.getJsonArray("outputData",new JsonArray()))
 			.onSuccess(v -> {
+				
 				participant.addResult(participant.getProjectPosition(), getResultDataFromTaskData(taskData))
 				.onSuccess(v2 -> {
 					participant.finishCurrentTask()
