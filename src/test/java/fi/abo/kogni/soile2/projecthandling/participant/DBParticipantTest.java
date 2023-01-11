@@ -79,7 +79,6 @@ public class DBParticipantTest extends GitTest{
 											context.assertTrue(newID4 == null);	
 											mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"),new JsonObject().put("_id", participant.getID()),null)
 											.onSuccess( json -> {
-												System.out.println(json.encodePrettily());
 												context.assertTrue(participant.isFinished());
 												context.assertTrue(json.getBoolean("finished"));
 												context.assertEquals(6,json.getInteger("currentStep"));

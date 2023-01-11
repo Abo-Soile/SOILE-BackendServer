@@ -44,7 +44,6 @@ public class SoileServerVerticle extends AbstractVerticle {
 			else
 			{
 				LOGGER.debug("Error starting server " + res.cause().getMessage());
-				res.cause().printStackTrace(System.out);
 				startPromise.fail(res.cause().getMessage());
 			}
 		});

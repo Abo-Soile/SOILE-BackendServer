@@ -48,14 +48,12 @@ public class SoileAuthenticationTest extends MongoTest implements UserManagement
 			auth.authenticate(participant1).onComplete( user -> {
 				if(user.succeeded())
 				{
-					System.out.println("Auth participant Success Tested");
 					context.assertEquals(participant1.getString("username"),
 							user.result().principal().getString("username"));
 					async.complete();
 				}			
 				else
 				{
-					System.out.println(user.cause().getMessage());
 					context.fail("Could not authenticate");
 					async.complete();
 				}
@@ -92,7 +90,6 @@ public class SoileAuthenticationTest extends MongoTest implements UserManagement
 				}
 				else
 				{
-					System.out.println("Invalid auth Tested");
 					context.assertEquals("Invalid username or invalid password for username: user1", user.cause().getMessage());
 					invalidAuth.complete();
 				}

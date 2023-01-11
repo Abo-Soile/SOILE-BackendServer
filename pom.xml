@@ -26,6 +26,10 @@
 			<id>Scicomp Repo</id>
 			<url>https://github.com/tpfau/scicompMaven/raw/main/</url>
 		</repository>
+		<repository>
+			<id>Soile Repo</id>
+			<url>https://github.com/Abo-Soile/SOILE-MavenArtifacts/raw/main/</url>
+		</repository>
 	</repositories>
 
 	<dependencyManagement>
@@ -102,20 +106,6 @@
 			<version>1.0.0-1</version>
 		</dependency> -->
 
-
-		<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk15on</artifactId>
-			<version>1.70</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk15on -->
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcpkix-jdk15on</artifactId>
-			<version>1.70</version>
-		</dependency>
-
 		<!-- Logging -->
 		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
 		<dependency>
@@ -153,38 +143,11 @@
 		</dependency>
 
 
-		<!-- Testing dependencies -->
-		<dependency>
-			<groupId>io.vertx</groupId>
-			<artifactId>vertx-unit</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.vertx</groupId>
-			<artifactId>vertx-web-client</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.13.1</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>de.flapdoodle.embed</groupId>
-			<artifactId>de.flapdoodle.embed.mongo</artifactId>
-			<version>4.3.3</version>
-			<scope>test</scope>
-		</dependency>
+		
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
-
-		<!-- Js dependencies <dependency> <groupId>io.reactiverse</groupId> <artifactId>es4x</artifactId> 
-			<version>0.17.1</version> </dependency> <dependency> <groupId>org.graalvm.sdk</groupId> 
-			<artifactId>graal-sdk</artifactId> <version>22.0.0.2</version> </dependency> 
-			<dependency> <groupId>org.graalvm.js</groupId> <artifactId>js</artifactId> 
-			<version>22.0.0.2</version> </dependency> -->
 
 		<!-- Formula Parsing for Filters -->
 		<dependency>
@@ -209,7 +172,28 @@
 			<version>2.11.0</version>
 		</dependency>
 
-
+<!-- Testing dependencies -->
+		<dependency>
+			<groupId>io.vertx</groupId>
+			<artifactId>vertx-unit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.vertx</groupId>
+			<artifactId>vertx-web-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.flapdoodle.embed</groupId>
+			<artifactId>de.flapdoodle.embed.mongo</artifactId>
+			<version>4.3.3</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -265,33 +249,6 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin.version}</version>
 			</plugin>
-<!--			<plugin>
-				<groupId>io.reactiverse</groupId>
-				<artifactId>vertx-maven-plugin</artifactId>
-				<version>${vertx-maven-plugin.version}</version>
-				<executions>
-					<execution>
-						<id>vmp</id>
-						<goals>
-							<goal>initialize</goal>
-							<goal>package</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<redeploy>true</redeploy>
-					<unpackWebJar>true</unpackWebJar>
-					<archive>
-						<files>
-							<file>
-								<source>src/soile_resources/soile_config.json</source>
-								<outputDirectory>config</outputDirectory>
-								<destName>soile_config.json</destName>
-							</file>
-						</files>
-					</archive>
-				</configuration>
-			</plugin>-->
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
@@ -304,11 +261,29 @@
 					</arguments>
 				</configuration>
 			</plugin>
-			<!-- es4x Plugin <plugin> <groupId>io.reactiverse</groupId> <artifactId>vertx-maven-plugin</artifactId> 
-				<version>1.0.27</version> <executions> <execution> <id>vmp</id> <goals> <goal>initialize</goal> 
-				<goal>package</goal> </goals> </execution> </executions> <configuration> 
-				<redeploy>true</redeploy> </configuration> </plugin> -->
-
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.8</version>
+				<configuration>
+                <excludes>**/*.jar</excludes>
+            	</configuration>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 

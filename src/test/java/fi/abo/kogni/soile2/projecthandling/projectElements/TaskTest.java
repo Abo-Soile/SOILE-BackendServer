@@ -20,13 +20,11 @@ public class TaskTest extends MongoTest {
 		ElementFactory<Task> TaskFactory = new ElementFactory<Task>(Task::new);
 		Async testAsync = context.async();
 		buildTestTask(context).onSuccess(p -> {
-			System.out.println("Initial Task set up");
 			p.addVersion("abcdefg");
 			p.addTag("NewVersion", "abcdefg");
 			p.save(mongo_client)
 			.onSuccess(ID -> {
 				p.setUUID(ID);
-				System.out.println(p.getUUID());
 				TaskFactory.loadElement(mongo_client, p.getUUID())
 				.onSuccess(Task -> {
 					context.assertEquals(p.getPrivate(),Task.getPrivate());
@@ -69,8 +67,6 @@ public class TaskTest extends MongoTest {
 				.onSuccess(Void2 -> {						
 					TaskFactory.loadElement(mongo_client, p.getUUID())
 					.onSuccess(Task -> {
-						System.out.println("This is the final task:");
-						System.out.println(Task.toJson().encodePrettily());
 						context.assertEquals(p.getPrivate(),Task.getPrivate());
 						context.assertEquals(2, Task.getTags().size());
 						context.assertEquals(2, Task.getVersions().size());
@@ -108,12 +104,10 @@ public class TaskTest extends MongoTest {
 			JsonObject taskDef = new JsonObject(Files.readString(Paths.get(TaskTest.class.getClassLoader().getResource("DBTestData/DBTask.json").getPath())));
 			Task tempTask = new Task();
 			tempTask.loadfromJson(taskDef);
-			System.out.println(tempTask.toJson().encodePrettily());
 			taskFactory.createElement(mongo_client, "TestTask", taskDef.getString("codeType"))
 			.onSuccess(task -> 
 			{
 				tempTask.setUUID(task.getUUID());
-				System.out.println("The generated Task has the id: " + task.getUUID());
 				taskPromise.complete(tempTask);
 								
 			})
@@ -124,7 +118,6 @@ public class TaskTest extends MongoTest {
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace(System.out);
 			context.fail(e);
 			taskPromise.fail(e);			
 		}

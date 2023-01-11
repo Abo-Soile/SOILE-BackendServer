@@ -39,7 +39,6 @@ public class CompiledCodeProviderTest extends SoileVerticleTest {
 				context.fail("Should have failed since code does nto compile");								
 			})
 			.onFailure(err -> {
-				System.out.println(err.getMessage());
 				compilationAsync.complete();
 			});
 

@@ -40,21 +40,18 @@ public class ObjectGeneratorTest extends GitTest {
 			Async listAsync = context.async();
 			context.assertEquals("tabcdefg2",apiexp.getElements().getJsonObject(0).getJsonObject("data").getString("instanceID"));
 			permissionsForAccess.add(apiexp.getUUID());
-			System.out.println(apiexp.getElements().encodePrettily());
 			for(int i = 0; i < apiexp.getElements().size(); i++)
 			{
 				permissionsForAccess.add(apiexp.getElements().getJsonObject(i).getJsonObject("data").getString("UUID"));
 			}
 			// check, that the created Elements actually exist.
 			taskManager.getElementList(permissionsForAccess).onSuccess(list -> {
-				System.out.println(list.encodePrettily());
 				context.assertEquals(2,list.size());					
 				Async expAsync2 = context.async();				
 				ObjectGenerator.buildAPIExperiment(expManager, taskManager,mongo_client, "TestExperiment2")
 				.onSuccess(apiexp2 -> {
 					permissionsForAccess.add(apiexp2.getUUID());
 					Async listAsync2 = context.async();
-					System.out.println(apiexp2.getJson().encodePrettily());
 					context.assertEquals("tabcdefg4",apiexp2.getElements().getJsonObject(0).getJsonObject("data").getString("instanceID"));
 					for(int i = 0; i < apiexp2.getElements().size(); i++)
 					{
@@ -68,7 +65,6 @@ public class ObjectGeneratorTest extends GitTest {
 							Async taskDataAsync = context.async();
 							taskManager.getElement(list2.getJsonObject(j).getString("uuid"))
 							.onSuccess(currentTask -> {
-								System.out.println("Current Task: \n" + currentTask.toJson().encodePrettily());
 								switch(currentTask.getName())
 								{
 								case "Test1": context.assertEquals("javascript", currentTask.getCodetype());break;
@@ -111,8 +107,7 @@ public class ObjectGeneratorTest extends GitTest {
 		.onSuccess(apiproj -> {
 			Async plistAsync = context.async();
 			Async elistAsync = context.async();
-			Async tlistAsync = context.async();
-			System.out.println("The Resulting API Project is: \n" + apiproj.getJson().encodePrettily());
+			Async tlistAsync = context.async();			
 			// check, that the created Elements actually exist.
 			expManager.getElementList(new JsonArray())
 			.onSuccess(expList -> 

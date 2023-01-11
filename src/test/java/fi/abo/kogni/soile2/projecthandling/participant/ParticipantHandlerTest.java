@@ -123,7 +123,6 @@ public class ParticipantHandlerTest extends GitTest{
 												context.assertTrue(newID4 == null);	
 												mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"),new JsonObject().put("_id", participant.getID()),null)
 												.onSuccess( json -> {
-													System.out.println(json.encodePrettily());
 													context.assertTrue(participant.isFinished());
 													context.assertTrue(json.getBoolean("finished"));
 													context.assertEquals(6,json.getInteger("currentStep"));
@@ -174,19 +173,13 @@ public class ParticipantHandlerTest extends GitTest{
 		ElementManager<Project> projectManager = ElementManager.getProjectManager(mongo_client, gitManager);
 		ObjectGenerator.buildAPIProject(projectManager, ElementManager.getExperimentManager(mongo_client, gitManager), ElementManager.getTaskManager(mongo_client, gitManager), mongo_client, "Testproject2")
 		.onSuccess(apiProject-> {
-			System.out.println("Api Project is: " + apiProject.getJson().encodePrettily());
 			projHandler.createProjectInstance(apiProject.getJson())
 			.onSuccess(projectInstance -> {				
-				System.out.println("The Project Instance is : " + projectInstance.toString());
-				System.out.println("The Api Project UUID is : " + apiProject.getUUID());
-				System.out.println("The Api Project is : " + apiProject.getJson().encodePrettily());
 				projectManager.getGitJson(apiProject.getUUID(), apiProject.getVersion())
 				.onSuccess(gitJson -> {
-					System.out.println("The Json associated with this project is:\n " + gitJson.encodePrettily());					
 					partHandler.createParticipant(projectInstance.getID())				
 					.onSuccess( participant -> 
 					{				
-						System.out.println("Starting Project");
 						projectInstance.startProject(participant)
 						.onSuccess(position -> {
 							partHandler.getParticipant(participant.getID())
@@ -202,7 +195,6 @@ public class ParticipantHandlerTest extends GitTest{
 									context.assertTrue(participant2 == participant3);
 									context.assertFalse(participant == participant3);
 									//
-									System.out.println("Finishing current step");
 									projectInstance.finishStep(participant, new JsonObject().put("taskID", position))
 									.onSuccess(res -> {
 										partHandler.getParticipant(participant.getID())

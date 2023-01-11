@@ -39,7 +39,6 @@ public class CodeRetrieverVerticleTest extends SoileVerticleTest {
 				context.fail("Should have failed since code does not compile");								
 			})
 			.onFailure(err -> {
-				System.out.println(err.getMessage());
 				compilationAsync.complete();
 			});
 

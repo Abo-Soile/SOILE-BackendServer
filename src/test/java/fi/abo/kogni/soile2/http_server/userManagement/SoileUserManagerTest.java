@@ -16,7 +16,8 @@ public class SoileUserManagerTest extends MongoTest implements UserManagementTes
 	
 	@Test
 	public void testUserAddition(TestContext context) {
-		final Async async = context.async();
+		System.out.println("----------------------------- Testing valid and duplicate user -----------------------------");
+		Async async = context.async();
 		SoileUserManager man = createManager(vertx); 		
 		String username =  "testUser";
 		String password =  "testpw";
@@ -27,7 +28,6 @@ public class SoileUserManagerTest extends MongoTest implements UserManagementTes
 					if(user.succeeded())
 					{
 						context.fail("User Already existed but was still created!");
-						async.complete();
 					}
 					else
 					{
@@ -39,7 +39,6 @@ public class SoileUserManagerTest extends MongoTest implements UserManagementTes
 				else
 				{
 					context.fail("Could not create user ( " + id.cause().getMessage() + ")");
-					async.complete();
 				}			
 		});				
 				
@@ -49,21 +48,19 @@ public class SoileUserManagerTest extends MongoTest implements UserManagementTes
 	
 	@Test
 	public void testInvalidUserName(TestContext context) {
-		final Async async = context.async();
+		System.out.println("----------------------------- Testing invalid user -----------------------------");
+		Async async = context.async();
 		SoileUserManager man = createManager(vertx);		
 		String username =  "test@User2";
 		String password =  "testpw";
-		man.createUser(username, password).onComplete(id -> {
-			if (id.succeeded())
-			{
+		man.createUser("Testuser", "testpw")
+		.onSuccess( res -> {
+		man.createUser(username, password).onSuccess(id -> {
 					context.fail("Should not allow this username!");
-					async.complete();		
-			}
-			else
-			{
-					async.complete();
-			}			
-		});				
+		})
+		.onFailure(err -> async.complete());
+		})
+		.onFailure(err -> context.fail(err));				
 				
 	}
 		

@@ -87,7 +87,6 @@ public class GitInteractionTest extends SoileBaseTest{
 			}
 			catch(Exception e)
 			{
-				e.printStackTrace(System.out);
 				context.fail(e.getMessage());
 				initAsync.complete();
 				return;
@@ -105,7 +104,6 @@ public class GitInteractionTest extends SoileBaseTest{
 					context.assertEquals(targetFile.getFilePath(), dataLakePath.toFile().getPath());
 					reloadAsync.complete();
 				}).onFailure(fail -> {	
-					fail.printStackTrace(System.out);
 					context.fail(fail.getMessage());
 					reloadAsync.complete();
 				});
@@ -147,7 +145,6 @@ public class GitInteractionTest extends SoileBaseTest{
 			});
 			initAsync.complete();
 		}).onFailure(fail -> {
-			System.out.println(fail);
 			context.fail(fail.getMessage());
 		});		
 		
@@ -172,7 +169,6 @@ public class GitInteractionTest extends SoileBaseTest{
 			}
 			catch(Exception e)
 			{
-				e.printStackTrace(System.out);
 				context.fail(e.getMessage());
 				initAsync.complete();
 				return;
@@ -189,7 +185,6 @@ public class GitInteractionTest extends SoileBaseTest{
 					context.assertFalse(targetJson.getBoolean("testField2"));
 					reloadAsync.complete();
 				}).onFailure(fail -> {	
-					fail.printStackTrace(System.out);
 					context.fail(fail.getMessage());
 					reloadAsync.complete();
 				});
@@ -208,7 +203,6 @@ public class GitInteractionTest extends SoileBaseTest{
 			});
 			initAsync.complete();
 		}).onFailure(fail -> {
-			System.out.println(fail);
 			context.fail(fail.getMessage());
 		});		
 		
@@ -242,8 +236,7 @@ public class GitInteractionTest extends SoileBaseTest{
 	
 	public Future<String> initGitRepo(String gitRepoName, TestContext context)
 	{		
-		Promise<String> versionPromise = Promise.<String>promise();
-		System.out.println("Requesting handling for git command:\n " + gitProviderVerticle.createInitCommand(gitRepoName).encodePrettily() + "\n\nUsing address: " + SoileConfigLoader.getServerProperty("gitVerticleAddress"));
+		Promise<String> versionPromise = Promise.<String>promise();		
 		Async repoCreationAsync = context.async();
 		vertx.eventBus().request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitProviderVerticle.createInitCommand(gitRepoName))
 		.onSuccess( res -> {
@@ -266,8 +259,6 @@ public class GitInteractionTest extends SoileBaseTest{
 		private String originalFileName;
 		public SimpleFileUpload(String uploadedFileName, String originalFileName)
 		{	
-			System.out.println(uploadedFileName);
-			System.out.println(originalFileName);
 			this.uploadFileName = uploadedFileName;
 			this.originalFileName = originalFileName;
 			

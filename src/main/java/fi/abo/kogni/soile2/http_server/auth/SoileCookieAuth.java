@@ -109,8 +109,7 @@ public class SoileCookieAuth {
 										// resume if the db Request failed.
 										request.resume();
 										log.error("We found a valid session but could not create the user due to the following error");
-										log.error(dbRes.cause());
-										dbRes.cause().printStackTrace(System.out);
+										log.error(dbRes.cause());										
 										userPromise.fail(new HttpException(401));									}
 
 								});																				

@@ -29,10 +29,8 @@ public class ElementManagerTest extends GitTest{
 			Async twoProjects = context.async();
 			manager.createElement("NewProject2")
 			.onSuccess(p2 -> {
-				System.out.println("Second Project created");
 				manager.getElementList(new JsonArray())
 				.onSuccess(list -> {
-					System.out.println("List retrieved");
 					context.assertEquals(2, list.size()); // default is non private
 					Project[] projects = new Project[] {project, p2};
 					for(Project p : projects)
@@ -40,7 +38,6 @@ public class ElementManagerTest extends GitTest{
 						for(int i = 0; i < list.size(); i++)
 						{
 							JsonObject current = list.getJsonObject(i); 
-							System.out.println(current.encodePrettily());
 							if(current.getString("uuid").equals(p.getUUID()))
 							{
 								context.assertEquals(p.getName(), current.getString("name"));
@@ -49,7 +46,6 @@ public class ElementManagerTest extends GitTest{
 							}							
 						}						
 					}
-					System.out.println("Items removed");
 					// everything was removed
 					context.assertEquals(0, list.size());
 					twoProjects.complete();

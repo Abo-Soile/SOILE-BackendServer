@@ -33,8 +33,8 @@ public class MongoDBTests extends MongoTest{
 			.onSuccess(id2 -> {
 				mongo_client.save("TestCollection", basicData3)
 				.onSuccess(id3 -> {
-					System.out.println(createInFilter("data","value",new JsonArray().add("v1")
-							.add("v3")).encodePrettily());
+					createInFilter("data","value",new JsonArray().add("v1")
+							.add("v3")).encodePrettily();
 					JsonObject dataAddReArr = new JsonObject().put("$set", new JsonObject().put("data", new JsonObject().put("id", "$_id")));
 					JsonObject dataUnset = new JsonObject().put("$unset","data.err");
 					
@@ -46,10 +46,7 @@ public class MongoDBTests extends MongoTest{
 																									 .add(dataUnset)
 																									 .add(dataProj))
 					.onSuccess(res -> {
-						for(JsonObject o : res)
-						{
-							System.out.println(o.encodePrettily());
-						}
+
 						JsonObject pullUpdate = new JsonObject().put("$pull", new JsonObject()
 								  												  .put("data", new JsonObject()
 								  												  .put("value", "v3")))
@@ -58,10 +55,6 @@ public class MongoDBTests extends MongoTest{
 						.onSuccess(suc -> {
 							mongo_client.find("TestCollection", QueryObject).
 							onSuccess(list -> {
-								for(JsonObject o : list)
-								{
-									System.out.println(o.encodePrettily());
-								}
 								async.complete();	
 							})
 							.onFailure(err -> context.fail(err));

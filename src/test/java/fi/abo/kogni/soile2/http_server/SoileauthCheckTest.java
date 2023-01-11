@@ -73,7 +73,6 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 										{												
 											context.assertTrue(new JsonObject(authWorked.body().toString()).getBoolean("authenticated"));
 											context.assertEquals("testUser", new JsonObject(authWorked.body().toString()).getString("user"));
-											System.out.println("Cookie Auth Worked");
 										}
 										catch(Exception e)
 										{
@@ -84,7 +83,6 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 									{
 										context.fail("Couldn't complete auth test request");
 									}
-									System.out.println("Completing cookieTest");
 									cookieTest.complete();											
 								});
 								// test that token is working
@@ -98,7 +96,6 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 										{
 											context.assertTrue(new JsonObject(authWorked.body().toString()).getBoolean("authenticated"));
 											context.assertEquals("testUser", new JsonObject(authWorked.body().toString()).getString("user"));
-											System.out.println("JWT Auth Worked");
 										}
 										catch(Exception e)
 										{
@@ -109,7 +106,6 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 									{
 										context.fail("Couldn't complete auth test request");
 									}
-									System.out.println("Completing tokenTest");
 									tokenTest.complete();											
 								});
 								// test that no cookie and token fails.
@@ -118,7 +114,6 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 									if(authTest.succeeded())
 									{
 										HttpResponse authWorked = authTest.result();
-										System.out.println("UnauthorizedTest yielded: " + authWorked.body().toString());
 										try
 										{
 											context.assertEquals(401,authWorked.statusCode());												
@@ -132,15 +127,12 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 									{
 										context.fail("Couldn't complete auth test request");
 									}
-									System.out.println("Completing failed Test");
 									failedTest.complete();											
 								});
-								System.out.println("Completing login");
 								login.complete();
 
 
 							}).onFailure( fail -> {
-								System.out.println("Completing login, failing test");
 								login.complete();
 								context.fail(fail.getCause());
 							});								
@@ -150,7 +142,6 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 						{
 							context.fail("Couldn't create user");								
 						}
-						System.out.println("Completing user creation");
 						userCreationAsync.complete();
 
 					});
@@ -158,7 +149,6 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 		catch(Exception e)
 		{
 			context.fail(e.getMessage());
-			System.out.println("Completing user creation failing");
 			userCreationAsync.complete();
 		}
 	}  

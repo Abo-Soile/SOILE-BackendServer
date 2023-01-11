@@ -32,7 +32,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 			Async checkUserDetailsAsync = context.async();
 			getUserDetailsFromDB(mongo_client, username)
 			.onSuccess(userData -> {
-				System.out.println(userData.encodePrettily());
 				context.assertEquals(username, userData.getValue(SoileConfigLoader.getUserdbField("usernameField")));
 				context.assertEquals("email@there.fi", userData.getValue(SoileConfigLoader.getUserdbField("userEmailField")));
 				context.assertEquals(Roles.Admin.toString(), userData.getValue(SoileConfigLoader.getUserdbField("userRolesField")));
@@ -59,8 +58,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				}
 				else
 				{
-					System.out.println("Failing due to:");
-					err.printStackTrace(System.out);
 					context.fail(err);
 				}
 			});
@@ -86,8 +83,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				}
 				else
 				{
-					System.out.println("Failing due to:");
-					err.printStackTrace(System.out);
 					context.fail(err);
 				}
 			});					
@@ -99,7 +94,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		.onSuccess(created -> {
 			getUserDetailsFromDB(mongo_client, "SecondUser")
 			.onSuccess(userData -> {
-				System.out.println(userData.encodePrettily());
 				context.assertEquals("SecondUser", userData.getValue(SoileConfigLoader.getUserdbField("usernameField")));				
 				context.assertEquals(Roles.Participant.toString(), userData.getValue(SoileConfigLoader.getUserdbField("userRolesField")));				
 				HashingStrategy strategy = new SoileHashing(SoileConfigLoader.getUserProperty("serverSalt"));				
@@ -167,23 +161,19 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		createUser(vertx, blockedUser, "testPassword", "Fullname", blockedEmail, Roles.Participant )
 		.onSuccess(created -> {
 			Async nameNotWorking = context.async();
-			System.out.println("Trying to create user with blocking name");
 			eb.request(getUsermanagerEventBusAddress("addUserWithEmail"), NameNotWorkingTestUser)
 			.onSuccess(err -> {
 				context.fail("Should fail due to duplicate Name");
 			})
 			.onFailure(success -> {
-				System.out.println("Could not add user with blocking name because of: " + success.getMessage());
 				nameNotWorking.complete();
 			});
-			System.out.println("Trying to create user with blocking email");
 			Async emailNotWorking = context.async();
 			eb.request(getUsermanagerEventBusAddress("addUserWithEmail"), EmailNotWorkingTestUser)
 			.onSuccess(err -> {
 				context.fail("Should fail due to duplicate email");
 			})
 			.onFailure(success -> {
-				System.out.println("Could not add user with blocking email because of: " + success.getMessage());
 				getUserDetailsFromDB(mongo_client, "AnotherUser")
 				.onSuccess(res -> {
 					context.assertNull(res);
@@ -192,7 +182,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				.onFailure(err -> context.fail(err));				
 			});
 			Async additionWorking = context.async();
-			System.out.println("Trying to create working user");
 			eb.request(getUsermanagerEventBusAddress("addUserWithEmail"), WorkingTestUser)
 			.onSuccess(reply -> {
 				JsonObject response = (JsonObject) reply.body();
@@ -259,9 +248,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				 context.assertEquals(SoileCommUtils.SUCCESS, ((JsonObject)add.body()).getValue(SoileCommUtils.RESULTFIELD));
 				getUserDetailsFromDB(mongo_client, "NewUser")
 				.onSuccess(userData-> {
-					System.out.println(userData.encodePrettily());
 					JsonArray taskPermissions = userData.getJsonArray(SoileConfigLoader.getMongoTaskAuthorizationOptions().getPermissionField());
-					System.out.println("Checking if " + aPermissionTest +  " is in array");
 					context.assertTrue(taskPermissions.contains(aPermissionTest));
 					context.assertTrue(taskPermissions.contains(a2PermissionTest));
 					context.assertTrue(taskPermissions.contains(bPermissionTest));
@@ -274,7 +261,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 						context.assertEquals(SoileCommUtils.SUCCESS, ((JsonObject)removed.body()).getValue(SoileCommUtils.RESULTFIELD));
 						getUserDetailsFromDB(mongo_client, "NewUser")
 						.onSuccess(userData2-> {
-							System.out.println(userData2.encodePrettily());
 							JsonArray taskPermissions2 = userData2.getJsonArray(SoileConfigLoader.getMongoTaskAuthorizationOptions().getPermissionField());
 							context.assertFalse(taskPermissions2.contains(aPermissionTest));
 							context.assertTrue(taskPermissions2.contains(a2PermissionTest));
@@ -458,7 +444,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 					JsonObject response = (JsonObject) reply.body();
 					context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
 					JsonArray participants =  response.getJsonArray("participantIDs");
-					System.out.println(participants.encodePrettily());
 					boolean id1 = false;
 					boolean id2 = false;
 					boolean id3 = false;
@@ -503,7 +488,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 			eb.request(getUsermanagerEventBusAddress("getUserInfo"), new JsonObject().put("username","NewUser"))
 			.onSuccess(reply -> {
 				JsonObject response = (JsonObject) reply.body();
-				System.out.println(response.encodePrettily());
 				context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
 				JsonObject userData = response.getJsonObject(SoileCommUtils.DATAFIELD);
 				context.assertFalse(userData.containsKey("password"));
@@ -625,7 +609,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 			eb.request(getUsermanagerEventBusAddress("getAccessRequest"), new JsonObject().put("username","NewUser") )
 			.onSuccess(reply -> {
 				JsonObject response = (JsonObject) reply.body();
-				System.out.println(response.encodePrettily());
 				context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
 				JsonObject accessData = response.getJsonObject(SoileCommUtils.DATAFIELD);
 				context.assertEquals("NewUser", accessData.getString("username"));

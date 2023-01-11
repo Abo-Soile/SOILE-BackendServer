@@ -184,7 +184,7 @@ public class GitManager {
 			}
 			catch(Exception e)
 			{
-				e.printStackTrace(System.out);
+				log.error(e);
 				dataPromise.fail(e);
 			}
 			

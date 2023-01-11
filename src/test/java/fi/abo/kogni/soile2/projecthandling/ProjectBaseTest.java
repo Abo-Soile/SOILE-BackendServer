@@ -28,9 +28,8 @@ public abstract class ProjectBaseTest {
 			taskData = new JsonObject(Files.readString(Paths.get(getClass().getClassLoader().getResource("TaskData.json").getPath()))).getJsonArray("data");						 
 		}
 		catch(Exception e)
-		{			
-			e.printStackTrace(System.out);
-			fail(e.getMessage());
+		{						
+			context.fail(e.getMessage());
 			return;
 		}
 	}

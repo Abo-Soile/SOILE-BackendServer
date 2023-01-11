@@ -58,20 +58,18 @@ public class DataLakeManagerTest extends SoileBaseTest{
 	@Test
 	public void storeFiles(TestContext context)
 	{
+		
 		Async testAsync = context.async();
 
 
-		System.out.println("The temporary Data Directory is: " +  tempDataDir);
-		System.out.println("The temporary File will be: " +  Path.of(tempDataDir,"ImageData.jpg").toString()); 
+		System.out.println("--------------------  Testing File storing ----------------------");		 
 		DataLakeManager dlm = new DataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
 		String partID = "Test";
 		int step = 0;
 		String taskID = "testTask";
-		FileUpload tempUpload = DataProvider.getFileUploadForTarget(Path.of(tempDataDir,"ImageData.jpg").toString(), "TestImage.jpg", "image/jpg");
-		System.out.println("Trying to store data");
+		FileUpload tempUpload = DataProvider.getFileUploadForTarget(Path.of(tempDataDir,"ImageData.jpg").toString(), "TestImage.jpg", "image/jpg");		
 		dlm.storeParticipantData(partID, step, taskID, tempUpload)
-		.onSuccess(TargetFileName -> {
-			System.out.println("Comparing data");
+		.onSuccess(TargetFileName -> {			
 			TaskFileResult res = new TaskFileResult("TestImage.jpg", TargetFileName, "image/jpg", step, taskID, partID);
 			context.assertTrue(vertx.fileSystem().existsBlocking(dlm.getFile(res).getAbsolutePath()));
 			try

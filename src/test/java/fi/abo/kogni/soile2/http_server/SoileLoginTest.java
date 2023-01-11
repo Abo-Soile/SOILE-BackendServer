@@ -38,7 +38,6 @@ public class SoileLoginTest extends SoileVerticleTest {
 								//This is a participant user, so we need to auth against the participant API
 								MultiMap map = createFormFromJson(userObject);
 								final Async sucAsync = context.async();		
-								System.out.println("Posting to https://localhost/login");
 								//Lets build a new session that we will attach the cookie to and try to restore this.
 								WebClientSession newsession = createSession();								
 								session.post(port,"localhost","/login").sendForm(map).onSuccess(authed ->
@@ -46,9 +45,6 @@ public class SoileLoginTest extends SoileVerticleTest {
 									boolean foundSessionCookie = false;
 									for(Cookie current : session.cookieStore().get(true, SoileConfigLoader.getServerProperty("domain"), SoileConfigLoader.getSessionProperty("cookiePath")))
 									{
-										System.out.println("Found Cookie: " + current.toString());
-										System.out.println(current.name());
-										System.out.println(SoileConfigLoader.getSessionProperty("sessionCookieID"));
 										if(current.name().equals(SoileConfigLoader.getSessionProperty("sessionCookieID")))
 										{		
 											//add the cookie to the other session.
@@ -56,7 +52,6 @@ public class SoileLoginTest extends SoileVerticleTest {
 											foundSessionCookie = true;
 										}
 									}
-									System.out.println("Valid Auth: " + authed.body().toString());
 									context.assertTrue(foundSessionCookie);
 									context.assertEquals(200,authed.statusCode());
 									context.assertTrue(new JsonObject(authed.body().toString()).fieldNames().contains("token"));																		
@@ -107,7 +102,6 @@ public class SoileLoginTest extends SoileVerticleTest {
 								map = createFormFromJson(userObject);
 								webclient.post(port,"localhost","/login").sendForm(map).onSuccess(authed ->
 								{
-									System.out.println("Invalid Auth: " +  authed.body().toString());
 									context.assertTrue(authed.body().toString().contains("Unauthorized"));
 									context.assertEquals(401,authed.statusCode());
 									unsucAsync.complete();	

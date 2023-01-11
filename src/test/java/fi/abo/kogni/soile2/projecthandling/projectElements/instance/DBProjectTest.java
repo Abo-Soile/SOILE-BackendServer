@@ -34,16 +34,12 @@ public class DBProjectTest extends GitTest{
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager, mongo_client, "Testproject")
 		.onSuccess(existingApiProject -> 
 		{	
-			System.out.println("API Project created");
 			Async projectAsync= context.async();
 			projManager.getElement(existingApiProject.getUUID())
 			.onSuccess(project -> {
-				System.out.println("Project created" + project.toJson());				
 				Async projInstAsync = context.async();				
 				projInstHandler.createProjectInstance(ElementTester.getCreationJson(project, "StartedProject1","thisIsSomeShortcut"))
 				.onSuccess(projectInstance -> {					
-					System.out.println("Instantiated Project");
-					System.out.println(projectInstance.toDBJson().encodePrettily());
 					Async partListAsync = context.async();
 					projectInstance.getParticipants()
 					.onSuccess(parts -> {
@@ -77,11 +73,9 @@ public class DBProjectTest extends GitTest{
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager, mongo_client, "Testproject")
 		.onSuccess(existingApiProject -> 
 		{	
-			System.out.println("API Project created");
 			Async projectAsync= context.async();
 			projManager.getElement(existingApiProject.getUUID())
 			.onSuccess(project -> {
-				System.out.println("Project created" + project.toJson());				
 				Async projInstAsync = context.async();
 				JsonObject creationJson = new JsonObject()
 						.put("sourceUUID", existingApiProject.getUUID())
@@ -95,8 +89,6 @@ public class DBProjectTest extends GitTest{
 					partHandler.create(projectInstance).onSuccess(participant -> {
 						
 					});
-					System.out.println("Instantiated Project");
-					System.out.println(projectInstance.toDBJson().encodePrettily());
 					Async partListAsync = context.async();
 					projectInstance.getParticipants()
 					.onSuccess(parts -> {

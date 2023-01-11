@@ -21,13 +21,11 @@ public class ExperimentTest extends MongoTest {
 		ElementFactory<Experiment> ExperimentFactory = new ElementFactory<Experiment>(Experiment::new);
 		Async testAsync = context.async();
 		buildTestExperiment(context).onSuccess(p -> {
-			System.out.println("Initial Experiment set up");
 			p.addVersion("abcdefg");
 			p.addTag("NewVersion", "abcdefg");
 			p.save(mongo_client)
 			.onSuccess(ID -> {
 				p.setUUID(ID);
-				System.out.println(p.getUUID());
 				ExperimentFactory.loadElement(mongo_client, p.getUUID())
 				.onSuccess(Experiment -> {
 					context.assertEquals(p.getPrivate(),Experiment.getPrivate());
@@ -117,14 +115,12 @@ public class ExperimentTest extends MongoTest {
 	{
 		Async testAsync = context.async();	
 		buildTestExperiment(context).onSuccess(exp -> {
-			System.out.println(exp.toJson(true).encodePrettily());
 			buildTestExperiment(context)
 			.onFailure(err -> {
 				context.assertEquals(err.getClass(), ElementNameExistException.class);
 				testAsync.complete();
 			})
 			.onSuccess(exp2 -> {
-				System.out.println(exp2.toJson(true).encodePrettily());
 				context.fail("The creation should have failed due to colliding names");
 				testAsync.complete();
 			});
@@ -149,7 +145,6 @@ public class ExperimentTest extends MongoTest {
 			ExperimentFactory.createElement(mongo_client,tempExperiment.getName())
 			.onSuccess(Experiment -> 
 			{
-				System.out.println("The generated Experiment has the id: " + Experiment.getUUID());				
 				Experiment.setPrivate(tempExperiment.getPrivate());
 				ExperimentPromise.complete(Experiment);
 			})
@@ -160,7 +155,6 @@ public class ExperimentTest extends MongoTest {
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace(System.out);
 			context.fail(e);
 			ExperimentPromise.fail(e);			
 		}

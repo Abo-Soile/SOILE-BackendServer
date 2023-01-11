@@ -67,7 +67,6 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 										context.assertTrue(dlm.getFile(fileRes).exists());
 										mongo_client.findOne(SoileConfigLoader.getdbProperty("participantCollection"), new JsonObject().put("_id", participant1.getID()),null)
 										.onSuccess(dbData -> {
-											System.out.println(dbData.encodePrettily());
 											context.assertEquals(taskID, dbData.getJsonArray("outputData").getJsonObject(0).getString("task"));
 											context.assertEquals("smoker", dbData.getJsonArray("outputData").getJsonObject(0).getJsonArray("outputs").getJsonObject(0).getString("name"));
 											context.assertEquals(1, dbData.getJsonArray("outputData").getJsonObject(0).getJsonArray("outputs").getJsonObject(0).getValue("value"));

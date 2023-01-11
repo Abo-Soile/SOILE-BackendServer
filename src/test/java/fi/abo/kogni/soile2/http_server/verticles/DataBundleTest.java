@@ -42,6 +42,7 @@ public class DataBundleTest extends ElementTester {
 	@Test
 	public void testDataBundling(TestContext context)
 	{
+		System.out.println("--------------------------- Testing Data Bundling ----------------------------");
 		// this test is somewhat overloaded. However this allows testing multiple downloads simultaneously.
 		String dataDir = DataBundleTest.class.getClassLoader().getResource("FileTestData").getPath();
 
@@ -91,14 +92,11 @@ public class DataBundleTest extends ElementTester {
 														participant2.addResult(position2, projInstance.getResultDataFromTaskData(results2))
 														.onSuccess(v2 -> {
 															// so, now we have two participants each with Result Data.
-															System.out.println("trying to obtain a bundle");
 															Async participantBundleAsync = context.async();
 															dbg.buildParticipantsBundle(new JsonArray().add(participant.getID()).add(participant2.getID()), projInstance.getID())
-															.onSuccess(dlID -> {
-																System.out.println("Bundle generation started");
+															.onSuccess(dlID -> {																
 																awaitReady(dbg, dlID, Promise.<Void>promise())
-																.onSuccess(dlReady -> {
-																	System.out.println("Bundle Generated");
+																.onSuccess(dlReady -> {																	
 																	Async statusAsync = context.async();
 																	dbg.getDownloadStatus(dlID).onSuccess( status -> {
 																		context.assertEquals(status.getString("status"), DownloadStatus.downloadReady.toString());
@@ -106,8 +104,7 @@ public class DataBundleTest extends ElementTester {
 																	})
 																	.onFailure(err -> context.fail(err));
 																	Async fileListAsync = context.async();
-																	dbg.getDownloadFilesFromDB(dlID).onSuccess( files -> {
-																		System.out.println(files.encodePrettily());
+																	dbg.getDownloadFilesFromDB(dlID).onSuccess( files -> {																		
 																		context.assertEquals(3, files.size());
 																		int found = 0;
 																		for(int i = 0; i < files.size(); ++i)
@@ -132,8 +129,6 @@ public class DataBundleTest extends ElementTester {
 																					context.assertEquals(2,dataJson.getJsonArray("participantResults").size());
 																					JsonObject part1Results = dataJson.getJsonArray("participantResults").getJsonObject(0);
 																					JsonObject part2Results = dataJson.getJsonArray("participantResults").getJsonObject(1);
-																					System.out.println(part1Results.encodePrettily());
-																					System.out.println(part2Results.encodePrettily());
 																					if(dataJson.getJsonArray("participantResults").getJsonObject(0).getString("participantID").equals(participant2.getID()))
 																					{
 																						JsonObject tmp = part1Results;
@@ -175,10 +170,8 @@ public class DataBundleTest extends ElementTester {
 															Async taskBundling = context.async();
 															dbg.buildTasksBundle(new JsonArray().add(position1), projInstance.getID())
 															.onSuccess(dlID -> {
-																System.out.println("Bundle generation started");
 																awaitReady(dbg, dlID, Promise.<Void>promise())
 																.onSuccess(dlReady -> {
-																	System.out.println("Bundle Generated");
 																	Async statusAsync = context.async();
 																	dbg.getDownloadStatus(dlID).onSuccess( status -> {
 																		context.assertEquals(status.getString("status"), DownloadStatus.downloadReady.toString());
@@ -187,7 +180,6 @@ public class DataBundleTest extends ElementTester {
 																	.onFailure(err -> context.fail(err));
 																	Async fileListAsync = context.async();
 																	dbg.getDownloadFilesFromDB(dlID).onSuccess( files -> {
-																		System.out.println(files.encodePrettily());
 																		context.assertEquals(3, files.size());
 																		int found = 0;
 																		for(int i = 0; i < files.size(); ++i)
@@ -207,17 +199,13 @@ public class DataBundleTest extends ElementTester {
 																				found++;
 																				try {
 																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(files.getJsonObject(i).getString("absolutePath"))));
-																					System.out.println(files.encodePrettily());
 																					context.assertTrue(dataJson.containsKey("taskResults"));
 																					context.assertEquals(1,dataJson.getJsonArray("taskResults").size());
 																					JsonObject taskResults = dataJson.getJsonArray("taskResults").getJsonObject(0);																					
-																					System.out.println(taskResults.encodePrettily());																					
 																					context.assertEquals(position1, taskResults.getString("taskID"));
 																					context.assertEquals(2, taskResults.getJsonArray("resultData").size());
 																					JsonObject part1Results = taskResults.getJsonArray("resultData").getJsonObject(0);
 																					JsonObject part2Results = taskResults.getJsonArray("resultData").getJsonObject(1);
-																					System.out.println(part1Results.encodePrettily());
-																					System.out.println(part2Results.encodePrettily());
 																					if(part1Results.getString("participantID").equals(participant2.getID()))
 																					{
 																						JsonObject tmp = part1Results;
@@ -255,10 +243,8 @@ public class DataBundleTest extends ElementTester {
 															Async taskRequest = context.async();
 															dbg.buildTaskBundle(position1, projInstance.getID())
 															.onSuccess(dlID -> {
-																System.out.println("Bundle generation started");
 																awaitReady(dbg, dlID, Promise.<Void>promise())
 																.onSuccess(dlReady -> {
-																	System.out.println("Bundle Generated");
 																	Async statusAsync = context.async();
 																	dbg.getDownloadStatus(dlID).onSuccess( status -> {
 																		context.assertEquals(status.getString("status"), DownloadStatus.downloadReady.toString());
@@ -267,7 +253,6 @@ public class DataBundleTest extends ElementTester {
 																	.onFailure(err -> context.fail(err));
 																	Async fileListAsync = context.async();
 																	dbg.getDownloadFilesFromDB(dlID).onSuccess( files -> {
-																		System.out.println(files.encodePrettily());
 																		context.assertEquals(3, files.size());
 																		int found = 0;
 																		for(int i = 0; i < files.size(); ++i)
@@ -287,16 +272,12 @@ public class DataBundleTest extends ElementTester {
 																				found++;
 																				try {
 																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(files.getJsonObject(i).getString("absolutePath"))));
-																					System.out.println(files.encodePrettily());
 																					context.assertFalse(dataJson.containsKey("taskResults"));																					
 																					JsonObject taskResults = dataJson;																					
-																					System.out.println(taskResults.encodePrettily());																					
 																					context.assertEquals(position1, taskResults.getString("taskID"));
 																					context.assertEquals(2, taskResults.getJsonArray("resultData").size());
 																					JsonObject part1Results = taskResults.getJsonArray("resultData").getJsonObject(0);
 																					JsonObject part2Results = taskResults.getJsonArray("resultData").getJsonObject(1);
-																					System.out.println(part1Results.encodePrettily());
-																					System.out.println(part2Results.encodePrettily());
 																					if(part1Results.getString("participantID").equals(participant2.getID()))
 																					{
 																						JsonObject tmp = part1Results;
@@ -334,10 +315,8 @@ public class DataBundleTest extends ElementTester {
 															Async partRequest = context.async();
 															dbg.buildParticipantBundle(participant.getID(), projInstance.getID())
 															.onSuccess(dlID -> {
-																System.out.println("Bundle generation started");
 																awaitReady(dbg, dlID, Promise.<Void>promise())
 																.onSuccess(dlReady -> {
-																	System.out.println("Bundle Generated");
 																	Async statusAsync = context.async();
 																	dbg.getDownloadStatus(dlID).onSuccess( status -> {
 																		context.assertEquals(status.getString("status"), DownloadStatus.downloadReady.toString());
@@ -346,7 +325,6 @@ public class DataBundleTest extends ElementTester {
 																	.onFailure(err -> context.fail(err));
 																	Async fileListAsync = context.async();
 																	dbg.getDownloadFilesFromDB(dlID).onSuccess( files -> {
-																		System.out.println(files.encodePrettily());
 																		context.assertEquals(2, files.size());
 																		int found = 0; 
 																		for(int i = 0; i < files.size(); ++i)
@@ -364,7 +342,6 @@ public class DataBundleTest extends ElementTester {
 																					
 																					context.assertFalse(dataJson.containsKey("participantResults"));																					
 																					JsonObject part1Results = dataJson;																					
-																					System.out.println(part1Results.encodePrettily());
 																					context.assertEquals(participant.getID(), part1Results.getString("participantID"));
 																					context.assertEquals(1, part1Results.getJsonArray("resultData").size());
 																					context.assertEquals(1, part1Results.getJsonArray("resultData").getJsonObject(0).getJsonArray("dbData").size());
@@ -429,7 +406,6 @@ public class DataBundleTest extends ElementTester {
 		{
 			if(status.getString("status").equals(DownloadStatus.downloadReady.toString()))
 			{
-				System.out.println("Download Ready");
 				readyPromise.complete();
 				return;
 			}
@@ -437,21 +413,17 @@ public class DataBundleTest extends ElementTester {
 			{
 				if(status.getString("status").equals(DownloadStatus.failed.toString()))
 				{
-					System.out.println("Download Failed");
 					readyPromise.fail(new Exception("Download Failed"));
 				}
 				else
 				{
 					try {
-						System.out.println("Download not ready waiting");
 						// we need to wait a tiny bit... 
 						Thread.sleep(100);
-						System.out.println("Testing again");
 						awaitReady(dbg, dlID, readyPromise);
 					}
 					catch(InterruptedException e)
 					{
-						System.out.println("Download waiting interrupted");
 						readyPromise.fail(e);
 					}
 				}

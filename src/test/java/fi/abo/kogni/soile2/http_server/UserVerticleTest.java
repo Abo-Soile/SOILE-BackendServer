@@ -48,7 +48,6 @@ public interface UserVerticleTest {
 						userCreatedPromise.fail(err);
 					})
 					.onFailure(err2 -> {
-						System.out.println("couldn't clean up user");
 						userCreatedPromise.fail(err2);	
 					});
 					
@@ -56,7 +55,6 @@ public interface UserVerticleTest {
 			}
 			else
 			{
-				System.out.println("Simple User created");
 				userCreatedPromise.complete();
 			}
 			

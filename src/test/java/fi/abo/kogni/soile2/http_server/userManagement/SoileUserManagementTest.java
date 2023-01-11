@@ -26,7 +26,7 @@ public class SoileUserManagementTest extends SoileVerticleTest{
 
 	@Test
 	public void testUserAddition(TestContext context) {
-		System.out.println("Testing User Addition");
+		System.out.println("------------------------------- Testing User Addition-----------------------------------");
 		Async async = context.async();
 		try {
 			createSoileUser("testUser", res -> {					
@@ -34,7 +34,6 @@ public class SoileUserManagementTest extends SoileVerticleTest{
 						{									
 							JsonObject obj = (JsonObject)res.result().body();					
 							context.assertTrue(SoileCommUtils.isResultSuccessFull(obj));
-							System.out.println("Added User");
 							createSoileUser("testUser",invRes ->
 								{
 									if(invRes.succeeded())
@@ -56,7 +55,6 @@ public class SoileUserManagementTest extends SoileVerticleTest{
 						}					
 						else
 						{
-							System.out.println(res.cause());
 							context.fail("No response found");
 							async.complete();
 						}
@@ -85,7 +83,6 @@ public class SoileUserManagementTest extends SoileVerticleTest{
 						{
 							JsonObject obj = (JsonObject)res.result().body();					
 							context.assertEquals("Success",obj.getValue("Result"));
-							System.out.println("User Creation Test Successfull");
 							vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "removeUser"), userObject, remres ->
 							{
 								if(remres.succeeded())

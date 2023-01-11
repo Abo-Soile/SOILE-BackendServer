@@ -20,13 +20,11 @@ public class ProjectTest extends MongoTest {
 		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
 		Async testAsync = context.async();
 		buildTestProject(context).onSuccess(p -> {
-			System.out.println("Initial Project set up");
 			p.addVersion("abcdefg");
 			p.addTag("NewVersion", "abcdefg");
 			p.save(mongo_client)
 			.onSuccess(ID -> {
 				p.setUUID(ID);
-				System.out.println(p.getUUID());
 				projectFactory.loadElement(mongo_client, p.getUUID())
 				.onSuccess(project -> {
 					context.assertEquals(p.getPrivate(),project.getPrivate());
@@ -69,8 +67,6 @@ public class ProjectTest extends MongoTest {
 				.onSuccess(Void2 -> {						
 					projectFactory.loadElement(mongo_client, p.getUUID())
 					.onSuccess(project -> {		
-						System.out.println("This is the final task:");
-						System.out.println(project.toJson().encodePrettily());			
 						context.assertEquals(p.getPrivate(),project.getPrivate());
 						context.assertEquals(2, project.getTags().size());
 						context.assertEquals(2, project.getVersions().size());
@@ -111,7 +107,6 @@ public class ProjectTest extends MongoTest {
 			projectFactory.createElement(mongo_client, "TestProject")
 			.onSuccess(project -> 
 			{
-				System.out.println("The generated project has the id: " + project.getUUID());
 				project.setName(tempProject.getName());
 				project.setPrivate(tempProject.getPrivate());
 				projectPromise.complete(project);
@@ -123,7 +118,6 @@ public class ProjectTest extends MongoTest {
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace(System.out);
 			context.fail(e);
 			projectPromise.fail(e);			
 		}
