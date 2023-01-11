@@ -8,12 +8,10 @@ public class TokenParticipantFactory extends DBParticipantFactory {
 
 	public TokenParticipantFactory(ParticipantManager client) {
 		super(client);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
 	public Participant createParticipant(JsonObject data) {
-		// TODO Auto-generated method stub
 		return new TokenParticipant(data, manager);
 	}
 }

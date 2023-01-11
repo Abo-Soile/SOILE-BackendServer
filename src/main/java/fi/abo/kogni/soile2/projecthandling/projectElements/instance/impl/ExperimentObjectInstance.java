@@ -22,7 +22,6 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	
 	public ExperimentObjectInstance(JsonObject data, ProjectInstance source) {
 		super(data, source);
-		// TODO Auto-generated constructor stub		
 		defineElements();		
 	}
 

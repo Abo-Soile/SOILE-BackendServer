@@ -62,7 +62,6 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 
 	@Override
 	public void getElement(String key, Handler<AsyncResult<ProjectInstance>> handler) {
-		// TODO Auto-generated method stub
 		handler.handle(getElement(key));
 	}
 

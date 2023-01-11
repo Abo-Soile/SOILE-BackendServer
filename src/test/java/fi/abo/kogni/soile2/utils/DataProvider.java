@@ -37,49 +37,41 @@ public class DataProvider {
 		String contentType;
 		@Override
 		public String name() {
-			// TODO Auto-generated method stub
 			return localFile;
 		}
 
 		@Override
 		public String uploadedFileName() {
-			// TODO Auto-generated method stub
 			return localFile;
 		}
 
 		@Override
 		public String fileName() {
-			// TODO Auto-generated method stub
 			return sourceFileName;
 		}
 
 		@Override
 		public long size() {
-			// TODO Auto-generated method stub
 			return 0;
 		}
 
 		@Override
 		public String contentType() {
-			// TODO Auto-generated method stub
 			return contentType;
 		}
 
 		@Override
 		public String contentTransferEncoding() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public String charSet() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public boolean cancel() {
-			// TODO Auto-generated method stub
 			return false;
 		}
 }

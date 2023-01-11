@@ -76,7 +76,6 @@ public class SoileBodyHandlerImpl implements BodyHandler {
 
 	@Override
 	public void handle(RoutingContext ctx) {
-		// TODO Auto-generated method stub
 		if(ctx.normalizedPath().matches("/task/.*/resource/.*") && ctx.request().method() == HttpMethod.POST)
 		{
 			String taskid = ctx.pathParams().get("id");

@@ -17,7 +17,6 @@ public class APITask extends APIElementBase<Task> {
 	
 	public APITask() {
 		super(new JsonObject());
-		// TODO Auto-generated constructor stub		
 	}
 	
 	public APITask(JsonObject data) {

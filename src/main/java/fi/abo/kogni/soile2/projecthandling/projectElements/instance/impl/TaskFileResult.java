@@ -1,15 +1,8 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
-import java.io.FileNotFoundException;
 import java.nio.file.Path;
 
-import org.bouncycastle.util.test.TestRandomEntropySourceProvider;
-
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.file.FileSystem;
-import io.vertx.core.impl.future.SucceededFuture;
 
 /**
  * A Task File Result maps a large file that was a result of a task from the name the file was given in the task 

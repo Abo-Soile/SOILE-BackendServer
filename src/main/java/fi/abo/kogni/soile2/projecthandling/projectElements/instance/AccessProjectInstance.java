@@ -12,13 +12,11 @@ public class AccessProjectInstance implements AccessElement{
 
 	@Override
 	public TargetElementType getElementType() {
-		// TODO Auto-generated method stub
 		return TargetElementType.INSTANCE;
 	}
 
 	@Override
 	public String getTargetCollection() {
-		// TODO Auto-generated method stub
 		return SoileConfigLoader.getCollectionName("projectInstanceCollection");
 	}
 

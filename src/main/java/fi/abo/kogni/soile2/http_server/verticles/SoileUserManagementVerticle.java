@@ -128,7 +128,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 
 			@Override
 			public void handle(Message<JsonObject> t) {
-				// TODO Auto-generated method stub
 				try {
 					call.handle(t);
 				}				
@@ -591,7 +590,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 */
 	void makeUserParticpantInProject(Message<JsonObject> msg)
 	{
-		//TODO Implement
 		//make sure we actually get the right thing
 		JsonObject command = msg.body();			
 

@@ -8,7 +8,6 @@ public class TokenParticipant extends DBParticipant {
 	private String token;
 	
 	public TokenParticipant(JsonObject data, ParticipantManager manager) {
-		// TODO Auto-generated constructor stub
 		super(data,manager);
 		token = data.getString(token);
 	}

@@ -19,13 +19,11 @@ public class DataLakeFile extends File implements FileDescriptor {
 	
 	public DataLakeFile(String pathname, String originalFileName, String mimeFormat) {
 		super(pathname);
-		// TODO Auto-generated constructor stub
 		this.originalFileName = originalFileName;
 		this.mimeFormat = mimeFormat;
 	}
 	public DataLakeFile(JsonObject source) {
 		super(source.getString("AbsolutPath"));
-		// TODO Auto-generated constructor stub
 		this.originalFileName = source.getString("originalFileName");
 		this.mimeFormat = source.getString("mimeFormat");
 	}

@@ -13,7 +13,6 @@ public class APIExperiment extends APIElementBase<Experiment> {
 
 	public APIExperiment() {
 		this(new JsonObject());
-		// TODO Auto-generated constructor stub		
 	}
 	
 	public APIExperiment(JsonObject data) {

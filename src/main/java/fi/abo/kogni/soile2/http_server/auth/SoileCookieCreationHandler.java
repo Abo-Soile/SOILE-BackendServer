@@ -32,7 +32,6 @@ public class SoileCookieCreationHandler {
 		// if we get an explicit user we use that one, otherwise we try to retrieve it from the context.
 		User currentuser = user == null ? user : ctx.user();
 		Promise<Void> finishedCookie = Promise.<Void>promise();
-		// TODO Auto-generated method stub
 				LOGGER.debug("Handling a request");
 				if(user != null)
 				{

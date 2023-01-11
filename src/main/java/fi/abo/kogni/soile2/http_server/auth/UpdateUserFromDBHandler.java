@@ -7,7 +7,6 @@ public class UpdateUserFromDBHandler implements Handler<RoutingContext> {
 
 	@Override
 	public void handle(RoutingContext context) {
-		// TODO Auto-generated method stub
 		if(context.user() != null)
 		{
 			

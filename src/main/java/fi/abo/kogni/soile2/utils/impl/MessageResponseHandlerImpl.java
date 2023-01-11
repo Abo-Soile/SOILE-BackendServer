@@ -24,7 +24,6 @@ public class MessageResponseHandlerImpl implements MessageResponseHandler{
 	}
 	@Override
 	public void handle(JsonObject responseData, RoutingContext context) {
-		// TODO Auto-generated method stub
 		if(responseData.getString(SoileCommUtils.RESULTFIELD).equals(SoileCommUtils.SUCCESS))
 		{
 			context.response().setStatusCode(successStatusCode);

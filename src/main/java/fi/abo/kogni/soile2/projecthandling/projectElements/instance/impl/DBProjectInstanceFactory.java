@@ -28,7 +28,6 @@ public class DBProjectInstanceFactory implements ProjectInstanceFactory {
 
 	@Override
 	public ProjectInstance createInstance() {
-		// TODO Auto-generated method stub
 		return new DBProjectInstance(projManager, client, eb);
 	}
 

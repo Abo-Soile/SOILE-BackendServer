@@ -102,7 +102,6 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 
 	@Override
 	public void getElement(String key, Handler<AsyncResult<Participant>> handler) {
-		// TODO Auto-generated method stub
 		handler.handle(getElement(key));
 	}
 
@@ -302,7 +301,6 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			}
 			update.remove("_id");
 			JsonObject dataUpdate = new JsonObject().put("$set", update); 
-			//TODO Correct this call. Needs to be upsert. 
 			client.updateCollectionWithOptions(participantCollection,new JsonObject().put("_id", p.getID()),dataUpdate, new UpdateOptions().setUpsert(true))
 			.onSuccess(res -> {
 				savePromise.complete(p.getID());

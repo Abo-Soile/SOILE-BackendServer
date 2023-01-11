@@ -20,7 +20,6 @@ public class ParticipantImplForTesting extends ParticipantImpl {
 	public ParticipantImplForTesting(JsonObject data) {
 		super(data);
 		resultsMap = new HashMap<String, JsonArray>();
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override

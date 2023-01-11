@@ -41,7 +41,6 @@ public class DBProjectInstance extends ProjectInstance{
 		this.projectManager = projManager;
 		this.client = client;
 		this.eb = eb;
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override

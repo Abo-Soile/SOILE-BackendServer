@@ -33,7 +33,6 @@ public class SoileCookieAuth {
 	}
 		
 	public Future<User> authenticate(RoutingContext context ) {
-		// TODO Auto-generated method stub
 		log.debug("Checking session cookies");
 
 		HttpServerRequest request = context.request();		  

@@ -117,7 +117,6 @@ public class DBParticipant extends ParticipantImpl{
 
 	@Override
 	public Future<Integer> getCurrentStep() {
-		// TODO Auto-generated method stub
 		return Future.succeededFuture(currentStep);
 	}
 	

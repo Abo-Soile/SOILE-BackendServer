@@ -74,12 +74,10 @@ public class Task extends ElementBase {
 
 	@Override
 	public String getTypeID() {
-		// TODO Auto-generated method stub
 		return typeID;
 	}	
 	@Override
 	public TargetElementType getElementType() {
-		// TODO Auto-generated method stub
 		return TargetElementType.TASK;
 	}
 	

@@ -289,31 +289,26 @@ public class GitInteractionTest extends SoileBaseTest{
 
 		@Override
 		public long size() {
-			// TODO Auto-generated method stub
 			return 0;
 		}
 
 		@Override
 		public String contentType() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public String contentTransferEncoding() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public String charSet() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public boolean cancel() {
-			// TODO Auto-generated method stub
 			return false;
 		}
 		

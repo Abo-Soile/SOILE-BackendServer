@@ -19,7 +19,6 @@ public class DBParticipantFactory implements ParticipantFactory{
 	
 	@Override
 	public Participant createParticipant(JsonObject data) {
-		// TODO Auto-generated method stub
 		return new DBParticipant(data, manager);
 	}
 	

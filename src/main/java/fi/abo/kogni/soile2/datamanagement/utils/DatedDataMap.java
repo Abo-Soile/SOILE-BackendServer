@@ -59,7 +59,6 @@ public class DatedDataMap<K,T>
 	}
 
 	public Set<K> keySet() {
-		// TODO Auto-generated method stub
 		return data.keySet();
 	}
 
@@ -68,7 +67,6 @@ public class DatedDataMap<K,T>
 	}
 
 	public int size() {
-		// TODO Auto-generated method stub
 		return data.size();
 	}
 	

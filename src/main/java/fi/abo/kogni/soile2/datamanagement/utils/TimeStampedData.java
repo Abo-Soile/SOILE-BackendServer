@@ -86,7 +86,6 @@ public class TimeStampedData<T> implements Comparable<TimeStampedData<T>>{
 	}
 	@Override
 	public int compareTo(TimeStampedData<T> o) {
-		// TODO Auto-generated method stub
 		return this.dataDate.compareTo(o.dataDate);
 	}
 	

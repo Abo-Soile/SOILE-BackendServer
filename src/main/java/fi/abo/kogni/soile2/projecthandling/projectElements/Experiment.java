@@ -22,7 +22,6 @@ public class Experiment extends ElementBase {
 	
 	public Experiment(JsonObject data) {
 		super(data, SoileConfigLoader.getdbProperty("experimentCollection"));
-		// TODO Auto-generated constructor stub
 	}
 
 	@JsonProperty("elements")
@@ -65,13 +64,11 @@ public class Experiment extends ElementBase {
 
 	@Override
 	public String getTypeID() {
-		// TODO Auto-generated method stub
 		return "E";
 	}
 	
 	@Override
 	public TargetElementType getElementType() {
-		// TODO Auto-generated method stub
 		return TargetElementType.EXPERIMENT;
 	}
 }

@@ -73,13 +73,11 @@ public class Project extends ElementBase{
 	
 	@Override
 	public String getTypeID() {
-		// TODO Auto-generated method stub
 		return "P";
 	}
 	
 	@Override
 	public TargetElementType getElementType() {
-		// TODO Auto-generated method stub
 		return TargetElementType.PROJECT;
 	}
 }

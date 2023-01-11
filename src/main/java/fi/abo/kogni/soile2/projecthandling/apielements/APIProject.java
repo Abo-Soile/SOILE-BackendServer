@@ -14,7 +14,6 @@ public class APIProject extends APIElementBase<Project>{
 
 	public APIProject() {
 		this(new JsonObject());
-		// TODO Auto-generated constructor stub		
 	}
 
 	

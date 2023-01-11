@@ -17,7 +17,6 @@ public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
 
 	@Override
 	public ProjectInstance createInstance() {
-		// TODO Auto-generated method stub
 		return new TestProject();
 	}
 
@@ -52,7 +51,6 @@ public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
 
 		@Override
 		public Future<Void> addParticipant(Participant p) {
-			// TODO Auto-generated method stub
 			participants.add(p.getID());
 			return Future.succeededFuture();
 		}
@@ -65,37 +63,31 @@ public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
 
 		@Override
 		public Future<JsonArray> getParticipants() {
-			// TODO Auto-generated method stub
 			return Future.succeededFuture(new JsonArray(List.copyOf(participants)));
 		}
 
 		@Override
 		public Future<Void> deactivate() {
-			// TODO Auto-generated method stub
 			return Future.succeededFuture();
 		}
 
 		@Override
 		public Future<Void> activate() {
-			// TODO Auto-generated method stub
 			return Future.succeededFuture();
 		}
 
 		@Override
 		public Future<JsonArray> createAccessTokens(int count) {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public Future<String> createPermanentAccessToken() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public Future<Void> useToken(String token) {
-			// TODO Auto-generated method stub
 			return null;
 		}		
 	}
