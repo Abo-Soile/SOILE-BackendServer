@@ -24,7 +24,7 @@
 	<repositories>
 		<repository>
 			<id>Scicomp Repo</id>
-			<url>https://github.com/tpfau/scicompMaven/raw/main/</url>
+			<url>https://github.com/AaltoRSE/scicompMaven/raw/main/</url>
 		</repository>
 		<repository>
 			<id>Soile Repo</id>
