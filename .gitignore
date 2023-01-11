@@ -1,1 +1,13 @@
-/target/
+### Eclipse ###
+*/.classpath
+*/.project
+*/.settings/**/*
+.metadata
+
+### Compiled Files ###
+**/target/**/*
+**/file-uploads/**/*
+
+### logs ###
+logs/*
+
