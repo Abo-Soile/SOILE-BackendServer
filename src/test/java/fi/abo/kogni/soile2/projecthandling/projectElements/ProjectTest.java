@@ -20,7 +20,7 @@ public class ProjectTest extends MongoTest {
 		System.out.println("--------------------  Testing PRoject save/load ----------------------");
 		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
 		Async testAsync = context.async();
-		buildTestProject(context).onSuccess(p -> {
+		buildTestProject().onSuccess(p -> {
 			p.addVersion("abcdefg");
 			p.addTag("NewVersion", "abcdefg");
 			p.save(mongo_client)
@@ -55,7 +55,7 @@ public class ProjectTest extends MongoTest {
 		System.out.println("--------------------  Testing Project Update ----------------------");
 		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
 		Async testAsync = context.async();	
-		buildTestProject(context).onSuccess(p -> {
+		buildTestProject().onSuccess(p -> {
 			p.addVersion("abcdefg");
 			p.addTag("NewVersion", "abcdefg");
 			p.setPrivate(true);
@@ -97,7 +97,7 @@ public class ProjectTest extends MongoTest {
 
 	}
 
-	public Future<Project> buildTestProject(TestContext context)
+	public Future<Project> buildTestProject()
 	{			
 		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
 		Promise<Project> projectPromise = Promise.<Project>promise();
@@ -115,12 +115,10 @@ public class ProjectTest extends MongoTest {
 			})
 			.onFailure(err -> {
 				projectPromise.fail(err);
-				context.fail(err);
 			});
 		}
 		catch(Exception e)
 		{
-			context.fail(e);
 			projectPromise.fail(e);			
 		}
 		return projectPromise.future();

@@ -20,7 +20,7 @@ public class TaskTest extends MongoTest {
 	System.out.println("--------------------  Testing Task Save/Load ----------------------");
 		ElementFactory<Task> TaskFactory = new ElementFactory<Task>(Task::new);
 		Async testAsync = context.async();
-		buildTestTask(context).onSuccess(p -> {
+		buildTestTask().onSuccess(p -> {
 			p.addVersion("abcdefg");
 			p.addTag("NewVersion", "abcdefg");
 			p.save(mongo_client)
@@ -55,7 +55,7 @@ public class TaskTest extends MongoTest {
 	System.out.println("--------------------  Testing Task Update ----------------------");
 		ElementFactory<Task> TaskFactory = new ElementFactory<Task>(Task::new);
 		Async testAsync = context.async();	
-		buildTestTask(context).onSuccess(p -> {
+		buildTestTask().onSuccess(p -> {
 			p.addVersion("abcdefg");
 			p.addTag("NewVersion", "abcdefg");
 			p.setPrivate(true);
@@ -97,7 +97,7 @@ public class TaskTest extends MongoTest {
 
 	}
 
-	public Future<Task> buildTestTask(TestContext context)
+	public Future<Task> buildTestTask()
 	{			
 		ElementFactory<Task> taskFactory = new ElementFactory<Task>(Task::new);
 		Promise<Task> taskPromise = Promise.<Task>promise();
@@ -115,12 +115,10 @@ public class TaskTest extends MongoTest {
 			})
 			.onFailure(err -> {
 				taskPromise.fail(err);
-				context.fail(err);
 			});
 		}
 		catch(Exception e)
 		{
-			context.fail(e);
 			taskPromise.fail(e);			
 		}
 		return taskPromise.future();

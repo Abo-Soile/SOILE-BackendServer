@@ -21,7 +21,7 @@ public class ExperimentTest extends MongoTest {
 		System.out.println("----------------------------- Testing Experiment Save and Load -----------------------------");
 		ElementFactory<Experiment> ExperimentFactory = new ElementFactory<Experiment>(Experiment::new);
 		Async testAsync = context.async();
-		buildTestExperiment(context).onSuccess(p -> {
+		buildTestExperiment().onSuccess(p -> {
 			p.addVersion("abcdefg");
 			p.addTag("NewVersion", "abcdefg");
 			p.save(mongo_client)
@@ -54,7 +54,7 @@ public class ExperimentTest extends MongoTest {
 		System.out.println("----------------------------- Testing Experiment Update -----------------------------");
 		ElementFactory<Experiment> ExperimentFactory = new ElementFactory<Experiment>(Experiment::new);
 		Async testAsync = context.async();	
-		buildTestExperiment(context).onSuccess(exp -> {
+		buildTestExperiment().onSuccess(exp -> {
 			exp.addVersion("abcdefg");
 			exp.addTag("NewVersion", "abcdefg");
 			exp.setPrivate(true);
@@ -114,8 +114,8 @@ public class ExperimentTest extends MongoTest {
 	{
 		System.out.println("----------------------------- Testing Experiment Name Exception -----------------------------");
 		Async testAsync = context.async();	
-		buildTestExperiment(context).onSuccess(exp -> {
-			buildTestExperiment(context)
+		buildTestExperiment().onSuccess(exp -> {
+			buildTestExperiment()
 			.onFailure(err -> {
 				context.assertEquals(err.getClass(), ElementNameExistException.class);
 				testAsync.complete();
@@ -133,7 +133,7 @@ public class ExperimentTest extends MongoTest {
 
 	}
 
-	public Future<Experiment> buildTestExperiment(TestContext context)
+	public Future<Experiment> buildTestExperiment()
 	{			
 		ElementFactory<Experiment> ExperimentFactory = new ElementFactory<Experiment>(Experiment::new);
 		Promise<Experiment> ExperimentPromise = Promise.<Experiment>promise();
@@ -150,12 +150,10 @@ public class ExperimentTest extends MongoTest {
 			})
 			.onFailure(err -> {
 				ExperimentPromise.fail(err);
-				context.fail(err);
 			});
 		}
 		catch(Exception e)
 		{
-			context.fail(e);
 			ExperimentPromise.fail(e);			
 		}
 		return ExperimentPromise.future();
