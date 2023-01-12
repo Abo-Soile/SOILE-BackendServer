@@ -20,8 +20,8 @@ public class TestFilter extends ProjectBaseTest{
 
 	@Test
 	public void testFilterCheck(TestContext context) {
+		System.out.println("--------------------  Testing Filter ----------------------");
 		JsonObject filterData;
-		JsonObject projectData;
 		try
 		{			
 			filterData = new JsonObject(Files.readString(Paths.get(getClass().getClassLoader().getResource("FilterData.json").getPath())));

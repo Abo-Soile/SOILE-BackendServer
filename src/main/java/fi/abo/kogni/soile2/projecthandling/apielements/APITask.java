@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
+import fi.abo.kogni.soile2.projecthandling.exceptions.NoCodeTypeChangeException;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -13,7 +14,7 @@ import io.vertx.core.json.JsonObject;
 public class APITask extends APIElementBase<Task> {
 
 	private String[] gitFields = new String[] {"name", "codeType", "resources"};
-	private Object[] gitDefaults = new Object[] {"", "javascript", new JsonArray()};
+	private Object[] gitDefaults = new Object[] {"", "", new JsonArray()};
 	
 	public APITask() {
 		super(new JsonObject());
@@ -55,8 +56,13 @@ public class APITask extends APIElementBase<Task> {
 		data.put("code", code);
 	}
 	@Override
-	public void setElementProperties(Task task)
+	public void setElementProperties(Task task) throws NoCodeTypeChangeException
 	{
+		if(!task.getCodetype().equals(getCodetype()) && !task.getCodetype().equals(""))
+		{
+			// the code type is set, and differs from what is supposed to be set now. 
+			throw new NoCodeTypeChangeException();
+		}
 		task.setCodetype(getCodetype());
 		// TODO: maybe this should be converted so that it in the end puts in IDs.
 		task.setResources(getResources());

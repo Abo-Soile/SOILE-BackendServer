@@ -100,14 +100,13 @@ public abstract class SoileBaseTest {
 	 * @param context the test context
 	 */
 	@After
-	public void stopVertx(TestContext context) {
+	public void finishUp(TestContext context) {
 		System.out.println("Shutting down Vertx");
 		Async vertxClosed = context.async();
 		vertx.close().onComplete(res ->
 		{
 			System.out.println("Close completed.");
 			vertxClosed.complete();
-			context.asyncAssertSuccess(); 
 		});		
 	}
 

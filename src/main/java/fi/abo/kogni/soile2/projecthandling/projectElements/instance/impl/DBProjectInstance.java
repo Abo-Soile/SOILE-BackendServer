@@ -3,8 +3,6 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
 
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -203,7 +201,7 @@ public class DBProjectInstance extends ProjectInstance{
 			// TODO: Check, whether there are more efficient ways to do this...
 			JsonArray newTokens = new JsonArray();
 			Set<Object> currentTokens = new HashSet<Object>();
-			for(Object o : res.getJsonArray("accessTokens"))
+			for(Object o : res.getJsonArray("accessTokens", new JsonArray()))
 			{
 				currentTokens.add(o);
 			}
@@ -212,14 +210,16 @@ public class DBProjectInstance extends ProjectInstance{
 			{
 				VertxContextPRNG rng = VertxContextPRNG.current();
 				int currentSize = currentTokens.size();
-				String nextToken = rng.nextString(30);
+				String nextToken = rng.nextString(30).substring(0, 30);
+				LOGGER.debug("Token " + nextToken +" has a length of: " + nextToken.length());
 				currentTokens.add(nextToken);
 				if(currentTokens.size() > currentSize)
 				{
 					newTokens.add(nextToken);
 				}					
-			}
-			client.updateCollection(getTargetCollection(), query, new JsonObject().put("$push", new JsonObject().put("accessTokens",newTokens)))
+			}			
+			LOGGER.debug("New tokens are:\n" + newTokens.encodePrettily());
+			client.updateCollection(getTargetCollection(), query, new JsonObject().put("$push", new JsonObject().put("accessTokens",new JsonObject().put("$each", newTokens))))
 			.onSuccess( updated -> {
 
 				tokenPromise.complete(newTokens);
@@ -235,18 +235,21 @@ public class DBProjectInstance extends ProjectInstance{
 	public Future<String> createPermanentAccessToken() {
 		JsonObject query = new JsonObject().put("_id", instanceID);
 		VertxContextPRNG rng = VertxContextPRNG.current();		
-		String Token = rng.nextString(35);
+		String Token = rng.nextString(40).substring(0, 40);
 		return client.updateCollection(getTargetCollection(), query, new JsonObject().put("$set", new JsonObject().put("permanentAccessToken",Token))).map(Token);				
 	}
 
 	@Override
 	public Future<Void> useToken(String token) {
+		LOGGER.debug("Trying to validate token: " + token);
 		Promise<Void> tokenUsedPromise = Promise.promise();
 		JsonObject query = new JsonObject().put("_id", instanceID);
 		if(token.length() == 30)
 		{
+			LOGGER.debug("Testing single use Access Token");
 			client.updateCollection(getTargetCollection(), query, new JsonObject().put("$pull", new JsonObject().put("accessTokens",token)))
 			.onSuccess( updated -> {
+				LOGGER.debug(updated.toJson().encodePrettily());
 				if(updated.getDocModified() == 0)
 				{
 					tokenUsedPromise.fail(new HttpException(403, "Invalid Token, or token already used"));
@@ -260,6 +263,7 @@ public class DBProjectInstance extends ProjectInstance{
 		}
 		else
 		{
+			LOGGER.debug("Testing permanent Access Token");
 			client.findOne(getTargetCollection(), query.put("permanentAccessToken",token), null)
 			.onSuccess( res -> {
 				if(res == null)

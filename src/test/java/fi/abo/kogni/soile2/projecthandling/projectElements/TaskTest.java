@@ -17,6 +17,7 @@ public class TaskTest extends MongoTest {
 	@Test
 	public void testTaskSaveLoad(TestContext context)
 	{
+	System.out.println("--------------------  Testing Task Save/Load ----------------------");
 		ElementFactory<Task> TaskFactory = new ElementFactory<Task>(Task::new);
 		Async testAsync = context.async();
 		buildTestTask(context).onSuccess(p -> {
@@ -51,6 +52,7 @@ public class TaskTest extends MongoTest {
 	@Test
 	public void testTaskUpdate(TestContext context)
 	{
+	System.out.println("--------------------  Testing Task Update ----------------------");
 		ElementFactory<Task> TaskFactory = new ElementFactory<Task>(Task::new);
 		Async testAsync = context.async();	
 		buildTestTask(context).onSuccess(p -> {

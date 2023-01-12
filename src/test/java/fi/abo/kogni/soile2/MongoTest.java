@@ -2,6 +2,8 @@ package fi.abo.kogni.soile2;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -17,6 +19,8 @@ import de.flapdoodle.embed.process.runtime.Network;
 import de.flapdoodle.reverse.TransitionWalker.ReachedState;
 import de.flapdoodle.reverse.transitions.Start;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -58,30 +62,53 @@ public abstract class MongoTest extends SoileBaseTest {
 	}
 	
 	@After
-	public void cleanCollections(TestContext context)
+	@Override
+	public void finishUp(TestContext context)
 	{		
 		final Async oasync = context.async();
 		System.out.println("Cleaning up Collections");
 		mongo_client.getCollections(cols ->{
 			if(cols.succeeded())
 			{
-				HashMap<String, Async> asyncMap = new HashMap<>(); 
+				Async shutDownVertxAsync = context.async();				
+				HashMap<String, Async> asyncMap = new HashMap<>();
+				List<Future> collectionsDropped = new LinkedList<Future>();
 				for(String col : cols.result())
 				{
+					System.out.println("Creating Async for col: " + col);
 					final Async async = context.async();
 					
 					asyncMap.put(col, async);					
 				}			
 				for(String col : cols.result())
 				{
-					mongo_client.dropCollection(col).onComplete(res ->				
+					collectionsDropped.add(mongo_client.dropCollection(col).onComplete(res ->				
 					{
-						asyncMap.get(col).complete();
-					});
+						System.out.println("Finished Async for col: " + col);
+						asyncMap.get(col).complete();						
+					}));					
+				}
+				if(collectionsDropped.size() == 0)
+				{
+					// either there was nothing to drop, then we can shut down the vertx instance
+					System.out.println("No collections found. Proceeding");
+					super.finishUp(context);
+					shutDownVertxAsync.complete();
+				}
+				else
+				{
+					CompositeFuture.all(collectionsDropped)
+					.onSuccess(dropped -> {
+						// or there were collections to be dropped, then we have to wait till those are dropped before shutting down vertx. 
+						super.finishUp(context);
+						shutDownVertxAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));
 				}
 			}
 			else
 			{
+				System.out.println("Trouble cleaning up collections");
 				cols.cause().printStackTrace(System.out);
 			}
 			oasync.complete();

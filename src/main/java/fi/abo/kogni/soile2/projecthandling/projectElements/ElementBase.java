@@ -348,7 +348,16 @@ public abstract class ElementBase implements Element {
 		if(getUUID() != null)
 		{
 			// So, we have a UUID in this element, which means it is not freshly created.
-			JsonObject updates = getUpdates();
+			JsonObject defaultSetUpdates = new JsonObject().put("name", getName()).put("private", getPrivate()).put("visible", getVisible());			
+			JsonObject updates = getUpdates();			
+			if(!updates.containsKey("$set"))
+			{
+				updates.put("$set", defaultSetUpdates);
+			}
+			else
+			{
+				updates.getJsonObject("$set").mergeIn(defaultSetUpdates);
+			}
 			// now, check that the name we have here does not collide with a name in the db.
 			JsonObject differingIDQuery = new JsonObject()
 					.put("_id", new JsonObject()

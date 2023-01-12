@@ -7,7 +7,6 @@ import org.junit.Test;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
-import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
@@ -28,6 +27,7 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 	@Test
 	public void taskdeleteParticipantTest(TestContext context)
 	{		
+		System.out.println("--------------------  Testing Participant Deletion via verticle ----------------------");
 		Async testAsync = context.async();
 		JsonObject smokerOutput = new JsonObject()
 				.put("name", "smoker")

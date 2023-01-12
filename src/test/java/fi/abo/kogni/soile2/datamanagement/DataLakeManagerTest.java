@@ -57,8 +57,7 @@ public class DataLakeManagerTest extends SoileBaseTest{
 	
 	@Test
 	public void storeFiles(TestContext context)
-	{
-		
+	{		
 		Async testAsync = context.async();
 
 

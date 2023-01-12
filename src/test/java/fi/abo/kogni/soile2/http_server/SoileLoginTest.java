@@ -20,6 +20,8 @@ public class SoileLoginTest extends SoileVerticleTest {
 	 */
 	@Test
 	public void testValidAuthentication(TestContext context) {
+		System.out.println("--------------------  Testing Valid Auth ----------------------");		 
+
 		Async async = context.async();
 		try {
 			JsonObject userObject = new JsonObject()
@@ -81,6 +83,8 @@ public class SoileLoginTest extends SoileVerticleTest {
 	 */
 	@Test
 	public void testInValidAuthentication(TestContext context) {
+		System.out.println("--------------------  Testing Invalid Auth ----------------------");		 
+
 		Async async = context.async();
 		try {
 			JsonObject userObject = new JsonObject()

@@ -103,9 +103,15 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 		return new JsonObject().put("projectID", projectID)
 							   .put("version", projectVersion)
 							   .put("participants", new JsonArray())
-							   .put("private", false);
+							   .put("private", false)
+							   .put("accessTokens",new JsonArray());
 	}
 	
+	/**
+	 * Save the given Project instance.
+	 * @param proj
+	 * @return
+	 */
 	public Future<JsonObject> save(ProjectInstance proj)
 	{
 		return proj.save();

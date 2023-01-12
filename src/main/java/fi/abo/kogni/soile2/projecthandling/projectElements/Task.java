@@ -28,7 +28,7 @@ public class Task extends ElementBase {
 
 	@JsonProperty("codeType")
 	public String getCodetype() {
-		return data.getString("codeType");
+		return data.getString("codeType","");
 	}
 	public void setCodetype(String codeType) {
 		data.put("codeType", codeType);
@@ -54,7 +54,7 @@ public class Task extends ElementBase {
 	{		
 		super.loadfromJson(json);
 		setResources(json.getJsonArray("resources",new JsonArray()));
-		setCodetype(json.getString("codeType", "javascript"));
+		setCodetype(json.getString("codeType", ""));
 	}
 	@Override
 	public JsonObject toJson(boolean provideUUID)
@@ -67,8 +67,7 @@ public class Task extends ElementBase {
 			JsonObject updateVersions = new JsonObject().put("versions", new JsonObject().put("$each", getVersions()));
 			JsonObject updateTags = new JsonObject().put("tags", new JsonObject().put("$each", getTags()));
 			JsonObject updateResources = new JsonObject().put("resources", new JsonObject().put("$each", getResources()));
-			JsonObject updates = new JsonObject().put("$addToSet", new JsonObject().mergeIn(updateVersions).mergeIn(updateResources).mergeIn(updateTags))
-												 .put("$set", new JsonObject().put("private", getPrivate()).put("name", getName()));
+			JsonObject updates = new JsonObject().put("$addToSet", new JsonObject().mergeIn(updateVersions).mergeIn(updateResources).mergeIn(updateTags));
 			return updates;
 	}
 

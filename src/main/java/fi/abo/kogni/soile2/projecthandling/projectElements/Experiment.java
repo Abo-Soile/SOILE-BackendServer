@@ -57,8 +57,7 @@ public class Experiment extends ElementBase {
 			JsonObject updateVersions = new JsonObject().put("versions", new JsonObject().put("$each", getVersions()));
 			JsonObject updateTags = new JsonObject().put("tags", new JsonObject().put("$each", getTags()));
 			JsonObject updateElements = new JsonObject().put("elements", new JsonObject().put("$each", getElements()));
-			JsonObject updates = new JsonObject().put("$addToSet", new JsonObject().mergeIn(updateVersions).mergeIn(updateElements).mergeIn(updateTags))
-												 .put("$set", new JsonObject().put("private", getPrivate()).put("name", getName()));
+			JsonObject updates = new JsonObject().put("$addToSet", new JsonObject().mergeIn(updateVersions).mergeIn(updateElements).mergeIn(updateTags));
 			return updates;
 	}
 

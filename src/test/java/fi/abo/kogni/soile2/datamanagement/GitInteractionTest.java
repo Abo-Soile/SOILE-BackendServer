@@ -46,6 +46,8 @@ public class GitInteractionTest extends SoileBaseTest{
 	@Test
 	public void testGitRepoExists(TestContext context)
 	{
+		System.out.println("-------------------- Testing Repo exists ----------------------");		 
+
 		String targetElement = "TestElement";
 		GitResourceManager rm = new GitResourceManager(vertx.eventBus());
 		Async notExistAsync = context.async();
@@ -70,6 +72,8 @@ public class GitInteractionTest extends SoileBaseTest{
 	@Test
 	public void testGitResourceItemManagement(TestContext context) 
 	{
+		System.out.println("--------------------  Testing Git Resource Management ----------------------");		 
+
 		// set up the git Repository and the DataLake folder we will use for the test
 		Async initAsync = context.async();
 		String targetElement = "TestElement";
@@ -153,6 +157,8 @@ public class GitInteractionTest extends SoileBaseTest{
 	@Test
 	public void testGitObjectItemManagement(TestContext context) 
 	{
+		System.out.println("--------------------  Testing Git Object Managment ----------------------");		 
+
 		// set up the git Repository and the DataLake folder we will use for the test
 		Async initAsync = context.async();
 		String targetElement = "TestElement";		

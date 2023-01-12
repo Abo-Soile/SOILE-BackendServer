@@ -17,7 +17,8 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 public class TestProjectProgression extends ProjectBaseTest{
 
 	@Test
-	public void testProgression(TestContext context) {		
+	public void testProgression(TestContext context) {
+		System.out.println("--------------------  Testing Project Progression ----------------------");
 		try {
 			Async projAsync = context.async();
 			ProjectFactoryImplForTesting.loadProject(getPos(0))

@@ -322,6 +322,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 	@Test
 	public void testAddAndRemoveSession(TestContext context)
 	{		
+		System.out.println("--------------------  Testing Adding and Removal of sessions ----------------------");
 		//create a few users
 		Async testAsync = context.async();
 		createUser(vertx, "NewUser", "testPassword", "Fullname", "New@mail.fi", Roles.Participant )
@@ -366,6 +367,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 	@Test
 	public void testcheckUserSessionValid(TestContext context)
 	{		
+		System.out.println("--------------------  Testing Check for session validity ----------------------");
 		Async testAsync = context.async();
 		//create a few users
 		JsonObject userSession = new JsonObject().put("sessionID", "NewSession").put("username", "NewUser");
@@ -410,6 +412,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 	@Test
 	public void testParticipantCommands(TestContext context)
 	{		
+		System.out.println("--------------------  Testing Participant Commands ----------------------");
 		Async testAsync = context.async();
 		//create a few users
 		JsonObject addToProject = new JsonObject().put("projectInstanceID", "projectID").put("participantID", "NewID").put("username", "NewUser");
@@ -479,6 +482,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 	@Test
 	public void testUserInfo(TestContext context)
 	{		
+		System.out.println("--------------------  Testing User Information get/set ----------------------");
 		Async testAsync = context.async();
 		//create a few users
 		createUser(vertx, "NewUser", "testPassword", "Fullname", "New@mail.fi", Roles.Researcher )
@@ -530,6 +534,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 	@Test
 	public void testlistUsers(TestContext context)
 	{		
+		System.out.println("--------------------  Testing User listing ----------------------");
 		Async testAsync = context.async();
 		//create a few users
 		createUser(vertx, "NewUser", "testPassword", "Fullname", "New@mail.fi", Roles.Researcher )
@@ -569,6 +574,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 	@Test
 	public void testgetAccessRequest(TestContext context)
 	{		
+		System.out.println("--------------------  Testing User access listing ----------------------");
 		Async testAsync = context.async();
 		JsonObject taskPermission = new JsonObject().put("type", "READ")
 				 .put("target", "task");
@@ -616,7 +622,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				JsonObject permissions = accessData.getJsonObject("permissions");
 				JsonArray taskPermissions = permissions.getJsonArray("tasks");
 				JsonArray expPermissions = permissions.getJsonArray("experiments");
-				JsonArray projPermissions = permissions.getJsonArray("projects");
 				JsonArray instPermissions = permissions.getJsonArray("instances");
 				context.assertEquals(2,instPermissions.size());
 				context.assertEquals(1,taskPermissions.size());
@@ -631,10 +636,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		})
 		.onFailure(err -> context.fail(err));
 	}
-	/*			
-	consumers.add(vertx.eventBus().consumer(getEventbusCommandString("listUsers"), this::listUsers));
-	consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getAccessRequest"), this::getUserAccessInfo));
-	*/
 	
 	JsonObject createPermissionElement(String permission, PermissionType type)
 	{

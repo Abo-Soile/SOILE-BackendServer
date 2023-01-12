@@ -33,6 +33,7 @@ public class ObjectGeneratorTest extends GitTest {
 	@Test
 	public void testBuildExperiment(TestContext context)
 	{		
+		System.out.println("--------------------  Testing Experiment generation ----------------------");
 		Async expAsync = context.async();
 		JsonArray permissionsForAccess = new JsonArray();
 		ObjectGenerator.buildAPIExperiment(expManager, taskManager,mongo_client, "TestExperiment1")
@@ -102,6 +103,7 @@ public class ObjectGeneratorTest extends GitTest {
 	@Test
 	public void testBuildProject(TestContext context)
 	{		
+		System.out.println("--------------------  Testing Project Generation ----------------------");
 		Async projAsync = context.async();
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager,mongo_client, "Testproject")
 		.onSuccess(apiproj -> {

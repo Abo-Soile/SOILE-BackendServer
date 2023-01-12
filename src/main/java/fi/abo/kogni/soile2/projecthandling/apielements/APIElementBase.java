@@ -3,6 +3,7 @@ package fi.abo.kogni.soile2.projecthandling.apielements;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
+import fi.abo.kogni.soile2.projecthandling.exceptions.NoNameChangeException;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import io.vertx.core.Future;
@@ -147,8 +148,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 		{
 			target.addTag(getTag(), getVersion());
 		}
-		target.addVersion(getVersion());
-		target.setName(getName());
+		target.addVersion(getVersion());		
 		target.setUUID(getUUID());
 		target.setPrivate(getPrivate());
 	}
@@ -190,7 +190,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	 * Set the element Properties for a DB element of the type specified for this APIElement.
 	 * @param target
 	 */
-	public abstract void setElementProperties(T target);
+	public abstract void setElementProperties(T target) throws Exception;
 	
 	/**
 	 * Load properties which are specific to this element.
@@ -207,7 +207,15 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 		.onSuccess(element -> 
 		{			
 			setDefaultProperties(element);
-			setElementProperties(element);
+			try {
+				setElementProperties(element);
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace(System.out);
+				elementPromise.fail(e);
+				return;
+			}						
 			elementPromise.complete(element);		
 		})
 			.onFailure(fail -> elementPromise.fail(fail));

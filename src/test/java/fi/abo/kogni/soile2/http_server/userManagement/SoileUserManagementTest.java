@@ -69,6 +69,8 @@ public class SoileUserManagementTest extends SoileVerticleTest{
 
 	@Test
 	public void testRemoveUser(TestContext context) {
+		System.out.println("--------------------  Testing User removal ----------------------");		 
+
 		Async async = context.async();
 		try {
 			JsonObject userObject = new JsonObject()

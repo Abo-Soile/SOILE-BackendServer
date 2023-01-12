@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
@@ -93,18 +94,25 @@ public class DataBundleTest extends ElementTester {
 														.onSuccess(v2 -> {
 															// so, now we have two participants each with Result Data.
 															Async participantBundleAsync = context.async();
-															dbg.buildParticipantsBundle(new JsonArray().add(participant.getID()).add(participant2.getID()), projInstance.getID())
-															.onSuccess(dlID -> {																
+															eb.request("fi.abo.soile.DLCreate", new JsonObject().put("requestType", "participants")
+																												.put("participants",new JsonArray().add(participant.getID()).add(participant2.getID()))
+																												.put("projectID", projInstance.getID()))
+															.onSuccess(reply -> {
+																String dlID = (String)reply.body();
 																awaitReady(dbg, dlID, Promise.<Void>promise())
 																.onSuccess(dlReady -> {																	
 																	Async statusAsync = context.async();
-																	dbg.getDownloadStatus(dlID).onSuccess( status -> {
+																	eb.request("fi.abo.soile.DLStatus", new JsonObject().put("downloadID", dlID))																			
+																	.onSuccess( response -> {
+																		JsonObject status = (JsonObject) response.body();
 																		context.assertEquals(status.getString("status"), DownloadStatus.downloadReady.toString());
 																		statusAsync.complete();
 																	})
 																	.onFailure(err -> context.fail(err));
 																	Async fileListAsync = context.async();
-																	dbg.getDownloadFilesFromDB(dlID).onSuccess( files -> {																		
+																	eb.request("fi.abo.soile.DLFiles", new JsonObject().put("downloadID", dlID))
+																	.onSuccess( response -> {
+																		JsonArray files = ((JsonObject) response.body()).getJsonArray("files"); 
 																		context.assertEquals(3, files.size());
 																		int found = 0;
 																		for(int i = 0; i < files.size(); ++i)
@@ -419,7 +427,7 @@ public class DataBundleTest extends ElementTester {
 				{
 					try {
 						// we need to wait a tiny bit... 
-						Thread.sleep(100);
+						TimeUnit.MILLISECONDS.sleep(50);
 						awaitReady(dbg, dlID, readyPromise);
 					}
 					catch(InterruptedException e)

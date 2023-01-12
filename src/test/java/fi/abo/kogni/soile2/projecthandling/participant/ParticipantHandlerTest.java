@@ -25,6 +25,7 @@ public class ParticipantHandlerTest extends GitTest{
 
 	@Test
 	public void testGetParticipantStatus(TestContext context) {
+		System.out.println("--------------------  Testing Participant Status retrieval ----------------------");
 		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
@@ -62,6 +63,7 @@ public class ParticipantHandlerTest extends GitTest{
 
 	@Test
 	public void testParticipantStatus(TestContext context) {
+		System.out.println("--------------------  Testing Participnt Status settings ----------------------");
 		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		JsonObject smokerOutput = new JsonObject()
@@ -167,6 +169,7 @@ public class ParticipantHandlerTest extends GitTest{
 
 	@Test
 	public void testCreateAndGet(TestContext context) {
+		System.out.println("--------------------  Testing Participant Creating and retrieval ----------------------");
 		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();

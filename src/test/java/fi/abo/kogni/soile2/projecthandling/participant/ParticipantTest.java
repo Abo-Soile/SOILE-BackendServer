@@ -15,6 +15,7 @@ public class ParticipantTest extends ProjectBaseTest{
 
 	@Test
 	public void testComparison(TestContext context) {
+		System.out.println("--------------------  Testing Participant comparison ----------------------");
 		Async p1Async = context.async();
 		ParticipantImplForTesting.getTestParticipant(context,0,getPos(0)).onSuccess(participant1 -> {
 			Async p2Async = context.async();	
@@ -47,6 +48,7 @@ public class ParticipantTest extends ProjectBaseTest{
 	@Test
 	public void testJSONIO(TestContext context)
 	{
+		System.out.println("--------------------  Testing Participant Json IO ----------------------");
 		Async p1Async = context.async();
 		ParticipantImplForTesting.getTestParticipant(context,0,getPos(0)).onSuccess(participant1 -> {
 			ProjectFactoryImplForTesting fac = new ProjectFactoryImplForTesting();

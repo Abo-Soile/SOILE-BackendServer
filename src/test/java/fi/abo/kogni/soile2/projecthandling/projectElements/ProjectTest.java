@@ -17,6 +17,7 @@ public class ProjectTest extends MongoTest {
 	@Test
 	public void testProjectSaveLoad(TestContext context)
 	{
+		System.out.println("--------------------  Testing PRoject save/load ----------------------");
 		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
 		Async testAsync = context.async();
 		buildTestProject(context).onSuccess(p -> {
@@ -51,6 +52,7 @@ public class ProjectTest extends MongoTest {
 	@Test
 	public void testProjectUpdate(TestContext context)
 	{
+		System.out.println("--------------------  Testing Project Update ----------------------");
 		ElementFactory<Project> projectFactory = new ElementFactory<Project>(Project::new);
 		Async testAsync = context.async();	
 		buildTestProject(context).onSuccess(p -> {

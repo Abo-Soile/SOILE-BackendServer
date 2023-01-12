@@ -28,6 +28,8 @@ public class SoileAuthenticationTest extends MongoTest implements UserManagement
 	
 	@Test	
 	public void testValidAuthentication(TestContext context) {
+		System.out.println("--------------------  Testing Valid Auth ----------------------");		 
+
 		// create a user, that we want to authenticate later on.
 		JsonObject participant1 = new JsonObject().put("username", "participant")
 				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password");
@@ -64,6 +66,8 @@ public class SoileAuthenticationTest extends MongoTest implements UserManagement
 
 	@Test	
 	public void testInValidAuthentication(TestContext context) {
+		System.out.println("--------------------  Testing Invalid Auth ----------------------");		 
+
 		// create a user, that we want to authenticate later on.
 		JsonObject participant1 = new JsonObject().put("username", "participant")
 				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password");

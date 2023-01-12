@@ -6,6 +6,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.function.Supplier;
 
+import javax.naming.directory.InvalidAttributesException;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,6 +19,7 @@ import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
+import fi.abo.kogni.soile2.projecthandling.exceptions.NoNameChangeException;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
@@ -24,10 +27,11 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
 
-
-
 /**
- * The element Manager handles DB elements and their link to the git Repositories. 
+ * The element Manager handles DB elements and their link to the git Repositories.
+ * TODO: We need to allow proper tagging. By default, the list of versions should only return tagged 
+ * versions (i.e. versions with a tag), and only if actual versions are requested those should be returned with a date stamp.
+ * There should be two different updates: Tagged updates and Automatic updates.   
  * @author Thomas Pfau
  *
  * @param <T>
@@ -42,7 +46,7 @@ public class ElementManager<T extends ElementBase> {
 	String typeID;
 	TargetElementType type;
 	public static final Logger log = LogManager.getLogger(ElementManager.class);
-	private static DateFormat dateFormatter = new SimpleDateFormat("MM/dd/yyyy - HH:SS");
+	private static DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, GitManager manager)
 	{
@@ -188,13 +192,19 @@ public class ElementManager<T extends ElementBase> {
 	 */
 	public Future<String> updateElement(APIElement<T> newData)
 	{
-		Promise<String> elementPromise = Promise.<String>promise();
+		Promise<String> elementPromise = Promise.promise();
 		GitFile currentVersion = new GitFile("Object.json", getGitIDForUUID(newData.getUUID()), newData.getVersion());
 		// This will return an updated Element given the newData object, so we don't need to update the internals of the object
 		// but can directly go on to write and save the data. 
 		newData.getDBElement(client, factory).onSuccess(element -> 
 		{
-			// the gitJson can be directly derived from the API element.
+			if(!element.getName().equals(newData.getName()))
+			{
+				System.out.println("Failing updateElement");
+				elementPromise.fail(new NoNameChangeException());
+				return;
+			}
+			// the gitJson can be directly derived from the API element.					
 			gitManager.writeGitFile(currentVersion, newData.getGitJson())
 			.onSuccess(version -> {
 				if(newData.hasAdditionalGitContent())
@@ -255,7 +265,7 @@ public class ElementManager<T extends ElementBase> {
 		Element e = supplier.get();
 		JsonArray result = new JsonArray();		
 		// should possibly be done via findBatch
-		client.findWithOptions(e.getTargetCollection(), new JsonObject(), new FindOptions().setFields(new JsonObject().put("private",1).put("name", 1).put("_id", 1)))
+		client.findWithOptions(e.getTargetCollection(), new JsonObject(), new FindOptions().setFields(new JsonObject().put("private",1).put("visible", 1).put("name", 1).put("_id", 1)))
 		.onSuccess(res -> {
 			for(JsonObject current : res)
 			{
@@ -268,11 +278,17 @@ public class ElementManager<T extends ElementBase> {
 						addElement = false;
 					}
 				}			
+				if(!current.getBoolean("visible",true))
+				{
+					// this was deleted, so no longer retrievable. 
+					addElement = false;
+				}
 				if(addElement)
 				{
 					// rename the _id key to uuid.					
 					current.put("uuid",current.getString("_id")).remove("_id");
 					current.remove("private");
+					current.remove("visible");
 					result.add(current);
 				}
 			}

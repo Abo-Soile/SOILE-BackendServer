@@ -18,6 +18,8 @@ public class CompiledCodeProviderTest extends SoileVerticleTest {
 	@Test
 	public void elangTest(TestContext context)
 	{
+		System.out.println("--------------------  Testing Experiment Language ----------------------");		 
+
 		GitManager gm = new GitManager(vertx.eventBus()); 
 		CompiledCodeProvider elangProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("elangAddress"), vertx.eventBus(), gm);
 		try
@@ -53,6 +55,8 @@ public class CompiledCodeProviderTest extends SoileVerticleTest {
 	@Test
 	public void qmarkupTest(TestContext context)
 	{
+		System.out.println("--------------------  Testing Questionaire Markup ----------------------");		 
+
 		GitManager gm = new GitManager(vertx.eventBus()); 
 		CompiledCodeProvider qmarkupProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("questionnaireAddress"), vertx.eventBus(), gm);
 		try

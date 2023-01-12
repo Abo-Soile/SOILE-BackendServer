@@ -17,6 +17,7 @@ public class CodeRetrieverVerticleTest extends SoileVerticleTest {
 	@Test
 	public void elangTest(TestContext context)
 	{		
+		System.out.println("--------------------  Testing Elang Verticle ----------------------");
 		try
 		{			
 			String originalCode2 = Files.readString(Paths.get(CodeRetrieverVerticleTest.class.getClassLoader().getResource("CodeTestData/FirstTask.elang").getPath()));
@@ -53,6 +54,7 @@ public class CodeRetrieverVerticleTest extends SoileVerticleTest {
 	@Test
 	public void qmarkupTest(TestContext context)
 	{
+		System.out.println("--------------------  Testing Questionair Verticle ----------------------");
 		try 
 		{
 			String originalCode2 = Files.readString(Paths.get(CodeRetrieverVerticleTest.class.getClassLoader().getResource("CodeTestData/pilotform.qmarkup").getPath()));

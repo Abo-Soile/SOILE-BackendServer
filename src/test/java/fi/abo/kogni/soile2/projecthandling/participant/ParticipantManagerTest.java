@@ -20,6 +20,7 @@ public class ParticipantManagerTest extends GitTest{
 
 	@Test
 	public void testGetParticipantResults(TestContext context) {
+		System.out.println("--------------------  Testing Participant Result retrieval ----------------------");
 		ParticipantManager mgr = new ParticipantManager(mongo_client);
 
 		try
@@ -109,6 +110,7 @@ public class ParticipantManagerTest extends GitTest{
 
 	@Test
 	public void testParticipantRetrieval(TestContext context) {
+		System.out.println("--------------------  Testing Participant retrieval ----------------------");
 		ParticipantManager mgr = new ParticipantManager(mongo_client);
 		try
 		{
