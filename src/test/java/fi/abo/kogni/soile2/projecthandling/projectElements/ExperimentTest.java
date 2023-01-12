@@ -18,6 +18,7 @@ public class ExperimentTest extends MongoTest {
 	@Test
 	public void testExperimentSaveLoad(TestContext context)
 	{
+		System.out.println("----------------------------- Testing Experiment Save and Load -----------------------------");
 		ElementFactory<Experiment> ExperimentFactory = new ElementFactory<Experiment>(Experiment::new);
 		Async testAsync = context.async();
 		buildTestExperiment(context).onSuccess(p -> {
@@ -35,17 +36,14 @@ public class ExperimentTest extends MongoTest {
 				})
 				.onFailure(err -> {
 					context.fail(err);
-					testAsync.complete();
 				});
 			})
 			.onFailure(err -> {
 				context.fail(err);
-				testAsync.complete();
 			});
 		})
 		.onFailure(err -> {
 			context.fail(err);
-			testAsync.complete();
 		});
 	}
 
@@ -53,6 +51,7 @@ public class ExperimentTest extends MongoTest {
 	@Test
 	public void testExperimentUpdate(TestContext context)
 	{
+		System.out.println("----------------------------- Testing Experiment Update -----------------------------");
 		ElementFactory<Experiment> ExperimentFactory = new ElementFactory<Experiment>(Experiment::new);
 		Async testAsync = context.async();	
 		buildTestExperiment(context).onSuccess(exp -> {
@@ -113,6 +112,7 @@ public class ExperimentTest extends MongoTest {
 	@Test
 	public void testExperimentNameException(TestContext context)
 	{
+		System.out.println("----------------------------- Testing Experiment Name Exception -----------------------------");
 		Async testAsync = context.async();	
 		buildTestExperiment(context).onSuccess(exp -> {
 			buildTestExperiment(context)
