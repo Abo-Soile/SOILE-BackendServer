@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.MongoTest;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;

@@ -12,7 +12,7 @@ import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.codeProvider.CodeProvider;
 import fi.abo.kogni.soile2.http_server.codeProvider.CompiledCodeProvider;
 import fi.abo.kogni.soile2.http_server.codeProvider.JSCodeProvider;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;

@@ -3,9 +3,9 @@ package fi.abo.kogni.soile2.datamanagement.git;
 import io.vertx.core.Future;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
-public class ObjectManager extends GitDataRetriever<JsonObject> {
+public class GitCodeManager extends GitDataRetriever<String> {
 	
-	public ObjectManager(EventBus bus)
+	public GitCodeManager(EventBus bus)
 	{
 		super(bus,true);		
 	}				
@@ -17,11 +17,11 @@ public class ObjectManager extends GitDataRetriever<JsonObject> {
 	 */	 	
 	public Future<String> writeElement(GitFile target, JsonObject content)	
 	{							
-		return eb.request("soile.git.writeGitFile", target.toJson().put("data", content)).map(reply -> {return (String) reply.body();});		
+		return eb.request("soile.git.writeGitFile", target.toJson().put("data",content)).map(reply -> {return (String) reply.body();});		
 	}
 
 	@Override
-	public JsonObject createElement(Object elementData, GitFile key) {		
-		return (JsonObject) elementData;
+	public String createElement(Object elementData, GitFile key) {		
+		return (String) elementData;
 	}
 }

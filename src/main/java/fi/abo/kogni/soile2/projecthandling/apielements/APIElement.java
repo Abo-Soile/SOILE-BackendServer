@@ -9,6 +9,7 @@ import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import io.vertx.core.Future;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 /**
@@ -126,14 +127,14 @@ public interface APIElement<T extends ElementBase> {
 	 * @param gitManager a git Manager to use
 	 * @return A Future of the updated version
 	 */
-	Future<String> storeAdditionalData(String currentVersion, GitManager gitManager, String targetRepository);
+	Future<String> storeAdditionalData(String currentVersion, EventBus eb, String targetRepository);
 	
 	/**
 	 * Load additional data to from git and add it to this object.
 	 * @param gitManager a git Manager to use
 	 * @return if the loading operation was successfull
 	 */
-	Future<Boolean> loadAdditionalData(GitManager gitManager, String targetRepository);
+	Future<Boolean> loadAdditionalData(EventBus eb, String targetRepository);
 	
 	JsonObject getGitJson();
 	

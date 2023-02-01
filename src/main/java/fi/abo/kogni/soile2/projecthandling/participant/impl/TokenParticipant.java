@@ -9,7 +9,7 @@ public class TokenParticipant extends DBParticipant {
 	
 	public TokenParticipant(JsonObject data, ParticipantManager manager) {
 		super(data,manager);
-		token = data.getString(token);
+		token = data.getString("token");
 	}
 
 	@Override

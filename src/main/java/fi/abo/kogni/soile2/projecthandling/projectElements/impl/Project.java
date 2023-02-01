@@ -1,29 +1,37 @@
-package fi.abo.kogni.soile2.projecthandling.projectElements;
+package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
+import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-public class Experiment extends ElementBase {
-
+/**
+ * This class represents a Project as stored in the mongoDB Project Database.
+ * It essentially represents the Json object represented in the Database.
+ * @author Thomas Pfau
+ *
+ */
+public class Project extends ElementBase{
+	private static SimpleDateFormat parser=new SimpleDateFormat("DD-MM-yyyy HH:mm:ss z");
+	static final Logger LOGGER = LogManager.getLogger(Project.class);
 	private List<String> elements;
-
-	public Experiment()
+	public Project()
 	{
-		this(new JsonObject());
+		super(new JsonObject(), SoileConfigLoader.getdbProperty("projectCollection"));
+		elements = new LinkedList<String>();
+	}
+			
 		
-	}
-	
-	public Experiment(JsonObject data) {
-		super(data, SoileConfigLoader.getdbProperty("experimentCollection"));
-	}
-
 	@JsonProperty("elements")
 	public JsonArray getElements() {
 		return new JsonArray(elements);
@@ -38,18 +46,20 @@ public class Experiment extends ElementBase {
 		this.elements = newElements;
 	}
 	
+	/**
+	 * Add an element to the list of elements used by this Project
+	 * @param elementID
+	 */
 	public void addElement(String elementID)
 	{
 		elements.add(elementID);
 	}
 	
-	
 	@Override
-	public void loadfromJson(JsonObject o)
+	public JsonObject toJson(boolean provideUUID)
 	{
-		super.loadfromJson(o);
-		setElements(o.getJsonArray("elements",new JsonArray()));
-	}
+		return super.toJson(provideUUID).put("elements", getElements());
+	}	
 	
 	@Override
 	public JsonObject getUpdates()
@@ -60,14 +70,14 @@ public class Experiment extends ElementBase {
 			JsonObject updates = new JsonObject().put("$addToSet", new JsonObject().mergeIn(updateVersions).mergeIn(updateElements).mergeIn(updateTags));
 			return updates;
 	}
-
+	
 	@Override
 	public String getTypeID() {
-		return "E";
+		return "P";
 	}
 	
 	@Override
 	public TargetElementType getElementType() {
-		return TargetElementType.EXPERIMENT;
+		return TargetElementType.PROJECT;
 	}
 }

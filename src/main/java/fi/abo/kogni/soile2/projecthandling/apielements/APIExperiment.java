@@ -2,7 +2,7 @@ package fi.abo.kogni.soile2.projecthandling.apielements;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 

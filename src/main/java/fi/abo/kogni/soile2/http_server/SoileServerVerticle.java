@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
+import fi.abo.kogni.soile2.http_server.verticles.GitManagerVerticle;
 import fi.abo.kogni.soile2.http_server.verticles.SoileUserManagementVerticle;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
@@ -90,6 +91,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new SoileUserManagementVerticle(), opts)));
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(soileRouter, opts)));
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), SoileConfigLoader.getServerProperty("soileGitFolder")), opts )));
+		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new GitManagerVerticle(), opts )));
 		return CompositeFuture.all(deploymentFutures).mapEmpty();
 	}
 	

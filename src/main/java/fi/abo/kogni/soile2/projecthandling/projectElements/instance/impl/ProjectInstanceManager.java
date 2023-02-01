@@ -9,7 +9,7 @@ import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.datamanagement.utils.DataRetriever;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedData;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstanceFactory;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -42,8 +42,8 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 	public ProjectInstanceManager(MongoClient client, EventBus eb)
 	{						
 		this(client,
-				new ElementToDBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client, eb),								
-				new DBProjectInstanceFactory(ElementManager.getProjectManager(client, new GitManager(eb)),client, eb)				 
+				new ElementToDBProjectInstanceFactory(ElementManager.getProjectManager(client, eb),client, eb),								
+				new DBProjectInstanceFactory(ElementManager.getProjectManager(client, eb),client, eb)				 
 				);				
 	}		
 		

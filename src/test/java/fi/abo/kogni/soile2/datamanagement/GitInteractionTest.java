@@ -12,9 +12,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
+import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.SoileBaseTest;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.ObjectManager;
+import fi.abo.kogni.soile2.projecthandling.utils.SimpleFileUpload;
 import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
@@ -26,23 +28,8 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.ext.web.FileUpload;
 
 @RunWith(VertxUnitRunner.class)
-public class GitInteractionTest extends SoileBaseTest{
+public class GitInteractionTest extends GitTest{
 
-	File tmpFolder;
-	
-	@Override
-	public void runBeforeTests(TestContext context)
-	{
-		try {
-			tmpFolder = Files.createTempDirectory("SoileTMP").toFile();	
-		}
-		catch(IOException e)
-		{
-			context.fail(e);
-			return;
-		}
-		vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), tmpFolder.getAbsolutePath()), context.asyncAssertSuccess());
-	}
 	@Test
 	public void testGitRepoExists(TestContext context)
 	{
@@ -215,31 +202,6 @@ public class GitInteractionTest extends SoileBaseTest{
 	}
 	
 	
-	@After
-	public void clearGitRepo()
-	{
-		try
-		{
-			FileUtils.deleteDirectory(tmpFolder);
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace(System.out);
-		}
-	}
-	@After
-	public void cleargitLake()
-	{
-		try
-		{
-			FileUtils.deleteDirectory(new File(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder")));
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace(System.out);
-		}
-	}
-	
 	public Future<String> initGitRepo(String gitRepoName, TestContext context)
 	{		
 		Promise<String> versionPromise = Promise.<String>promise();		
@@ -257,57 +219,4 @@ public class GitInteractionTest extends SoileBaseTest{
 		return versionPromise.future();
 	}
 	
-	
-	private class SimpleFileUpload implements FileUpload	
-	{
-		
-		private String uploadFileName;
-		private String originalFileName;
-		public SimpleFileUpload(String uploadedFileName, String originalFileName)
-		{	
-			this.uploadFileName = uploadedFileName;
-			this.originalFileName = originalFileName;
-			
-		}
-		@Override
-		public String name() {
-			return null;
-		}
-
-		@Override
-		public String uploadedFileName() {			
-			return uploadFileName;
-		}
-
-		@Override
-		public String fileName() {
-			return originalFileName;
-		}
-
-		@Override
-		public long size() {
-			return 0;
-		}
-
-		@Override
-		public String contentType() {
-			return null;
-		}
-
-		@Override
-		public String contentTransferEncoding() {
-			return null;
-		}
-
-		@Override
-		public String charSet() {
-			return null;
-		}
-
-		@Override
-		public boolean cancel() {
-			return false;
-		}
-		
-	}
 }

@@ -4,7 +4,6 @@ import java.io.File;
 import java.nio.file.Paths;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
-import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.eventbus.EventBus;
@@ -39,7 +38,7 @@ public class GitResourceManager extends GitDataRetriever<DataLakeFile> {
 		JsonObject fileContents = new JsonObject().put("filename", gitFileName)
 												  .put("targetFile", targetFileName)
 												  .put("format", targetUpload.contentType());		
-		return manager.writeGitResourceFile(target, fileContents);		
+		return eb.request("soile.git.writeGitResourceFile", target.toJson().put("data", fileContents)).map(reply -> {return (String) reply.body();});		
 	}
 	
 	/**
@@ -49,7 +48,7 @@ public class GitResourceManager extends GitDataRetriever<DataLakeFile> {
 	 */
 	public Future<Boolean> existElementRepo(String elementID)
 	{
-		return manager.doesRepoExist(elementID);
+		return eb.request("soile.git.doesRepoExist",elementID).map(reply -> {return (Boolean) reply.body();});
 	}
 
 	@Override

@@ -28,9 +28,9 @@ import fi.abo.kogni.soile2.http_server.verticles.TaskInformationverticle;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
+import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.qmarkup.verticle.QuestionnaireRenderVerticle;
 import fi.abo.kogni.soile2.utils.DebugRouter;
@@ -69,7 +69,6 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private Router soileRouter;
 	private SoileAuthenticationBuilder handler;
 	private SoileAuthorization soileAuthorization;
-	private GitManager gitManager;
 	private GitResourceManager resourceManager;
 	private ParticipantHandler partHandler;
 	private ProjectInstanceHandler projHandler;
@@ -85,7 +84,6 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		consumers = new LinkedList<>();
 		cookieHandler = new SoileCookieCreationHandler(vertx.eventBus());	
 		this.client = MongoClient.createShared(vertx, config().getJsonObject("db"));
-		gitManager = new GitManager(vertx.eventBus());
 		resourceManager = new GitResourceManager(vertx.eventBus());
 		soileAuthorization = new SoileAuthorization(client);
 		projHandler = new ProjectInstanceHandler(client, vertx.eventBus());
@@ -264,7 +262,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	
 	public Future<RouterBuilder> setupTaskAPI(RouterBuilder builder)
 	{
-		taskRouter = new TaskRouter(gitManager, client, resourceManager, vertx.eventBus(), soileAuthorization);
+		taskRouter = new TaskRouter( client, resourceManager, vertx.eventBus(), soileAuthorization);
 		builder.operation("getTaskList").handler(taskRouter::getElementList);
 		builder.operation("getVersionsForTask").handler(taskRouter::getVersionList);
 		builder.operation("createTask").handler(taskRouter::create);
@@ -277,7 +275,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	
 	public Future<RouterBuilder> setupExperimentAPI(RouterBuilder builder)
 	{
-		ElementRouter<Experiment> router = new ElementRouter<Experiment>(new ElementManager<Experiment>(Experiment::new, APIExperiment::new, client, gitManager), soileAuthorization, vertx.eventBus(), client );
+		ElementRouter<Experiment> router = new ElementRouter<Experiment>(new ElementManager<Experiment>(Experiment::new, APIExperiment::new, client, vertx.eventBus()), soileAuthorization, vertx.eventBus(), client );
 		builder.operation("getExperimentList").handler(router::getElementList);
 		builder.operation("getVersionsForExperiment").handler(router::getVersionList);
 		builder.operation("createExperiment").handler(router::create);
@@ -288,7 +286,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	
 	public Future<RouterBuilder> setupProjectAPI(RouterBuilder builder)
 	{
-		ElementRouter<Project> router = new ElementRouter<Project>(new ElementManager<Project>(Project::new, APIProject::new, client, gitManager), soileAuthorization, vertx.eventBus(), client );
+		ElementRouter<Project> router = new ElementRouter<Project>(new ElementManager<Project>(Project::new, APIProject::new, client, vertx.eventBus()), soileAuthorization, vertx.eventBus(), client );
 		builder.operation("getProjectList").handler(router::getElementList);
 		builder.operation("getVersionsForProject").handler(router::getVersionList);
 		builder.operation("createProject").handler(router::create);

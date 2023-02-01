@@ -1,36 +1,30 @@
-package fi.abo.kogni.soile2.projecthandling.projectElements;
+package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
-import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-/**
- * This class represents a Project as stored in the mongoDB Project Database.
- * It essentially represents the Json object represented in the Database.
- * @author Thomas Pfau
- *
- */
-public class Project extends ElementBase{
-	private static SimpleDateFormat parser=new SimpleDateFormat("DD-MM-yyyy HH:mm:ss z");
-	static final Logger LOGGER = LogManager.getLogger(Project.class);
+public class Experiment extends ElementBase {
+
 	private List<String> elements;
-	public Project()
+
+	public Experiment()
 	{
-		super(new JsonObject(), SoileConfigLoader.getdbProperty("projectCollection"));
-		elements = new LinkedList<String>();
-	}
-			
+		this(new JsonObject());
 		
+	}
+	
+	public Experiment(JsonObject data) {
+		super(data, SoileConfigLoader.getdbProperty("experimentCollection"));
+	}
+
 	@JsonProperty("elements")
 	public JsonArray getElements() {
 		return new JsonArray(elements);
@@ -45,20 +39,18 @@ public class Project extends ElementBase{
 		this.elements = newElements;
 	}
 	
-	/**
-	 * Add an element to the list of elements used by this Project
-	 * @param elementID
-	 */
 	public void addElement(String elementID)
 	{
 		elements.add(elementID);
 	}
 	
+	
 	@Override
-	public JsonObject toJson(boolean provideUUID)
+	public void loadfromJson(JsonObject o)
 	{
-		return super.toJson(provideUUID).put("elements", getElements());
-	}	
+		super.loadfromJson(o);
+		setElements(o.getJsonArray("elements",new JsonArray()));
+	}
 	
 	@Override
 	public JsonObject getUpdates()
@@ -69,14 +61,14 @@ public class Project extends ElementBase{
 			JsonObject updates = new JsonObject().put("$addToSet", new JsonObject().mergeIn(updateVersions).mergeIn(updateElements).mergeIn(updateTags));
 			return updates;
 	}
-	
+
 	@Override
 	public String getTypeID() {
-		return "P";
+		return "E";
 	}
 	
 	@Override
 	public TargetElementType getElementType() {
-		return TargetElementType.PROJECT;
+		return TargetElementType.EXPERIMENT;
 	}
 }

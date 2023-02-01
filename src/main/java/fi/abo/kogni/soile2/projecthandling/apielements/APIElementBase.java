@@ -8,6 +8,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 /**
@@ -173,7 +174,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	 * This is essentially a no--op on most objects.
 	 */
 	@Override
-	public Future<String> storeAdditionalData(String currentVersion, GitManager gitManager, String targetRepository)
+	public Future<String> storeAdditionalData(String currentVersion, EventBus eb, String targetRepository)
 	{
 		return Future.succeededFuture(currentVersion);
 	}
@@ -182,7 +183,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	 * This is essentially a no--op on most objects.
 	 */
 	@Override
-	public Future<Boolean> loadAdditionalData(GitManager gitManager, String targetRepository)
+	public Future<Boolean> loadAdditionalData(EventBus eb, String targetRepository)
 	{
 		return Future.succeededFuture(true);
 	}

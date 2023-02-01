@@ -2,6 +2,7 @@ package fi.abo.kogni.soile2.projecthandling.utils;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,13 +12,14 @@ import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
+import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
@@ -32,23 +34,47 @@ public class ObjectGenerator {
 		try
 		{
 			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
-			String TaskCode = Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));		
+			String TaskCode = Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));
+			String TestDataFolder = ObjectGenerator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath();			
 			manager.createOrLoadElement(TaskDef.getString("name"),TaskDef.getString("codeType"))
-			.onSuccess(task -> {				
-				APITask apiTask = new APITask(TaskDef);				
-				apiTask.loadGitJson(TaskDef);
-				apiTask.setCode(TaskCode);
-				apiTask.setVersion(task.getCurrentVersion());
-				apiTask.setUUID(task.getUUID());			
-				task.setPrivate(apiTask.getPrivate());				
-				task.save(client)
-				.onSuccess(res -> {
-					manager.updateElement(apiTask)
-					.onSuccess(newVersion -> {
-						apiTask.setVersion(newVersion);
-						taskPromise.complete(apiTask);							
+			.onSuccess(task -> {
+				JsonArray resources = TaskDef.getJsonArray("resources", new JsonArray());
+				Promise<String> versionPromise = Promise.promise();
+				Future<String> versionFuture = versionPromise.future();
+				List<Future> composite = new LinkedList<>();
+				LinkedList<Future<String>> chain = new LinkedList<>();
+				chain.add(versionFuture);
+				for(int i = 0; i < resources.size(); ++i)
+				{
+					SimpleFileUpload upload = new SimpleFileUpload(Path.of(TestDataFolder, resources.getString(i)).toString(), resources.getString(i));
+					// create all in a compose chain...
+					chain.add(chain.getLast().compose(newVersion ->  
+					manager.handlePostFile(task.getUUID(), newVersion, TaskDef.getString(TestDataFolder), upload)));
+					composite.add(chain.getLast());
+				}
+				versionPromise.complete(task.getCurrentVersion());
+				CompositeFuture.all(composite)
+				.onSuccess(done -> {
+					chain.getLast().onSuccess(latestVersion ->
+					{
+					APITask apiTask = new APITask(TaskDef);				
+					apiTask.loadGitJson(TaskDef);
+					apiTask.setCode(TaskCode);
+					apiTask.setVersion(latestVersion);
+					apiTask.setUUID(task.getUUID());			
+					task.setPrivate(apiTask.getPrivate());				
+					task.save(client)
+					.onSuccess(res -> {
+						manager.updateElement(apiTask)
+						.onSuccess(newVersion -> {
+							apiTask.setVersion(newVersion);
+							taskPromise.complete(apiTask);							
+						})
+						.onFailure(err -> taskPromise.fail(err));
 					})
-					.onFailure(err -> taskPromise.fail(err));						
+					.onFailure(err -> taskPromise.fail(err));
+					})
+					.onFailure(err -> taskPromise.fail(err));
 				})
 				.onFailure(err -> taskPromise.fail(err));
 				
@@ -257,11 +283,11 @@ public class ObjectGenerator {
 		return projectPromise.future();
 	}
 	
-	public static Future<JsonObject> createProject(MongoClient client, GitManager manager, String projectName)
+	public static Future<JsonObject> createProject(MongoClient client, EventBus eb, String projectName)
 	{
-		ElementManager<Project> projectManager = new ElementManager<>(Project::new, APIProject::new, client, manager); 
-		 ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, client, manager);
-		 ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, client, manager);
+		ElementManager<Project> projectManager = new ElementManager<>(Project::new, APIProject::new, client, eb); 
+		 ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, client, eb);
+		 ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, client, eb);
 		 return buildAPIProject(projectManager, expManager, taskManager, client, projectName).map(res -> { return new JsonObject().put("UUID", res.getUUID()).put("version", res.getVersion());});
 	}
 }

@@ -8,8 +8,8 @@ import org.junit.Test;
 import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.projecthandling.ProjectBaseTest;
 import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
+import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import fi.abo.kogni.soile2.projecthandling.utils.ProjectFactoryImplForTesting;
@@ -29,7 +29,7 @@ public class ParticipantHandlerTest extends GitTest{
 		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
-		ObjectGenerator.buildAPIProject(ElementManager.getProjectManager(mongo_client, gitManager), ElementManager.getExperimentManager(mongo_client, gitManager), ElementManager.getTaskManager(mongo_client, gitManager), mongo_client, "Testproject")
+		ObjectGenerator.buildAPIProject(ElementManager.getProjectManager(mongo_client, eb), ElementManager.getExperimentManager(mongo_client, eb), ElementManager.getTaskManager(mongo_client, eb), mongo_client, "Testproject")
 		.onSuccess(apiProject-> {
 			projHandler.createProjectInstance(apiProject.getJson())
 			.onSuccess(projectInstance -> {			
@@ -173,8 +173,8 @@ public class ParticipantHandlerTest extends GitTest{
 		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
-		ElementManager<Project> projectManager = ElementManager.getProjectManager(mongo_client, gitManager);
-		ObjectGenerator.buildAPIProject(projectManager, ElementManager.getExperimentManager(mongo_client, gitManager), ElementManager.getTaskManager(mongo_client, gitManager), mongo_client, "Testproject2")
+		ElementManager<Project> projectManager = ElementManager.getProjectManager(mongo_client, eb);
+		ObjectGenerator.buildAPIProject(projectManager, ElementManager.getExperimentManager(mongo_client, eb), ElementManager.getTaskManager(mongo_client, eb), mongo_client, "Testproject2")
 		.onSuccess(apiProject-> {
 			projHandler.createProjectInstance(apiProject.getJson())
 			.onSuccess(projectInstance -> {				

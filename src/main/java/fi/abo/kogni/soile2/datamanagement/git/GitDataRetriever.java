@@ -10,7 +10,7 @@ import io.vertx.core.json.JsonObject;
 
 public abstract class GitDataRetriever<T> implements DataRetriever<GitFile, T> {
 	
-	protected GitManager manager;	
+	protected EventBus eb;	
 	protected boolean retrieveJson;
 	protected boolean handleResources;
 	public GitDataRetriever(EventBus eb)
@@ -25,7 +25,7 @@ public abstract class GitDataRetriever<T> implements DataRetriever<GitFile, T> {
 	
 	public GitDataRetriever(EventBus eb, boolean retrieveJson, boolean handleResources)
 	{
-		this.manager = new GitManager(eb); 	
+		this.eb = eb; 	
 		this.retrieveJson = retrieveJson;
 		this.handleResources = handleResources; 
 	}
@@ -39,11 +39,11 @@ public abstract class GitDataRetriever<T> implements DataRetriever<GitFile, T> {
 			Future<JsonObject> gitObject;
 			if(handleResources)
 			{
-				gitObject = manager.getGitResourceContentsAsJson(key);
+				gitObject = eb.request("soile.git.getGitResourceContentsAsJson", key.toJson()).map(message -> { return (JsonObject) message.body();});
 			}
 			else
 			{
-				gitObject = manager.getGitFileContentsAsJson(key);
+				gitObject = eb.request("soile.git.getGitFileContentsAsJson", key.toJson()).map(message -> { return (JsonObject) message.body();});
 			}
 			gitObject.onSuccess(contents -> {
 				projectPromise.complete(createElement(contents, key));
@@ -57,11 +57,11 @@ public abstract class GitDataRetriever<T> implements DataRetriever<GitFile, T> {
 			Future<String> gitObject;
 			if(handleResources)
 			{
-				gitObject = manager.getGitResourceContents(key);
+				gitObject = eb.request("soile.git.getGitResourceContents", key.toJson()).map(message -> { return (String) message.body();});
 			}
 			else
 			{
-				gitObject = manager.getGitFileContents(key);
+				gitObject = eb.request("soile.git.getGitFileContents", key.toJson()).map(message -> { return (String) message.body();});
 			}
 			gitObject.onSuccess(contents -> {
 				projectPromise.complete(createElement(contents, key));

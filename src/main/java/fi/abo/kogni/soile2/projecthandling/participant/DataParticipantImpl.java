@@ -100,7 +100,7 @@ public abstract class DataParticipantImpl extends ParticipantImpl implements Dat
 
 	/**
 	 * Get All tasks that have files for this {@link DataParticipantImpl} 
-	 * @param taskID the task to retrieve the file results for
+	 * @param typeID the task to retrieve the file results for
 	 * @return a {@link Set} of {@link TaskFileResult}s representing all results stored for this user.
 	 */
 	@Override

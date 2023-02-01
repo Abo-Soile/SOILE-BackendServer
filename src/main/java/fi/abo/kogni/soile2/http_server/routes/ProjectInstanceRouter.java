@@ -20,9 +20,9 @@ import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
+import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
@@ -212,7 +212,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> 
 		{
 			instanceHandler.loadProject(requestedInstanceID)
@@ -373,7 +373,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
 			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
@@ -425,7 +425,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		
-		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
 			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
@@ -470,7 +470,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		
-		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,true)
+		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,true)
 		.onSuccess(Void -> 
 		{
 			if(context.fileUploads().size() != 1)
@@ -514,7 +514,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		String requestedInstanceID = params.pathParameter("id").getString();
 		String token = params.queryParameter("token").getString();
 		instanceHandler.loadProject(requestedInstanceID)
-		.onSuccess(project -> {				
+		.onSuccess(project -> {					
 			project.useToken(token)
 			.onSuccess( tokenUsed -> {
 				if(context.user() != null)
@@ -536,7 +536,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 				}
 				else
 				{
-					// we don't have a user, so we set up a oken user.
+					// we don't have a user, so we set up a Token user.
 					partHandler.createTokenUser(project)
 					.onSuccess(participant -> {
 						context.response()

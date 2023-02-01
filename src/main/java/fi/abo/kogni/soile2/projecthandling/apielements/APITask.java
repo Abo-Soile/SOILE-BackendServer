@@ -1,20 +1,26 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import fi.abo.kogni.soile2.datamanagement.git.GitElement;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.exceptions.NoCodeTypeChangeException;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class APITask extends APIElementBase<Task> {
 
-	private String[] gitFields = new String[] {"name", "codeType", "resources"};
-	private Object[] gitDefaults = new Object[] {"", "", new JsonArray()};
+	private String[] gitFields = new String[] {"name", "codeType"};
+	private Object[] gitDefaults = new Object[] {"", ""};
 	
 	public APITask() {
 		super(new JsonObject());
@@ -90,25 +96,39 @@ public class APITask extends APIElementBase<Task> {
 		return true;
 	}
 	@Override
-	public Future<String> storeAdditionalData(String currentVersion, GitManager gitManager, String targetRepository)
+	public Future<String> storeAdditionalData(String currentVersion, EventBus eb, String targetRepository)
 	{
 		// We need to store the code. Resources are stored individually.
 		GitFile g = new GitFile("Code.obj", targetRepository, currentVersion);
-		return gitManager.writeGitFile(g, getCode());
+		
+		return eb.request("soile.git.writeGitFile", g.toJson().put("data",getCode())).map(message -> {return (String) message.body();});
 	}
 	@Override
-	public Future<Boolean> loadAdditionalData(GitManager gitManager, String targetRepository)
+	public Future<Boolean> loadAdditionalData(EventBus eb, String targetRepository)
 	{
-		Promise<Boolean> successPromise = Promise.promise();
+		Promise<Boolean> codePromise = Promise.promise();
 		GitFile g = new GitFile("Code.obj", targetRepository, this.getVersion());
-		gitManager.getGitFileContents(g).onSuccess(code -> {
-			setCode(code);
-			successPromise.complete(true);
+		List<Future> loadedList = new LinkedList<>();
+		loadedList.add(codePromise.future());
+		eb.request("soile.git.getGitFileContents", g.toJson()).onSuccess(codeReply -> {
+			setCode((String)codeReply.body());
+			codePromise.complete(true);
 		})
 		.onFailure(err -> {
-			successPromise.fail(err);
+			codePromise.fail(err);
+		});
+		Promise<Boolean> resourcesPromise = Promise.promise();
+		loadedList.add(resourcesPromise.future());
+		GitElement targetRepo = new GitElement(targetRepository, this.getVersion());
+		eb.request("soile.git.getResourceList", targetRepo.toJson()).onSuccess(resources -> {
+			setResources((JsonArray) resources.body());
+			resourcesPromise.complete(true);
+		})
+		.onFailure(err -> {
+			resourcesPromise.fail(err);
 		});
 		
-		return successPromise.future();
+		
+		return CompositeFuture.all(loadedList).map(true);
 	}	
 }

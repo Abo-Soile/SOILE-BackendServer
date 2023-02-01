@@ -25,7 +25,7 @@ public abstract class GitTest extends MongoTest {
 	{		
 		super.runBeforeTests(context);
 		Async gitInit = context.async();
-		VerticleInitialiser.startGitVerticle(vertx, Level.ERROR).onSuccess( dir -> {
+		VerticleInitialiser.startGitVerticles(vertx, Level.ERROR).onSuccess( dir -> {
 			gitDir = dir;
 			gitInit.complete();
 		})

@@ -6,10 +6,11 @@ import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
+import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import io.vertx.core.json.JsonArray;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -24,9 +25,9 @@ public class ObjectGeneratorTest extends GitTest {
 	public void runBeforeTests(TestContext context)
 	{		
 		super.runBeforeTests(context);
-		projManager = new ElementManager<Project>(Project::new, APIProject::new, mongo_client,gitManager);
-		expManager = new ElementManager<Experiment>(Experiment::new, APIExperiment::new, mongo_client,gitManager);
-		taskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client,gitManager);
+		projManager = new ElementManager<Project>(Project::new, APIProject::new, mongo_client,eb);
+		expManager = new ElementManager<Experiment>(Experiment::new, APIExperiment::new, mongo_client,eb);
+		taskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client,eb);
 	}
 	
 	
@@ -134,4 +135,41 @@ public class ObjectGeneratorTest extends GitTest {
 		})
 		.onFailure(err -> context.fail(err));
 	}
+	
+	@Test
+	public void testBuildTask(TestContext context)
+	{		
+		System.out.println("--------------------  Testing Project Generation ----------------------");
+		Async projAsync = context.async();
+		ElementFactory<Task> TaskFactory = new ElementFactory<Task>(Task::new);
+		ObjectGenerator.buildAPITask(taskManager, "Test2", mongo_client)
+		.onSuccess(apiTask -> {
+			Async tlistAsync = context.async();			
+			// check, that the created Elements actually exist.
+			taskManager.getElementList(new JsonArray()).onSuccess(list -> {
+				context.assertEquals(1,list.size()); // one task
+				Async gitAsync = context.async();
+				taskManager.getAPIElementFromDB(apiTask.getUUID(), apiTask.getVersion())
+				.onSuccess(element -> {
+					APITask task = (APITask) element;
+					System.out.println("Task: " + task.getJson().encodePrettily());
+					context.assertEquals(1,task.getResources().size());					
+					gitAsync.complete();
+				}).onFailure(err -> context.fail(err));
+				Async dbAsync = context.async();
+				TaskFactory.loadElement(mongo_client, apiTask.getUUID())
+				.onSuccess(Task -> {
+					System.out.println("DBTask: " + Task.toJson().encodePrettily());
+					context.assertEquals(1, Task.getResources().size());
+					dbAsync.complete();							
+				})
+				.onFailure(err -> context.fail(err));
+				tlistAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));
+			projAsync.complete();
+		})
+		.onFailure(err -> context.fail(err));
+	}
+	
 }

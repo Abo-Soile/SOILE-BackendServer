@@ -254,7 +254,7 @@ public abstract class ParticipantImpl implements Participant{
 
 		/**
 		 * Save after finishing a task.
-		 * @param taskID The just completed task
+		 * @param typeID The just completed task
 		 */
 		@Override
 		public Future<Void> finishCurrentTask()

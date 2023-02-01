@@ -1,13 +1,12 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
-import fi.abo.kogni.soile2.projecthandling.projectElements.TaskDataHandler;
+import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.TaskDataHandler;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
@@ -19,12 +18,11 @@ import io.vertx.ext.web.validation.ValidationHandler;
 
 public class TaskRouter extends ElementRouter<Task> {
 
-	TaskDataHandler dataHandler;
+	//TaskDataHandler dataHandler;
 	
-	public TaskRouter(GitManager gitManager, MongoClient client, GitResourceManager resManager, EventBus eb, SoileAuthorization auth )
+	public TaskRouter(MongoClient client, GitResourceManager resManager, EventBus eb, SoileAuthorization auth )
 	{
-		super(ElementManager.getTaskManager(client,gitManager),auth, eb, client);
-		dataHandler = new TaskDataHandler(resManager);
+		super(ElementManager.getTaskManager(client,eb),auth, eb, client);
 	}		
 	
 	public void postResource(RoutingContext context)
@@ -42,7 +40,7 @@ public class TaskRouter extends ElementRouter<Task> {
 				return;
 			}
 			
-			dataHandler.handlePostFile(elementID,version,filename,context.fileUploads().get(0))
+			elementManager.handlePostFile(elementID,version,filename,context.fileUploads().get(0))
 			.onSuccess(newversion -> {
 				context.response().setStatusCode(200)
 				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
@@ -62,7 +60,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{
-			dataHandler.handleGetFile(elementID, version, filename )
+			elementManager.handleGetFile(elementID, version, filename )
 			.onSuccess( datalakeFile -> {
 				context.response().
 				setStatusCode(200)
@@ -77,6 +75,6 @@ public class TaskRouter extends ElementRouter<Task> {
 	
 	public void cleanup()
 	{
-		dataHandler.cleanUp();
+		elementManager.cleanUp();
 	}
 }

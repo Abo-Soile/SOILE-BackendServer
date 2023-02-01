@@ -36,7 +36,7 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 		JsonObject nonSmokerQuestionaireOutput = new JsonObject().put("outputData", new JsonArray().add(smokerOutput));		
 		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, eb);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
-		ObjectGenerator.createProject(mongo_client, new GitManager(eb), "Testproject")
+		ObjectGenerator.createProject(mongo_client, eb, "Testproject")
 		.onSuccess(projectData -> {
 			projHandler.createProjectInstance(projectData.put("name", "NewProjectInstance").put("private", false))
 			.onSuccess(proj -> {

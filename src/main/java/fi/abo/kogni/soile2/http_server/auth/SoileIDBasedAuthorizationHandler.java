@@ -71,6 +71,7 @@ public class SoileIDBasedAuthorizationHandler{
 			authorizationPromise.complete();
 			return authorizationPromise.future();
 		}
+		// Fetch the project with the id, but only return the private field (everything else is not relevant)
 		client.findOne(targetCollection,new JsonObject().put("_id", id),new JsonObject().put("private", 1))
 		.onSuccess( res -> {
 			if( res == null)

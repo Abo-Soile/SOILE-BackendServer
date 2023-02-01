@@ -160,7 +160,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	/**
 	 * Create a download for the given tasks.  
-	 * @param taskID A {@link JsonArray} of task IDs of for which to retrieve data.
+	 * @param typeID A {@link JsonArray} of task IDs of for which to retrieve data.
 	 * @param projectID The project ID these tasks are in.
 	 * @return
 	 */
@@ -413,7 +413,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	/**
 	 * Extract the datalake files indicated in the FileResults of the resultsData.
-	 * @param taskID the current task that is being handled
+	 * @param typeID the current task that is being handled
 	 * @param participantID the participant ID of the participant currently bing handled
 	 * @param resultData One object of the resultData Json Array according to the Participant specifications
 	 * @param extractedFileNames the List of DataLakeFiles that is required.

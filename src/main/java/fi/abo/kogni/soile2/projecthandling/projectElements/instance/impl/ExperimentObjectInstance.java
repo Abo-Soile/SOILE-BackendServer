@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.DataParticipant;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Experiment;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import io.vertx.core.json.JsonArray;
