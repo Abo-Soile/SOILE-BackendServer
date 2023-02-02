@@ -1,7 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
-import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstanceFactory;

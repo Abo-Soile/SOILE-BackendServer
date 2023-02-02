@@ -10,13 +10,33 @@ import io.vertx.core.Vertx;
 import io.vertx.core.file.CopyOptions;
 import io.vertx.ext.web.FileUpload;
 
-public class DataLakeManager{
+/**
+ * This class represents a DataLakeManager for data in projects. 
+ * The Data is ordered as follows:
+ * Project 
+ * 	- participantID1
+ *  	- <taskID>
+ *   		- <step> (a number)
+ *   			- localFileName
+ *   		- <step> (a number)
+ *   			- localFileName
+ *   	- <taskID>
+ *   		- <step> (a number)
+ *   			- localFileName
+ *   			...
+ *   - participantID2 
+ *   	...
+ * 
+ * @author Thomas Pfau
+ *
+ */
+public class ParticipantDataLakeManager{
 
 	String datalakedirectory;
 	Vertx vertx;
-	static final Logger LOGGER = LogManager.getLogger(DataLakeManager.class);
+	static final Logger LOGGER = LogManager.getLogger(ParticipantDataLakeManager.class);
 
-	public DataLakeManager(String Folder, Vertx vertx) {
+	public ParticipantDataLakeManager(String Folder, Vertx vertx) {
 		datalakedirectory = Folder;
 		this.vertx = vertx; 
 	}
@@ -60,21 +80,12 @@ public class DataLakeManager{
 		
 		return idPromise.future();	
 	}
-	
-	
+
 	/**
-	 * Write an element to into the dataLake. The actual location in the dataLake is defind by the project ID, the task ID and the participant ID.
-	 * Data will be stored in the following scheme (to be able to quickly download all data for a project):  
-	 * projectInstanceID / participantID / step / taskID / filesForTask.format    
-	 * This allows a quick removal of all data for a participant by deleting the respective participantID folder.
-	 * @param p the participant for which to store the data
-	 * @param step the step for the data 
-	 * @param taskId the task for which data is stored.
-	 * @param projectID
-	 * @param upload
+	 * Get a File from a TaskFileResult
+	 * @param result the result for which to obtain the file location in the datalake
 	 * @return
 	 */
-
 	public DataLakeFile getFile(TaskFileResult result)
 	{
 		return result.getFile(datalakedirectory);		

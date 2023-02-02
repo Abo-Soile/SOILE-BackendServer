@@ -8,7 +8,7 @@ import org.junit.Test;
 import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.projecthandling.ProjectBaseTest;
 import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
-import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
@@ -26,10 +26,10 @@ public class ParticipantHandlerTest extends GitTest{
 	@Test
 	public void testGetParticipantStatus(TestContext context) {
 		System.out.println("--------------------  Testing Participant Status retrieval ----------------------");
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
-		ObjectGenerator.buildAPIProject(ElementManager.getProjectManager(mongo_client, eb), ElementManager.getExperimentManager(mongo_client, eb), ElementManager.getTaskManager(mongo_client, eb), mongo_client, "Testproject")
+		ObjectGenerator.buildAPIProject(ElementManager.getProjectManager(mongo_client, vertx), ElementManager.getExperimentManager(mongo_client, vertx), ElementManager.getTaskManager(mongo_client, vertx), mongo_client, "Testproject")
 		.onSuccess(apiProject-> {
 			projHandler.createProjectInstance(apiProject.getJson())
 			.onSuccess(projectInstance -> {			
@@ -64,7 +64,7 @@ public class ParticipantHandlerTest extends GitTest{
 	@Test
 	public void testParticipantStatus(TestContext context) {
 		System.out.println("--------------------  Testing Participnt Status settings ----------------------");
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		JsonObject smokerOutput = new JsonObject()
 				.put("name", "smoker")
@@ -170,11 +170,11 @@ public class ParticipantHandlerTest extends GitTest{
 	@Test
 	public void testCreateAndGet(TestContext context) {
 		System.out.println("--------------------  Testing Participant Creating and retrieval ----------------------");
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
-		ElementManager<Project> projectManager = ElementManager.getProjectManager(mongo_client, eb);
-		ObjectGenerator.buildAPIProject(projectManager, ElementManager.getExperimentManager(mongo_client, eb), ElementManager.getTaskManager(mongo_client, eb), mongo_client, "Testproject2")
+		ElementManager<Project> projectManager = ElementManager.getProjectManager(mongo_client, vertx);
+		ObjectGenerator.buildAPIProject(projectManager, ElementManager.getExperimentManager(mongo_client, vertx), ElementManager.getTaskManager(mongo_client, vertx), mongo_client, "Testproject2")
 		.onSuccess(apiProject-> {
 			projHandler.createProjectInstance(apiProject.getJson())
 			.onSuccess(projectInstance -> {				

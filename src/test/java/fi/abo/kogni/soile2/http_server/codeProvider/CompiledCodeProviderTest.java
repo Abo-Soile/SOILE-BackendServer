@@ -10,6 +10,7 @@ import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
 import fi.abo.kogni.soile2.http_server.codeProvider.CompiledCodeProvider;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 
@@ -21,7 +22,7 @@ public class CompiledCodeProviderTest extends SoileVerticleTest {
 		System.out.println("--------------------  Testing Experiment Language ----------------------");		 
 
 		GitManager gm = new GitManager(vertx.eventBus()); 
-		CompiledCodeProvider elangProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("elangAddress"), vertx.eventBus(), gm);
+		CompiledCodeProvider elangProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("elangAddress"), vertx.eventBus());
 		try
 		{			
 			String originalCode2 = Files.readString(Paths.get(CompiledCodeProviderTest.class.getClassLoader().getResource("CodeTestData/FirstTask.elang").getPath()));
@@ -58,7 +59,7 @@ public class CompiledCodeProviderTest extends SoileVerticleTest {
 		System.out.println("--------------------  Testing Questionaire Markup ----------------------");		 
 
 		GitManager gm = new GitManager(vertx.eventBus()); 
-		CompiledCodeProvider qmarkupProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("questionnaireAddress"), vertx.eventBus(), gm);
+		CompiledCodeProvider qmarkupProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("questionnaireAddress"), vertx.eventBus());
 		try
 		{			
 			String originalCode2 = Files.readString(Paths.get(CompiledCodeProviderTest.class.getClassLoader().getResource("CodeTestData/pilotform.qmarkup").getPath()));
@@ -67,8 +68,9 @@ public class CompiledCodeProviderTest extends SoileVerticleTest {
 			.onSuccess(Code -> {	
 				// this could be made more explicit, testing actual contents.
 				context.assertNotNull(Code);
-				// this s a compiled code, original does not contain this.
-				context.assertTrue(Code.contains("<p>"));
+				// This is now a valid Json... 
+				JsonObject codeObject = new JsonObject(Code);
+				context.assertTrue(codeObject.containsKey("elements"));
 				compilation2Async.complete();				
 			})
 			.onFailure(err -> context.fail(err));

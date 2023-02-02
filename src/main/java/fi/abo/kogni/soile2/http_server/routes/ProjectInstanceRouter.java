@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 import fi.aalto.scicomp.zipper.FileDescriptor;
 import fi.aalto.scicomp.zipper.Zipper;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
@@ -20,7 +20,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
@@ -45,6 +45,13 @@ import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 
+/**
+ * Router for ProjectInstance operations (i.e. project execution, and data retrieval).
+ * Documentation for public functions (aside from the constructor) can be obtained from the 
+ * API document, with operationIDs mapping 1:1 to method names 
+ * @author Thomas Pfau
+ *
+ */
 public class ProjectInstanceRouter extends SoileRouter {
 
 	ProjectInstanceHandler instanceHandler;
@@ -56,7 +63,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 	TargetElementType instanceType = TargetElementType.INSTANCE;
 	ElementManager<Task> taskManager;
 	MongoAuthorization mongoAuth;
-	DataLakeManager dataLakeManager;
+	ParticipantDataLakeManager dataLakeManager;
 	EventBus eb;
 	Vertx vertx;
 	
@@ -74,7 +81,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		roleHandler = new SoileRoleBasedAuthorizationHandler();
 		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client);
 		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Project().getTargetCollection(), client);
-		dataLakeManager = new DataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
+		dataLakeManager = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
 	}
 
 	public void startProject(RoutingContext context)
@@ -586,9 +593,8 @@ public class ProjectInstanceRouter extends SoileRouter {
 		
 		if(user.principal().getString("username") == null)
 		{
-			// This is a Token User!
-			return partHandler.getParticipantForToken(user.principal().getString("access_token"), project.getID());
-			
+			// This is a Token User! So we quickly get the participant from the Token. 
+			return partHandler.getParticipantForToken(user.principal().getString("access_token"), project.getID());			
 		}
 		else
 		{
@@ -625,18 +631,6 @@ public class ProjectInstanceRouter extends SoileRouter {
 			return partPromise.future();
 		}
 		
-	}
-	
-	/**
-	 * Start preparing a download for the indicated data.
-	 * @param participants the participants to prepare a download for.
-	 * @return Whether the preparation started.
-	 */
-	private Future<String> prepareParticipantDownload(JsonArray participants)
-	{
-		Promise<String> downloadIDPromise = Promise.promise();
-		
-		return downloadIDPromise.future();
 	}
 
 }

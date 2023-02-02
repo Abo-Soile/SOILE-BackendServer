@@ -8,8 +8,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
-import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.elang.verticle.ExperimentLanguageVerticle;
 import fi.abo.kogni.soile2.http_server.auth.JWTTokenCreator;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthentication;
@@ -28,24 +27,20 @@ import fi.abo.kogni.soile2.http_server.verticles.TaskInformationverticle;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.qmarkup.verticle.QuestionnaireRenderVerticle;
 import fi.abo.kogni.soile2.utils.DebugRouter;
-import fi.abo.kogni.soile2.utils.MessageResponseHandler;
-import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
@@ -57,9 +52,11 @@ import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.sstore.LocalSessionStore;
-import io.vertx.ext.web.validation.RequestParameters;
-import io.vertx.ext.web.validation.ValidationHandler;
-
+/**
+ * Verticle that handles Route Building for the Soile Backend Platform 
+ * @author Thomas Pfau
+ *
+ */
 public class SoileRouteBuilding extends AbstractVerticle{
 
 	private static final Logger LOGGER = LogManager.getLogger(SoileRouteBuilding.class);
@@ -69,7 +66,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private Router soileRouter;
 	private SoileAuthenticationBuilder handler;
 	private SoileAuthorization soileAuthorization;
-	private GitResourceManager resourceManager;
+	private DataLakeResourceManager resourceManager;
 	private ParticipantHandler partHandler;
 	private ProjectInstanceHandler projHandler;
 	private TaskRouter taskRouter;
@@ -84,9 +81,9 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		consumers = new LinkedList<>();
 		cookieHandler = new SoileCookieCreationHandler(vertx.eventBus());	
 		this.client = MongoClient.createShared(vertx, config().getJsonObject("db"));
-		resourceManager = new GitResourceManager(vertx.eventBus());
+		resourceManager = new DataLakeResourceManager(vertx);
 		soileAuthorization = new SoileAuthorization(client);
-		projHandler = new ProjectInstanceHandler(client, vertx.eventBus());
+		projHandler = new ProjectInstanceHandler(client, vertx);
 		partHandler = new ParticipantHandler(client, projHandler, vertx);
 		deployedVerticles = new ConcurrentLinkedQueue<>();
 		LOGGER.debug("Starting Routerbuilder");
@@ -259,10 +256,14 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		}
 	}	
 	
-	
-	public Future<RouterBuilder> setupTaskAPI(RouterBuilder builder)
+	/**
+	 * Everything that needs to be done for the Task API
+	 * @param builder
+	 * @return
+	 */
+	private Future<RouterBuilder> setupTaskAPI(RouterBuilder builder)
 	{
-		taskRouter = new TaskRouter( client, resourceManager, vertx.eventBus(), soileAuthorization);
+		taskRouter = new TaskRouter( client, resourceManager, vertx, soileAuthorization);
 		builder.operation("getTaskList").handler(taskRouter::getElementList);
 		builder.operation("getVersionsForTask").handler(taskRouter::getVersionList);
 		builder.operation("createTask").handler(taskRouter::create);
@@ -273,9 +274,14 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
-	public Future<RouterBuilder> setupExperimentAPI(RouterBuilder builder)
+	/**
+	 * Everything that needs to be done for the Experiment API
+	 * @param builder
+	 * @return
+	 */
+	private Future<RouterBuilder> setupExperimentAPI(RouterBuilder builder)
 	{
-		ElementRouter<Experiment> router = new ElementRouter<Experiment>(new ElementManager<Experiment>(Experiment::new, APIExperiment::new, client, vertx.eventBus()), soileAuthorization, vertx.eventBus(), client );
+		ElementRouter<Experiment> router = new ElementRouter<Experiment>(new ElementManager<Experiment>(Experiment::new, APIExperiment::new, client, vertx), soileAuthorization, vertx.eventBus(), client );
 		builder.operation("getExperimentList").handler(router::getElementList);
 		builder.operation("getVersionsForExperiment").handler(router::getVersionList);
 		builder.operation("createExperiment").handler(router::create);
@@ -283,10 +289,15 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("updateExperiment").handler(router::writeElement);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
-	
-	public Future<RouterBuilder> setupProjectAPI(RouterBuilder builder)
+
+	/**
+	 * Everything that needs to be done for the Project API
+	 * @param builder
+	 * @return
+	 */
+	private Future<RouterBuilder> setupProjectAPI(RouterBuilder builder)
 	{
-		ElementRouter<Project> router = new ElementRouter<Project>(new ElementManager<Project>(Project::new, APIProject::new, client, vertx.eventBus()), soileAuthorization, vertx.eventBus(), client );
+		ElementRouter<Project> router = new ElementRouter<Project>(new ElementManager<Project>(Project::new, APIProject::new, client, vertx), soileAuthorization, vertx.eventBus(), client );
 		builder.operation("getProjectList").handler(router::getElementList);
 		builder.operation("getVersionsForProject").handler(router::getVersionList);
 		builder.operation("createProject").handler(router::create);
@@ -295,7 +306,12 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 		
-	public Future<RouterBuilder> setupProjectexecutionAPI(RouterBuilder builder)
+	/**
+	 * Everything that needs to be done for the project execution API
+	 * @param builder
+	 * @return
+	 */
+	private Future<RouterBuilder> setupProjectexecutionAPI(RouterBuilder builder)
 	{
 		ProjectInstanceRouter router = new ProjectInstanceRouter(soileAuthorization, vertx, client, partHandler, projHandler);
 		builder.operation("listDownloadData").handler(router::listDownloadData);
@@ -314,6 +330,11 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
+	/**
+	 * Everything that needs to be done for the User API
+	 * @param builder
+	 * @return
+	 */
 	public Future<RouterBuilder> setupUserAPI(RouterBuilder builder)
 	{
 		UserRouter router = new UserRouter(soileAuthorization, vertx, client);

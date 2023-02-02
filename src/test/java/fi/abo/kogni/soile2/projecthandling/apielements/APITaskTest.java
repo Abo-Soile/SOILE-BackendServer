@@ -3,10 +3,9 @@ package fi.abo.kogni.soile2.projecthandling.apielements;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.GitTest;
-import fi.abo.kogni.soile2.MongoTest;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
-import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
-import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import fi.abo.kogni.soile2.projecthandling.utils.SimpleFileUpload;
@@ -20,13 +19,14 @@ public class APITaskTest extends GitTest {
 	{		
 		System.out.println("--------------------  Testing Task Save/Load ----------------------");
 		Async testAsync = context.async();
-		ElementManager<Task> TaskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client, eb);
-		GitResourceManager grm = new GitResourceManager(eb);
+		ElementManager<Task> TaskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client, vertx);
+		DataLakeResourceManager grm = new DataLakeResourceManager(vertx);
 		ObjectGenerator.buildAPITask(TaskManager, "FirstTask", mongo_client)
 		.onSuccess(apiTask -> {
-			// create a new (albeit invalid, because the target file does not exist) upload.
-			SimpleFileUpload upload = new SimpleFileUpload("XYZ.data", "Fun.jpg");
-			grm.writeElement(new GitFile("NewFile",TaskManager.getGitIDForUUID(apiTask.getUUID()),apiTask.getVersion()), upload)
+			// create a new upload.
+			String fileName = vertx.fileSystem().createTempFileBlocking("SomeFile", ".ending");			
+			SimpleFileUpload upload = new SimpleFileUpload(fileName, "Fun.jpg");
+			grm.writeUploadToGit(new GitFile("NewFile",TaskManager.getGitIDForUUID(apiTask.getUUID()),apiTask.getVersion()), upload)
 			.onSuccess(newVersion -> {
 				Async newVerAsync = context.async();
 				// this version should now have NewFile, while the old Version should not.
@@ -49,8 +49,7 @@ public class APITaskTest extends GitTest {
 				}).onFailure(err -> context.fail(err));
 				testAsync.complete();
 			})
-			.onFailure(err -> context.fail(err));			
-
+			.onFailure(err -> context.fail(err));						
 		})
 		.onFailure(err -> context.fail(err));
 	}

@@ -3,6 +3,9 @@ package fi.abo.kogni.soile2.projecthandling.apielements;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitElement;
@@ -10,6 +13,7 @@ import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.exceptions.NoCodeTypeChangeException;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
+import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -18,6 +22,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class APITask extends APIElementBase<Task> {
+	private static final Logger LOGGER = LogManager.getLogger(APITask.class);
 
 	private String[] gitFields = new String[] {"name", "codeType"};
 	private Object[] gitDefaults = new Object[] {"", ""};
@@ -99,8 +104,9 @@ public class APITask extends APIElementBase<Task> {
 	public Future<String> storeAdditionalData(String currentVersion, EventBus eb, String targetRepository)
 	{
 		// We need to store the code. Resources are stored individually.
-		GitFile g = new GitFile("Code.obj", targetRepository, currentVersion);
 		
+		GitFile g = new GitFile("Code.obj", targetRepository, currentVersion);
+		LOGGER.debug("Writing Source Code");
 		return eb.request("soile.git.writeGitFile", g.toJson().put("data",getCode())).map(message -> {return (String) message.body();});
 	}
 	@Override
@@ -108,6 +114,7 @@ public class APITask extends APIElementBase<Task> {
 	{
 		Promise<Boolean> codePromise = Promise.promise();
 		GitFile g = new GitFile("Code.obj", targetRepository, this.getVersion());
+		LOGGER.debug("Loading Code Object");
 		List<Future> loadedList = new LinkedList<>();
 		loadedList.add(codePromise.future());
 		eb.request("soile.git.getGitFileContents", g.toJson()).onSuccess(codeReply -> {
@@ -121,6 +128,7 @@ public class APITask extends APIElementBase<Task> {
 		loadedList.add(resourcesPromise.future());
 		GitElement targetRepo = new GitElement(targetRepository, this.getVersion());
 		eb.request("soile.git.getResourceList", targetRepo.toJson()).onSuccess(resources -> {
+			LOGGER.debug("Resources are: " + ((JsonArray) resources.body()).encodePrettily());
 			setResources((JsonArray) resources.body());
 			resourcesPromise.complete(true);
 		})

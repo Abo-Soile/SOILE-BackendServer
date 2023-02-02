@@ -14,7 +14,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.SoileBaseTest;
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ProjectTest;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
 import fi.abo.kogni.soile2.utils.DataProvider;
@@ -62,7 +62,7 @@ public class DataLakeManagerTest extends SoileBaseTest{
 
 
 		System.out.println("--------------------  Testing File storing ----------------------");		 
-		DataLakeManager dlm = new DataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
+		ParticipantDataLakeManager dlm = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
 		String partID = "Test";
 		int step = 0;
 		String taskID = "testTask";

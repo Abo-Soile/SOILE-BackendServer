@@ -5,6 +5,11 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 
+/**
+ * Base class which provides Error Handling for Soile Routers handling some common errors.
+ * @author Thomas Pfau
+ *
+ */
 public class SoileRouter {
 
 	

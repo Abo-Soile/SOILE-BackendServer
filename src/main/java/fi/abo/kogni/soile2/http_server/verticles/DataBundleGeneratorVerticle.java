@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
@@ -30,7 +30,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	MongoClient client;
 	ParticipantHandler partHandler;
 	ProjectInstanceHandler projHandler;
-	DataLakeManager dlmgr;
+	ParticipantDataLakeManager dlmgr;
 	String dataLakeFolder;
 	String downloadCollection;
 	static final Logger LOGGER = LogManager.getLogger(DataBundleGeneratorVerticle.class);
@@ -40,7 +40,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	{
 		dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
 		downloadCollection = SoileConfigLoader.getdbProperty("downloadCollection");
-		dlmgr = new DataLakeManager(dataLakeFolder, vertx);
+		dlmgr = new ParticipantDataLakeManager(dataLakeFolder, vertx);
 		this.client = client;
 		this.projHandler = projHandler;
 		this.partHandler = partHandler;		

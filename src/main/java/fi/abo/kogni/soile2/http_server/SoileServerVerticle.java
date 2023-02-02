@@ -1,6 +1,7 @@
 package fi.abo.kogni.soile2.http_server;
 
 import java.util.LinkedList;
+
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -20,6 +21,14 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
+
+/**
+ * The Soile Server Verticle. 
+ * Sets up the configuration, 
+ * Initializes all other necessary Verticles and starts the web-server.
+ * @author Thomas Pfau
+ *
+ */
 public class SoileServerVerticle extends AbstractVerticle {
 
 	static final Logger LOGGER = LogManager.getLogger(SoileServerVerticle.class);
@@ -31,10 +40,12 @@ public class SoileServerVerticle extends AbstractVerticle {
 	public void start(Promise<Void> startPromise) throws Exception {
 		soileRouter = new SoileRouteBuilding();
 		deployedVerticles = new ConcurrentLinkedQueue<>();		
-		setupConfig()
-		.compose(this::setupFolders)		
-		.compose(this::deployVerticles)		
-		.compose(this::startHttpServer).onComplete(res ->
+		
+		setupConfig() // As the very first stepp we need to set up the config so that it is available for all later steps.
+		.compose(this::setupFolders) // Set up all necessary folders		
+		.compose(this::deployVerticles) // deploy all necessary verticles (including routing etc)
+		.compose(this::startHttpServer) // start the web server.
+		.onComplete(res ->
 		{
 			if(res.succeeded())
 			{

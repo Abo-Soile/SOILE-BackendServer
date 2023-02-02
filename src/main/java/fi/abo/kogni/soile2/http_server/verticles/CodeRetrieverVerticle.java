@@ -8,7 +8,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.codeProvider.CodeProvider;
 import fi.abo.kogni.soile2.http_server.codeProvider.CompiledCodeProvider;
 import fi.abo.kogni.soile2.http_server.codeProvider.JSCodeProvider;
@@ -31,15 +30,13 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 	private CodeProvider elangProvider;
 	private CodeProvider qmarkupProvider;
 	private CodeProvider psychoJsProvider;
-	GitManager gitManager;	
 	
 	@Override
 	public void start()
 	{
-		gitManager = new GitManager(vertx.eventBus()); 
-		elangProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("elangAddress"),vertx.eventBus(),gitManager);
-		qmarkupProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("questionnaireAddress"),vertx.eventBus(),gitManager);
-		psychoJsProvider = new JSCodeProvider(gitManager);		
+		elangProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("elangAddress"),vertx.eventBus());
+		qmarkupProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("questionnaireAddress"),vertx.eventBus());
+		psychoJsProvider = new JSCodeProvider(vertx.eventBus());		
 		LOGGER.debug("Deploying CodeRetriever with id : " + deploymentID());
 		vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("compilationAddress"), this::compileCode);
 		vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"), this::compileGitCode);				
@@ -48,9 +45,9 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 	
 	public void cleanUP(Message<Object> cleanUpRequest)
 	{
-		elangProvider.cleanup();
-		psychoJsProvider.cleanup();
-		qmarkupProvider.cleanup();
+		elangProvider.cleanUp();
+		psychoJsProvider.cleanUp();
+		qmarkupProvider.cleanUp();
 	}
 	
 	

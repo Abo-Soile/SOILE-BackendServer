@@ -8,7 +8,7 @@ import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
@@ -26,11 +26,11 @@ public class DBProjectTest extends GitTest{
 	public void testProjectCreation(TestContext context)
 	{		
 		System.out.println("--------------------  Testing DB Project Creation ----------------------");
-		ElementManager<Project> projManager = new ElementManager<>(Project::new, APIProject::new, mongo_client, eb);
-		ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, mongo_client, eb);		 
-		ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, mongo_client, eb);
+		ElementManager<Project> projManager = new ElementManager<>(Project::new, APIProject::new, mongo_client, vertx);
+		ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, mongo_client, vertx);		 
+		ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, mongo_client, vertx);
 		Async APIProjectCreationAsync = context.async();		 
-		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());		 
+		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(mongo_client, vertx);		 
 
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager, mongo_client, "Testproject")
 		.onSuccess(existingApiProject -> 
@@ -66,11 +66,11 @@ public class DBProjectTest extends GitTest{
 	public void testProgression(TestContext context)
 	{
 		System.out.println("--------------------  Testing DB Project progression ----------------------");
-		ElementManager<Project> projManager = new ElementManager<>(Project::new, APIProject::new, mongo_client, eb);
-		ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, mongo_client, eb);		 
-		ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, mongo_client, eb);
+		ElementManager<Project> projManager = new ElementManager<>(Project::new, APIProject::new, mongo_client, vertx);
+		ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, mongo_client, vertx);		 
+		ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, mongo_client, vertx);
 		Async APIProjectCreationAsync = context.async();		 
-		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());		 
+		ProjectInstanceHandler projInstHandler = new ProjectInstanceHandler(mongo_client, vertx);		 
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projInstHandler, vertx);
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager, mongo_client, "Testproject")
 		.onSuccess(existingApiProject -> 
@@ -114,10 +114,10 @@ public class DBProjectTest extends GitTest{
 	@Test
 	public void testTokens(TestContext context)
 	{			
-		ElementManager<Project> projManager  = new ElementManager<Project>(Project::new, APIProject::new, mongo_client,eb);
-		ElementManager<Experiment> expManager  = new ElementManager<Experiment>(Experiment::new, APIExperiment::new, mongo_client,eb);;
-		ElementManager<Task> taskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client,eb);
-		ProjectInstanceHandler handler = new ProjectInstanceHandler(mongo_client, eb);
+		ElementManager<Project> projManager  = new ElementManager<Project>(Project::new, APIProject::new, mongo_client,vertx);
+		ElementManager<Experiment> expManager  = new ElementManager<Experiment>(Experiment::new, APIExperiment::new, mongo_client,vertx);
+		ElementManager<Task> taskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client,vertx);
+		ProjectInstanceHandler handler = new ProjectInstanceHandler(mongo_client, vertx);
 		Async testAsync = context.async();
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager, mongo_client, "Testproject")
 		.onSuccess(apiProject -> {

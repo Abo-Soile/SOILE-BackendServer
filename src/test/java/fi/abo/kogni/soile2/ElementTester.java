@@ -4,7 +4,7 @@ import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
-import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
@@ -24,9 +24,9 @@ public abstract class ElementTester extends GitTest {
 	public void runBeforeTests(TestContext context)
 	{
 		super.runBeforeTests(context);	
-		projManager = new ElementManager<>(Project::new, APIProject::new, mongo_client, eb);
-		expManager = new ElementManager<>(Experiment::new, APIExperiment::new, mongo_client, eb);		 
-		taskManager = new ElementManager<>(Task::new, APITask::new, mongo_client, eb);
+		projManager = new ElementManager<>(Project::new, APIProject::new, mongo_client, vertx);
+		expManager = new ElementManager<>(Experiment::new, APIExperiment::new, mongo_client, vertx);		 
+		taskManager = new ElementManager<>(Task::new, APITask::new, mongo_client, vertx);
 	}
 	
 	public Future<Project> createProject(TestContext context)

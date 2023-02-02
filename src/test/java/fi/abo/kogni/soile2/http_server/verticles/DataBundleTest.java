@@ -12,7 +12,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.ElementTester;
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
@@ -34,7 +34,7 @@ public class DataBundleTest extends ElementTester {
 	public void runBeforeTests(TestContext context)
 	{
 		super.runBeforeTests(context);	
-		projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
+		projHandler = new ProjectInstanceHandler(mongo_client, vertx);
 		partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		dbg = new DataBundleGeneratorVerticle(mongo_client, projHandler, partHandler);
 		vertx.deployVerticle(dbg);
@@ -48,7 +48,7 @@ public class DataBundleTest extends ElementTester {
 		String dataDir = DataBundleTest.class.getClassLoader().getResource("FileTestData").getPath();
 
 		Async testComplete = context.async();
-		DataLakeManager dlm = new DataLakeManager(resultDataLakeDir, vertx);
+		ParticipantDataLakeManager dlm = new ParticipantDataLakeManager(resultDataLakeDir, vertx);
 		createProject(context).onSuccess(project ->
 		{
 			projHandler.createProjectInstance(getCreationJson(project, "TestProject", ""))

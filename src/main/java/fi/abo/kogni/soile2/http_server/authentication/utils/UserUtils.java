@@ -13,7 +13,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.mongo.MongoClient;
-
+/**
+ * Utility functions for user handling
+ * @author Thomas Pfau
+ *
+ */
 public class UserUtils {
 
 	static final Logger LOGGER = LogManager.getLogger(UserUtils.class);

@@ -13,8 +13,18 @@ import io.vertx.core.Handler;
  */
 public interface DataRetriever<K,T> {
 	
+	/**
+	 * Get a Future of an Element of Type T given a key of type K
+	 * @param key the key for which to retrieve the Element;
+	 * @return A Future of the corresponding element of Type T. This fails if no element can be created by the retriever or no element exists and the retriever does not create elements.
+	 */
 	Future<T> getElement(K key);
 
-	void getElement(K key, Handler<AsyncResult<T>> handler);	
+	/**
+	 * Same as getElement(K key) but the handler will be given the resulting future to handle; 
+	 * @param key 
+	 * @param handler 
+	 */
 
+	void getElement(K key, Handler<AsyncResult<T>> handler);	
 }

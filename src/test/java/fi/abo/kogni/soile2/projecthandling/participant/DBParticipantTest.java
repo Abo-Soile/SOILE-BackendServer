@@ -24,7 +24,7 @@ public class DBParticipantTest extends GitTest{
 	@Test
 	public void testCreationAndExp(TestContext context) {
 		System.out.println("--------------------  Testing Participant Creation and Progress ----------------------");
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx.eventBus());
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		JsonObject smokerOutput = new JsonObject()
 				.put("name", "smoker")

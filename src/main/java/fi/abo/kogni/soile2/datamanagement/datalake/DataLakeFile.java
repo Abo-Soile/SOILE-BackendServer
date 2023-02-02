@@ -17,23 +17,41 @@ public class DataLakeFile extends File implements FileDescriptor {
 	private String originalFileName;
 	private String mimeFormat;
 	
-	public DataLakeFile(String pathname, String originalFileName, String mimeFormat) {
-		super(pathname);
+	/**
+	 * Basic constructor given a real filename, the original Filename and the format of the file contents.
+	 * @param path the actual location of the file
+	 * @param originalFileName the Name this file originally had (as the path likely points to a random file name)
+	 * @param mimeFormat the format of the file contents.
+	 */
+	public DataLakeFile(String path, String originalFileName, String mimeFormat) {
+		super(path);
 		this.originalFileName = originalFileName;
 		this.mimeFormat = mimeFormat;
 	}
+	
+	/**
+	 * Constructor retrieving the necessary information from a {@link JsonObject}
+	 * @param source
+	 */
 	public DataLakeFile(JsonObject source) {
 		super(source.getString("AbsolutPath"));
 		this.originalFileName = source.getString("originalFileName");
 		this.mimeFormat = source.getString("mimeFormat");
 	}
 	
-	
+	/**
+	 * Get the original File name, i.e. how this file should normally be referred to.
+	 * @return the name for the file
+	 */
 	public String getOriginalFileName()
 	{
 		return originalFileName;
 	}
 	
+	/**
+	 * Get the format of this file (mimetype)
+	 * @return the format specifier
+	 */
 	public String getFormat()
 	{
 		return mimeFormat;

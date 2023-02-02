@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.projecthandling.participant.impl;
+package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -6,15 +6,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.function.Supplier;
 
-import javax.naming.directory.InvalidAttributesException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
-import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIElement;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
@@ -26,11 +24,9 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.Element;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementDataHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -60,7 +56,11 @@ public class ElementManager<T extends ElementBase> {
 	public static final Logger log = LogManager.getLogger(ElementManager.class);
 	private static DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, EventBus eb)
+	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, Vertx vertx)
+	{
+		this(supplier, apisupplier, client, vertx, new ElementDataHandler<T>(new DataLakeResourceManager(vertx), supplier));		
+	}
+	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, Vertx vertx, ElementDataHandler<T> handler)
 	{
 		this.apisupplier = apisupplier;
 		this.supplier = supplier;		
@@ -68,9 +68,10 @@ public class ElementManager<T extends ElementBase> {
 		type = supplier.get().getElementType();
 		this.factory = new ElementFactory<T>(supplier);
 		this.client = client;
-		this.eb = eb;
-		dataHandler = new ElementDataHandler<T>(new GitResourceManager(eb), supplier);
+		this.eb = vertx.eventBus();
+		this.dataHandler = handler;
 	}
+	
 	
 	public String getGitIDForUUID(String uuid)
 	{
@@ -487,18 +488,18 @@ public class ElementManager<T extends ElementBase> {
 		return elementPromise.future();			
 	}
 	
-	public static ElementManager<Project> getProjectManager(MongoClient client, EventBus eb)
+	public static ElementManager<Project> getProjectManager(MongoClient client, Vertx vertx)
 	{
-		return new ElementManager<Project>(Project::new,APIProject::new, client, eb);
+		return new ElementManager<Project>(Project::new,APIProject::new, client, vertx);
 	}
 	
-	public static ElementManager<Experiment> getExperimentManager(MongoClient client, EventBus eb)
+	public static ElementManager<Experiment> getExperimentManager(MongoClient client, Vertx vertx)
 	{
-		return new ElementManager<Experiment>(Experiment::new,APIExperiment::new, client, eb);
+		return new ElementManager<Experiment>(Experiment::new,APIExperiment::new, client, vertx);
 	}
 	
-	public static ElementManager<Task> getTaskManager(MongoClient client, EventBus eb)
+	public static ElementManager<Task> getTaskManager(MongoClient client, Vertx vertx)
 	{
-		return new ElementManager<Task>(Task::new,APITask::new, client, eb);
+		return new ElementManager<Task>(Task::new,APITask::new, client, vertx);
 	}	
 }

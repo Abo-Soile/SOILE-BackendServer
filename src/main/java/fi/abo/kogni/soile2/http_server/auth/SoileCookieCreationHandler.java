@@ -7,7 +7,7 @@ import java.security.SecureRandom;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.http_server.authentication.utils.CookieStrategy;
+import fi.abo.kogni.soile2.http_server.authentication.utils.SoileCookieStrategy;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
@@ -27,10 +27,17 @@ public class SoileCookieCreationHandler {
 		eb = bus;
 	}
 	
-	public Future<Void> updateCookie(RoutingContext ctx, User user)
+	
+	/**
+	 * Update a cookie for the given 
+	 * @param ctx
+	 * @param currentuser
+	 * @return
+	 */
+	public Future<Void> updateCookie(RoutingContext ctx, User currentuser)
 	{		
 		// if we get an explicit user we use that one, otherwise we try to retrieve it from the context.
-		User currentuser = user == null ? user : ctx.user();
+		User user = currentuser == null ? currentuser : ctx.user();
 		Promise<Void> finishedCookie = Promise.<Void>promise();
 				LOGGER.debug("Handling a request");
 				if(user != null)
@@ -77,8 +84,8 @@ public class SoileCookieCreationHandler {
 	public void invalidateSessionCookie(RoutingContext ctx)
 	{
 		Cookie sessionCookie = ctx.request().getCookie(SoileConfigLoader.getSessionProperty("sessionCookieID"));
-		String token = CookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
-		String username = CookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());		
+		String token = SoileCookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
+		String username = SoileCookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());		
 		eb.send(SoileCommUtils.getUserEventBusCommand("invalidateUserSession")
 			   ,new JsonObject().put("sessionID",token)
 				 				.put("username",username));		
@@ -107,7 +114,7 @@ public class SoileCookieCreationHandler {
 	    			}
 	    		});
 		// now build the cookie to store on the remote system. 		
-		String cookiecontent = CookieStrategy.buildCookieContent(cuser.getString("username"),token);
+		String cookiecontent = SoileCookieStrategy.buildCookieContent(cuser.getString("username"),token);
  
 		Cookie cookie = Cookie.cookie(SoileConfigLoader.getSessionProperty("sessionCookieID"),cookiecontent)
 							  .setDomain(SoileConfigLoader.getServerProperty(("domain")))

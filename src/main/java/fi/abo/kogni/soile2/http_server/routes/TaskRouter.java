@@ -1,13 +1,12 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
-import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
-import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.TaskDataHandler;
-import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
@@ -16,13 +15,16 @@ import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 
+/**
+ * The Task Router (of the element Router needs a couple of additional routes like Resource Posting/retrieval). 
+ * @author Thomas Pfau
+ *
+ */
 public class TaskRouter extends ElementRouter<Task> {
 
-	//TaskDataHandler dataHandler;
-	
-	public TaskRouter(MongoClient client, GitResourceManager resManager, EventBus eb, SoileAuthorization auth )
+	public TaskRouter(MongoClient client, DataLakeResourceManager resManager, Vertx vertx, SoileAuthorization auth )
 	{
-		super(ElementManager.getTaskManager(client,eb),auth, eb, client);
+		super(ElementManager.getTaskManager(client,vertx),auth, vertx.eventBus(), client);
 	}		
 	
 	public void postResource(RoutingContext context)
@@ -36,7 +38,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		{
 			if(context.fileUploads().size() != 1)
 			{
-				handleError(new HttpException(400, "Missing or invalid file data"), context);
+				handleError(new HttpException(400, "Missing or invalid file data, exactly one File expected"), context);
 				return;
 			}
 			
@@ -71,6 +73,8 @@ public class TaskRouter extends ElementRouter<Task> {
 		})
 		.onFailure(err -> handleError(err, context));
 	}
+	
+	
 	
 	
 	public void cleanup()

@@ -65,7 +65,8 @@ public class CodeRetrieverVerticleTest extends SoileVerticleTest {
 				JsonObject response = (JsonObject) reply.body();
 				// this could be made more explicit, testing actual contents.
 				context.assertNotNull(response.getString("code"));
-				context.assertTrue(response.getString("code").contains("<p>"));
+				JsonObject codeObject = new JsonObject(response.getString("code"));
+				context.assertTrue(codeObject.containsKey("elements"));
 				compilation2Async.complete();				
 			})
 			.onFailure(err -> context.fail(err));

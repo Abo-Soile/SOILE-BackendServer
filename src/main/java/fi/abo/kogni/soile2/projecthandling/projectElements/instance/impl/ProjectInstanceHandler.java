@@ -17,6 +17,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInsta
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.json.JsonArray;
@@ -36,10 +37,10 @@ public class ProjectInstanceHandler {
 	 * @param dataLakeFolder The Folder where the dataLake for result files is located
 	 * @param client the mongoclient for connecting to the mongo database
 	 */
-	public ProjectInstanceHandler(MongoClient client, EventBus eb) {
+	public ProjectInstanceHandler(MongoClient client, Vertx vertx) {
 		super();
 		this.dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
-		this.manager = new ProjectInstanceManager(client, eb);
+		this.manager = new ProjectInstanceManager(client, vertx);
 		projects = new TimeStampedMap<String, ProjectInstance>(manager, 1000*60*60);
 	}
 
@@ -62,7 +63,7 @@ public class ProjectInstanceHandler {
 	 */
 	public void cleanup()
 	{
-		projects.cleanup();
+		projects.cleanUp();
 	}
 	/**
 	 * Get a list of all Files associated with the specified {@link DBParticipant} within this {@link ProjectInstance}.

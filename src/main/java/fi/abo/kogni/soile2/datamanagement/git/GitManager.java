@@ -1,30 +1,24 @@
 package fi.abo.kogni.soile2.datamanagement.git;
 
 import java.io.File;
-import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
-import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * This class manages access to the {@link gitProviderVerticle}s via the eventbus..
  * It only communicates with the gitProviderVerticle providing some utility functions.
  * TODO: Create Tags for an active save command. 
- * TODO: Convert into a Verticle
+ * TODO: Convert into a Verticle ?
  * @author Thomas Pfau
  *
  */
@@ -290,7 +284,7 @@ public class GitManager{
 	{
 		return writeGitResourceFile(file, data.encodePrettily());
 	}
-
+	
 	public boolean gitFileValid(GitFile file)
 	{
 		if(file.getRepoID() == null)
@@ -365,8 +359,6 @@ public class GitManager{
 	public static JsonObject buildBasicGitExperiment(String name)
 	{
 		return buildBasicGitObject(name).put("elements", new JsonArray());
-	}
-	
-	
+	}		
 	
 }

@@ -10,7 +10,11 @@ import io.vertx.ext.auth.authorization.OrAuthorization;
 import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import io.vertx.ext.web.handler.HttpException;
 
-
+/**
+ * Class to handle Role based athorization
+ * @author Thomas Pfau
+ *
+ */
 public class SoileRoleBasedAuthorizationHandler{
 
 	public SoileRoleBasedAuthorizationHandler()
@@ -43,7 +47,11 @@ public class SoileRoleBasedAuthorizationHandler{
 	}
 
 
-
+/**
+ * Build an Authorization based on the Role indicates as required
+ * @param requiredRole The {@link Roles} object indicating the required Role
+ * @return The Authorization that can be tested
+ */
 	private Authorization buildRoleAuthorization(Roles requiredRole)
 	{
 

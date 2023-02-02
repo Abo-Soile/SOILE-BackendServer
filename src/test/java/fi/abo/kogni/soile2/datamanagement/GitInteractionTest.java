@@ -1,7 +1,10 @@
 package fi.abo.kogni.soile2.datamanagement;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,10 +17,10 @@ import org.junit.runner.RunWith;
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.SoileBaseTest;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.ObjectManager;
 import fi.abo.kogni.soile2.projecthandling.utils.SimpleFileUpload;
-import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -36,7 +39,7 @@ public class GitInteractionTest extends GitTest{
 		System.out.println("-------------------- Testing Repo exists ----------------------");		 
 
 		String targetElement = "TestElement";
-		GitResourceManager rm = new GitResourceManager(vertx.eventBus());
+		DataLakeResourceManager rm = new DataLakeResourceManager(vertx);
 		Async notExistAsync = context.async();
 		rm.existElementRepo(targetElement).onSuccess(exists -> {
 			Async existAsync = context.async();
@@ -64,17 +67,20 @@ public class GitInteractionTest extends GitTest{
 		// set up the git Repository and the DataLake folder we will use for the test
 		Async initAsync = context.async();
 		String targetElement = "TestElement";
-		GitResourceManager rm = new GitResourceManager(vertx.eventBus());
+		DataLakeResourceManager rm = new DataLakeResourceManager(vertx);
 		ObjectManager om = new ObjectManager(vertx.eventBus());		
 		initGitRepo(targetElement, context).onSuccess(initialVersion -> 
 		{		
 			Path dataPath = Paths.get(getClass().getClassLoader().getResource("FilterData.json").getPath());
+			String origData ="";
 			Path dataLakePath = Paths.get(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder"), targetElement, dataPath.getFileName().toString());
 			try
 			{	
 				// To properly test this, we need to manually create the git DataLake Folder for this element.
 				FileUtils.forceMkdir(Paths.get(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder"), targetElement).toFile());
-				Files.copy(dataPath,dataLakePath);				
+				Files.copy(dataPath,dataLakePath);
+				FileReader br = new FileReader(dataPath.toFile());
+				origData = new String(Files.readAllBytes(dataPath), StandardCharsets.UTF_8);
 			}
 			catch(Exception e)
 			{
@@ -82,17 +88,25 @@ public class GitInteractionTest extends GitTest{
 				initAsync.complete();
 				return;
 			}
+			final String testData = origData;
 			SimpleFileUpload upload = new SimpleFileUpload(dataLakePath.getFileName().toString(), dataPath.getFileName().toString());
 			
 			Async writeAsync = context.async();
-			rm.writeElement(new GitFile("NewFile.txt", targetElement, initialVersion), upload).onSuccess(newVersion -> 
+			rm.writeUploadToGit(new GitFile("NewFile.txt", targetElement, initialVersion), upload).onSuccess(newVersion -> 
 			{
 				Async reloadAsync = context.async();
 				// test that the new version has the file
 				rm.getElement(new GitFile("NewFile.txt", targetElement, newVersion)).onSuccess(targetFile -> 
 				{
 					context.assertEquals(targetFile.getOriginalFileName(), "NewFile.txt");
-					context.assertEquals(targetFile.getFilePath(), dataLakePath.toFile().getPath());
+					try {
+						String fileData = new String(Files.readAllBytes(dataPath), StandardCharsets.UTF_8);
+						context.assertEquals(testData, fileData);
+					}
+					catch(IOException e)
+					{
+						context.fail(e);
+					}
 					reloadAsync.complete();
 				}).onFailure(fail -> {	
 					context.fail(fail.getMessage());

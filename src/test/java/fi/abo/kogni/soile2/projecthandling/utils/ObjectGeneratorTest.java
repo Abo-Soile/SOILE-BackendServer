@@ -6,8 +6,8 @@ import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
-import fi.abo.kogni.soile2.projecthandling.participant.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
@@ -25,9 +25,9 @@ public class ObjectGeneratorTest extends GitTest {
 	public void runBeforeTests(TestContext context)
 	{		
 		super.runBeforeTests(context);
-		projManager = new ElementManager<Project>(Project::new, APIProject::new, mongo_client,eb);
-		expManager = new ElementManager<Experiment>(Experiment::new, APIExperiment::new, mongo_client,eb);
-		taskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client,eb);
+		projManager = new ElementManager<Project>(Project::new, APIProject::new, mongo_client,vertx);
+		expManager = new ElementManager<Experiment>(Experiment::new, APIExperiment::new, mongo_client,vertx);
+		taskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client,vertx);
 	}
 	
 	
@@ -144,9 +144,12 @@ public class ObjectGeneratorTest extends GitTest {
 		ElementFactory<Task> TaskFactory = new ElementFactory<Task>(Task::new);
 		ObjectGenerator.buildAPITask(taskManager, "Test2", mongo_client)
 		.onSuccess(apiTask -> {
+			System.out.println("Task created");
 			Async tlistAsync = context.async();			
 			// check, that the created Elements actually exist.
-			taskManager.getElementList(new JsonArray()).onSuccess(list -> {
+			taskManager.getElementList(new JsonArray())
+			.onSuccess(list -> {
+				System.out.println("Element List obtained");
 				context.assertEquals(1,list.size()); // one task
 				Async gitAsync = context.async();
 				taskManager.getAPIElementFromDB(apiTask.getUUID(), apiTask.getVersion())

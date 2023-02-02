@@ -6,6 +6,7 @@ import io.vertx.core.Promise;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.mongo.MongoClient;
 
+//TODO: Check if this can be deleted
 public class SoileProjectInstanceAuthHandler extends SoileIDBasedAuthorizationHandler {
 
 	public SoileProjectInstanceAuthHandler(String targetCollection, MongoClient client) {

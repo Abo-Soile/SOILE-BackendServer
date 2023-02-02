@@ -25,12 +25,24 @@ public class GitFile {
 		this.repoVersion = json.getString("version");
 	}
 	
+	/**
+	 * Get the fileName this File represents.
+	 * @return
+	 */
 	public String getFileName() {
 		return fileName;
 	}
+	/**
+	 * Get the RepoId this file should be stored in / retrieved from
+	 * @return
+	 */
 	public String getRepoID() {
 		return repoID;
 	}
+	/**
+	 * Get the version of the file that will be looked up / stored to.
+	 * @return
+	 */
 	public String getRepoVersion() {
 		return repoVersion;
 	}
@@ -57,6 +69,10 @@ public class GitFile {
 		return "GitFile{ filename: " + fileName + " ; repoID: " + repoID + " ; version: " + repoVersion + " }";
 	}
 	
+	/**
+	 * Ge a Json representation for this file
+	 * @return a {@link JsonObject} with a "filename", a "repoID" and a "version" field.
+	 */
 	public JsonObject toJson()
 	{		
 		return new JsonObject().put("filename",fileName).put("repoID",repoID).put("version", repoVersion);
