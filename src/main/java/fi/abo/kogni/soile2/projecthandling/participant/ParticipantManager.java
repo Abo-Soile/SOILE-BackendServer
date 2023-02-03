@@ -15,7 +15,6 @@ import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEn
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.DBParticipantFactory;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.TokenParticipantFactory;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
 import fi.abo.kogni.soile2.utils.MongoAggregationHandler;
@@ -24,7 +23,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.VertxContextPRNG;
@@ -32,8 +30,6 @@ import io.vertx.ext.mongo.BulkOperation;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.mongo.UpdateOptions;
-import io.vertx.ext.mongo.WriteOption;
-import io.vertx.ext.web.handler.HttpException;
 
 /**
  * This class provides functionalities to interact with the Participant db, creating, saving and deleting participants.
@@ -49,7 +45,6 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	private HashMap<String, Long> dirtyTimeStamps; 
 	//TODO: needs constructor.
 	private String participantCollection = SoileConfigLoader.getdbProperty("participantCollection");
-	private Vertx vertx;
 	public static final Logger log = LogManager.getLogger(ParticipantManager.class);
 
 	public ParticipantManager(MongoClient client)
@@ -286,7 +281,11 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		
 	}
 	
-	
+	/**
+	 * Save the given participant.
+	 * @param p the {@link Participant} to save
+	 * @return
+	 */
 	public Future<String> save(Participant p)
 	{
 		//TODO: Possibly we need to fix this in some way to avoid concurrent handling 
@@ -430,6 +429,13 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		return participantsPromise.future();
 	}
 	
+	/**
+	 * Update the outputs of a participant for the given TaskID and Outputs array.
+	 * @param p The {@link Participant} to update
+	 * @param taskID the id of the Task for which to update the Outputs
+	 * @param Outputs The Output data
+	 * @return A Successfull future if the outputs were updated.
+	 */
 	public Future<Void> updateOutputsForTask(Participant p, String taskID, JsonArray Outputs)
 	{
 		// We will pull the outputs for this task.

@@ -21,6 +21,12 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Verticle that handles Git Acces via the GitManager (essentially this is a "frontEnd" for the GitManager class)
+ * This verticle keeps some data in memory for faster response time.
+ * @author Thomas Pfau
+ *
+ */
 public class GitManagerVerticle extends AbstractVerticle{
 
 

@@ -1,6 +1,5 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
-import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -22,7 +21,6 @@ import io.vertx.core.json.JsonObject;
  *
  */
 public class Project extends ElementBase{
-	private static SimpleDateFormat parser=new SimpleDateFormat("DD-MM-yyyy HH:mm:ss z");
 	static final Logger LOGGER = LogManager.getLogger(Project.class);
 	private List<String> elements;
 	public Project()

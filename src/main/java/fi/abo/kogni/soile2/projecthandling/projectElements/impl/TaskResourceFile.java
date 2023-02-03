@@ -28,6 +28,10 @@ public class TaskResourceFile {
 		this.elementID = elementID;
 	}	
 	
+	/**
+	 * Get the DatalakeFile that this TaskResourceFile is associated with (i.e. an actual File Object, while this object only holds some data).
+	 * @return
+	 */
 	public DataLakeFile getDataLakeFile()
 	{
 		return new DataLakeFile(Path.of(dataLakeFolder, elementID, targetName).toAbsolutePath().toString(), originalFileName, mimeFormat);

@@ -10,6 +10,11 @@ import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Class representing a Task in the Database.
+ * @author Thomas Pfau
+ *
+ */
 public class Task extends ElementBase {
 
 	public static String typeID = "T";
@@ -43,10 +48,18 @@ public class Task extends ElementBase {
 	public JsonArray getResources() {
 		return data.getJsonArray("resources");
 	}
+	/**
+	 * Add a set of resources.
+	 * @param resources
+	 */
 	public void setResources(JsonArray resources) {
 		data.put("resources", resources);
 	}
-
+	
+	/**
+	 * Add a specific resource
+	 * @param filename
+	 */
 	public void addResource(String filename) {		
 		data.getJsonArray("resources").add(filename);
 	}

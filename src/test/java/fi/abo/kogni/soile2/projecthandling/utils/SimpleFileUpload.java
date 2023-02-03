@@ -2,6 +2,11 @@ package fi.abo.kogni.soile2.projecthandling.utils;
 
 import io.vertx.ext.web.FileUpload;
 
+/**
+ * A helper class to generate a simple file upload for unit testing
+ * @author Thomas Pfau
+ *
+ */
 public class SimpleFileUpload implements FileUpload	
 {
 	

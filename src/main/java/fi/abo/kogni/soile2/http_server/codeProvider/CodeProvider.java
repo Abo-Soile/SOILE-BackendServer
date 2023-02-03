@@ -4,7 +4,7 @@ import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import io.vertx.core.Future;
 
 /**
- * Interface providing code for a particular Task.
+ * Interface providing (compiled) code for a particular Task.
  * Implementing classes are assumed to keep the code (and compiled code) in memory for some time.
  * @author Thomas Pfau
  *
@@ -12,7 +12,7 @@ import io.vertx.core.Future;
 public interface CodeProvider {
 
 	/**
-	 * Get the original Code associated with the given {@link GitFile}.
+	 * Get the compiled Code associated with the given {@link GitFile}.
 	 * @param file
 	 * @return
 	 */

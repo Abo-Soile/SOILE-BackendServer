@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -11,19 +9,21 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
-import fi.abo.kogni.soile2.projecthandling.participant.DataParticipant;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.DBParticipant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.file.FileSystem;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
+/**
+ * Handler for Project instances.
+ * @author Thomas Pfau
+ *
+ */
 public class ProjectInstanceHandler {
 
 	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceHandler.class);
@@ -159,21 +159,14 @@ public class ProjectInstanceHandler {
 	}
 	
 	/**
-	 * Get a list of project instances.
+	 * Get a list of project instances. based on the given Permissions
+	 * This will return non-private projects and all projects listed in the permissions.
+	 * @param Permissions  the permissions for the projects 
+	 * @return
 	 */
 	public Future<JsonArray> getProjectList(JsonArray Permissions)
 	{
 		return manager.getProjectInstanceStatus(Permissions);
 	}
 	
-	/**
-	 * 
-	 */
-	public Future<JsonObject> getAvailableData(ProjectInstance instance)
-	{
-		Promise<JsonObject> dataPromise = Promise.promise();
-		
-		
-		return dataPromise.future();
-	}
 }

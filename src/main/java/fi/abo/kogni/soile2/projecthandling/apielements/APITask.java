@@ -10,10 +10,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitElement;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.exceptions.NoCodeTypeChangeException;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
-import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -21,6 +19,11 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * An API Task element
+ * @author Thomas Pfau
+ *
+ */
 public class APITask extends APIElementBase<Task> {
 	private static final Logger LOGGER = LogManager.getLogger(APITask.class);
 

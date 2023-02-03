@@ -6,16 +6,14 @@ import java.util.List;
 
 import fi.aalto.scicomp.mathparser.MathHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
-import fi.abo.kogni.soile2.projecthandling.participant.DataParticipant;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 /**
- * 
- * @author thomas
+ * A Filter Object Instance
+ * @author Thomas Pfau
  *
  */
 public class FilterObjectInstance extends ElementInstanceBase {

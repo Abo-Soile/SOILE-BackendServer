@@ -1,11 +1,8 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
 
-import java.util.function.Supplier;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import io.vertx.core.Future;
@@ -136,12 +133,28 @@ public interface APIElement<T extends ElementBase> {
 	 */
 	Future<Boolean> loadAdditionalData(EventBus eb, String targetRepository);
 	
+	/**
+	 * Get the json as stored in Git.
+	 * @return
+	 */
 	JsonObject getGitJson();
 	
+	/**
+	 * Load data from a Json as stored in Git
+	 * @param json the Json to load into the API node
+	 */
 	void loadGitJson(JsonObject json);
 	
+	/**
+	 * Get the Json for this 
+	 * @return
+	 */
 	JsonObject getJson();
 	
+	/**
+	 * Load APIElement Data from a json object. 
+	 * @param json
+	 */
 	void loadFromJson(JsonObject json);
 }
 

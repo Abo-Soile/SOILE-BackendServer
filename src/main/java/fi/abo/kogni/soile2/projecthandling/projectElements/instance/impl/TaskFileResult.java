@@ -62,17 +62,31 @@ public class TaskFileResult {
 		return f;		
 	}
 	
+	/**
+	 * Get the result in the given Project Path. 
+	 * @param ProjectPath the path of the project this result is stored in.
+	 * @return The absolute (full) Path of the file this result refers to. 
+	 */
 	public String getFilePathInDataLake(String ProjectPath)
 	{
 		return Path.of(ProjectPath, getFilePath()).toString();
 	}
 	
 
+	/**
+	 * Get the Path to the file represented by this {@link TaskFileResult} based on the folder of the datalake it is stored in.
+	 * @param dataLakeFolder the datalake folder.
+	 * @return the absolute path of the file
+	 */
 	public String getFolderPath(String dataLakeFolder)
 	{
 		return Path.of(dataLakeFolder, getRelativeFolderPath(),Integer.toString(step),taskID).toString();
 	}
 
+	/**
+	 * Set the name of the local file (i.e. the actual file stored in he datalake.
+	 * @param filename
+	 */
 	public void setLocalFileName(String filename)
 	{
 		this.localFileName = filename;

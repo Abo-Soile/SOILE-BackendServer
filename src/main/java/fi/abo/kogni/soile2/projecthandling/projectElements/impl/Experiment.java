@@ -11,6 +11,11 @@ import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Class representing an Experiment on the Database.
+ * @author Thomas Pfau
+ *
+ */
 public class Experiment extends ElementBase {
 
 	private List<String> elements;

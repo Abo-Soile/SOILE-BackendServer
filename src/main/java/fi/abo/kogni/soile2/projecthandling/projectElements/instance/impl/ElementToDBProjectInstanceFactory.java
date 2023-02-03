@@ -6,6 +6,11 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInsta
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.mongo.MongoClient;
 
+/**
+ * Factory for the creation of a Project instance that is not yet in the database. 
+ * @author Thomas Pfau
+ *
+ */
 public class ElementToDBProjectInstanceFactory extends DBProjectInstanceFactory {
 
 	/**

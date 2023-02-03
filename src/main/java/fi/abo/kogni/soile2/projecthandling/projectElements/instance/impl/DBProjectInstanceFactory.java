@@ -1,6 +1,5 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
@@ -8,6 +7,11 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInsta
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.mongo.MongoClient;
 
+/**
+ * Factory for Database based project instances.
+ * @author Thomas Pfau
+ *
+ */
 public class DBProjectInstanceFactory implements ProjectInstanceFactory {
 
 	protected MongoClient client;

@@ -2,8 +2,6 @@ package fi.abo.kogni.soile2.projecthandling.apielements;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
-import fi.abo.kogni.soile2.projecthandling.exceptions.NoNameChangeException;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import io.vertx.core.Future;
@@ -165,6 +163,9 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 		setPrivate(target.getPrivate());
 	}
 	
+	/**
+	 * Indicate whether this Element has additional Git content that needs to be loaded.
+	 */
 	public boolean hasAdditionalGitContent()
 	{
 		return false;
@@ -229,6 +230,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 		loadDefaultProperties(element);
 	}
 	
+	@Override
 	public JsonObject getJson() {
 		return this.data;
 	}

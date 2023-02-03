@@ -2,6 +2,11 @@ package fi.abo.kogni.soile2.utils;
 
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Utils for Event Bus Communication.
+ * @author Thomas Pfau
+ *
+ */
 public class SoileCommUtils {
 
 	public static String SUCCESS = "Success";

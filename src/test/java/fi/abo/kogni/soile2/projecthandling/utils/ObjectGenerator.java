@@ -31,6 +31,11 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
+/**
+ * Helper Class to generate a couple of Objects (mainly for testing)
+ * @author Thomas Pfau
+ *
+ */
 public class ObjectGenerator {
 
 	private static final Logger LOGGER = LogManager.getLogger(ObjectGenerator.class);

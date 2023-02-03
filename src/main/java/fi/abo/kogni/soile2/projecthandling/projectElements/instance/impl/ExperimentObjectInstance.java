@@ -8,13 +8,15 @@ import java.util.Random;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
-import fi.abo.kogni.soile2.projecthandling.participant.DataParticipant;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * {@link ElementInstance} representing an Experiment in a Project.
+ * @author Thomas Pfau
+ */
 public class ExperimentObjectInstance extends ElementInstanceBase{
 
 	Random rand = new Random();
@@ -25,34 +27,60 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 		defineElements();		
 	}
 
+	/**
+	 * Get the instanceID of the Element (Task or Experiment) within this Experiment that is the first element (if this is not random)
+	 * @return The InstanceID of the start element
+	 */
 	@JsonProperty("start")
 	public String getStart() {
 		return data.getString("start");
 	}
 	
+	/**
+	 * Set the instance ID of the Element (Task or Experiment) within this Experiment that is the first element (if this is not random)
+	 * @param start The InstanceID of the start element
+	 */
 	public void setStart(String start) {
 		data.put("start", start);
 	}
 	
+
+	/**
+	 * Is this experiment randomized
+	 * @return whether this experiments elements are randomized or not
+	 */
 	@JsonProperty("random")
 	public Boolean getRandom() {
 		return data.getBoolean("random");
 	}
+	/**
+	 * Set the randomization state of this element
+	 * @param random
+	 */
 	public void setRandom(Boolean random) {
 		data.put("random",random);
 	}
 
+	/**
+	 * Get the JsonArray of Elements in this experiment. 
+	 * Each element is a JsonObject with individual properties depending on its type. 
+	 * @return
+	 */
 	@JsonProperty("elements")
 	public JsonArray getElements() {
 		return data.getJsonArray("elements");
 	}
+	/**
+	 * Set the JsonArray of Elements in this experiment. 
+	 * Each element is a JsonObject with individual properties depending on its type. 
+	 */
 	public void setElements(JsonArray elements) {
 		data.put("elements",elements);	
 		defineElements();
 	}
 	
 	/**
-	 * 
+	 * Define the element instanceIDs in this experiment. 
 	 */
 	private void defineElements()
 	{

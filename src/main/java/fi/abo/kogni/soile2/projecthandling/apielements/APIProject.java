@@ -6,6 +6,11 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * An API Project
+ * @author Thomas Pfau
+ *
+ */
 public class APIProject extends APIElementBase<Project>{
 
 	

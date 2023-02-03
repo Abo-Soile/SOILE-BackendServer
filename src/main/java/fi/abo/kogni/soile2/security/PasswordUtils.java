@@ -11,6 +11,11 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+/**
+ * Helper functions for Password generation
+ * @author Thomas Pfau
+ *
+ */
 public class PasswordUtils {
 
 	/**

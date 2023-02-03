@@ -5,7 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-
+/**
+ * An API Experiment instance
+ * @author Thomas Pfau
+ *
+ */
 public class APIExperiment extends APIElementBase<Experiment> {
 
 	private String[] gitFields = new String[] {"name", "elements"};

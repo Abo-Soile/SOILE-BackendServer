@@ -16,9 +16,13 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
-import io.vertx.ext.mongo.MongoClient;
 
 
+/**
+ * Verticle for parts of participant handling
+ * @author Thomas Pfau
+ *
+ */
 public class ParticipantVerticle extends AbstractVerticle {
 
 	ParticipantHandler partHandler;
@@ -54,7 +58,10 @@ public class ParticipantVerticle extends AbstractVerticle {
 		})
 		.onFailure(err -> stopPromise.fail(err));			
 	}
-	
+	/**
+	 * Delete a participant and all associated files/data.
+	 * @param message
+	 */
 	public void deleteParticipants(Message<JsonArray> message)
 	{
 		JsonArray participantInformation = message.body();

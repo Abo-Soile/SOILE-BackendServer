@@ -146,6 +146,10 @@ public abstract class ProjectInstance implements AccessElement{
 		}
 	}
 
+	/**
+	 * Get the name of the project Instance
+	 * @return
+	 */
 	public String getName()
 	{
 		return name;
@@ -259,6 +263,11 @@ public abstract class ProjectInstance implements AccessElement{
 		return finishedPromise.future();
 	}	
 	
+	/**
+	 * Retrieve the results part of the data provided when a Task is submitted. 
+	 * @param taskData the data submitted when a taskk is finished.
+	 * @return the results data to be stored in a db.
+	 */
 	public JsonObject getResultDataFromTaskData(JsonObject taskData)
 	{
 		JsonObject resultData = new JsonObject();

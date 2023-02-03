@@ -1,5 +1,10 @@
 package fi.abo.kogni.soile2.projecthandling.exceptions;
 
+/**
+ * Names of elements cannot be changed.
+ * @author Thomas Pfau
+ *
+ */
 public class NoNameChangeException extends Exception {
 
 	public NoNameChangeException()

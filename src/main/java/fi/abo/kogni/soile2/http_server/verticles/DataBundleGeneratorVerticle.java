@@ -25,6 +25,11 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
+/**
+ * Verticle that handles creation of data bundles for Downloads. 
+ * @author Thomas Pfau
+ *
+ */
 public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	MongoClient client;
@@ -35,7 +40,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	String downloadCollection;
 	static final Logger LOGGER = LogManager.getLogger(DataBundleGeneratorVerticle.class);
 
-
+	
 	public DataBundleGeneratorVerticle(MongoClient client, ProjectInstanceHandler projHandler, ParticipantHandler partHandler)
 	{
 		dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
@@ -69,6 +74,11 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		.onFailure(err -> stopPromise.fail(err));
 	}
 
+	/**
+	 * Possible options for the status of a download
+	 * @author Thomas Pfau
+	 *
+	 */
 	public enum DownloadStatus
 	{
 		creating,
@@ -81,6 +91,13 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	}
 
+	/**
+	 * Create a Download for the given Information in the message.
+	 * The message needs to have a "requestType" (participants, participant, tasks or task).
+	 * participants/tasks need to be JsonArrays, task/participant are strings. 
+	 * along with a projectID for which to generate the download.  
+	 * @param message
+	 */
 	public void createDownload(Message<JsonObject> message)
 	{
 		try {
@@ -391,6 +408,11 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	}
 
+	/**
+	 * Initiate a download. 
+	 * @param projectID
+	 * @return
+	 */
 	private Future<Download> startDownload(String projectID)
 	{
 		Promise<Download> collectionStartedPromise = Promise.promise();

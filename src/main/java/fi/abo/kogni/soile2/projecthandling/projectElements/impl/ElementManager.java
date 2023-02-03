@@ -44,7 +44,7 @@ import io.vertx.ext.web.FileUpload;
  * @param <T>
  */
 public class ElementManager<T extends ElementBase> {
-	
+
 	Supplier<T> supplier;
 	Supplier<APIElement<T>> apisupplier;
 	ElementFactory<T> factory;
@@ -60,6 +60,7 @@ public class ElementManager<T extends ElementBase> {
 	{
 		this(supplier, apisupplier, client, vertx, new ElementDataHandler<T>(new DataLakeResourceManager(vertx), supplier));		
 	}
+	
 	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, Vertx vertx, ElementDataHandler<T> handler)
 	{
 		this.apisupplier = apisupplier;
@@ -71,13 +72,17 @@ public class ElementManager<T extends ElementBase> {
 		this.eb = vertx.eventBus();
 		this.dataHandler = handler;
 	}
-	
-	
+
+	/**
+	 * Get the ID of the repository for this type of Element.
+	 * @param uuid the uuid of the element
+	 * @return the Supplemented ID of the element representing the repository ID
+	 */
 	public String getGitIDForUUID(String uuid)
 	{
 		return typeID + uuid;
 	}
-		
+
 	/**
 	 * Clean up any caches used by this manager.
 	 */
@@ -142,7 +147,7 @@ public class ElementManager<T extends ElementBase> {
 		}
 		return createElement(name, null);
 	}
-	
+
 	/**
 	 * Load or Create an element. This should not normally be called but might be necessary for some tests. 
 	 * @param name
@@ -190,7 +195,13 @@ public class ElementManager<T extends ElementBase> {
 		}
 		return createOrLoadElement(name, null);
 	}
-	
+
+	/**
+	 * Get the Git Json for the given element at the given ID. This is the Git Object of the element.
+	 * @param elementID the elementID
+	 * @param elementVersion the version to retrieve
+	 * @return A {@link Future} of the {@link JsonObject} that was stored in git. 
+	 */
 	public Future<JsonObject> getGitJson(String elementID, String elementVersion)
 	{
 		GitFile target = new GitFile("Object.json", getGitIDForUUID(elementID), elementVersion);
@@ -203,7 +214,7 @@ public class ElementManager<T extends ElementBase> {
 		.onFailure(err -> elementPromise.fail(err));		
 		return elementPromise.future();		
 	}
-	
+
 	/**
 	 * Get the Element stored in the Database with the given ID.  
 	 * @param elementID the ID of the element.
@@ -213,7 +224,7 @@ public class ElementManager<T extends ElementBase> {
 	{		
 		return factory.loadElement(client, elementID);
 	}
-	
+
 	/**
 	 * Update the given element in the database and on git using the Data from the provided API element
 	 * @param newData
@@ -264,7 +275,13 @@ public class ElementManager<T extends ElementBase> {
 		.onFailure(fail -> elementPromise.fail(fail));		
 		return elementPromise.future();			
 	}
-	
+
+	/**
+	 * Delete the given element. This does NOT actually delete the element, but makes it invisible, so it can still be used but it can no longer be modified or updated. 
+	 * Elements that contain it will still be valid, but the element can no longer be updated. 
+	 * @param newData
+	 * @return
+	 */
 	public Future<Boolean> deleteElement(APIElement<T> newData)
 	{
 		// well, we want to delete the Object. This is final 		
@@ -282,7 +299,7 @@ public class ElementManager<T extends ElementBase> {
 		.onFailure(fail -> deletionPromise.fail(fail));		
 		return deletionPromise.future();			
 	}
-	
+
 	/**
 	 * Get the List of all elements of the specified type. 
 	 * Returns a list of 
@@ -329,7 +346,7 @@ public class ElementManager<T extends ElementBase> {
 		});
 		return listPromise.future();		
 	}
-	
+
 	/**
 	 * Get the list of all tags for the given element.  
 	 * Returns a list of 
@@ -360,8 +377,8 @@ public class ElementManager<T extends ElementBase> {
 		});
 		return listPromise.future();		
 	}
-	
-	
+
+
 	/**
 	 * Get the list of all versions for the given element.  
 	 * Returns a list of 
@@ -381,10 +398,10 @@ public class ElementManager<T extends ElementBase> {
 			for(int i = 0; i < versionArray.size(); i++)
 			{	
 				JsonObject currentVersion = versionArray.getJsonObject(i);
-				
+
 				result.add(new JsonObject()
-							   .put("version", currentVersion.getString("version"))
-							   .put("date", dateFormatter.format(new Date(currentVersion.getLong("timestamp"))))						
+						.put("version", currentVersion.getString("version"))
+						.put("date", dateFormatter.format(new Date(currentVersion.getLong("timestamp"))))						
 						);				
 			}
 			listPromise.complete(result);
@@ -394,7 +411,7 @@ public class ElementManager<T extends ElementBase> {
 		});
 		return listPromise.future();		
 	}
-	
+
 	private HashMap<String,Date> createVersionHashMap(JsonArray versions)
 	{
 		HashMap<String,Date> versionMap = new HashMap<>();
@@ -405,8 +422,8 @@ public class ElementManager<T extends ElementBase> {
 		}
 		return versionMap;
 	}
-	
-	
+
+
 	/**
 	 * Get an API that can be returned based on the given UUID and version.
 	 * @param uuid the uuid of the element to be returned
@@ -445,7 +462,7 @@ public class ElementManager<T extends ElementBase> {
 		});
 		return elementPromise.future();			
 	}
-	
+
 	/**
 	 * Get the {@link DataLakeFile} for the given FileName of the taskID  Version
 	 * @param elementID the Id of the element 
@@ -469,7 +486,11 @@ public class ElementManager<T extends ElementBase> {
 	{
 		return dataHandler.handlePostFile(elementID, elementVersion, filename, upload);
 	}
-	
+
+	/**
+	 * Get the supplier for the ElementType represented by this Manager
+	 * @return
+	 */
 	public Supplier<T> getElementSupplier()
 	{
 		return supplier;
@@ -487,17 +508,35 @@ public class ElementManager<T extends ElementBase> {
 		elementPromise.complete(apiElement);
 		return elementPromise.future();			
 	}
-	
+
+	/**
+	 * Static method to create a Project Manager
+	 * @param client
+	 * @param vertx
+	 * @return
+	 */
 	public static ElementManager<Project> getProjectManager(MongoClient client, Vertx vertx)
 	{
 		return new ElementManager<Project>(Project::new,APIProject::new, client, vertx);
 	}
-	
+
+	/**
+	 * Static method to create a Experiment Manager
+	 * @param client
+	 * @param vertx
+	 * @return
+	 */
 	public static ElementManager<Experiment> getExperimentManager(MongoClient client, Vertx vertx)
 	{
 		return new ElementManager<Experiment>(Experiment::new,APIExperiment::new, client, vertx);
 	}
-	
+
+	/**
+	 * Static method to create a Task Manager
+	 * @param client
+	 * @param vertx
+	 * @return
+	 */
 	public static ElementManager<Task> getTaskManager(MongoClient client, Vertx vertx)
 	{
 		return new ElementManager<Task>(Task::new,APITask::new, client, vertx);

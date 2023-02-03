@@ -1,20 +1,12 @@
 package fi.abo.kogni.soile2.projecthandling.participant.impl;
 
-import fi.abo.kogni.soile2.projecthandling.participant.ParticipantImpl;
-
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.utils.DatedDataMap;
-import fi.abo.kogni.soile2.projecthandling.participant.DataParticipantImpl;
+import fi.abo.kogni.soile2.projecthandling.participant.ParticipantImpl;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
