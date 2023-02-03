@@ -3,12 +3,10 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.aalto.scicomp.gitFs.gitProviderVerticle;
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ShortCutExistsException;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;

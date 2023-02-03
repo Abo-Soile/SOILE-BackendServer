@@ -5,32 +5,34 @@ import java.io.File;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * This class manages access to the {@link gitProviderVerticle}s via the eventbus..
  * It only communicates with the gitProviderVerticle providing some utility functions.
  * TODO: Create Tags for an active save command. 
+ * TODO: Convert into a Verticle ?
  * @author Thomas Pfau
  *
  */
-public class GitManager {
+public class GitManager{
 
 	EventBus eb;
-	private static final Logger log = LogManager.getLogger(GitManager.class.getName());	
-
+	
 	public GitManager(EventBus eb)
 	{
 		this.eb = eb;
 	}
+	private static final Logger log = LogManager.getLogger(GitManager.class.getName());
+	public static String resourceFolder = "resources";
+
 	
 	/**
 	 * Test whether a repo element exists asynchronosly
@@ -92,12 +94,6 @@ public class GitManager {
 		});
 		return initPromise.future();
 	}
-	/*
-	public Future<Boolean> deleteRepo(String elementID)
-	{
-		
-	}*/
-
 
 	/**
 	 * Get the file contents of a file in the github repository, these are all just json/linker files). 
@@ -135,7 +131,7 @@ public class GitManager {
 	 */
 	public Future<String> getGitResourceContents(GitFile file)
 	{
-		return getGitFileContents(new GitFile("resources" + File.separator + file.getFileName(), file.getRepoID(), file.getRepoVersion()));
+		return getGitFileContents(new GitFile(resourceFolder + File.separator + file.getFileName(), file.getRepoID(), file.getRepoVersion()));
 	}
 	/**
 	 * Get the file contents of a git file as a Json Object. 
@@ -196,6 +192,43 @@ public class GitManager {
 	}
 
 	/**
+	 * Get the resource files available for a specific git Version of an Object  
+	 * @return A {@link JsonObject} of the contents of the git file.
+	 */
+	public Future<JsonArray> getResourceList(GitElement repoVersion)
+	{
+		if(!repoVersion.isValid())
+		{
+			return Future.failedFuture("Supplied Repo was invalid: " + repoVersion.toString());
+		}
+		Promise<JsonArray> dataPromise = Promise.promise();
+		JsonObject getFilesCommand = gitProviderVerticle.createCommandForRepoAtVersion(repoVersion.getRepoID(), repoVersion.getRepoVersion())
+									 .put(gitProviderVerticle.COMMANDFIELD, gitProviderVerticle.LIST_FILES_COMMAND);
+		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), getFilesCommand).onSuccess(fileData ->{			
+			JsonArray result = ((JsonObject)fileData.body()).getJsonArray(gitProviderVerticle.DATAFIELD);
+			log.debug(result.encodePrettily());
+			for(int i = 0; i < result.size(); ++i)
+			{				
+				if(result.getValue(i) instanceof JsonObject)
+				{
+					// this is a folder
+					if(result.getJsonObject(i).containsKey(resourceFolder))
+					{
+						dataPromise.complete(result.getJsonObject(i).getJsonArray(resourceFolder));
+						return;
+					}
+				}
+				// we didn't find the resource folder so we return an empty array.
+			}
+			dataPromise.complete(new JsonArray());
+		}).onFailure(fail -> 
+		{
+			dataPromise.fail(fail);
+		});	
+		return dataPromise.future();			
+	}
+	
+	/**
 	 * Write data to a file specified by the {@link GitFile}, receive the new version of the respective file. 
 	 * @param file the GitFile containing name (including folders),  
 	 * @param data
@@ -238,7 +271,7 @@ public class GitManager {
 	 */
 	public Future<String> writeGitResourceFile(GitFile file, String data)
 	{
-		return writeGitFile(new GitFile("resources" + File.separator + file.getFileName(), file.getRepoID(), file.getRepoVersion()), data);
+		return writeGitFile(new GitFile(resourceFolder + File.separator + file.getFileName(), file.getRepoID(), file.getRepoVersion()), data);
 	}
 	
 	/**
@@ -251,7 +284,7 @@ public class GitManager {
 	{
 		return writeGitResourceFile(file, data.encodePrettily());
 	}
-
+	
 	public boolean gitFileValid(GitFile file)
 	{
 		if(file.getRepoID() == null)
@@ -326,5 +359,6 @@ public class GitManager {
 	public static JsonObject buildBasicGitExperiment(String name)
 	{
 		return buildBasicGitObject(name).put("elements", new JsonArray());
-	}
+	}		
+	
 }

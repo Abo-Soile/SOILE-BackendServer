@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.datamanagement.git;
 
+import io.vertx.core.json.JsonObject;
+
 /**
  * This represents all data necessary to retrieve the file for a given repository (the repository id can e.g. be a task/project or similar). 
  * @author Thomas Pfau
@@ -16,12 +18,31 @@ public class GitFile {
 		this.repoID = repoID;
 		this.repoVersion = repoVersion;
 	}
+	public GitFile(JsonObject json) {
+		super();
+		this.fileName = json.getString("filename");
+		this.repoID = json.getString("repoID");
+		this.repoVersion = json.getString("version");
+	}
+	
+	/**
+	 * Get the fileName this File represents.
+	 * @return
+	 */
 	public String getFileName() {
 		return fileName;
 	}
+	/**
+	 * Get the RepoId this file should be stored in / retrieved from
+	 * @return
+	 */
 	public String getRepoID() {
 		return repoID;
 	}
+	/**
+	 * Get the version of the file that will be looked up / stored to.
+	 * @return
+	 */
 	public String getRepoVersion() {
 		return repoVersion;
 	}
@@ -48,5 +69,12 @@ public class GitFile {
 		return "GitFile{ filename: " + fileName + " ; repoID: " + repoID + " ; version: " + repoVersion + " }";
 	}
 	
-	
+	/**
+	 * Ge a Json representation for this file
+	 * @return a {@link JsonObject} with a "filename", a "repoID" and a "version" field.
+	 */
+	public JsonObject toJson()
+	{		
+		return new JsonObject().put("filename",fileName).put("repoID",repoID).put("version", repoVersion);
+	}
 }

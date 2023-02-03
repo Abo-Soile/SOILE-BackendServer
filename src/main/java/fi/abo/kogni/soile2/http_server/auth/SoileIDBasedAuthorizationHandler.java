@@ -19,7 +19,13 @@ import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.handler.HttpException;
 
-
+/**
+ * Authorization handling for ID based auth. 
+ * This is for any end-points with IDs (like tasks/experiments/projects/projectInstances) and allows handling those based on the appropriate 
+ * Target collection to check authorizations against.
+ * @author Thomas Pfau
+ *
+ */
 public class SoileIDBasedAuthorizationHandler{
 			
 	static final Logger LOGGER = LogManager.getLogger(SoileIDBasedAuthorizationHandler.class);
@@ -63,7 +69,14 @@ public class SoileIDBasedAuthorizationHandler{
 			return false;
 		}
 	}
-	
+	/**
+	 * Check, whether the given user has authorization to access the given resource based on the required {@link PermissionType}
+	 * @param user The user to check the authorization for
+	 * @param id the ID of the object to check
+	 * @param adminAllowed whether admin access overrides the access restrictions
+	 * @param requiredAccess what the required level of access is (higher access overrides lower access).
+	 * @return A successful future if the user has the given authorization.
+	 */
 	public Future<Void> authorize(User user, String id, boolean adminAllowed, PermissionType requiredAccess) {	
 		Promise<Void> authorizationPromise = Promise.<Void>promise();
 		if(requiredAccess == null)
@@ -71,6 +84,7 @@ public class SoileIDBasedAuthorizationHandler{
 			authorizationPromise.complete();
 			return authorizationPromise.future();
 		}
+		// Fetch the project with the id, but only return the private field (everything else is not relevant)
 		client.findOne(targetCollection,new JsonObject().put("_id", id),new JsonObject().put("private", 1))
 		.onSuccess( res -> {
 			if( res == null)

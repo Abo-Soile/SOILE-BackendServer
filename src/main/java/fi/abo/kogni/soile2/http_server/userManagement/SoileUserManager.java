@@ -26,7 +26,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.HashString;
 import io.vertx.ext.auth.HashingStrategy;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
@@ -75,6 +74,10 @@ public class SoileUserManager implements MongoUserUtil{
 		permissionMap.put(PermissionChange.Replace, "$set");
 	}
 
+	/**
+	 * Set up the DB (i.e. making the usernameField a unique index.
+	 * @return
+	 */
 	public Future<Void> setupDB()
 	{		
 		IndexOptions options = new IndexOptions();
@@ -480,6 +483,13 @@ public class SoileUserManager implements MongoUserUtil{
 
 
 
+	/**
+	 * Remove a given SessionID from a given username, invalidating that session (e.g. called by logout) 
+	 * @param username The username for which to deactivate the session
+	 * @param sessionID the sessionID to deactivate
+	 * @param handler A handler that handles the resulting {@link MongoClientUpdateResult}
+	 * @return this, for fluent use.
+	 */
 	public SoileUserManager removeUserSession(String username, String sessionID, Handler<AsyncResult<MongoClientUpdateResult>> handler)	
 	{
 		if (username == null  || sessionID == null) {
@@ -560,6 +570,13 @@ public class SoileUserManager implements MongoUserUtil{
 	}
 
 
+	/**
+	 * Add a session to a user that can be used for re-authentication.
+	 * @param username The username for which to add a session
+	 * @param sessionID the ID of the session to add 
+	 * @param handler the handler to handle the resulting {@link MongoClientUpdateResult}
+	 * @return
+	 */
 	public SoileUserManager addUserSession(String username, String sessionID, Handler<AsyncResult<MongoClientUpdateResult>> handler)	
 	{
 		if (username == null  || sessionID == null) {
@@ -641,6 +658,13 @@ public class SoileUserManager implements MongoUserUtil{
 		return this;
 	}
 
+	/**
+	 * Test whether a given session is (still) valid for a given user
+	 * @param username the username of the user
+	 * @param sessionID the sessionID to check
+	 * @param handler the handler to handle the {@link Boolean} {@link Future}
+	 * @return
+	 */
 	public SoileUserManager isSessionValid(String username, String sessionID, Handler<AsyncResult<Boolean>> handler)	
 	{
 		if (username == null  || sessionID == null) {
@@ -814,6 +838,11 @@ public class SoileUserManager implements MongoUserUtil{
 		return client.findOne(authnOptions.getCollectionName(), query, fields);
 	}
 
+	/**
+	 * Get the Information about a users Permissions/Access
+	 * @param username The username for which to get the permissions
+	 * @return A Future of a JsonOBject with the permissions.
+	 */
 	public Future<JsonObject> getUserAccessInfo(String username) {
 		JsonObject query = new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), username);
 		JsonObject fields = new JsonObject().put(SoileConfigLoader.getUserdbField("userRolesField"), 1)

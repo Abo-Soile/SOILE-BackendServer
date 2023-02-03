@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.http_server.verticles;
 import java.net.HttpURLConnection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -118,27 +117,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			stopPromise.complete();
 		})
 		.onFailure(err -> stopPromise.fail(err));			
-	}
-
-	// This might be an option to address unexpected errors. not sure whether we want to go this way yet.
-	private Handler<Message<JsonObject>> handleRequest(Handler<Message<JsonObject>> call)
-	{
-		
-		return new Handler<Message<JsonObject>>() {
-
-			@Override
-			public void handle(Message<JsonObject> t) {
-				try {
-					call.handle(t);
-				}				
-				catch(Exception e)
-				{
-					t.fail(HttpURLConnection.HTTP_BAD_REQUEST, e.getMessage());
-					return;
-				}				
-			}
-			
-		};
 	}
 	
 	/**

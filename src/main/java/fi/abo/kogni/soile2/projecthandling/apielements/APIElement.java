@@ -1,14 +1,12 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
 
-import java.util.function.Supplier;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import io.vertx.core.Future;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 /**
@@ -126,21 +124,37 @@ public interface APIElement<T extends ElementBase> {
 	 * @param gitManager a git Manager to use
 	 * @return A Future of the updated version
 	 */
-	Future<String> storeAdditionalData(String currentVersion, GitManager gitManager, String targetRepository);
+	Future<String> storeAdditionalData(String currentVersion, EventBus eb, String targetRepository);
 	
 	/**
 	 * Load additional data to from git and add it to this object.
 	 * @param gitManager a git Manager to use
 	 * @return if the loading operation was successfull
 	 */
-	Future<Boolean> loadAdditionalData(GitManager gitManager, String targetRepository);
+	Future<Boolean> loadAdditionalData(EventBus eb, String targetRepository);
 	
+	/**
+	 * Get the json as stored in Git.
+	 * @return
+	 */
 	JsonObject getGitJson();
 	
+	/**
+	 * Load data from a Json as stored in Git
+	 * @param json the Json to load into the API node
+	 */
 	void loadGitJson(JsonObject json);
 	
+	/**
+	 * Get the Json for this 
+	 * @return
+	 */
 	JsonObject getJson();
 	
+	/**
+	 * Load APIElement Data from a json object. 
+	 * @param json
+	 */
 	void loadFromJson(JsonObject json);
 }
 

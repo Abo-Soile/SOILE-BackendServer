@@ -5,10 +5,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
-import fi.abo.kogni.soile2.projecthandling.participant.DataParticipant;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
-import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -137,6 +134,12 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	@Override
 	public abstract String nextTask(Participant user);
 
+	/**
+	 * Checks, whether "next" is possible and if not return <code>null</code>.  
+	 * @param user The user for which to get the next element
+	 * @param next the next element.
+	 * @return The instanceID of the next {@link TaskObjectInstance} or null if there is no next. 
+	 */
 	protected String getNextIfThereIsOne(Participant user, String next)
 	{
 		ElementInstance element = sourceProject.getElement(next);

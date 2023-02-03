@@ -8,6 +8,11 @@ import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 
+/**
+ * A Simple Token generator for JWT.
+ * @author Thomas Pfau
+ *
+ */
 public class JWTTokenCreator{
 
 	Vertx vertx;	
@@ -18,6 +23,11 @@ public class JWTTokenCreator{
 		this.vertx = vertx;
 		this.handler = handler;
 	}
+	/**
+	 * Create a Token if the context has an authenticated user. 
+	 * @param context the Routing context for which to create a token.
+	 * @return a Future of the token. This fails if there is no user in the Context.
+	 */
 	public Future<String> getToken(RoutingContext context) {
 		Promise<String> tokenPromise = Promise.<String>promise();
 		if(context.user() == null)

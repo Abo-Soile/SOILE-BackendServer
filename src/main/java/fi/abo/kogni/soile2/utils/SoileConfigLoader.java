@@ -6,11 +6,16 @@ import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.future.SucceededFuture;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
 
+/**
+ * Heart of the SOILE2 Configuration loading. 
+ * This provides static access to the configuration and needs to be set up BEFORE anything else. 
+ * @author Thomas Pfau
+ *
+ */
 public class SoileConfigLoader {
 	
 	public static final String SESSION_CFG = "session";
@@ -48,6 +53,11 @@ public class SoileConfigLoader {
 	
 	private static boolean isSetup = false;
 	
+	/**
+	 * Set up the configuration from Vertx. 
+	 * @param vertx the Vertx instance to use for loading the configuration
+	 * @return A Successfull future if the Configuration was loaded.
+	 */
 	public static Future<Void> setupConfig(Vertx vertx)
 	{
 		if(isSetup)
@@ -77,7 +87,11 @@ public class SoileConfigLoader {
 	}
 	
 	
-	public static void setConfigs(JsonObject config)
+	/**
+	 * Set the individual configs from the given JsonObject
+	 * @param config
+	 */
+	private static void setConfigs(JsonObject config)
 	{
 		dbCfg = config.getJsonObject(DB_CFG);
 		userdbFields = config.getJsonObject(USER_DB_FIELDS);

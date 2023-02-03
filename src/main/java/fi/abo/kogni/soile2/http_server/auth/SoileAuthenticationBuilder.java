@@ -7,8 +7,7 @@ import io.vertx.ext.auth.KeyStoreOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.mongo.MongoClient;
-import io.vertx.ext.web.handler.ChainAuthHandler;
-import io.vertx.ext.web.handler.JWTAuthHandler;
+import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.handler.SimpleAuthenticationHandler;
 
 /**
@@ -21,6 +20,11 @@ public class SoileAuthenticationBuilder {
 	private JWTAuth authProvider;
 	private SimpleAuthenticationHandler cookieHandler;
 	private SimpleAuthenticationHandler tokenHandler;
+	/**
+	 * Get a JWTAuth Provider for the Soile platform
+	 * @param vertx
+	 * @return A {@link JWTAuth} provider with a soile specific config (generated if it did not previously exist)
+	 */
 	public synchronized JWTAuth getJWTAuthProvider(Vertx vertx)
 	{
 		if(authProvider == null)
@@ -34,6 +38,11 @@ public class SoileAuthenticationBuilder {
 		return authProvider;
 	}
 	
+	/**
+	 * A {@link AuthenticationHandler} that authenticates using cookies. 
+	 * @param vertx
+	 * @return a Auth Provider using Cookies for auth
+	 */
 	public synchronized SimpleAuthenticationHandler getCookieAuthProvider(Vertx vertx, MongoClient client, SoileCookieCreationHandler cookieCreationHandler)
 	{
 		if(cookieHandler == null)
@@ -45,6 +54,12 @@ public class SoileAuthenticationBuilder {
 		return cookieHandler;
 	}	
 	
+	/**
+	 * A {@link AuthenticationHandler} that authenticates using a token. Should only be used for Project execution specific 
+	 * end-points 
+	 * @param vertx
+	 * @return a Auth Provider using Cookies for auth
+	 */
 	public synchronized SimpleAuthenticationHandler getTokenAuthProvider(ParticipantHandler partHandler)
 	{
 		if(tokenHandler == null)
@@ -55,11 +70,4 @@ public class SoileAuthenticationBuilder {
 		}
 		return tokenHandler;
 	}	
-	
-	public ChainAuthHandler create(Vertx vertx, MongoClient client, SoileCookieCreationHandler cookieCreationHandler)
-	{			
-		JWTAuthHandler jwtAuth = JWTAuthHandler.create(getJWTAuthProvider(vertx));	
-		ChainAuthHandler handler = ChainAuthHandler.any().add(getCookieAuthProvider(vertx, client, cookieCreationHandler)).add(jwtAuth);
-		return handler;
-	}
 }

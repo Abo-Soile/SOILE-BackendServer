@@ -1,7 +1,7 @@
 {
 	"FirstTask": {
 		"name": "FirstTask",
-		"resources": ["apple.jpeg"],
+		"resources": ["ImageData.jpg"],
 		"private": true,
 		"codeType": "elang",
 		"codeFile": "FirstTask.elang"
@@ -21,7 +21,7 @@
 	},
 	"Test2": {		
 		"name": "Test2",
-		"resources": ["apple.jpeg"],									
+		"resources": ["ImageData.jpg"],									
 		"codeType": "elang",
 		"codeFile": "FirstTask.elang"
 	},  				
@@ -32,7 +32,7 @@
 	},
 	"Test4": {							
 		"name": "Test4",
-		"resources": ["apple.jpeg"],
+		"resources": ["ImageData.jpg"],
 		"codeFile": "Test.js",
 		"codeType": "javascript"
 	}

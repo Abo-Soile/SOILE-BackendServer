@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import fi.abo.kogni.soile2.MongoTest;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;

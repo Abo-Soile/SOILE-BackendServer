@@ -1,7 +1,6 @@
 package fi.abo.kogni.soile2.projecthandling.participant;
 
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;

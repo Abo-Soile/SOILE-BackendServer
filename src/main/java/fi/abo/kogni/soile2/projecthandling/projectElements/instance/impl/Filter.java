@@ -7,8 +7,19 @@ import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import io.vertx.core.json.JsonObject;
 
 
+/**
+ * A Filter that allows checking whether a user matches or not. 
+ * @author Thomas Pfau
+ *
+ */
 public class Filter {
 	
+	/**
+	 * Test if a Given {@link Participant} matches the filter. The filter is a Formula that has variables reflected by the outputs of the participant.
+	 * @param Filter The Formula (needs to be parseable)
+	 * @param user The {@link Participant} to check the filter for
+	 * @return
+	 */
 	public static boolean userMatchesFilter(String Filter, Participant user)
 	{
 		// a positive evaluation will lead to a value of one. 
@@ -17,7 +28,14 @@ public class Filter {
 		return Math.abs(val - 1) < 0.0001;
 	}	
 	
-	public static String testFilterExpression(String FilterString , JsonObject Values)
+	/**
+	 * Test the filter expression with a given Set of values as JsonObject. 
+	 * Returns success if valid (with the variables) or the message of the error that was thrown.
+	 * @param FilterString
+	 * @param Values
+	 * @return
+	 */
+	public static String isFilterExpressionValid(String FilterString , JsonObject Values)
 	{
 		
 		try

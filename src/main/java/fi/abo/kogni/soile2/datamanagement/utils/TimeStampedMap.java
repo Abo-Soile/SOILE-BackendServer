@@ -3,6 +3,7 @@ package fi.abo.kogni.soile2.datamanagement.utils;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -25,11 +26,16 @@ public class TimeStampedMap<K,T> {
 		ttl = TTL;
 	}
 	
+	public TimeStampedMap(Function<K,Future<T>> retrievalFunction, long TTL) {
+		retriever = new DataRetrieverImpl<>(retrievalFunction);
+		ttl = TTL;
+	}
+	
 	/**
 	 * Clean up old data, that is not currently in use
 	 * @return the removed data.
 	 */
-	public Collection<T> cleanup()
+	public Collection<T> cleanUp()
 	{
 		Collection<K> toClean = CollectionUtils.select(experimentMap.keySet(), key -> !experimentMap.get(key).isValid()); 
 		Collection<T> cleaned = CollectionUtils.collect(toClean, key -> experimentMap.get(key).getData());				

@@ -5,7 +5,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.datamanagement.utils.DataRetriever;
 import fi.abo.kogni.soile2.http_server.codeProvider.exceptions.CompilationException;
 import io.vertx.core.AsyncResult;
@@ -17,14 +16,12 @@ import io.vertx.core.json.JsonObject;
 
 public class CompiledCodeRetriever implements DataRetriever<GitFile, String> {
 
-	GitManager gitManager;
 	EventBus eb;
 	String targetAddress;		
 	static final Logger LOGGER = LogManager.getLogger(CompiledCodeRetriever.class);
 
-	public CompiledCodeRetriever(GitManager gitManager, EventBus eb, String targetAddress) {
+	public CompiledCodeRetriever(EventBus eb, String targetAddress) {
 		super();
-		this.gitManager = gitManager;
 		this.eb = eb;
 		this.targetAddress = targetAddress;
 	}
@@ -32,8 +29,9 @@ public class CompiledCodeRetriever implements DataRetriever<GitFile, String> {
 	@Override
 	public Future<String> getElement(GitFile key) {
 		Promise<String> codePromise = Promise.promise();
-		gitManager.getGitFileContentsAsJson(key)
-		.onSuccess(objectJson -> {			
+		eb.request("soile.git.getGitFileContentsAsJson", key.toJson())
+		.onSuccess(reply -> {
+			JsonObject objectJson = (JsonObject) reply.body();
 			compileCode(objectJson.getString("code"))
 			.onSuccess(compiledCode-> {
 				codePromise.complete(compiledCode);

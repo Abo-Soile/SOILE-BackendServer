@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements;
 
-import javax.naming.directory.InvalidAttributesException;
-
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.GitTest;
@@ -10,6 +8,10 @@ import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.NoNameChangeException;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -25,9 +27,9 @@ public class ElementManagerTest extends GitTest{
 	public void runBeforeTests(TestContext context)
 	{		
 		super.runBeforeTests(context);	
-		projManager = new ElementManager<Project>(Project::new, APIProject::new, mongo_client,gitManager);
-		taskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client,gitManager);
-		expManager = new ElementManager<Experiment>(Experiment::new, APIExperiment::new, mongo_client,gitManager);
+		projManager = new ElementManager<Project>(Project::new, APIProject::new, mongo_client,vertx);
+		taskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client,vertx);
+		expManager = new ElementManager<Experiment>(Experiment::new, APIExperiment::new, mongo_client,vertx);
 	}
 
 	@Test
@@ -291,8 +293,8 @@ public class ElementManagerTest extends GitTest{
 		.onSuccess(apiTask -> {
 			taskManager.getVersionListForElement(apiTask.getUUID())
 			.onSuccess(VersionList -> {
-				// The is the creation (i.e. empty + the data from the task).
-				context.assertEquals(2, VersionList.size());				
+				// The is the creation (i.e. empty) + The Addition of the file + the data from the task).
+				context.assertEquals(3, VersionList.size());				
 				testAsync.complete();
 			})
 			.onFailure(err -> context.fail(err));

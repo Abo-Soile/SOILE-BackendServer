@@ -17,7 +17,7 @@ public class ObjectManager extends GitDataRetriever<JsonObject> {
 	 */	 	
 	public Future<String> writeElement(GitFile target, JsonObject content)	
 	{							
-		return manager.writeGitFile(target, content);		
+		return eb.request("soile.git.writeGitFile", target.toJson().put("data", content)).map(reply -> {return (String) reply.body();});		
 	}
 
 	@Override

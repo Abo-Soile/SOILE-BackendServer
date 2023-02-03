@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.projecthandling.projectElements;
+package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -6,11 +6,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.function.Supplier;
 
-import javax.naming.directory.InvalidAttributesException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
@@ -20,12 +20,19 @@ import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.NoNameChangeException;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Element;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementDataHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.web.FileUpload;
 
 /**
  * The element Manager handles DB elements and their link to the git Repositories.
@@ -37,18 +44,24 @@ import io.vertx.ext.mongo.MongoClient;
  * @param <T>
  */
 public class ElementManager<T extends ElementBase> {
-	
+
 	Supplier<T> supplier;
 	Supplier<APIElement<T>> apisupplier;
 	ElementFactory<T> factory;
 	MongoClient client;
-	GitManager gitManager;
+	EventBus eb;
 	String typeID;
 	TargetElementType type;
+	ElementDataHandler<T> dataHandler;
 	public static final Logger log = LogManager.getLogger(ElementManager.class);
 	private static DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, GitManager manager)
+	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, Vertx vertx)
+	{
+		this(supplier, apisupplier, client, vertx, new ElementDataHandler<T>(new DataLakeResourceManager(vertx), supplier));		
+	}
+	
+	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, Vertx vertx, ElementDataHandler<T> handler)
 	{
 		this.apisupplier = apisupplier;
 		this.supplier = supplier;		
@@ -56,14 +69,27 @@ public class ElementManager<T extends ElementBase> {
 		type = supplier.get().getElementType();
 		this.factory = new ElementFactory<T>(supplier);
 		this.client = client;
-		gitManager = manager;
+		this.eb = vertx.eventBus();
+		this.dataHandler = handler;
 	}
-	
+
+	/**
+	 * Get the ID of the repository for this type of Element.
+	 * @param uuid the uuid of the element
+	 * @return the Supplemented ID of the element representing the repository ID
+	 */
 	public String getGitIDForUUID(String uuid)
 	{
 		return typeID + uuid;
 	}
-		
+
+	/**
+	 * Clean up any caches used by this manager.
+	 */
+	public void cleanUp()
+	{
+		dataHandler.cleanUp();
+	}
 	/**
 	 * Create a new element.
 	 * This future can fail with an {@link ElementNameExistException} with id = name, which indicates that an element with this name already exists.
@@ -78,13 +104,15 @@ public class ElementManager<T extends ElementBase> {
 		.onSuccess(element -> {
 			element.setName(name);	
 			log.debug(element.toJson().encodePrettily());
-			gitManager.initRepo(getGitIDForUUID(element.getUUID()))
-			.onSuccess(initVersion -> 
+			eb.request("soile.git.initRepo",getGitIDForUUID(element.getUUID()))
+			.onSuccess(reply -> 
 			{
+				String initVersion = (String) reply.body();
 				//create an empty project file.
 				JsonObject gitData = GitManager.buildBasicGitElement(name, this.type);
-				gitManager.writeGitFile(new GitFile("Object.json", getGitIDForUUID(element.getUUID()), initVersion), gitData)
-				.onSuccess(version -> {
+				eb.request("soile.git.writeGitFile", new GitFile("Object.json", getGitIDForUUID(element.getUUID()), initVersion).toJson().put("data",gitData))
+				.onSuccess(versionreply -> {
+					String version = (String) versionreply.body();
 					log.debug("Created a new element with name: " + name);
 					element.addVersion(version);
 					log.debug("and data: " + element.toJson().encodePrettily());
@@ -119,7 +147,7 @@ public class ElementManager<T extends ElementBase> {
 		}
 		return createElement(name, null);
 	}
-	
+
 	/**
 	 * Load or Create an element. This should not normally be called but might be necessary for some tests. 
 	 * @param name
@@ -167,14 +195,26 @@ public class ElementManager<T extends ElementBase> {
 		}
 		return createOrLoadElement(name, null);
 	}
-	
+
+	/**
+	 * Get the Git Json for the given element at the given ID. This is the Git Object of the element.
+	 * @param elementID the elementID
+	 * @param elementVersion the version to retrieve
+	 * @return A {@link Future} of the {@link JsonObject} that was stored in git. 
+	 */
 	public Future<JsonObject> getGitJson(String elementID, String elementVersion)
 	{
 		GitFile target = new GitFile("Object.json", getGitIDForUUID(elementID), elementVersion);
 		log.debug("Requesting Data for Repo: "  + getGitIDForUUID(elementID));
-		return gitManager.getGitFileContentsAsJson(target);
+		Promise<JsonObject> elementPromise = Promise.promise();
+		eb.request("soile.git.getGitFileContentsAsJson",target.toJson())
+		.onSuccess(res -> {
+			elementPromise.complete((JsonObject) res.body());
+		})
+		.onFailure(err -> elementPromise.fail(err));		
+		return elementPromise.future();		
 	}
-	
+
 	/**
 	 * Get the Element stored in the Database with the given ID.  
 	 * @param elementID the ID of the element.
@@ -184,7 +224,7 @@ public class ElementManager<T extends ElementBase> {
 	{		
 		return factory.loadElement(client, elementID);
 	}
-	
+
 	/**
 	 * Update the given element in the database and on git using the Data from the provided API element
 	 * @param newData
@@ -204,13 +244,14 @@ public class ElementManager<T extends ElementBase> {
 				elementPromise.fail(new NoNameChangeException());
 				return;
 			}
-			// the gitJson can be directly derived from the API element.					
-			gitManager.writeGitFile(currentVersion, newData.getGitJson())
-			.onSuccess(version -> {
+			// the gitJson can be directly derived from the API element.
+			eb.request("soile.git.writeGitFile", currentVersion.toJson().put("data", newData.getGitJson()))
+			.onSuccess(reply -> {
+				String version = (String) reply.body();
 				if(newData.hasAdditionalGitContent())
 				{
 					// this has additional data that we need to save in git.
-					newData.storeAdditionalData(version, gitManager, getGitIDForUUID(newData.getUUID()))
+					newData.storeAdditionalData(version, eb, getGitIDForUUID(newData.getUUID()))
 					.onSuccess(newVersion -> {
 						element.addVersion(newVersion);				
 						element.save(client).onSuccess(res -> {
@@ -234,7 +275,13 @@ public class ElementManager<T extends ElementBase> {
 		.onFailure(fail -> elementPromise.fail(fail));		
 		return elementPromise.future();			
 	}
-	
+
+	/**
+	 * Delete the given element. This does NOT actually delete the element, but makes it invisible, so it can still be used but it can no longer be modified or updated. 
+	 * Elements that contain it will still be valid, but the element can no longer be updated. 
+	 * @param newData
+	 * @return
+	 */
 	public Future<Boolean> deleteElement(APIElement<T> newData)
 	{
 		// well, we want to delete the Object. This is final 		
@@ -252,7 +299,7 @@ public class ElementManager<T extends ElementBase> {
 		.onFailure(fail -> deletionPromise.fail(fail));		
 		return deletionPromise.future();			
 	}
-	
+
 	/**
 	 * Get the List of all elements of the specified type. 
 	 * Returns a list of 
@@ -299,7 +346,7 @@ public class ElementManager<T extends ElementBase> {
 		});
 		return listPromise.future();		
 	}
-	
+
 	/**
 	 * Get the list of all tags for the given element.  
 	 * Returns a list of 
@@ -330,8 +377,8 @@ public class ElementManager<T extends ElementBase> {
 		});
 		return listPromise.future();		
 	}
-	
-	
+
+
 	/**
 	 * Get the list of all versions for the given element.  
 	 * Returns a list of 
@@ -351,10 +398,10 @@ public class ElementManager<T extends ElementBase> {
 			for(int i = 0; i < versionArray.size(); i++)
 			{	
 				JsonObject currentVersion = versionArray.getJsonObject(i);
-				
+
 				result.add(new JsonObject()
-							   .put("version", currentVersion.getString("version"))
-							   .put("date", dateFormatter.format(new Date(currentVersion.getLong("timestamp"))))						
+						.put("version", currentVersion.getString("version"))
+						.put("date", dateFormatter.format(new Date(currentVersion.getLong("timestamp"))))						
 						);				
 			}
 			listPromise.complete(result);
@@ -364,7 +411,7 @@ public class ElementManager<T extends ElementBase> {
 		});
 		return listPromise.future();		
 	}
-	
+
 	private HashMap<String,Date> createVersionHashMap(JsonArray versions)
 	{
 		HashMap<String,Date> versionMap = new HashMap<>();
@@ -375,8 +422,8 @@ public class ElementManager<T extends ElementBase> {
 		}
 		return versionMap;
 	}
-	
-	
+
+
 	/**
 	 * Get an API that can be returned based on the given UUID and version.
 	 * @param uuid the uuid of the element to be returned
@@ -394,10 +441,11 @@ public class ElementManager<T extends ElementBase> {
 			apiElement.loadFromDBElement(element);
 			// the version cannot be extracted from the db element, as the db element stores all versions, and this is a specific request. 
 			apiElement.setVersion(version);
-			apiElement.loadAdditionalData(gitManager, getGitIDForUUID(apiElement.getUUID()))
+			apiElement.loadAdditionalData(eb, getGitIDForUUID(apiElement.getUUID()))
 			.onSuccess(Void -> {
-				gitManager.getGitFileContentsAsJson(currentVersion)
-				.onSuccess(gitJson -> {
+				eb.request("soile.git.getGitFileContentsAsJson",currentVersion.toJson())
+				.onSuccess(jsonReply-> {
+					JsonObject gitJson = (JsonObject) jsonReply.body(); 
 					apiElement.loadGitJson(gitJson);
 					elementPromise.complete(apiElement);
 				})
@@ -415,6 +463,34 @@ public class ElementManager<T extends ElementBase> {
 		return elementPromise.future();			
 	}
 
+	/**
+	 * Get the {@link DataLakeFile} for the given FileName of the taskID  Version
+	 * @param elementID the Id of the element 
+	 * @param elementVersion the Version of the element
+	 * @param filename the filename of the requested file
+	 * @return a Future of the Datalake file associated with the given file at this version for the element.
+	 */
+	public Future<DataLakeFile> handleGetFile(String elementID, String elementVersion, String filename)
+	{
+		return dataHandler.handleGetFile(elementID, elementVersion, filename);
+	}
+	/**
+	 * Post a given upload to the given task at the given version. Return the new version of the element with the file added.  
+	 * @param elementID the id of the element
+	 * @param elementVersion the version of the element to add the file to
+	 * @param filename the name of the file
+	 * @param upload the upload to associate with the file.
+	 * @return A Future with the NEw Version of the repository for this element with the data added.
+	 */
+	public Future<String> handlePostFile(String elementID, String elementVersion, String filename, FileUpload upload)
+	{
+		return dataHandler.handlePostFile(elementID, elementVersion, filename, upload);
+	}
+
+	/**
+	 * Get the supplier for the ElementType represented by this Manager
+	 * @return
+	 */
 	public Supplier<T> getElementSupplier()
 	{
 		return supplier;
@@ -432,19 +508,37 @@ public class ElementManager<T extends ElementBase> {
 		elementPromise.complete(apiElement);
 		return elementPromise.future();			
 	}
-	
-	public static ElementManager<Project> getProjectManager(MongoClient client, GitManager gm)
+
+	/**
+	 * Static method to create a Project Manager
+	 * @param client
+	 * @param vertx
+	 * @return
+	 */
+	public static ElementManager<Project> getProjectManager(MongoClient client, Vertx vertx)
 	{
-		return new ElementManager<Project>(Project::new,APIProject::new, client, gm);
+		return new ElementManager<Project>(Project::new,APIProject::new, client, vertx);
 	}
-	
-	public static ElementManager<Experiment> getExperimentManager(MongoClient client, GitManager gm)
+
+	/**
+	 * Static method to create a Experiment Manager
+	 * @param client
+	 * @param vertx
+	 * @return
+	 */
+	public static ElementManager<Experiment> getExperimentManager(MongoClient client, Vertx vertx)
 	{
-		return new ElementManager<Experiment>(Experiment::new,APIExperiment::new, client, gm);
+		return new ElementManager<Experiment>(Experiment::new,APIExperiment::new, client, vertx);
 	}
-	
-	public static ElementManager<Task> getTaskManager(MongoClient client, GitManager gm)
+
+	/**
+	 * Static method to create a Task Manager
+	 * @param client
+	 * @param vertx
+	 * @return
+	 */
+	public static ElementManager<Task> getTaskManager(MongoClient client, Vertx vertx)
 	{
-		return new ElementManager<Task>(Task::new,APITask::new, client, gm);
+		return new ElementManager<Task>(Task::new,APITask::new, client, vertx);
 	}	
 }

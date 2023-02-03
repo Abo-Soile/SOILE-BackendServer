@@ -62,18 +62,34 @@ public class SoileAuthorization{
 		instanceAuthorization = MongoAuthorization.create("instanceProvider", client, instanceOptions);		
 	}
 
+	/**
+	 * Get a Authorization with a config for the Task Database
+	 * @return
+	 */
 	public MongoAuthorization getTaskAuthorization() {
 		return taskAuthorization;
 	}
 
+	/**
+	 * Get a Authorization with a config for the Project Database
+	 * @return
+	 */
 	public MongoAuthorization getProjectAuthorization() {
 		return projectAuthorization;
 	}
 
+	/**
+	 * Get a Authorization with a config for the Experiment Database
+	 * @return
+	 */
 	public MongoAuthorization getExperimentAuthorization() {
 		return experimentAuthorization;
 	}
 
+	/**
+	 * Get a Authorization with a config for the ProjectInstance Database
+	 * @return
+	 */
 	public MongoAuthorization getInstanceAuthorization() {
 		return instanceAuthorization;
 	}
@@ -208,6 +224,10 @@ public class SoileAuthorization{
 		return permissionPromise.future();
 	}
 	
+	/**
+	 * Get a Authorization with a config for the requested {@link TargetElementType}
+	 * @return
+	 */
 	public MongoAuthorization getAuthorizationForOption(TargetElementType option)
 	{
 		switch(option)
@@ -220,6 +240,10 @@ public class SoileAuthorization{
 		}
 	}	
 	
+	/**
+	 * Get a {@link MongoAuthorizationOptions} with a config for the requested {@link TargetElementType}
+	 * @return
+	 */
 	private MongoAuthorizationOptions getAuthorizationOptionsForOption(TargetElementType option)
 	{
 		switch(option)

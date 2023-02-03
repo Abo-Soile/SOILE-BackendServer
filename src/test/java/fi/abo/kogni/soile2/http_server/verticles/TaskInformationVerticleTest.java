@@ -5,8 +5,8 @@ import org.junit.Test;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -20,7 +20,7 @@ public class TaskInformationVerticleTest extends SoileVerticleTest {
 	public void taskInfoTest(TestContext context)
 	{		
 		Async testAsync = context.async();
-		ElementManager<Task> taskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client,new GitManager(eb));
+		ElementManager<Task> taskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client,vertx);
 		ObjectGenerator.buildAPITask(taskManager, "FirstTask", mongo_client)
 		.onSuccess(currentTask -> {
 			String taskID = currentTask.getUUID();

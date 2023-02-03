@@ -88,17 +88,11 @@ public class CheckDirtyMap<K,T> {
 	
 	private void getElementFromRetriever(K itemID, Promise<T> itemPromise)
 	{
-		retriever.getElement(itemID).onComplete(result -> {
-			if(result.succeeded())
-			{
-				this.putData(itemID, result.result());
-				itemPromise.complete(result.result());
-			}
-			else
-			{
-				itemPromise.fail(result.cause());
-			}
-		});
+		retriever.getElement(itemID).onSuccess(result -> {
+			this.putData(itemID, result);
+			itemPromise.complete(result);
+		})
+		.onFailure(err -> itemPromise.fail(err));
 	}
 	
 	/**

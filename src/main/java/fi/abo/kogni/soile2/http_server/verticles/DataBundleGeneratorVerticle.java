@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
@@ -25,22 +25,27 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
+/**
+ * Verticle that handles creation of data bundles for Downloads. 
+ * @author Thomas Pfau
+ *
+ */
 public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	MongoClient client;
 	ParticipantHandler partHandler;
 	ProjectInstanceHandler projHandler;
-	DataLakeManager dlmgr;
+	ParticipantDataLakeManager dlmgr;
 	String dataLakeFolder;
 	String downloadCollection;
 	static final Logger LOGGER = LogManager.getLogger(DataBundleGeneratorVerticle.class);
 
-
+	
 	public DataBundleGeneratorVerticle(MongoClient client, ProjectInstanceHandler projHandler, ParticipantHandler partHandler)
 	{
 		dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
 		downloadCollection = SoileConfigLoader.getdbProperty("downloadCollection");
-		dlmgr = new DataLakeManager(dataLakeFolder, vertx);
+		dlmgr = new ParticipantDataLakeManager(dataLakeFolder, vertx);
 		this.client = client;
 		this.projHandler = projHandler;
 		this.partHandler = partHandler;		
@@ -69,6 +74,11 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		.onFailure(err -> stopPromise.fail(err));
 	}
 
+	/**
+	 * Possible options for the status of a download
+	 * @author Thomas Pfau
+	 *
+	 */
 	public enum DownloadStatus
 	{
 		creating,
@@ -81,6 +91,13 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	}
 
+	/**
+	 * Create a Download for the given Information in the message.
+	 * The message needs to have a "requestType" (participants, participant, tasks or task).
+	 * participants/tasks need to be JsonArrays, task/participant are strings. 
+	 * along with a projectID for which to generate the download.  
+	 * @param message
+	 */
 	public void createDownload(Message<JsonObject> message)
 	{
 		try {
@@ -160,7 +177,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	/**
 	 * Create a download for the given tasks.  
-	 * @param taskID A {@link JsonArray} of task IDs of for which to retrieve data.
+	 * @param typeID A {@link JsonArray} of task IDs of for which to retrieve data.
 	 * @param projectID The project ID these tasks are in.
 	 * @return
 	 */
@@ -391,6 +408,11 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	}
 
+	/**
+	 * Initiate a download. 
+	 * @param projectID
+	 * @return
+	 */
 	private Future<Download> startDownload(String projectID)
 	{
 		Promise<Download> collectionStartedPromise = Promise.promise();
@@ -413,7 +435,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	/**
 	 * Extract the datalake files indicated in the FileResults of the resultsData.
-	 * @param taskID the current task that is being handled
+	 * @param typeID the current task that is being handled
 	 * @param participantID the participant ID of the participant currently bing handled
 	 * @param resultData One object of the resultData Json Array according to the Participant specifications
 	 * @param extractedFileNames the List of DataLakeFiles that is required.

@@ -7,14 +7,11 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
-import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
-import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.netty.util.internal.shaded.org.jctools.queues.MessagePassingQueue.Supplier;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
@@ -29,6 +26,13 @@ import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 
+/**
+ * Generic router for all different types of Elements. 
+ * Descriptions for the individual calls can be obtained from the API document ( method names are 1:1 reflected by operation Names)
+ * @author Thomas Pfau
+ *
+ * @param <T>
+ */
 public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	ElementManager<T> elementManager;
@@ -47,7 +51,6 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		elementManager = manager;
 		this.eb = eb;
 	}
-
 
 	public void getElement(RoutingContext context)
 	{

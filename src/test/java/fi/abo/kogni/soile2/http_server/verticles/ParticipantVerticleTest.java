@@ -4,7 +4,7 @@ import java.nio.file.Path;
 
 import org.junit.Test;
 
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
@@ -27,29 +27,35 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 	@Test
 	public void taskdeleteParticipantTest(TestContext context)
 	{		
-		System.out.println("--------------------  Testing Participant Deletion via verticle ----------------------");
+		System.out.println("--------------------------------------------------------------------  Testing Participant Deletion via verticle ----------------------");
 		Async testAsync = context.async();
 		JsonObject smokerOutput = new JsonObject()
 				.put("name", "smoker")
 				.put("value", 1);
-		DataLakeManager dlm = new DataLakeManager(resultDataLakeDir, vertx);
+		ParticipantDataLakeManager dlm = new ParticipantDataLakeManager(resultDataLakeDir, vertx);
 		JsonObject nonSmokerQuestionaireOutput = new JsonObject().put("outputData", new JsonArray().add(smokerOutput));		
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, eb);
+		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
-		ObjectGenerator.createProject(mongo_client, new GitManager(eb), "Testproject")
+		ObjectGenerator.createProject(mongo_client, vertx, "Testproject")
 		.onSuccess(projectData -> {
+			System.out.println("------------------------------------------------Project created");
 			projHandler.createProjectInstance(projectData.put("name", "NewProjectInstance").put("private", false))
 			.onSuccess(proj -> {
+				System.out.println("------------------------------------------------Project Instance created");
 				partHandler.create(proj)
 				.onSuccess(participant1 -> {
+					System.out.println("------------------------------------------------Participant 1 created");
 					proj.startProject(participant1)
 					.onSuccess(taskID -> {
+						System.out.println("------------------------------------------------Participant 1 started");
 						participant1.getCurrentStep()
 						// create The File Data
 						.onSuccess(val -> 
 						{
+							System.out.println("------------------------------------------------Current step obtained");
 							createUpload(participant1, val, taskID, dlm)
 								.onSuccess( fileData -> {
+									System.out.println("------------------------------------------------Upload created");
 									//now, build the result data
 									nonSmokerQuestionaireOutput.put("resultData", new JsonObject().put("fileData", fileData)
 											.put("jsonData", new JsonArray().add(new JsonObject().put("name", "something")
@@ -57,6 +63,7 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 											.put("taskID", taskID);
 									proj.finishStep(participant1, nonSmokerQuestionaireOutput)
 									.onSuccess(res -> {
+										System.out.println("------------------------------------------------Step finished");
 										JsonObject fileResult = fileData.getJsonObject(0);
 										TaskFileResult fileRes = new TaskFileResult(fileResult.getString("filename"),
 												fileResult.getString("targetid"),
@@ -67,6 +74,7 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 										context.assertTrue(dlm.getFile(fileRes).exists());
 										mongo_client.findOne(SoileConfigLoader.getdbProperty("participantCollection"), new JsonObject().put("_id", participant1.getID()),null)
 										.onSuccess(dbData -> {
+											System.out.println("------------------------------------------------Mongo Data retrieved");
 											context.assertEquals(taskID, dbData.getJsonArray("outputData").getJsonObject(0).getString("task"));
 											context.assertEquals("smoker", dbData.getJsonArray("outputData").getJsonObject(0).getJsonArray("outputs").getJsonObject(0).getString("name"));
 											context.assertEquals(1, dbData.getJsonArray("outputData").getJsonObject(0).getJsonArray("outputs").getJsonObject(0).getValue("value"));
@@ -76,8 +84,10 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 											JsonArray deletionCommand = new JsonArray().add(new JsonObject().put("participantID", participant1.getID()).put("projectID", proj.getID()));
 											eb.request("soile.participant.delete", deletionCommand)
 											.onSuccess(reply -> {
+												System.out.println("------------------------------------------------Deletion succeeded");
 												mongo_client.findOne(SoileConfigLoader.getdbProperty("participantCollection"), new JsonObject().put("_id", participant1.getID()),null)
 												.onSuccess(nullRes -> {
+													System.out.println("------------------------------------------------Participant no longer present");
 													context.assertNull(nullRes);
 													context.assertFalse(dlm.getFile(fileRes).exists());
 													testAsync.complete();
@@ -107,7 +117,7 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 		.onFailure(err -> context.fail(err));
 }
 
-private Future<JsonArray> createUpload(Participant participant, int p1step, String position1, DataLakeManager dlm)
+private Future<JsonArray> createUpload(Participant participant, int p1step, String position1, ParticipantDataLakeManager dlm)
 {
 	Promise<JsonArray> resultData = Promise.promise();
 	String dataDir = DataBundleTest.class.getClassLoader().getResource("FileTestData").getPath();		

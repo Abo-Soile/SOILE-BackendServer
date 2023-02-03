@@ -12,7 +12,7 @@ import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ProjectIsInactiveException;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FilterObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
@@ -146,6 +146,10 @@ public abstract class ProjectInstance implements AccessElement{
 		}
 	}
 
+	/**
+	 * Get the name of the project Instance
+	 * @return
+	 */
 	public String getName()
 	{
 		return name;
@@ -259,6 +263,11 @@ public abstract class ProjectInstance implements AccessElement{
 		return finishedPromise.future();
 	}	
 	
+	/**
+	 * Retrieve the results part of the data provided when a Task is submitted. 
+	 * @param taskData the data submitted when a taskk is finished.
+	 * @return the results data to be stored in a db.
+	 */
 	public JsonObject getResultDataFromTaskData(JsonObject taskData)
 	{
 		JsonObject resultData = new JsonObject();
@@ -458,9 +467,24 @@ public abstract class ProjectInstance implements AccessElement{
 	 */
 	public abstract Future<JsonArray> getParticipants();
 	
+	/**
+	 * Create a given number of Access tokens for this project. 
+	 * @param count - the number of access tokens to create
+	 * @return - a {@link JsonArray} of one-time access tokens that can be used to sign up for this project
+	 */
 	public abstract Future<JsonArray> createAccessTokens(int count);
 	
+	/**
+	 * Create a general access token for this project. This token is reusable and not linked to a specific user.
+	 * On signup, it will be exchanged against a individual access token.
+	 * @return
+	 */
 	public abstract Future<String> createPermanentAccessToken();
 	
+	/**
+	 * Use a token for the given project. If the provided token is a one-time token it will deactivate this token.
+	 * @param token The token to use
+	 * @return A successfull future, if the token is available.
+	 */
 	public abstract Future<Void> useToken(String token);
 }

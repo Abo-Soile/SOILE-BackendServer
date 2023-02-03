@@ -1,6 +1,5 @@
-package fi.abo.kogni.soile2.projecthandling.projectElements;
+package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
-import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -10,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -21,7 +21,6 @@ import io.vertx.core.json.JsonObject;
  *
  */
 public class Project extends ElementBase{
-	private static SimpleDateFormat parser=new SimpleDateFormat("DD-MM-yyyy HH:mm:ss z");
 	static final Logger LOGGER = LogManager.getLogger(Project.class);
 	private List<String> elements;
 	public Project()

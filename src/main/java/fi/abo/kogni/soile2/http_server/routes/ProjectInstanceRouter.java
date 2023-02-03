@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 import fi.aalto.scicomp.zipper.FileDescriptor;
 import fi.aalto.scicomp.zipper.Zipper;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
@@ -20,9 +20,9 @@ import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
@@ -45,6 +45,13 @@ import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 
+/**
+ * Router for ProjectInstance operations (i.e. project execution, and data retrieval).
+ * Documentation for public functions (aside from the constructor) can be obtained from the 
+ * API document, with operationIDs mapping 1:1 to method names 
+ * @author Thomas Pfau
+ *
+ */
 public class ProjectInstanceRouter extends SoileRouter {
 
 	ProjectInstanceHandler instanceHandler;
@@ -56,7 +63,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 	TargetElementType instanceType = TargetElementType.INSTANCE;
 	ElementManager<Task> taskManager;
 	MongoAuthorization mongoAuth;
-	DataLakeManager dataLakeManager;
+	ParticipantDataLakeManager dataLakeManager;
 	EventBus eb;
 	Vertx vertx;
 	
@@ -74,7 +81,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		roleHandler = new SoileRoleBasedAuthorizationHandler();
 		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client);
 		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Project().getTargetCollection(), client);
-		dataLakeManager = new DataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
+		dataLakeManager = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
 	}
 
 	public void startProject(RoutingContext context)
@@ -212,7 +219,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> 
 		{
 			instanceHandler.loadProject(requestedInstanceID)
@@ -373,7 +380,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
 			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
@@ -425,7 +432,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		
-		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
 			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
@@ -470,7 +477,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		
-		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,true)
+		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,true)
 		.onSuccess(Void -> 
 		{
 			if(context.fileUploads().size() != 1)
@@ -514,7 +521,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		String requestedInstanceID = params.pathParameter("id").getString();
 		String token = params.queryParameter("token").getString();
 		instanceHandler.loadProject(requestedInstanceID)
-		.onSuccess(project -> {				
+		.onSuccess(project -> {					
 			project.useToken(token)
 			.onSuccess( tokenUsed -> {
 				if(context.user() != null)
@@ -536,7 +543,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 				}
 				else
 				{
-					// we don't have a user, so we set up a oken user.
+					// we don't have a user, so we set up a Token user.
 					partHandler.createTokenUser(project)
 					.onSuccess(participant -> {
 						context.response()
@@ -586,9 +593,8 @@ public class ProjectInstanceRouter extends SoileRouter {
 		
 		if(user.principal().getString("username") == null)
 		{
-			// This is a Token User!
-			return partHandler.getParticipantForToken(user.principal().getString("access_token"), project.getID());
-			
+			// This is a Token User! So we quickly get the participant from the Token. 
+			return partHandler.getParticipantForToken(user.principal().getString("access_token"), project.getID());			
 		}
 		else
 		{
@@ -625,18 +631,6 @@ public class ProjectInstanceRouter extends SoileRouter {
 			return partPromise.future();
 		}
 		
-	}
-	
-	/**
-	 * Start preparing a download for the indicated data.
-	 * @param participants the participants to prepare a download for.
-	 * @return Whether the preparation started.
-	 */
-	private Future<String> prepareParticipantDownload(JsonArray participants)
-	{
-		Promise<String> downloadIDPromise = Promise.promise();
-		
-		return downloadIDPromise.future();
 	}
 
 }

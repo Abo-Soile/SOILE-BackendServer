@@ -5,15 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.apache.commons.collections4.Put;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
-import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
@@ -400,6 +397,11 @@ public abstract class ElementBase implements Element {
 		return saveSuccess.future();
 	}
 		
+	/**
+	 * Get a JsonObject that contains all updates for this element based on its current state. 
+	 * This contains push or set updates.
+	 * @return a {@link JsonObject} that can be used with a {@link MongoClient}s update methods. 
+	 */
 	public abstract JsonObject getUpdates();
 		
 }

@@ -8,5 +8,10 @@ import io.vertx.core.json.JsonObject;
  */
 public interface ParticipantFactory {	
 	
+	/**
+	 * Create a Participant based on the provided data
+	 * @param data
+	 * @return
+	 */
 	public Participant createParticipant(JsonObject data);
 }

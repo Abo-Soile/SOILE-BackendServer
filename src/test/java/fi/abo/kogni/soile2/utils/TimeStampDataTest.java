@@ -35,12 +35,12 @@ public class TimeStampDataTest {
 		}, 50);
 		testMap.getData("current")
 		.onSuccess(element1 -> {
-			testMap.cleanup();
+			testMap.cleanUp();
 			testMap.getData("current")
 			.onSuccess(element2 -> {
 				try {
 				TimeUnit.MILLISECONDS.sleep(51);
-				testMap.cleanup();
+				testMap.cleanUp();
 				testMap.getData("current")
 				.onSuccess(element3 -> {
 					context.assertEquals(1,element1);

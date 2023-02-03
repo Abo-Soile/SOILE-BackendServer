@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.projecthandling.projectElements;
+package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -6,10 +6,16 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Class representing an Experiment on the Database.
+ * @author Thomas Pfau
+ *
+ */
 public class Experiment extends ElementBase {
 
 	private List<String> elements;

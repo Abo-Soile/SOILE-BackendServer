@@ -3,7 +3,7 @@ package fi.abo.kogni.soile2.http_server.auth;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.http_server.authentication.utils.CookieStrategy;
+import fi.abo.kogni.soile2.http_server.authentication.utils.SoileCookieStrategy;
 import fi.abo.kogni.soile2.http_server.authentication.utils.UserUtils;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -18,6 +18,11 @@ import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 
+/**
+ * This Authentication class offers authentication from soile cookies.
+ * @author Thomas Pfau
+ *
+ */
 public class SoileCookieAuth {
 	
 	private final Vertx vertx;
@@ -32,6 +37,12 @@ public class SoileCookieAuth {
 		this.cookieHandler = cookieHandler;
 	}
 		
+	/**
+	 * Retrieve a user for the given context if it has a relevant cookie. 
+	 * TODO: Ensure that this also works with Tokens. Might not be possible. For Tokens, we probably have to 
+	 * @param context
+	 * @return
+	 */
 	public Future<User> authenticate(RoutingContext context ) {
 		log.debug("Checking session cookies");
 
@@ -56,8 +67,8 @@ public class SoileCookieAuth {
 				}
 				try
 				{
-					String token = CookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
-					String username = CookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());
+					String token = SoileCookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
+					String username = SoileCookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());
 					JsonObject command = new JsonObject().put("username", username)
 							.put("sessionID", token);
 

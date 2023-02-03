@@ -2,6 +2,12 @@ package fi.abo.kogni.soile2.http_server.authentication.utils;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 
+/**
+ * An Access Element is a Type of element used in Handling. Experiments/Projects/Task and ProjectInstances should implement this 
+ * Interface
+ * @author Thomas Pfau
+ *
+ */
 public interface AccessElement {
 
 	/**

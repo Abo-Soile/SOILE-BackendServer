@@ -1,7 +1,10 @@
 package fi.abo.kogni.soile2.datamanagement;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,10 +15,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
+import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.SoileBaseTest;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.ObjectManager;
-import fi.abo.kogni.soile2.datamanagement.git.GitResourceManager;
+import fi.abo.kogni.soile2.projecthandling.utils.SimpleFileUpload;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -26,30 +31,15 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import io.vertx.ext.web.FileUpload;
 
 @RunWith(VertxUnitRunner.class)
-public class GitInteractionTest extends SoileBaseTest{
+public class GitInteractionTest extends GitTest{
 
-	File tmpFolder;
-	
-	@Override
-	public void runBeforeTests(TestContext context)
-	{
-		try {
-			tmpFolder = Files.createTempDirectory("SoileTMP").toFile();	
-		}
-		catch(IOException e)
-		{
-			context.fail(e);
-			return;
-		}
-		vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), tmpFolder.getAbsolutePath()), context.asyncAssertSuccess());
-	}
 	@Test
 	public void testGitRepoExists(TestContext context)
 	{
 		System.out.println("-------------------- Testing Repo exists ----------------------");		 
 
 		String targetElement = "TestElement";
-		GitResourceManager rm = new GitResourceManager(vertx.eventBus());
+		DataLakeResourceManager rm = new DataLakeResourceManager(vertx);
 		Async notExistAsync = context.async();
 		rm.existElementRepo(targetElement).onSuccess(exists -> {
 			Async existAsync = context.async();
@@ -77,17 +67,20 @@ public class GitInteractionTest extends SoileBaseTest{
 		// set up the git Repository and the DataLake folder we will use for the test
 		Async initAsync = context.async();
 		String targetElement = "TestElement";
-		GitResourceManager rm = new GitResourceManager(vertx.eventBus());
+		DataLakeResourceManager rm = new DataLakeResourceManager(vertx);
 		ObjectManager om = new ObjectManager(vertx.eventBus());		
 		initGitRepo(targetElement, context).onSuccess(initialVersion -> 
 		{		
 			Path dataPath = Paths.get(getClass().getClassLoader().getResource("FilterData.json").getPath());
+			String origData ="";
 			Path dataLakePath = Paths.get(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder"), targetElement, dataPath.getFileName().toString());
 			try
 			{	
 				// To properly test this, we need to manually create the git DataLake Folder for this element.
 				FileUtils.forceMkdir(Paths.get(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder"), targetElement).toFile());
-				Files.copy(dataPath,dataLakePath);				
+				Files.copy(dataPath,dataLakePath);
+				FileReader br = new FileReader(dataPath.toFile());
+				origData = new String(Files.readAllBytes(dataPath), StandardCharsets.UTF_8);
 			}
 			catch(Exception e)
 			{
@@ -95,17 +88,25 @@ public class GitInteractionTest extends SoileBaseTest{
 				initAsync.complete();
 				return;
 			}
+			final String testData = origData;
 			SimpleFileUpload upload = new SimpleFileUpload(dataLakePath.getFileName().toString(), dataPath.getFileName().toString());
 			
 			Async writeAsync = context.async();
-			rm.writeElement(new GitFile("NewFile.txt", targetElement, initialVersion), upload).onSuccess(newVersion -> 
+			rm.writeUploadToGit(new GitFile("NewFile.txt", targetElement, initialVersion), upload).onSuccess(newVersion -> 
 			{
 				Async reloadAsync = context.async();
 				// test that the new version has the file
 				rm.getElement(new GitFile("NewFile.txt", targetElement, newVersion)).onSuccess(targetFile -> 
 				{
 					context.assertEquals(targetFile.getOriginalFileName(), "NewFile.txt");
-					context.assertEquals(targetFile.getFilePath(), dataLakePath.toFile().getPath());
+					try {
+						String fileData = new String(Files.readAllBytes(dataPath), StandardCharsets.UTF_8);
+						context.assertEquals(testData, fileData);
+					}
+					catch(IOException e)
+					{
+						context.fail(e);
+					}
 					reloadAsync.complete();
 				}).onFailure(fail -> {	
 					context.fail(fail.getMessage());
@@ -215,31 +216,6 @@ public class GitInteractionTest extends SoileBaseTest{
 	}
 	
 	
-	@After
-	public void clearGitRepo()
-	{
-		try
-		{
-			FileUtils.deleteDirectory(tmpFolder);
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace(System.out);
-		}
-	}
-	@After
-	public void cleargitLake()
-	{
-		try
-		{
-			FileUtils.deleteDirectory(new File(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder")));
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace(System.out);
-		}
-	}
-	
 	public Future<String> initGitRepo(String gitRepoName, TestContext context)
 	{		
 		Promise<String> versionPromise = Promise.<String>promise();		
@@ -257,57 +233,4 @@ public class GitInteractionTest extends SoileBaseTest{
 		return versionPromise.future();
 	}
 	
-	
-	private class SimpleFileUpload implements FileUpload	
-	{
-		
-		private String uploadFileName;
-		private String originalFileName;
-		public SimpleFileUpload(String uploadedFileName, String originalFileName)
-		{	
-			this.uploadFileName = uploadedFileName;
-			this.originalFileName = originalFileName;
-			
-		}
-		@Override
-		public String name() {
-			return null;
-		}
-
-		@Override
-		public String uploadedFileName() {			
-			return uploadFileName;
-		}
-
-		@Override
-		public String fileName() {
-			return originalFileName;
-		}
-
-		@Override
-		public long size() {
-			return 0;
-		}
-
-		@Override
-		public String contentType() {
-			return null;
-		}
-
-		@Override
-		public String contentTransferEncoding() {
-			return null;
-		}
-
-		@Override
-		public String charSet() {
-			return null;
-		}
-
-		@Override
-		public boolean cancel() {
-			return false;
-		}
-		
-	}
 }

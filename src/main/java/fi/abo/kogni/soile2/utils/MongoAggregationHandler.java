@@ -10,15 +10,28 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.ext.mongo.MongoClient;
 
+
+/**
+ * Helper Methos for Mongo Aggregations, makes using aggregations a bit easier and less code intensive.
+ * @author Thomas Pfau
+ *
+ */
 public class MongoAggregationHandler {
 		
+	/**
+	 * Convert the aggregation pipeline from a stream into a List of JsonObjects.
+	 * @param client The MongoClient to use an aggregation with
+	 * @param targetCollection the targetCollection for the aggregation
+	 * @param pipeline the Pipeline (i.e. different aggregation commands)
+	 * @return A Future of the all JsonObjects produced by the aggregation if the aggregation succeeded
+	 */
 	public static Future<List<JsonObject>> aggregate(MongoClient client, String targetCollection, JsonArray pipeline )
 	{
 		Promise<List<JsonObject>> resultPromise = Promise.promise();
 		List<JsonObject> result = new LinkedList<>();
 		ReadStream<JsonObject> stream = client.aggregate(targetCollection, pipeline);
 		stream.handler(object -> {
-			// we will pause until we have finished this, this should avoid .
+			// we will pause until we have finished this, this should avoid concurrency problems.
 			stream.pause();
 			result.add(object);
 			stream.resume();
@@ -33,6 +46,13 @@ public class MongoAggregationHandler {
 	}
 	
 	
+	/**
+	 * Create a filter that filters checks whether the subField contains the subFieldIn data.
+	 * @param field the field to in which to check for the subfield
+	 * @param subField the subfield in which to check for the items
+	 * @param subFieldIn the items to check
+	 * @return
+	 */
 	public static JsonObject createInFilter(String field, String subField, JsonArray subFieldIn)
 	{
 		return new JsonObject().put("$project", 
@@ -44,6 +64,13 @@ public class MongoAggregationHandler {
 												.add(subFieldIn))))));
 	}
 	
+	/**
+	 * Create a filter that filters checks whether the subField is equal to a given object
+	 * @param field the field to in which to check for the subfield
+	 * @param subField the subfield in which to check for the items
+	 * @param subFieldEqual the items the subField needs to be equal to.
+	 * @return
+	 */
 	public static JsonObject createEqFilter(String field, String subField, Object subFieldEqual)
 	{
 		return new JsonObject().put("$project", 
