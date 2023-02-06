@@ -106,7 +106,7 @@ public class TaskTest extends MongoTest {
 			JsonObject taskDef = new JsonObject(Files.readString(Paths.get(TaskTest.class.getClassLoader().getResource("DBTestData/DBTask.json").getPath())));
 			Task tempTask = new Task();
 			tempTask.loadfromJson(taskDef);
-			taskFactory.createElement(mongo_client, "TestTask", taskDef.getString("codeType"))
+			taskFactory.createElement(mongo_client, "TestTask", taskDef.getString("codeType"), taskDef.getString("codeVersion"))
 			.onSuccess(task -> 
 			{
 				tempTask.setUUID(task.getUUID());

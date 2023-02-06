@@ -41,7 +41,7 @@ public class ElementFactory<T extends ElementBase> {
 	 * @param type Is Nullable, mainly for tasks codeType.
 	 * @return
 	 */
-	public Future<T> createElement(MongoClient client, String name, String type)
+	public Future<T> createElement(MongoClient client, String name, String type, String version)
 	{		
 		Promise<T> elementPromise = Promise.<T>promise();
 		T element = DBObjectSupplier.get();
@@ -57,6 +57,7 @@ public class ElementFactory<T extends ElementBase> {
 				if(element.getElementType().equals(TargetElementType.TASK))
 				{
 					((Task)element).setCodetype(type);
+					((Task)element).setCodeVersion(version);
 				}
 				element.save(client)						
 				.onSuccess( id -> {					
@@ -93,7 +94,7 @@ public class ElementFactory<T extends ElementBase> {
 		{
 			return Future.failedFuture("Need a codeType to create a Task");
 		}
-		return createElement(client, name, null);
+		return createElement(client, name, null, null);
 	}
 	
 	/**

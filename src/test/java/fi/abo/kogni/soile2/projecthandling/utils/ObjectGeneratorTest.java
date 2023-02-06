@@ -68,10 +68,10 @@ public class ObjectGeneratorTest extends GitTest {
 							.onSuccess(currentTask -> {
 								switch(currentTask.getName())
 								{
-								case "Test1": context.assertEquals("javascript", currentTask.getCodetype());break;
+								case "Test1": context.assertEquals("psychopy", currentTask.getCodetype());break;
 								case "Test2": context.assertEquals("elang", currentTask.getCodetype());break;
-								case "Test3": context.assertEquals("javascript", currentTask.getCodetype());break;
-								case "Test4": context.assertEquals("javascript", currentTask.getCodetype());break;
+								case "Test3": context.assertEquals("psychopy", currentTask.getCodetype());break;
+								case "Test4": context.assertEquals("psychopy", currentTask.getCodetype());break;
 								default: context.fail("Found unexpected Task with name: " + currentTask.getName());
 								}
 								taskDataAsync.complete();

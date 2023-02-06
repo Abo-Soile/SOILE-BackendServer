@@ -2,27 +2,21 @@ package fi.abo.kogni.soile2.http_server.routes;
 
 import java.util.List;
 
+import fi.abo.kogni.soile2.http_server.auth.AccessHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
-import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
-import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.Task;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.netty.util.internal.shaded.org.jctools.queues.MessagePassingQueue.Supplier;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.User;
-import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
@@ -33,18 +27,18 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	ElementManager<T> elementManager;
 	EventBus eb;
-	SoileIDBasedAuthorizationHandler IDAccessHandler;
-	SoileRoleBasedAuthorizationHandler roleHandler;
+	AccessHandler accessHandler;
 	SoileAuthorization authorizationRertiever;
-	MongoAuthorization mongoAuth; 
+
 	public ElementRouter(ElementManager<T> manager, SoileAuthorization auth, EventBus eb, MongoClient client)
 	{		
+		
 		authorizationRertiever = auth;
-		T tempElement = manager.getElementSupplier().get();
-		mongoAuth = auth.getAuthorizationForOption(tempElement.getElementType());
-		roleHandler = new SoileRoleBasedAuthorizationHandler();		
-		IDAccessHandler = new SoileIDBasedAuthorizationHandler(tempElement.getTargetCollection(), client);
+		T tempElement = manager.getElementSupplier().get();		
 		elementManager = manager;
+		accessHandler = new AccessHandler(auth.getAuthorizationForOption(tempElement.getElementType()),
+										  new SoileIDBasedAuthorizationHandler(tempElement.getTargetCollection(), client),
+										  new SoileRoleBasedAuthorizationHandler());
 		this.eb = eb;
 	}
 
@@ -54,7 +48,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String elementID = params.pathParameter("id").getString();
 		String elementVersion = params.pathParameter("version").getString();
-		checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{
 			elementManager.getAPIElementFromDB(elementID, elementVersion)
@@ -74,7 +68,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String elementID = params.pathParameter("id").getString();		
-		checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{
 			
@@ -98,7 +92,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	public void getElementList(RoutingContext context)
 	{				
 		//TODO: Add skip + limit + query here.		
-		checkAccess(context.user(),null, Roles.Researcher,null,true)
+		accessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
 		.onSuccess(Void -> 
 		{
 			authorizationRertiever.getGeneralPermissions(context.user(),elementManager.getElementSupplier().get().getElementType())
@@ -123,7 +117,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String elementID = params.pathParameter("id").getString();	
-		checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{
 			elementManager.getVersionListForElement(elementID)
@@ -143,7 +137,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String elementID = params.pathParameter("id").getString();	
-		checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{
 			elementManager.getTagListForElement(elementID)
@@ -161,29 +155,33 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	public void create(RoutingContext context)
 	{		
-		checkAccess(context.user(),null, Roles.Researcher,null,true)
+		accessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
 		.onSuccess(Void -> 
 		{
-			List<String> nameParams = context.queryParam("name");
-			List<String> typeParams = context.queryParam("codeType");
-			String type;
-			if(typeParams.size() == 0) {
-				type = null; 
+			List<String> nameParam = context.queryParam("name");
+			List<String> typeParam = context.queryParam("codeType");
+			List<String> versionParam = context.queryParam("codeVersion");
+			String type = null;
+			String version = null;
+			if(nameParam.size() != 1) {
+				context.fail(400, new HttpException(400, "Must have exactly one codetype, codeVersion and name parameter"));
+				return;
 				}
+			if( elementManager.getElementSupplier().get().getElementType() == TargetElementType.TASK  && (typeParam.size() != 1 || versionParam.size() != 1))
+			{
+				context.fail(400, new HttpException(400, "Must have exactly one codetype and codeVersion parameter"));
+			}						
 			else{
-				type = typeParams.get(0);
-				if(!Task.allowedTypes.contains(type))
+				type = typeParam.get(0);
+				version = versionParam.get(0);
+				if(!SoileConfigLoader.isValidTaskType(type, version))
 				{
-					context.fail(400, new HttpException(400, "Invalid codeType Parameter"));
+					// this could be a bit more explicit
+					context.fail(400, new HttpException(400, "Invalid codeType/version Parameter"));
 					return;
 				}
 			}
-			if(nameParams.size() != 1)
-			{
-				context.fail(400, new HttpException(400, "Invalid name  query parameter"));
-				return;
-			}		
-			elementManager.createElement(nameParams.get(0), type)
+			elementManager.createElement(nameParam.get(0), type, version)
 			.onSuccess(element -> {			
 				JsonObject permissionChangeRequest = new JsonObject()
 						.put("username", context.user().principal().getString("username"))
@@ -217,32 +215,4 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		default: return SoileConfigLoader.INSTANCE;			
 		}
 	}
-
-
-	protected Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission, boolean adminAllowed)
-	{
-		Promise<Void> accessPromise = Promise.<Void>promise();
-		mongoAuth.getAuthorizations(user)
-		.onSuccess(Void -> {
-			IDAccessHandler.authorize(user, id, adminAllowed, requiredPermission)
-			.onSuccess(acceptID -> {
-				roleHandler.authorize(user, requiredRole)
-				.onSuccess(acceptRole -> {
-					// both role and permission checks are successfull.
-					accessPromise.complete();
-				})
-				.onFailure(err -> accessPromise.fail(err));
-			})
-			.onFailure(err -> accessPromise.fail(err));
-		})
-		.onFailure(err -> {
-			accessPromise.fail(new HttpException(500,err.getMessage()));
-		});
-
-
-
-		return accessPromise.future();
-	}
-
-
 }

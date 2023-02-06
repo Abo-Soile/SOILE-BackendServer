@@ -33,7 +33,7 @@ public class ObjectGenerator {
 		{
 			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
 			String TaskCode = Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));		
-			manager.createOrLoadElement(TaskDef.getString("name"),TaskDef.getString("codeType"))
+			manager.createOrLoadElement(TaskDef.getString("name"),TaskDef.getString("codeType"),TaskDef.getString("codeVersion"))
 			.onSuccess(task -> {				
 				APITask apiTask = new APITask(TaskDef);				
 				apiTask.loadGitJson(TaskDef);

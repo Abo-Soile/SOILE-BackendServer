@@ -33,7 +33,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		String elementID = params.pathParameter("id").getString();
 		String version = params.pathParameter("version").getString();
 		String filename = params.pathParameter("file").getString();		
-		checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{
 			if(context.fileUploads().size() != 1)
@@ -59,7 +59,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		String elementID = params.pathParameter("id").getString();
 		String version = params.pathParameter("version").getString();
 		String filename = params.pathParameter("file").getString();
-		checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{
 			dataHandler.handleGetFile(elementID, version, filename )

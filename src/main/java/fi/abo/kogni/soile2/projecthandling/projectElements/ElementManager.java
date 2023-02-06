@@ -70,11 +70,11 @@ public class ElementManager<T extends ElementBase> {
 	 * @param name
 	 * @return
 	 */
-	public Future<T> createElement(String name, String type)
+	public Future<T> createElement(String name, String type, String languageversion)
 	{
 		Promise<T> elementPromise = Promise.<T>promise();
 		// now we need to create a unique UUID. This should (normally) not cause any clashes, but lets be sure...
-		factory.createElement(client, name, type)
+		factory.createElement(client, name, type, languageversion)
 		.onSuccess(element -> {
 			element.setName(name);	
 			log.debug(element.toJson().encodePrettily());
@@ -117,7 +117,7 @@ public class ElementManager<T extends ElementBase> {
 		{
 			return Future.failedFuture("Need a codeType to create a Task");
 		}
-		return createElement(name, null);
+		return createElement(name, null, null);
 	}
 	
 	/**
@@ -125,11 +125,11 @@ public class ElementManager<T extends ElementBase> {
 	 * @param name
 	 * @return
 	 */
-	public Future<T> createOrLoadElement(String name, String type)
+	public Future<T> createOrLoadElement(String name, String type, String version)
 	{
 		Promise<T> elementPromise = Promise.<T>promise();
 		// We will try to create the element with this name but if it already exists, return the element with the name.
-		createElement(name, type)
+		createElement(name, type, version)
 		.onSuccess(element -> 
 		{
 			elementPromise.complete(element);
@@ -165,7 +165,8 @@ public class ElementManager<T extends ElementBase> {
 		{
 			return Future.failedFuture("Need a codeType to create a Task");
 		}
-		return createOrLoadElement(name, null);
+		// need to
+		return createOrLoadElement(name, null, null);
 	}
 	
 	public Future<JsonObject> getGitJson(String elementID, String elementVersion)

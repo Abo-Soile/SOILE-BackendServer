@@ -25,7 +25,7 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 
 	static final Logger LOGGER = LogManager.getLogger(CodeRetrieverVerticle.class);
 
-	public final static String JAVASCRIPT = "javascript";
+	public final static String PSYCHOPY = "psychopy";
 	public final static String ELANG = "elang";
 	public final static String QMARKUP = "qmarkup";
 	private CodeProvider elangProvider;
@@ -101,7 +101,7 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 	{
 		switch(type)
 		{
-			case JAVASCRIPT: return psychoJsProvider;
+			case PSYCHOPY: return psychoJsProvider;
 			case ELANG: return elangProvider;
 			case QMARKUP: return qmarkupProvider;
 			default: return null;
