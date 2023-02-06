@@ -17,6 +17,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileCookieCreationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileFormLoginHandler;
 import fi.abo.kogni.soile2.http_server.routes.ElementRouter;
+import fi.abo.kogni.soile2.http_server.routes.ParticipationRouter;
 import fi.abo.kogni.soile2.http_server.routes.ProjectInstanceRouter;
 import fi.abo.kogni.soile2.http_server.routes.TaskRouter;
 import fi.abo.kogni.soile2.http_server.routes.UserRouter;
@@ -321,15 +322,27 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("deleteProject").handler(router::deleteProject);
 		builder.operation("getProjectResults").handler(router::getProjectResults);
 		builder.operation("downloadResults").handler(router::downloadResults);
-		builder.operation("downloadTest").handler(router::downloadTest);
+		builder.operation("downloadTest").handler(router::downloadTest);		
+		return Future.<RouterBuilder>succeededFuture(builder);
+	}
+	
+	/**
+	 * Everything that needs to be done for the project execution API
+	 * @param builder
+	 * @return
+	 */
+	private Future<RouterBuilder> setupParticipationAPI(RouterBuilder builder)
+	{	
+		ParticipationRouter router = new ParticipationRouter(soileAuthorization, vertx, client, partHandler, projHandler);
 		builder.operation("submitResults").handler(router::submitResults);
 		builder.operation("getTaskType").handler(router::getTaskType);
 		builder.operation("runTask").handler(router::runTask);
 		builder.operation("signUpForProject").handler(router::signUpForProject);
-		builder.operation("uploadData").handler(router::uploadData);			
+		builder.operation("uploadData").handler(router::uploadData);
+		builder.operation("getResourceForExecution").handler(router::getResourceForExecution);
+		builder.operation("getLib").handler(router::getLib);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
-	
 	/**
 	 * Everything that needs to be done for the User API
 	 * @param builder

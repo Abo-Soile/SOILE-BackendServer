@@ -1,6 +1,6 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
-import java.nio.file.Path;
+import java.io.File;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -34,7 +34,7 @@ public class TaskResourceFile {
 	 */
 	public DataLakeFile getDataLakeFile()
 	{
-		return new DataLakeFile(Path.of(dataLakeFolder, elementID, targetName).toAbsolutePath().toString(), originalFileName, mimeFormat);
+		return new DataLakeFile(dataLakeFolder, elementID + File.separator + targetName, originalFileName, mimeFormat);
 	}
 	
 	/**

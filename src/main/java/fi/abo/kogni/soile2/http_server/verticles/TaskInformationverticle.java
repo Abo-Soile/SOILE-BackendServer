@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
@@ -37,6 +38,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 		taskManager = new ElementManager<Task>(Task::new, APITask::new, MongoClient.createShared(vertx, config().getJsonObject("db")), vertx);
 		LOGGER.debug("Deploying TaskInformation with id : " + deploymentID());
 		vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("getTaskInformationAddress"), this::getTaskInfo);
+		vertx.eventBus().consumer("soile.task.getResource", this::getResource);
 	}
 					
 
@@ -65,6 +67,22 @@ public class TaskInformationverticle extends AbstractVerticle{
 		taskManager.getElement(taskID)
 		.onSuccess(task -> {
 			request.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, task.toJson()));
+		})
+		.onFailure(err -> {			
+			request.fail(500, err.getMessage());
+		});
+	}
+	
+	/**
+	 * Get information on the requested Task.
+	 * @param request
+	 */
+	public void getResource(Message<JsonObject> request)
+	{		
+		GitFile target = new GitFile(request.body());
+		taskManager.handleGetFile(target.getRepoID(), target.getRepoVersion(), target.getFileName())
+		.onSuccess(task -> {
+			request.reply(task);
 		})
 		.onFailure(err -> {			
 			request.fail(500, err.getMessage());

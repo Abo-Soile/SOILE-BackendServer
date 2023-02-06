@@ -58,7 +58,7 @@ public class TaskFileResult {
 	public DataLakeFile getFile(String dataLakeFolder) 
 	{		
 		String filePath = getFilePathInDataLake(dataLakeFolder);
-		DataLakeFile f = new DataLakeFile(filePath,Path.of(getRelativeFolderPath(),originalFileName).toString(),fileFormat);		
+		DataLakeFile f = new DataLakeFile(dataLakeFolder, filePath,Path.of(getRelativeFolderPath(),originalFileName).toString(),fileFormat);		
 		return f;		
 	}
 	

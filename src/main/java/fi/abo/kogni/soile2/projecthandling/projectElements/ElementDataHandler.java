@@ -52,7 +52,7 @@ public class ElementDataHandler<T extends Element>{
 	public Future<DataLakeFile> handleGetFile(String taskID, String taskVersion, String filename)
 	{		
 		Promise<DataLakeFile> filePromise = Promise.promise();
-		String repoID = Task.typeID + taskID;
+		String repoID = typeID + taskID;
 		GitFile f = new GitFile(filename, repoID, taskVersion);		
 		gitElements.getData(f)
 		.onSuccess(datalakeFile -> {			

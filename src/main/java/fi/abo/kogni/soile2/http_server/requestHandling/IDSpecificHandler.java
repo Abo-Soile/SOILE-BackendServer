@@ -37,7 +37,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -72,25 +74,24 @@ import io.vertx.ext.web.impl.Utils;
  * @author <a href="http://pmlopes@gmail.com">Paulo Lopes</a>
  * @author <a href="https://wissel.net">Stephan Wissel</a>
  */
-public class IDSpecificHandler implements StaticHandler {
+public class IDSpecificHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(IDSpecificHandler.class);
 
   // TODO change to private final after setWebRoot has been removed
-  private String webRoot = DEFAULT_WEB_ROOT;
-  private String pathParam = "";
-  private long maxAgeSeconds = DEFAULT_MAX_AGE_SECONDS; // One day
-  private boolean directoryListing = DEFAULT_DIRECTORY_LISTING;
-  private String directoryTemplateResource = DEFAULT_DIRECTORY_TEMPLATE;
+  private String webRoot = StaticHandler.DEFAULT_WEB_ROOT;
+  private long maxAgeSeconds = StaticHandler.DEFAULT_MAX_AGE_SECONDS; // One day
+  private boolean directoryListing = StaticHandler.DEFAULT_DIRECTORY_LISTING;
+  private String directoryTemplateResource = StaticHandler.DEFAULT_DIRECTORY_TEMPLATE;
   private String directoryTemplate;
-  private boolean includeHidden = DEFAULT_INCLUDE_HIDDEN;
-  private boolean filesReadOnly = DEFAULT_FILES_READ_ONLY;
-  private String indexPage = DEFAULT_INDEX_PAGE;
+  private boolean includeHidden = StaticHandler.DEFAULT_INCLUDE_HIDDEN;
+  private boolean filesReadOnly = StaticHandler.DEFAULT_FILES_READ_ONLY;
+  private String indexPage = StaticHandler.DEFAULT_INDEX_PAGE;
   private List<Http2PushMapping> http2PushMappings;
-  private boolean rangeSupport = DEFAULT_RANGE_SUPPORT;
+  private boolean rangeSupport = StaticHandler.DEFAULT_RANGE_SUPPORT;
   // TODO change to private final after setAllowRootAccess has been removed
-  private boolean allowRootFileSystemAccess = DEFAULT_ROOT_FILESYSTEM_ACCESS;
-  private boolean sendVaryHeader = DEFAULT_SEND_VARY_HEADER;
+  private boolean allowRootFileSystemAccess = StaticHandler.DEFAULT_ROOT_FILESYSTEM_ACCESS;
+  private boolean sendVaryHeader = StaticHandler.DEFAULT_SEND_VARY_HEADER;
   private String defaultContentEncoding = Charset.defaultCharset().name();
 
   private Set<String> compressedMediaTypes = Collections.emptySet();
@@ -105,21 +106,10 @@ public class IDSpecificHandler implements StaticHandler {
    * @param visibility          path specified by root is RELATIVE or ROOT
    * @param staticRootDirectory path on host with static file location
    */
-  public IDSpecificHandler(FileSystemAccess visibility, String staticRootDirectory, String pathParam) {
+  public IDSpecificHandler( String staticRootDirectory) {
 
-    switch (visibility) {
-      case ROOT:
-        this.allowRootFileSystemAccess = true;
-        break;
-      case RELATIVE:
-        this.allowRootFileSystemAccess = false;
-        break;
-      default:
-        throw new IllegalStateException("Unsupported visibility: " + visibility);
-    }
-
-    this.pathParam = pathParam;
-    this.setRoot(staticRootDirectory != null ? staticRootDirectory : DEFAULT_WEB_ROOT);
+    this.allowRootFileSystemAccess = false;
+    this.setRoot(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder"));
   }  
  
   private String directoryTemplate(FileSystem fileSystem) {
@@ -157,8 +147,7 @@ public class IDSpecificHandler implements StaticHandler {
     headers.set("date", Utils.formatRFC1123DateTime(System.currentTimeMillis()));
   }
 
-  @Override
-  public void handle(RoutingContext context) {
+  public void handle(RoutingContext context, GitFile target) {
     HttpServerRequest request = context.request();
     System.out.println("ID Specific Handler got request");
     if (request.method() != HttpMethod.GET && request.method() != HttpMethod.HEAD) {
@@ -178,28 +167,30 @@ public class IDSpecificHandler implements StaticHandler {
         return;
       }
       // will normalize and handle all paths as UNIX paths
-      String treatedPath = HttpUtils.removeDots(uriDecodedPath.replace('\\', '/'));
       // now, lets 
-      String relevantSubPath = context.pathParam(pathParam);
-      String path = treatedPath.substring(treatedPath.indexOf(relevantSubPath)+relevantSubPath.length());
-
+      context.vertx().eventBus().request("soile.task.getResource", target.toJson())
+      .onSuccess( fileResponse -> 
+      {   	             
+    	  //TODO: Make sure caching is version specific
+      String path = ((DataLakeFile)fileResponse.body()).getFileNameInLake();      
       // Access fileSystem once here to be safe
       FileSystem fs = context.vertx().fileSystem();
 
       sendStatic(
           context,
           fs,
-          path,
+          new PathVersion(path,target.getRepoVersion()),
           // only root is known for sure to be a directory. all other directories must be
           // identified as such.
           !directoryListing && "/".equals(path));
+    });
     }
   }
 
   /**
    * Can be called recursive for index pages
    */
-  private void sendStatic(RoutingContext context, FileSystem fileSystem, GitFile path, boolean index) {
+  private void sendStatic(RoutingContext context, FileSystem fileSystem, PathVersion path, boolean index) {
 
     String file = null;
 
@@ -341,10 +332,10 @@ public class IDSpecificHandler implements StaticHandler {
   /**
    * sibling means that we are being upgraded from a directory to a index
    */
-  private void sendDirectory(RoutingContext context, FileSystem fileSystem, String path, String file) {
+  private void sendDirectory(RoutingContext context, FileSystem fileSystem, PathVersion path, String file) {
     // in order to keep caches in a valid state we need to assert that
     // the user is requesting a directory (ends with /)
-    if (!path.endsWith("/")) {
+    if (!path.getPath().endsWith("/")) {
       context.response()
           .putHeader(HttpHeaders.LOCATION, path + "/")
           .setStatusCode(301)
@@ -548,151 +539,8 @@ public class IDSpecificHandler implements StaticHandler {
     }
   }
 
-  /**
-   * @deprecated - Use the parameters in constructor
-   */
-  @Override
-  @Deprecated
-  public StaticHandler setAllowRootFileSystemAccess(boolean allowRootFileSystemAccess) {
-    this.allowRootFileSystemAccess = allowRootFileSystemAccess;
-    return this;
-  }
-
-  /**
-   * @deprecated - Use the parameters in constructor
-   */
-  @Override
-  @Deprecated
-  public StaticHandler setWebRoot(String webRoot) {
-    setRoot(webRoot);
-    return this;
-  }
-
-  @Override
-  public StaticHandler setFilesReadOnly(boolean readOnly) {
-    this.filesReadOnly = readOnly;
-    return this;
-  }
-
-  @Override
-  public StaticHandler setMaxAgeSeconds(long maxAgeSeconds) {
-    if (maxAgeSeconds < 0) {
-      throw new IllegalArgumentException("timeout must be >= 0");
-    }
-    this.maxAgeSeconds = maxAgeSeconds;
-    return this;
-  }
-
-  @Override
-  public StaticHandler setMaxCacheSize(int maxCacheSize) {
-    cache.setMaxSize(maxCacheSize);
-    return this;
-  }
-
-  @Override
-  public StaticHandler setCachingEnabled(boolean enabled) {
-    cache.setEnabled(enabled);
-    return this;
-  }
-
-  @Override
-  public StaticHandler setDirectoryListing(boolean directoryListing) {
-    this.directoryListing = directoryListing;
-    return this;
-  }
-
-  @Override
-  public StaticHandler setDirectoryTemplate(String directoryTemplate) {
-    this.directoryTemplateResource = directoryTemplate;
-    this.directoryTemplate = null;
-    return this;
-  }
-
-  @Override
-  public StaticHandler setEnableRangeSupport(boolean enableRangeSupport) {
-    this.rangeSupport = enableRangeSupport;
-    return this;
-  }
-
-  @Override
-  public StaticHandler setIncludeHidden(boolean includeHidden) {
-    this.includeHidden = includeHidden;
-    return this;
-  }
-
-  @Override
-  public StaticHandler setCacheEntryTimeout(long timeout) {
-    cache.setCacheEntryTimeout(timeout);
-    return this;
-  }
-
-  @Override
-  public StaticHandler setIndexPage(String indexPage) {
-    Objects.requireNonNull(indexPage);
-    if (indexPage.charAt(0) == '/') {
-      this.indexPage = indexPage.substring(1);
-    } else {
-      this.indexPage = indexPage;
-    }
-    return this;
-  }
-
-  @Override
-  public StaticHandler setAlwaysAsyncFS(boolean alwaysAsyncFS) {
-    tune.setAlwaysAsyncFS(alwaysAsyncFS);
-    return this;
-  }
-
-  @Override
-  public StaticHandler setHttp2PushMapping(List<Http2PushMapping> http2PushMap) {
-    if (http2PushMap != null) {
-      this.http2PushMappings = new ArrayList<>(http2PushMap);
-    }
-    return this;
-  }
-
-  @Override
-  public StaticHandler skipCompressionForMediaTypes(Set<String> mediaTypes) {
-    if (mediaTypes != null) {
-      this.compressedMediaTypes = new HashSet<>(mediaTypes);
-    }
-    return this;
-  }
-
-  @Override
-  public StaticHandler skipCompressionForSuffixes(Set<String> fileSuffixes) {
-    if (fileSuffixes != null) {
-      this.compressedFileSuffixes = new HashSet<>(fileSuffixes);
-    }
-    return this;
-  }
-
-  @Override
-  public synchronized StaticHandler setEnableFSTuning(boolean enableFSTuning) {
-    tune.setEnabled(enableFSTuning);
-    return this;
-  }
-
-  @Override
-  public StaticHandler setMaxAvgServeTimeNs(long maxAvgServeTimeNanoSeconds) {
-    tune.maxAvgServeTimeNanoSeconds = maxAvgServeTimeNanoSeconds;
-    return this;
-  }
-
-  @Override
-  public StaticHandler setSendVaryHeader(boolean sendVaryHeader) {
-    this.sendVaryHeader = sendVaryHeader;
-    return this;
-  }
-
-  @Override
-  public StaticHandler setDefaultContentEncoding(String contentEncoding) {
-    this.defaultContentEncoding = contentEncoding;
-    return this;
-  }
-
-  private String getFile(String path, RoutingContext context) {
-    String file = webRoot + Utils.pathOffset(path, context);
+  private String getFile(PathVersion path, RoutingContext context) {
+    String file = webRoot + Utils.pathOffset(path.getPath(), context);
     if (LOG.isTraceEnabled()) {
       LOG.trace("File to serve is " + file);
     }
@@ -860,14 +708,14 @@ public class IDSpecificHandler implements StaticHandler {
 
     // these variables are read often and should always represent the
     // real value, no caching should be allowed
-    private volatile boolean enabled = DEFAULT_ENABLE_FS_TUNING;
+    private volatile boolean enabled = StaticHandler.DEFAULT_ENABLE_FS_TUNING;
     private volatile boolean useAsyncFS;
 
     private long totalTime;
     private long numServesBlocking;
     private long nextAvgCheck = NUM_SERVES_TUNING_FS_ACCESS;
-    private long maxAvgServeTimeNanoSeconds = DEFAULT_MAX_AVG_SERVE_TIME_NS;
-    private boolean alwaysAsyncFS = DEFAULT_ALWAYS_ASYNC_FS;
+    private long maxAvgServeTimeNanoSeconds = StaticHandler.DEFAULT_MAX_AVG_SERVE_TIME_NS;
+    private boolean alwaysAsyncFS = StaticHandler.DEFAULT_ALWAYS_ASYNC_FS;
 
     boolean enabled() {
       return enabled;
@@ -918,12 +766,12 @@ public class IDSpecificHandler implements StaticHandler {
   }
 
   private static class FSPropsCache {
-    private Map<GitFile, CacheEntry> propsCache;
-    private long cacheEntryTimeout = DEFAULT_CACHE_ENTRY_TIMEOUT;
-    private int maxCacheSize = DEFAULT_MAX_CACHE_SIZE;
+    private Map<PathVersion, CacheEntry> propsCache;
+    private long cacheEntryTimeout = StaticHandler.DEFAULT_CACHE_ENTRY_TIMEOUT;
+    private int maxCacheSize = StaticHandler.DEFAULT_MAX_CACHE_SIZE;
 
     FSPropsCache() {
-      setEnabled(DEFAULT_CACHING_ENABLED);
+      setEnabled(StaticHandler.DEFAULT_CACHING_ENABLED);
     }
 
     boolean enabled() {
@@ -965,13 +813,13 @@ public class IDSpecificHandler implements StaticHandler {
       this.cacheEntryTimeout = timeout;
     }
 
-    private void remove(String path) {
+    private void remove(PathVersion path) {
       if (propsCache != null) {
         propsCache.remove(path);
       }
     }
 
-    CacheEntry get(String key) {
+    CacheEntry get(PathVersion key) {
       if (propsCache != null) {
         return propsCache.get(key);
       }
@@ -979,11 +827,41 @@ public class IDSpecificHandler implements StaticHandler {
       return null;
     }
 
-    void put(GitFile target, FileProps props) {
+    void put(PathVersion target, FileProps props) {
       if (propsCache != null) {
         CacheEntry now = new CacheEntry(props, cacheEntryTimeout);
         propsCache.put(target, now);
       }
-    }
+    }    
   }
+  private class PathVersion
+  {
+	  private String path;
+	  private String version;
+		public PathVersion(String path, String version) {
+			super();
+			this.path = path;
+			this.version = version;
+		}
+
+		
+	public String getPath() {
+		return path;
+	}
+	public String getVersion() {
+		return version;
+	}
+	 @Override
+	public String toString()
+	{
+		 return path + "@" + version;
+	}
+	@Override
+	public int hashCode()
+	{
+		return this.toString().hashCode();
+	}
+	  
+  }
+  
 }

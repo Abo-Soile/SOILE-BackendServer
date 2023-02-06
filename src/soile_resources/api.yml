@@ -21,6 +21,8 @@ tags:
     description: Operations associated with a project.
   - name: projectexecution
     description: Anything to do with running projects / project instances.
+  - name: participation
+    description: Operations that are used by participants of a project.
   - name: exeriment
     description: Operations associated with experiments
   - name: user
@@ -488,6 +490,45 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
+  /task/{id}/{version}/filelist:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Get a list of all files for the given task at the given version
+      operationId: getTaskFileList
+      description: Obtain a list of allfiles available for a given task at a given version.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task for which versions are requested
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: version of the task
+          schema:
+            type : string            
+      responses:
+        '200':
+          description: A List of tasks versions, with Tags and Date information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ElementVersions'
+                
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'           
   /task/create:
     get:
       security:
@@ -509,12 +550,18 @@ paths:
         - name: codeType
           in: query
           required: true
-          description: Name of the Task
+          description: Code type
           schema:
             type : string
-            
             example: "javascript"
             description: The type of code used for this task. This is not changeable after creation.
+        - name: codeVersion
+          in: query
+          description: Version of the code used for the task.
+          schema:
+            type : string
+            example: "2022.2.5"
+            description: The version of the codeType used. 
       responses:
         '200':
           description: New Task created
@@ -1259,6 +1306,7 @@ paths:
         - tokenAuth: []
       tags:
         - projectexecution
+        - participation
       summary: Get the next unfinished task for the authorized user. 
       operationId: getTaskType
       description: "Get the ID of the current task for the authorized user."
@@ -1282,6 +1330,9 @@ paths:
                     type: string
                     description: the code type (javascript for psychoJS, qmarkup or elang for soile questionaire markup and experiment language)
                     example: "qmarkup"
+                  codeVersion:
+                    type: string
+                    description: The version of the code. Primarily necessary for PsychoJS code, as code might depend on specific versions of PsychoJS.
                   finished:
                     type: boolean
                     description: Whether this project is finished. clear indicator that this is finished in addition to the next property being undefined.
@@ -1291,7 +1342,7 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call
-  /projectexec/{id}/execute:  
+  /run/{id}/:  
     get:
       security:
         - cookieAuth: []
@@ -1302,17 +1353,14 @@ paths:
       summary: Get the next unfinished task for the authorized user. 
       operationId: runTask
       description: >-
-                   Get the code for the current Task for the user (calling this repeatedly will return the same code multiple times.
-                   The codeType for the task needs to be obtained from the getNextTaskType end-point before running this task
-                   in order to know how to interpret the returned code. 
+                   This endpoint provides the relevant code for the current task for the participant.  
       parameters:
         - name: id
           in: path
           required: true
-          description: UUID of the Project instance
+          description: UUID of the Project instance or the shortcut for the project instance
           schema:
             type : string
-            
       responses:
         '200':
           description: Success
@@ -1328,12 +1376,51 @@ paths:
           description: User has no authorization to make this call
         '406':
           description: User is finished.
+
+  /run/{id}/lib:  
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+        - tokenAuth: []
+      tags:
+        - projectexecution
+      summary: Get a library for a project
+      operationId: getLib
+      description: >-
+                   Get libraries required for the specified task. This routes to 
+                   all possible libs that might be required (i.e. they only need to be installed once to make them available.)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project instance
+          schema:
+            type : string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/javascript:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call
+        '406':
+          description: User is finished.
+
+          
   /projectexec/{id}/signUp:  
     get:
       security:
         - {} # Security on this endpoint is optional. Calling this in an authenticated manner will add a user to the participant. Calling it in a non authenticated manner will create a token that can be used for future authentication.
         - cookieAuth: []
         - JWTAuth: []
+        - tokenAuth: []
       tags:
         - projectexecution
       summary: signUp for a project with a one-time signUp Code. 
@@ -1371,44 +1458,6 @@ paths:
         '406':
           description: User is finished.
           
-#  /projectexec/{id}/addCollaborators:  
-#    get:
-#      security:
-#        - cookieAuth: []
-#        - JWTAuth: []
-#      tags:
-#        - projectexecution
-#      summary: Get the next unfinished task for the authorized user. 
-#      operationId: addCollaborator
-#      description: >-
-#                   Add a collaborator to the project. The collaborator will have READ/WRITE access to the project. i.e. they can download the data of participants etc.
-#                   The can NOT modify the project itself or stop/restart the project.
-#      parameters:
-#        - name: id
-#          in: path
-#          required: true
-#          description: UUID of the Project instance
-#          schema:
-#            type : string
-#            
-#      responses:
-#        '200':
-#          description: Success
-#        '401':
-#          $ref: '#/components/responses/UnauthorizedError'
-#        '400':
-#          description: 'Users not found or not Researchers'
-#        '403':
-#          description: User has no authorization to make this call
-#      requestBody:
-#        content:
-#          application/binary:
-#            schema:
-#              type: array
-#              items: 
-#                type: string
-#                description: The usernames of the collaborators to add. Collaborators must have Admin or Researcher roles!
-
   /projectexec/{id}/uploaddata:  
     post:
       security:
@@ -1452,6 +1501,43 @@ paths:
               type: string
               format: binary
               description: the file to upload
+              
+  /run/{id}/*:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+        - tokenAuth: []
+      tags:
+        - projectexecution
+      summary: Get Other data for the currentTask of the participant
+      operationId: getResourceForExecution
+      description: >- 
+                   This end point provides "static" data for the current task of the participant. This allows a proxy to simply 
+                   Access /run/{id}/some/File to access resources. 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project instance
+          schema:
+            type : string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/javascript:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call
+        '406':
+          description: User is finished.
+            
   /experiment/list:
     get:
       security:
@@ -1954,7 +2040,7 @@ components:
           example: 507f1f77bcf86cd799439011
         name:
           type: string
-          example: Name of the element
+          example: Name of the , this cannot be changed after creation. 
         version:
           type: string
           description: This is the version (in form of a githash) of this element. When submitting a new version this field should be empty. It is however provided when requesting a specific version.
@@ -1989,7 +2075,7 @@ components:
             type: string
           date:
             type: string
-            example: "2022-07-06T18:22"
+            example: "2022-07-06 18:22 yyyy-MM-dd HH:mm:ss"
             
     ObjectList:
       type: array
@@ -2007,7 +2093,7 @@ components:
       properties:
         name:
           type: string
-          description: "Name of the project"
+          description: Name of the element this name cannot be changed after creation. 
         _id:
           type: string
           example: 12345asasdadf32fds
@@ -2096,9 +2182,15 @@ components:
       type: object
       properties:
         codeType:
-          type: string
-          example: qlang
-          description: What kind of code this task has, either elang (soile experiment language), qlang (soile questionaire language), or (PsychoPy)javascript
+          type: object
+          properties:
+            language:
+              type: string
+              example: qlang
+              description: What kind of code this task has, either elang (soile experiment language), qlang (soile questionaire language), or (PsychoPy)javascript
+            version:
+              type: string
+              example: "2022.2.5"
         resources:
           type: array
           items: 
@@ -2212,7 +2304,7 @@ components:
           description: whether access to this project is limited
         name:
           type: string 
-          description: A unique name for this project
+          description: A unique name for this project, this name and the UUID have to be the same, or the name has to not be listed.
         shortcut:
           type: string
           description: "a shortcut string tht can be used for access via /e/shortcut"
@@ -2370,6 +2462,10 @@ components:
       type: apiKey
       in: header
       name: INSTANCE-KEY
+    anonymousAuth:
+      type: apiKey
+      in: header
+      name: INSTANCE-KEY  
   responses:
     UnauthorizedError:
       description: User is not authenticated.      

@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
+import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.http_server.auth.AccessHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
@@ -12,6 +13,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
+import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificHandler;
 import fi.abo.kogni.soile2.http_server.requestHandling.NonStaticHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
@@ -26,8 +28,10 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.impl.URIDecoder;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.FileUpload;
@@ -41,6 +45,7 @@ public class ParticipationRouter extends SoileRouter{
 
 	
 	NonStaticHandler libraryHandler;
+	IDSpecificHandler resourceHandler;
 	ProjectInstanceHandler instanceHandler;
 	AccessHandler accessHandler;
 	SoileAuthorization authorizationRertiever;
@@ -294,10 +299,9 @@ public class ParticipationRouter extends SoileRouter{
 					}					
 					else
 					{
-						// get the current Task
-						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
-						// This is supposedly a request for a static library required for this specific element, so here you are.
-						eb.reqcurrentTask.getUUID()
+						//ok handle this with the NonStatic Handler
+						libraryHandler.handle(context);
+						
 					}
 				})
 				.onFailure(err -> handleError(err, context));
@@ -328,8 +332,19 @@ public class ParticipationRouter extends SoileRouter{
 					}					
 					else
 					{
-						// This is supposedly a request for a static library required for this specific element, so here you are.
-						libraryHandler.handle(context);
+						// Ok, this is a request for resources for a file referenced from git. 
+						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
+						String uriDecodedPath = URIDecoder.decodeURIComponent(context.normalizedPath(), false);
+					      // if the normalized path is null it cannot be resolved
+					      if (uriDecodedPath == null) {
+					        context.next();
+					        return;
+					      }
+					      // will normalize and handle all paths as UNIX paths
+					    String treatedPath = HttpUtils.removeDots(uriDecodedPath.replace('\\', '/'));
+						String path = treatedPath.substring(treatedPath.indexOf(requestedInstanceID)+requestedInstanceID.length());
+						GitFile targetResource = new GitFile(currentTask.getUUID(),currentTask.getVersion(),path);
+						resourceHandler.handle(context, targetResource);						
 					}
 				})
 				.onFailure(err -> handleError(err, context));

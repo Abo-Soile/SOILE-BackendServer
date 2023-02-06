@@ -16,15 +16,18 @@ public class DataLakeFile extends File implements FileDescriptor {
 	private static final long serialVersionUID = 1L;
 	private String originalFileName;
 	private String mimeFormat;
-	
+	private String pathInLake;
+	private String dataLake;
 	/**
 	 * Basic constructor given a real filename, the original Filename and the format of the file contents.
 	 * @param path the actual location of the file
 	 * @param originalFileName the Name this file originally had (as the path likely points to a random file name)
 	 * @param mimeFormat the format of the file contents.
 	 */
-	public DataLakeFile(String path, String originalFileName, String mimeFormat) {
-		super(path);
+	public DataLakeFile(String dataLakePath, String pathInLake, String originalFileName, String mimeFormat) {
+		super(dataLakePath + File.separator + pathInLake);
+		this.pathInLake = pathInLake;
+		this.dataLake = dataLakePath; 
 		this.originalFileName = originalFileName;
 		this.mimeFormat = mimeFormat;
 	}
@@ -34,9 +37,11 @@ public class DataLakeFile extends File implements FileDescriptor {
 	 * @param source
 	 */
 	public DataLakeFile(JsonObject source) {
-		super(source.getString("AbsolutPath"));
+		super(source.getString("dataLake") + File.separator + source.getString("pathInLake"));
 		this.originalFileName = source.getString("originalFileName");
 		this.mimeFormat = source.getString("mimeFormat");
+		this.dataLake = source.getString("dataLake") ;
+		this.pathInLake = source.getString("pathInLake"); 
 	}
 	
 	/**
@@ -48,6 +53,15 @@ public class DataLakeFile extends File implements FileDescriptor {
 		return originalFileName;
 	}
 	
+	/**
+	 * Get the file name within the datalake
+	 * @return
+	 */
+	 
+	public String getFileNameInLake()
+	{
+		return pathInLake;
+	}
 	/**
 	 * Get the format of this file (mimetype)
 	 * @return the format specifier
@@ -74,7 +88,8 @@ public class DataLakeFile extends File implements FileDescriptor {
 	public JsonObject toJson()
 	{
 		return new JsonObject()
-				.put("absolutePath", getAbsolutePath())
+				.put("pathInLake", this.pathInLake)
+				.put("dataLake", this.dataLake)
 				.put("originalFileName", originalFileName)
 				.put("mimeFormat", mimeFormat);
 	}
