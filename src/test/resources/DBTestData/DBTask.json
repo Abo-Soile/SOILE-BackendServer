@@ -4,5 +4,7 @@
 	"tags" : [],
 	"versions" : [],
 	"resources" : [],
-	"codeType" : "javascript" 
+	"codeType" : "psychopy",
+	"codeVersion" : "2022.2.5"
+	
 }

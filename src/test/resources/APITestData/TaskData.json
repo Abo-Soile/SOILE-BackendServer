@@ -4,18 +4,21 @@
 		"resources": ["ImageData.jpg"],
 		"private": true,
 		"codeType": "elang",
+		"codeVersion" : "1.0",
 		"codeFile": "FirstTask.elang"
 	},
 	"Initial_Questionaire": {
 		"name": "Initial Questionaire",
 		"codeType": "qmarkup",
+		"codeVersion" : "1.0",
 		"private": false,
 		"codeFile": "pilotform.qmarkup"
 		
 	},  			
 	"Test1": {
 		"name": "Test1",
-		"codeType": "javascript",
+		"codeType": "psychopy",
+		"codeVersion" : "2022.2.5",
 		"private": false,
 		"codeFile": "Test.js"		
 	},
@@ -23,18 +26,21 @@
 		"name": "Test2",
 		"resources": ["ImageData.jpg"],									
 		"codeType": "elang",
+		"codeVersion" : "1.0",
 		"codeFile": "FirstTask.elang"
 	},  				
 	"Test3": {							
 		"name": "Test3",
-		"codeType": "javascript",
+		"codeType": "psychopy",
+		"codeVersion" : "2022.2.5",		
 		"codeFile": "Test.js"
 	},
 	"Test4": {							
 		"name": "Test4",
 		"resources": ["ImageData.jpg"],
 		"codeFile": "Test.js",
-		"codeType": "javascript"
+		"codeType": "psychopy",
+		"codeVersion" : "2022.2.5"
 	}
 }
 	

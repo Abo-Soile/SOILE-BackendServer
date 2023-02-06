@@ -154,12 +154,12 @@
 	},
 		
 	"tasks":{
-		"IDField" : "ID",
-		"VersionField" : "Version",
-		"SourceType": "Type",
-		"accessibleOutputs" : "Outputs",
-		"taskFolder" : "tasks/repos/",
-		"repoTaskAddress" : "soile::tasks::repo"
+		"availableTypes" : [ "qlang", "elang", "psychopy" ],
+		"availableVersions" : {
+								 "qlang" : [ "1.0" ],
+								 "elang" : [ "1.0" ],
+								 "psychopy" : [ "2022.2.5"]
+								 }
 	},
 	
 	"deploy": [
