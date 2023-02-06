@@ -11,23 +11,20 @@ import fi.aalto.scicomp.zipper.FileDescriptor;
 import fi.aalto.scicomp.zipper.Zipper;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
+import fi.abo.kogni.soile2.http_server.auth.AccessHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
-import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
+import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
-import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -39,9 +36,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.mongo.MongoClient;
-import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 
@@ -55,13 +50,12 @@ import io.vertx.ext.web.validation.ValidationHandler;
 public class ProjectInstanceRouter extends SoileRouter {
 
 	ProjectInstanceHandler instanceHandler;
-	SoileIDBasedAuthorizationHandler instanceIDAccessHandler;
-	SoileIDBasedAuthorizationHandler projectIDAccessHandler;
-	SoileRoleBasedAuthorizationHandler roleHandler;
+	AccessHandler instanceAccessHandler;
+	AccessHandler projectAccessHandler;
 	SoileAuthorization authorizationRertiever;
+	SoileIDBasedAuthorizationHandler projectIDAccessHandler;
 	ParticipantHandler partHandler;
 	TargetElementType instanceType = TargetElementType.INSTANCE;
-	ElementManager<Task> taskManager;
 	MongoAuthorization mongoAuth;
 	ParticipantDataLakeManager dataLakeManager;
 	EventBus eb;
@@ -77,11 +71,13 @@ public class ProjectInstanceRouter extends SoileRouter {
 		authorizationRertiever = auth;
 		instanceHandler = projHandler;
 		this.partHandler = partHandler;
-		mongoAuth = auth.getAuthorizationForOption(instanceType);
-		roleHandler = new SoileRoleBasedAuthorizationHandler();
-		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client);
+		MongoAuthorization mongoAuth = auth.getAuthorizationForOption(instanceType);
+		SoileRoleBasedAuthorizationHandler roleHandler = new SoileRoleBasedAuthorizationHandler();
+		
+		SoileIDBasedAuthorizationHandler instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client);
 		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Project().getTargetCollection(), client);
 		dataLakeManager = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
+		instanceAccessHandler = new AccessHandler(mongoAuth, instanceIDAccessHandler, roleHandler);
 	}
 
 	public void startProject(RoutingContext context)
@@ -122,7 +118,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 
 	public void getRunningProjectList(RoutingContext context)
 	{				
-		checkAccess(context.user(),null, Roles.Researcher,null,true)
+		instanceAccessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
 		.onSuccess(Void -> 
 		{
 			authorizationRertiever.getGeneralPermissions(context.user(),instanceType)
@@ -149,7 +145,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 				
-		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
 			instanceHandler.loadProject(requestedInstanceID)
@@ -173,7 +169,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		
-		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
 			instanceHandler.loadProject(requestedInstanceID)
@@ -196,7 +192,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
 			instanceHandler.loadProject(requestedInstanceID)
@@ -215,40 +211,12 @@ public class ProjectInstanceRouter extends SoileRouter {
 		.onFailure(err -> handleError(err, context));			
 	}
 
-	public void submitResults(RoutingContext context)
-	{				
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = params.pathParameter("id").getString();
-		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
-		.onSuccess(Void -> 
-		{
-			instanceHandler.loadProject(requestedInstanceID)
-			.onSuccess(project -> {					
-				// this list needs to be filtered by access
-				getParticpantForUser(context.user(), project)				
-				.onSuccess(participant-> {
-					project.finishStep(participant, context.body().asJsonObject())
-					.onSuccess(res -> {
-						context.response()
-						.setStatusCode(200)						
-						.end();
-					})
-					.onFailure(err -> handleError(err, context));
-				})
-				.onFailure(err -> handleError(err, context));
-			})
-			.onFailure(err -> handleError(err, context));
-		})
-		.onFailure(err -> handleError(err, context));			
-	}
-
-
 	public void listDownloadData(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		
-		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> {
 			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
@@ -276,7 +244,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		//TODO: not implemented properly yet
-		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{			
 			// this list needs to be filtered by access
@@ -300,7 +268,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		String dlID = params.pathParameter("downloadid").getString();
-		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{
 			// this list needs to be filtered by access
@@ -323,7 +291,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		String requestedInstanceID = params.pathParameter("id").getString();
 		String dlID = params.pathParameter("downloadid").getString();
 		
-		checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{
 			// this list needs to be filtered by access
@@ -375,212 +343,6 @@ public class ProjectInstanceRouter extends SoileRouter {
 	}
 	
 	
-
-	public void getTaskType(RoutingContext context)
-	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = params.pathParameter("id").getString();
-		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
-		.onSuccess(Void -> {
-			instanceHandler.loadProject(requestedInstanceID)
-			.onSuccess(project -> {					
-				//JsonArray taskData = project.getTasksWithNames();
-				// this list needs to be filtered by access
-				getParticpantForUser(context.user(), project)				
-				.onSuccess(participant-> {		
-					if(participant.isFinished())
-					{
-						context.response()
-						.setStatusCode(200)	
-						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-						.end(new JsonObject().put("finished", true).put("codeType", "").encode());
-					}					
-					else
-					{
-						try {
-							TaskObjectInstance currentTask = (TaskObjectInstance)project.getElement(participant.getProjectPosition());
-							eb.request(SoileConfigLoader.getVerticleProperty("getTaskInformationAddress"), new JsonObject().put("taskID", currentTask.getUUID()))
-							.onSuccess(response -> {								
-								JsonObject responseBody = ((JsonObject) response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
-								context.response()
-								.setStatusCode(200)	
-								.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-								.end(new JsonObject().put("finished", false).put("codeType", responseBody.getString("codeType")).encode());
-							})
-							.onFailure(err -> handleError(err, context));
-						}
-						catch(ClassCastException e)
-						{
-							// This should not happen, but just in case...
-							LOGGER.error("The current Task for user " + participant.getID() + "is NOT a task!!");
-							context.response()
-							.setStatusCode(500)					
-							.end("Problem retrieving task");
-						}						
-					}
-				})
-				.onFailure(err -> handleError(err, context));
-			})
-			.onFailure(err -> handleError(err, context));
-		})
-		.onFailure(err -> handleError(err, context));		
-	}
-	
-	
-	public void runTask(RoutingContext context)
-	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = params.pathParameter("id").getString();
-		
-		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
-		.onSuccess(Void -> {
-			instanceHandler.loadProject(requestedInstanceID)
-			.onSuccess(project -> {					
-				//JsonArray taskData = project.getTasksWithNames();
-				// this list needs to be filtered by access
-				getParticpantForUser(context.user(), project)				
-				.onSuccess(participant-> {		
-					if(participant.isFinished())
-					{
-						context.response()
-						.setStatusCode(406)							
-						.end("User is finished");
-					}					
-					else
-					{
-						// Try catch block.
-						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
-						eb.request(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"),
-							   new JsonObject().put("taskID", currentTask.getUUID())
-									   		   .put("type", currentTask.getCodeType())
-									   		   .put("version", currentTask.getVersion()))
-						.onSuccess(response -> {
-							JsonObject responseBody = (JsonObject) response.body();
-							context.response()
-							.setStatusCode(200)
-							.putHeader(HttpHeaders.CONTENT_TYPE, "application/javascript")
-							.end(responseBody.getString("code"));
-						})
-						.onFailure(err -> handleError(err, context));
-					}
-				})
-				.onFailure(err -> handleError(err, context));
-			})
-			.onFailure(err -> handleError(err, context));
-		})
-		.onFailure(err -> handleError(err, context));		
-	}
-	
-	
-	public void uploadData(RoutingContext context)
-	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = params.pathParameter("id").getString();
-		
-		checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,true)
-		.onSuccess(Void -> 
-		{
-			if(context.fileUploads().size() != 1)
-			{
-				handleError(new HttpException(400, "Only one Upload allowed at a time"), context);
-				return;
-			}
-			FileUpload currentUpload = context.fileUploads().get(0);
-			instanceHandler.loadProject(requestedInstanceID)
-			.onSuccess(project -> {				
-				//JsonArray taskData = project.getTasksWithNames();
-				// this list needs to be filtered by access
-				getParticpantForUser(context.user(), project)				
-				.onSuccess(participant-> {
-					participant.getCurrentStep()
-					.onSuccess(step -> {
-						dataLakeManager.storeParticipantData(participant.getID(), step, participant.getProjectPosition(), currentUpload)
-						.onSuccess(id -> {
-							context.response()
-							.setStatusCode(200)						
-							.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-							.end(new JsonObject().put("id", id).encode());
-							
-						})
-						.onFailure(err -> handleError(err, context));
-
-					})
-					.onFailure(err -> handleError(err, context));
-				})
-				.onFailure(err -> handleError(err, context));
-			})
-			.onFailure(err -> handleError(err, context));
-		})
-		.onFailure(err -> handleError(err, context));
-	}
-	
-	
-	public void signUpForProject(RoutingContext context)
-	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = params.pathParameter("id").getString();
-		String token = params.queryParameter("token").getString();
-		instanceHandler.loadProject(requestedInstanceID)
-		.onSuccess(project -> {					
-			project.useToken(token)
-			.onSuccess( tokenUsed -> {
-				if(context.user() != null)
-				{
-					// we will add execute access to the current user.					
-					
-					JsonObject userData = new JsonObject();
-					userData.put("username", context.user().principal().getString("username"));
-					userData.put("command", "add");
-					userData.put("permissions", new JsonArray().add(new JsonObject().put("target", requestedInstanceID).put("type", PermissionType.EXECUTE.toString())));							
-					eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"),userData).onSuccess( response ->
-					{
-						// all done;
-						context.response()
-						.setStatusCode(200)						
-						.end();
-					})
-					.onFailure(err -> handleError(err, context));
-				}
-				else
-				{
-					// we don't have a user, so we set up a Token user.
-					partHandler.createTokenUser(project)
-					.onSuccess(participant -> {
-						context.response()
-						.setStatusCode(200)						
-						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-						.end(new JsonObject().put("token", participant.getToken()).encode());
-					})
-					.onFailure(err -> handleError(err, context));
-				}
-			})
-			.onFailure(err -> handleError(err, context));
-		})
-		.onFailure(err -> handleError(err, context));
-	}
-
-	protected Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission, boolean adminAllowed)
-	{
-		Promise<Void> accessPromise = Promise.<Void>promise();
-		mongoAuth.getAuthorizations(user)
-		.onSuccess(Void -> {
-			instanceIDAccessHandler.authorize(user, id, adminAllowed, requiredPermission)
-			.onSuccess(acceptID -> {
-				roleHandler.authorize(user, requiredRole)
-				.onSuccess(acceptRole -> {
-					// both role and permission checks are successfull.
-					accessPromise.complete();
-				})
-				.onFailure(err -> accessPromise.fail(err));
-			})
-			.onFailure(err -> accessPromise.fail(err));
-		})
-		.onFailure(err -> {
-			accessPromise.fail(new HttpException(500,err.getMessage()));
-		});
-		return accessPromise.future();
-	}
-				
 	
 	/**
 	 * Get the participant for the current user. 

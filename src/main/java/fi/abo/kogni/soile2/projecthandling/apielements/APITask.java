@@ -48,6 +48,15 @@ public class APITask extends APIElementBase<Task> {
 		data.put("codeType", codeType);
 	}
 
+	@JsonProperty("codeVersion")
+	public String getCodeVersion() {
+		return data.getString("codeVersion", "");
+	}
+	@JsonProperty("codeVersion")
+	public void setCodeVersion(String codeVersion) {
+		data.put("codeVersion", codeVersion);
+	}
+	
 	/**
 	 * This represents ALL resources used in any version of the task. 
 	 * @return

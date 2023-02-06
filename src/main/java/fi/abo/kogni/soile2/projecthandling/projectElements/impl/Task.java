@@ -40,6 +40,16 @@ public class Task extends ElementBase {
 		data.put("codeType", codeType);
 	}
 
+	
+	@JsonProperty("codeVersion")
+	public String getCodeVersion() {
+		return data.getString("codeVersion","");
+	}
+	public void setCodeVersion(String codeVersion) {
+		data.put("codeVersion", codeVersion);
+	}
+
+	
 	/**
 	 * This represents ALL resources used in any version of the task. 
 	 * @return
@@ -93,7 +103,5 @@ public class Task extends ElementBase {
 	public TargetElementType getElementType() {
 		return TargetElementType.TASK;
 	}
-	
-	public static List<String> allowedTypes = List.of("javascript", "qlang", "elang");
 	
 }

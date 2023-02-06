@@ -1,11 +1,14 @@
 package fi.abo.kogni.soile2.utils;
 
+import java.util.Set;
+
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.mongo.MongoAuthenticationOptions;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
@@ -228,13 +231,24 @@ public class SoileConfigLoader {
 	}
 	
 	/**
-	 * Get a property from the Task config.
-	 * @param property - the property to obtain.
-	 * @return the property
+	 * Check, whether the language and version are possible.
+	 * @param language the language (e.g. qlang, elang or psychopy
+	 * @param version the version (1.0 for elang or qlang, and e.g. 2022.2.5 for psychopy)
+	 * @return
 	 */
-	public static String getTaskProperty(String property)
+
+	public static boolean isValidTaskType(String language, String version)
 	{
-		return taskCfg.getString(property);
+		return taskCfg.getJsonObject("availableVersions").getJsonArray(language,new JsonArray()).contains(version);
+	}
+	
+	/**
+	 * Get all available code types supported. 
+	 * @return the available code types
+	 */
+	public static Set<String> getAvailableTaskTypes()
+	{
+		return taskCfg.getJsonObject("availableVersions").fieldNames();
 	}
 	
 	/**

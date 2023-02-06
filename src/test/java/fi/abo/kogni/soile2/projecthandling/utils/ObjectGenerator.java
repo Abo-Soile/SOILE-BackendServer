@@ -51,7 +51,7 @@ public class ObjectGenerator {
 			String TestDataFolder = ObjectGenerator.class.getClassLoader().getResource("FileTestData").getPath();
 			String dataDir = Files.createTempDirectory("TaskDataFolder").toAbsolutePath().toString();
 			FileUtils.copyDirectory(new File(TestDataFolder), new File(dataDir));
-			manager.createOrLoadElement(TaskDef.getString("name"),TaskDef.getString("codeType"))
+			manager.createOrLoadElement(TaskDef.getString("name"),TaskDef.getString("codeType"),TaskDef.getString("codeVersion"))
 			.onSuccess(task -> {
 				LOGGER.debug("Task object created");
 				JsonArray resources = TaskDef.getJsonArray("resources", new JsonArray());
@@ -101,6 +101,7 @@ public class ObjectGenerator {
 							taskPromise.complete(apiTask);							
 						})
 						.onFailure(err -> taskPromise.fail(err));
+
 					})
 					.onFailure(err -> taskPromise.fail(err));
 					})
