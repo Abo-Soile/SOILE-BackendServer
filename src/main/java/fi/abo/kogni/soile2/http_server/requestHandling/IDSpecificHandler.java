@@ -199,7 +199,7 @@ public class IDSpecificHandler implements StaticHandler {
   /**
    * Can be called recursive for index pages
    */
-  private void sendStatic(RoutingContext context, FileSystem fileSystem, String path, boolean index) {
+  private void sendStatic(RoutingContext context, FileSystem fileSystem, GitFile path, boolean index) {
 
     String file = null;
 

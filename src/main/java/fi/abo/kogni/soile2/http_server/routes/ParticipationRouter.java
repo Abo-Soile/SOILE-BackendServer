@@ -294,20 +294,10 @@ public class ParticipationRouter extends SoileRouter{
 					}					
 					else
 					{
-						// Try catch block.
+						// get the current Task
 						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
-						eb.request(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"),
-							   new JsonObject().put("taskID", currentTask.getUUID())
-									   		   .put("type", currentTask.getCodeType())
-									   		   .put("version", currentTask.getVersion()))
-						.onSuccess(response -> {
-							JsonObject responseBody = (JsonObject) response.body();
-							context.response()
-							.setStatusCode(200)
-							.putHeader(HttpHeaders.CONTENT_TYPE, "application/javascript")
-							.end(responseBody.getString("code"));
-						})
-						.onFailure(err -> handleError(err, context));
+						// This is supposedly a request for a static library required for this specific element, so here you are.
+						eb.reqcurrentTask.getUUID()
 					}
 				})
 				.onFailure(err -> handleError(err, context));
@@ -316,6 +306,39 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));		
 	}
+	
+	public void getResourceForExecution(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+		.onSuccess(Void -> {
+			instanceHandler.loadProject(requestedInstanceID)
+			.onSuccess(project -> {					
+				//JsonArray taskData = project.getTasksWithNames();
+				// this list needs to be filtered by access
+				getParticpantForUser(context.user(), project)				
+				.onSuccess(participant-> {		
+					if(participant.isFinished())
+					{
+						context.response()
+						.setStatusCode(406)							
+						.end("User is finished");
+					}					
+					else
+					{
+						// This is supposedly a request for a static library required for this specific element, so here you are.
+						libraryHandler.handle(context);
+					}
+				})
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));		
+	}
+	
 	
 	/**
 	 * Get the participant for the current user. 
