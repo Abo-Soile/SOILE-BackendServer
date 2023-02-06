@@ -3,7 +3,8 @@ package fi.abo.kogni.soile2.http_server.routes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.http_server.auth.AccessHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
@@ -45,7 +46,7 @@ public class ParticipationRouter extends SoileRouter{
 	SoileAuthorization authorizationRertiever;
 	ParticipantHandler partHandler;
 	TargetElementType instanceType = TargetElementType.INSTANCE;
-	DataLakeManager dataLakeManager;
+	ParticipantDataLakeManager dataLakeManager;
 	EventBus eb;
 	Vertx vertx;
 	
@@ -60,7 +61,7 @@ public class ParticipationRouter extends SoileRouter{
 		instanceHandler = projHandler;
 		this.partHandler = partHandler;		
 		accessHandler = new AccessHandler(auth.getAuthorizationForOption(instanceType), new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client), new SoileRoleBasedAuthorizationHandler());		 	
-		dataLakeManager = new DataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
+		dataLakeManager = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
 		libraryHandler = new NonStaticHandler(FileSystemAccess.RELATIVE, "data/libs/", "/lib/");
 	}
 	
