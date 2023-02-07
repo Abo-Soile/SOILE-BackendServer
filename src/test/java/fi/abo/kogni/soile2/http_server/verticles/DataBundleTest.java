@@ -12,6 +12,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.ElementTester;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
@@ -119,19 +120,19 @@ public class DataBundleTest extends ElementTester {
 																		{
 																			if(files.getJsonObject(i).getString("originalFileName").contains("TestData.txt"))
 																			{
-																				checkFileSame(Path.of(dataDir, "textData.txt").toString(), files.getJsonObject(i).getString("absolutePath"), context);
+																				checkFileSame(Path.of(dataDir, "textData.txt").toString(), new DataLakeFile(files.getJsonObject(i)).getAbsolutePath(), context);
 																				found++;
 																			}
 																			if(files.getJsonObject(i).getString("originalFileName").contains("TestImage.jpg"))
 																			{
-																				checkFileSame(Path.of(dataDir, "ImageData.jpg").toString(), files.getJsonObject(i).getString("absolutePath"), context);
+																				checkFileSame(Path.of(dataDir, "ImageData.jpg").toString(), new DataLakeFile(files.getJsonObject(i)).getAbsolutePath(), context);
 																				found++;
 																			}
 																			if(files.getJsonObject(i).getString("originalFileName").equals("data.json"))
 																			{			
 																				found++;
-																				try {
-																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(files.getJsonObject(i).getString("absolutePath"))));
+																				try {																					
+																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(new DataLakeFile(files.getJsonObject(i)).getAbsolutePath())));
 																					
 																					context.assertTrue(dataJson.containsKey("participantResults"));
 																					context.assertEquals(2,dataJson.getJsonArray("participantResults").size());
@@ -194,19 +195,20 @@ public class DataBundleTest extends ElementTester {
 																		{
 																			if(files.getJsonObject(i).getString("originalFileName").contains("TestData.txt"))
 																			{
-																				checkFileSame(Path.of(dataDir, "textData.txt").toString(), files.getJsonObject(i).getString("absolutePath"), context);
+																				checkFileSame(Path.of(dataDir, "textData.txt").toString(), new DataLakeFile(files.getJsonObject(i)).getAbsolutePath(), context);
 																				found++;
 																			}
 																			if(files.getJsonObject(i).getString("originalFileName").contains("TestImage.jpg"))
 																			{
-																				checkFileSame(Path.of(dataDir, "ImageData.jpg").toString(), files.getJsonObject(i).getString("absolutePath"), context);
+																				checkFileSame(Path.of(dataDir, "ImageData.jpg").toString(), new DataLakeFile(files.getJsonObject(i)).getAbsolutePath(), context);
 																				found++;
 																			}
 																			if(files.getJsonObject(i).getString("originalFileName").equals("data.json"))
 																			{		
 																				found++;
-																				try {
-																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(files.getJsonObject(i).getString("absolutePath"))));
+																				try {																					
+																					System.out.println(files.getJsonObject(i).encodePrettily());
+																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(new DataLakeFile(files.getJsonObject(i)).getAbsolutePath())));
 																					context.assertTrue(dataJson.containsKey("taskResults"));
 																					context.assertEquals(1,dataJson.getJsonArray("taskResults").size());
 																					JsonObject taskResults = dataJson.getJsonArray("taskResults").getJsonObject(0);																					
@@ -267,19 +269,19 @@ public class DataBundleTest extends ElementTester {
 																		{
 																			if(files.getJsonObject(i).getString("originalFileName").contains("TestData.txt"))
 																			{
-																				checkFileSame(Path.of(dataDir, "textData.txt").toString(), files.getJsonObject(i).getString("absolutePath"), context);
+																				checkFileSame(Path.of(dataDir, "textData.txt").toString(), new DataLakeFile(files.getJsonObject(i)).getAbsolutePath(), context);
 																				found++;
 																			}
 																			if(files.getJsonObject(i).getString("originalFileName").contains("TestImage.jpg"))
 																			{
-																				checkFileSame(Path.of(dataDir, "ImageData.jpg").toString(), files.getJsonObject(i).getString("absolutePath"), context);
+																				checkFileSame(Path.of(dataDir, "ImageData.jpg").toString(), new DataLakeFile(files.getJsonObject(i)).getAbsolutePath(), context);
 																				found++;
 																			}
 																			if(files.getJsonObject(i).getString("originalFileName").equals("data.json"))
 																			{	
 																				found++;
 																				try {
-																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(files.getJsonObject(i).getString("absolutePath"))));
+																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(new DataLakeFile(files.getJsonObject(i)).getAbsolutePath())));
 																					context.assertFalse(dataJson.containsKey("taskResults"));																					
 																					JsonObject taskResults = dataJson;																					
 																					context.assertEquals(position1, taskResults.getString("taskID"));
@@ -339,14 +341,14 @@ public class DataBundleTest extends ElementTester {
 																		{
 																			if(files.getJsonObject(i).getString("originalFileName").contains("TestImage.jpg"))
 																			{
-																				checkFileSame(Path.of(dataDir, "ImageData.jpg").toString(), files.getJsonObject(i).getString("absolutePath"), context);
+																				checkFileSame(Path.of(dataDir, "ImageData.jpg").toString(), new DataLakeFile(files.getJsonObject(i)).getAbsolutePath(), context);
 																				found++;
 																			}
 																			if(files.getJsonObject(i).getString("originalFileName").equals("data.json"))
 																			{	
 																				found++;																			
 																				try {
-																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(files.getJsonObject(i).getString("absolutePath"))));
+																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(new DataLakeFile(files.getJsonObject(i)).getAbsolutePath())));
 																					
 																					context.assertFalse(dataJson.containsKey("participantResults"));																					
 																					JsonObject part1Results = dataJson;																					
@@ -442,6 +444,7 @@ public class DataBundleTest extends ElementTester {
 
 	private void checkFileSame(String File1, String File2, TestContext context)
 	{
+		System.out.println(File1 + "//" +  File2);
 		try
 		{
 			File f = new File(File1);

@@ -50,10 +50,10 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 						System.out.println("------------------------------------------------Participant 1 started");
 						participant1.getCurrentStep()
 						// create The File Data
-						.onSuccess(val -> 
+						.onSuccess(stepVal -> 
 						{
 							System.out.println("------------------------------------------------Current step obtained");
-							createUpload(participant1, val, taskID, dlm)
+							createUpload(participant1, stepVal, taskID, dlm)
 								.onSuccess( fileData -> {
 									System.out.println("------------------------------------------------Upload created");
 									//now, build the result data
@@ -65,10 +65,11 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 									.onSuccess(res -> {
 										System.out.println("------------------------------------------------Step finished");
 										JsonObject fileResult = fileData.getJsonObject(0);
-										TaskFileResult fileRes = new TaskFileResult(fileResult.getString("filename"),
-												fileResult.getString("targetid"),
+										System.out.println(fileResult.encodePrettily());
+										TaskFileResult fileRes = new TaskFileResult(fileResult.getString("targetid"),
+												fileResult.getString("filename"),												
 												fileResult.getString("fileformat"),
-												val,
+												stepVal,
 												taskID,
 												participant1.getID());
 										context.assertTrue(dlm.getFile(fileRes).exists());

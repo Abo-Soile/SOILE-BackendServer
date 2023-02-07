@@ -69,7 +69,7 @@ public class DataLakeManagerTest extends SoileBaseTest{
 		FileUpload tempUpload = DataProvider.getFileUploadForTarget(Path.of(tempDataDir,"ImageData.jpg").toString(), "TestImage.jpg", "image/jpg");		
 		dlm.storeParticipantData(partID, step, taskID, tempUpload)
 		.onSuccess(TargetFileName -> {			
-			TaskFileResult res = new TaskFileResult("TestImage.jpg", TargetFileName, "image/jpg", step, taskID, partID);
+			TaskFileResult res = new TaskFileResult(TargetFileName, "TestImage.jpg", "image/jpg", step, taskID, partID);
 			context.assertTrue(vertx.fileSystem().existsBlocking(dlm.getFile(res).getAbsolutePath()));
 			try
 			{

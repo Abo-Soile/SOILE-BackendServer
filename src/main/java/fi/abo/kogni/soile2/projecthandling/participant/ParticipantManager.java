@@ -204,8 +204,8 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			for(int j = 0; i < fileResults.size(); j++)
 			{
 				JsonObject fileResult = fileResults.getJsonObject(j);				
-				results.add(new TaskFileResult(fileResult.getString("filename"),
-											   fileResult.getString("targetid"),
+				results.add(new TaskFileResult(fileResult.getString("targetid"),
+												fileResult.getString("filename"),											   
 											   fileResult.getString("fileformat"),
 											   step,
 											   taskResults.getString("task"), 
