@@ -79,6 +79,16 @@ public interface UserVerticleTest {
 	{
 		return client.findOne(SoileConfigLoader.getdbProperty("userCollection"), new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"),username), null);
 	}
+	
+	public default Future<Void> createAdmin(Vertx vertx, String username, String password)
+	{
+		return createUser(vertx, username, password, Roles.Admin);
+	}
+	
+	public default Future<Void> createResearcher(Vertx vertx, String username, String password)
+	{
+		return createUser(vertx, username, password, Roles.Researcher);
+	}
 }
 
 

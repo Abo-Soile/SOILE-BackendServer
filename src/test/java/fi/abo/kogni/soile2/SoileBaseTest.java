@@ -1,12 +1,9 @@
 package fi.abo.kogni.soile2;
 
 
-import static io.vertx.ext.auth.impl.Codec.base64Encode;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.SecureRandom;
 
 import org.apache.commons.io.FileUtils;
@@ -14,11 +11,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 
-import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.config.ConfigRetriever;
-import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -33,9 +27,9 @@ public abstract class SoileBaseTest {
 
 	public Vertx vertx;
 	protected EventBus eb;
-	private SoileHashing hashStrat;	
-	private String hashingAlgo;
-	private SecureRandom random = new SecureRandom();
+	protected SoileHashing hashStrat;	
+	protected String hashingAlgo;
+	protected SecureRandom random = new SecureRandom();
 	public String tmpDir;
 	@Before
 	public void setUp(TestContext context)
