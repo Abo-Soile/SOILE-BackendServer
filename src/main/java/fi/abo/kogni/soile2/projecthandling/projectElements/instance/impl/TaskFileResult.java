@@ -17,37 +17,37 @@ import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
  */
 public class TaskFileResult {
 
-	public String originalFileName;
-	public String localFileName;
+	public String resultFileName;
 	public String fileFormat;
+	public String storageFileName;
 	private int step;
 	private String taskID;
 	private String participantID;
 
 	/**
 	 * Generate a new Fileresult for a given task. 
-	 * @param originialFileName the original ID of the file as supplied by the project generation
-	 * @param localFileName the name of the file stored locally
+	 * @param originalFileName the original ID of the file as supplied by the project generation
+	 * @param projectID The project ID in which this is a result 
 	 * @param fileFormat the type of the file, essentially the file extension
 	 * @param taskID the id of the task this file belongs to.
 	 * @param participantID the id of the participant this file belongs to.
 	 */
-	public TaskFileResult(String originialFileName, String localFileName, String fileFormat, int step, String taskID, String participantID) {
-		this.originalFileName = originialFileName;
-		this.localFileName = localFileName;
+	public TaskFileResult(String storageFilename, String originalFileName, String fileFormat, int step, String taskID, String participantID) {
+		this.resultFileName = originalFileName;		
 		this.fileFormat = fileFormat;
 		this.step = step;
 		this.participantID = participantID;
 		this.taskID = taskID;
+		this.storageFileName = storageFilename;
 	}
 
 	/**
 	 * Get the filename that was originally set for this result.
 	 * @return The original filename
 	 */
-	public String getPublicFileName()
+	public String getResultFileName()
 	{
-		return originalFileName;
+		return resultFileName;
 	}
 	
 	/**
@@ -56,22 +56,30 @@ public class TaskFileResult {
 	 * @return a File handle, if the file exists.
 	 */
 	public DataLakeFile getFile(String dataLakeFolder) 
-	{		
-		String filePath = getFilePathInDataLake(dataLakeFolder);
-		DataLakeFile f = new DataLakeFile(dataLakeFolder, filePath,Path.of(getRelativeFolderPath(),originalFileName).toString(),fileFormat);		
-		return f;		
+	{				
+		
+		return new DataLakeFile(dataLakeFolder, getFilePathInDataLake(),resultFileName, fileFormat);
 	}
 	
 	/**
 	 * Get the result in the given Project Path. 
-	 * @param ProjectPath the path of the project this result is stored in.
-	 * @return The absolute (full) Path of the file this result refers to. 
+	 * @return The relative Path of the file this result refers to. 
 	 */
-	public String getFilePathInDataLake(String ProjectPath)
+	public String getFilePathInDataLake()
 	{
-		return Path.of(ProjectPath, getFilePath()).toString();
+		return Path.of(getRelativeFolderPath(), storageFileName).toString();
 	}
-	
+
+	/**
+	 * Get the result in the given Project Path.
+	 * @param dataLakeDirectory the datalake directory this file is stored in 
+	 * @return The relative Path of the file this result refers to. 
+	 */
+	public String getFilePath(String dataLakeDirectory)
+	{
+		return Path.of(dataLakeDirectory, getFilePathInDataLake()).toString();
+	}
+
 
 	/**
 	 * Get the Path to the file represented by this {@link TaskFileResult} based on the folder of the datalake it is stored in.
@@ -80,7 +88,7 @@ public class TaskFileResult {
 	 */
 	public String getFolderPath(String dataLakeFolder)
 	{
-		return Path.of(dataLakeFolder, getRelativeFolderPath(),Integer.toString(step),taskID).toString();
+		return Path.of(dataLakeFolder, getRelativeFolderPath()).toString();
 	}
 
 	/**
@@ -89,7 +97,7 @@ public class TaskFileResult {
 	 */
 	public void setLocalFileName(String filename)
 	{
-		this.localFileName = filename;
+		this.storageFileName = filename;
 	}
 	
 	private String getRelativeFolderPath()
@@ -99,7 +107,12 @@ public class TaskFileResult {
 	
 	private String getFilePath()
 	{
-		return Path.of(participantID,Integer.toString(step),taskID,localFileName).toString();
+		return Path.of(getRelativeFolderPath(),storageFileName).toString();
+	}
+	
+	public String toString()
+	{
+		return getFilePath();
 	}
 	
 }

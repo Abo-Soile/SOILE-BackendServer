@@ -65,8 +65,8 @@ public class ParticipantDataLakeManager{
 				LOGGER.debug("temp File created: " + targetFileLocation);
 				String fileName = targetFileLocation.replace(targetFile.getFolderPath(datalakedirectory),"");
 				targetFile.setLocalFileName(fileName);
-				LOGGER.debug("Trying to move file : " + upload.uploadedFileName() + " to " + targetFile.getFilePathInDataLake(datalakedirectory));
-				vertx.fileSystem().move(upload.uploadedFileName(), targetFile.getFilePathInDataLake(datalakedirectory), new CopyOptions().setReplaceExisting(true))
+				LOGGER.debug("Trying to move file : " + upload.uploadedFileName() + " to " + targetFile.getFilePath(datalakedirectory));
+				vertx.fileSystem().move(upload.uploadedFileName(), targetFile.getFilePath(datalakedirectory), new CopyOptions().setReplaceExisting(true))
 				.onSuccess(res -> {
 					LOGGER.debug("File Moved ");
 					idPromise.complete(fileName);
@@ -88,6 +88,8 @@ public class ParticipantDataLakeManager{
 	 */
 	public DataLakeFile getFile(TaskFileResult result)
 	{
+		LOGGER.debug("Requesting file for directory" + datalakedirectory);
+		LOGGER.debug(result.toString());
 		return result.getFile(datalakedirectory);		
 	}
 }

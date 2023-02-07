@@ -67,7 +67,7 @@ public abstract class SoileVerticleTest extends MongoTest {
 		try
 		{
 			FileUtils.deleteDirectory(new File(gitDataLakeDir));
-			FileUtils.deleteDirectory(new File(resultDataLakeDir));
+			//FileUtils.deleteDirectory(new File(resultDataLakeDir));
 			FileUtils.deleteDirectory(new File(gitDir));
 		}
 		catch(Exception e)

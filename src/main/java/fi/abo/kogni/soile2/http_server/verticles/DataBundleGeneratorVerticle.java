@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
@@ -40,7 +41,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	String downloadCollection;
 	static final Logger LOGGER = LogManager.getLogger(DataBundleGeneratorVerticle.class);
 
-	
+
 	public DataBundleGeneratorVerticle(MongoClient client, ProjectInstanceHandler projHandler, ParticipantHandler partHandler)
 	{
 		dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
@@ -101,29 +102,29 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	public void createDownload(Message<JsonObject> message)
 	{
 		try {
-		JsonObject request = message.body();
-		switch(request.getString("requestType"))
-		{
-		case "participants" : buildParticipantsBundle(request.getJsonArray("participants"), request.getString("projectID"))
-							  .onSuccess(id -> message.reply(id))
-							  .onFailure(err -> message.fail(0, err.getMessage())); 
-							  break;
-		case "participant" : buildParticipantBundle(request.getString("participant"), request.getString("projectID"))
-							.onSuccess(id -> message.reply(id))
-							.onFailure(err -> message.fail(0, err.getMessage())); 
-							break;
+			JsonObject request = message.body();
+			switch(request.getString("requestType"))
+			{
+			case "participants" : buildParticipantsBundle(request.getJsonArray("participants"), request.getString("projectID"))
+			.onSuccess(id -> message.reply(id))
+			.onFailure(err -> message.fail(0, err.getMessage())); 
+			break;
+			case "participant" : buildParticipantBundle(request.getString("participant"), request.getString("projectID"))
+			.onSuccess(id -> message.reply(id))
+			.onFailure(err -> message.fail(0, err.getMessage())); 
+			break;
 
-		case "tasks" : buildTasksBundle(request.getJsonArray("tasks"), request.getString("projectID"))
-						.onSuccess(id -> message.reply(id))
-						.onFailure(err -> message.fail(0, err.getMessage())); 
-						break;
-		case "task" : buildTaskBundle(request.getString("task"), request.getString("projectID"))
-						.onSuccess(id -> message.reply(id))
-						.onFailure(err -> message.fail(0, err.getMessage())); 
-						break;
-		default:
+			case "tasks" : buildTasksBundle(request.getJsonArray("tasks"), request.getString("projectID"))
+			.onSuccess(id -> message.reply(id))
+			.onFailure(err -> message.fail(0, err.getMessage())); 
+			break;
+			case "task" : buildTaskBundle(request.getString("task"), request.getString("projectID"))
+			.onSuccess(id -> message.reply(id))
+			.onFailure(err -> message.fail(0, err.getMessage())); 
+			break;
+			default:
 				message.fail(400,"Invalid request");
-		}
+			}
 		}
 		catch(ClassCastException e)
 		{
@@ -145,7 +146,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 			replyForError(err, message);		
 		});
 	}
-	
+
 	/**
 	 * Get the download files for the indicated downloadID. Returns the status of the download along with the files (if there are any) 
 	 * @param message The message containing the download ID.
@@ -163,7 +164,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		})
 		.onFailure(err -> replyForError(err, message));	
 	}
-	
+
 	/**
 	 * Create a download for the given participants.  
 	 * @param participants The participant IDs of the participants for which to retrieve data.
@@ -222,7 +223,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 				.put("activeDownloads", 0)
 				.put("project", sourceProject));		
 	}
-	
+
 	/**
 	 * Collect the files required for the given Tasks and also build the Output Json file for that request.
 	 * @param tasks the tasks for which to obtain the data.
@@ -465,7 +466,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 				JsonObject fileUpdates = statusUpdate(DownloadStatus.downloadReady);
 				JsonObject setObject = fileUpdates.getJsonObject("$set");
 				setObject.put("jsonDataLocation", new JsonObject().put("nameInZip", "data.json")
-						.put("filename", fileName)
+						.put("filename", fileName.replace(SoileConfigLoader.getServerProperty("soileResultDirectory"), "")) // the name IN the the folder.
 						.put("mimeType", "application/json"))
 				.put("resultFiles",new JsonArray(resultFiles));
 				LOGGER.debug(new JsonArray(resultFiles).encodePrettily());
@@ -481,7 +482,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		})
 		.onFailure(err -> failDownload(err, dlID, "Couldn't create temporary json file for download " + dlID));	
 	}
-	
+
 	/**
 	 * This function assumes to have been provided with the resultData {@link JsonArray} from a participant.
 	 * @param resultData
@@ -566,8 +567,8 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		for(int fileEntry = 0; fileEntry < fileData.size(); fileEntry++)
 		{
 			JsonObject fileResult = fileData.getJsonObject(fileEntry);
-			TaskFileResult res = new TaskFileResult(fileResult.getString("filename"),
-					fileResult.getString("targetid"),
+			TaskFileResult res = new TaskFileResult(fileResult.getString("targetid"),
+					fileResult.getString("filename"),
 					fileResult.getString("fileformat"),
 					step,
 					taskID,
@@ -586,7 +587,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		resultData.remove("fileData");
 		return files;
 	}
-	
+
 	/**
 	 * Get the download status for a given download ID.
 	 * @param dlID the download ID
@@ -614,7 +615,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		.onFailure(err -> statusPromise.fail(err));
 		return statusPromise.future();
 	}
-	
+
 	/**
 	 * Get the download problems for a given download ID.
 	 * @param dlID the download ID
@@ -638,7 +639,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		.onFailure(err -> statusPromise.fail(err));
 		return statusPromise.future();
 	}
-	
+
 	/**
 	 * Get the Files for a given download from the database.
 	 * @param dlID the download for which the files are requested.
@@ -661,7 +662,8 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 					JsonArray results = result.getJsonArray("resultFiles");
 					JsonObject jsonDataFile = result.getJsonObject("jsonDataLocation");
-					results.add(new JsonObject().put("absolutePath", jsonDataFile.getString("filename")).put("originalFileName", jsonDataFile.getString("nameInZip")).put("mimeType", jsonDataFile.getString("mimeType")));
+					DataLakeFile f = new DataLakeFile(dataLakeFolder, jsonDataFile.getString("filename"), jsonDataFile.getString("nameInZip"), jsonDataFile.getString("mimeType"));					
+					results.add(f.toJson());
 					dlPromise.complete(results);
 				}
 				else
@@ -673,7 +675,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		.onFailure(err -> dlPromise.fail(err));
 		return dlPromise.future();
 	}
-	
+
 	Future<Void> checkAndFilterFiles(List<JsonObject> fileIndicators, String dlID)
 	{
 		Promise<Void> checkAndFilterPromise = Promise.promise();
@@ -749,21 +751,27 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	 */
 	Future<Void> checkFileExist(JsonObject fileIndicator)
 	{
-		Promise<Void> fileExists = Promise.promise();
-		LOGGER.debug(fileIndicator.encodePrettily());	
-		vertx.fileSystem().exists(fileIndicator.getString("absolutePath"))
-		.onSuccess(res -> {
-			if(res)
-			{
-				fileExists.complete();
-			}
-			else
-			{
-				LOGGER.error("Couldn't find file: " + fileIndicator.encode());
-				fileExists.fail("File does not exist");
-			}
-		})
-		.onFailure(err -> fileExists.fail(err));
+		Promise<Void> fileExists = Promise.promise();						
+		try {
+
+			vertx.fileSystem().exists(new DataLakeFile(fileIndicator).getAbsolutePath())
+			.onSuccess(res -> {
+				if(res)
+				{
+					fileExists.complete();
+				}
+				else
+				{
+					LOGGER.error("Couldn't find file: " + fileIndicator.encode());
+					fileExists.fail("File does not exist");
+				}
+			})
+			.onFailure(err -> fileExists.fail(err));
+		}
+		catch(Exception e)
+		{
+			fileExists.fail(e);
+		}
 		return fileExists.future();
 	}
 
