@@ -231,12 +231,12 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	}
 	
 	@Override
-	public JsonObject getJson() {
+	public JsonObject getAPIJson() {
 		return this.data;
 	}
 	
 	@Override
-	public void loadFromJson(JsonObject currentJson) {
+	public void loadFromAPIJson(JsonObject currentJson) {
 		this.data = currentJson;
 	}
 	

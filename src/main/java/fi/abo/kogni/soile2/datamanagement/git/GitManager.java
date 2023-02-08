@@ -106,6 +106,7 @@ public class GitManager{
 	{
 		if(!gitFileValid(file))
 		{
+			log.error(file.toJson().encodePrettily());
 			return Future.failedFuture("Supplied File was invalid");
 		}
 		Promise<String> dataPromise = Promise.<String>promise();

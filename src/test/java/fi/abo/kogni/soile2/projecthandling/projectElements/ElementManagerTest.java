@@ -241,7 +241,7 @@ public class ElementManagerTest extends GitTest{
 			.onSuccess(secondAPITask -> {
 				APITask apiTask2 = (APITask) secondAPITask;
 				context.assertEquals(apiTask.getCode(), apiTask2.getCode());
-				context.assertEquals(apiTask.getCodetype(), apiTask2.getCodetype());
+				context.assertEquals(apiTask.getCodeType(), apiTask2.getCodeType());
 				testAsync.complete();
 			})
 			.onFailure(err -> context.fail(err));

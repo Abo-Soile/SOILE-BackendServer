@@ -149,13 +149,13 @@ public interface APIElement<T extends ElementBase> {
 	 * Get the Json for this 
 	 * @return
 	 */
-	JsonObject getJson();
+	JsonObject getAPIJson();
 	
 	/**
 	 * Load APIElement Data from a json object. 
 	 * @param json
 	 */
-	void loadFromJson(JsonObject json);
+	void loadFromAPIJson(JsonObject json);
 }
 
 

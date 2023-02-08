@@ -446,7 +446,8 @@ public class ElementManager<T extends ElementBase> {
 			.onSuccess(Void -> {
 				eb.request("soile.git.getGitFileContentsAsJson",currentVersion.toJson())
 				.onSuccess(jsonReply-> {
-					JsonObject gitJson = (JsonObject) jsonReply.body(); 
+					JsonObject gitJson = (JsonObject) jsonReply.body();
+					log.debug("Git returned: " + gitJson.encodePrettily());
 					apiElement.loadGitJson(gitJson);
 					elementPromise.complete(apiElement);
 				})
@@ -505,7 +506,7 @@ public class ElementManager<T extends ElementBase> {
 	{
 		Promise<APIElement<T>> elementPromise = Promise.<APIElement<T>>promise();
 		APIElement<T> apiElement = apisupplier.get();		
-		apiElement.loadFromJson(json);
+		apiElement.loadFromAPIJson(json);
 		elementPromise.complete(apiElement);
 		return elementPromise.future();			
 	}

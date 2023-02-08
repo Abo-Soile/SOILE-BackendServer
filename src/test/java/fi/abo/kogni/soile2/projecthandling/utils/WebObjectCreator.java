@@ -1,9 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.utils;
 
 import java.io.File;
-/**
- * THIS CLASS IS NOT INTENDED TO BE USED IN THE FINAL PRODUCT, IT IS A HELPER CLASS FOR TESTS TO CREATE OBJECTS
- */
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +14,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
@@ -27,54 +26,89 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.impl.MimeMapping;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientSession;
 
 /**
+ * THIS CLASS IS NOT INTENDED TO BE USED IN THE FINAL PRODUCT, IT IS A HELPER CLASS FOR TESTS TO CREATE OBJECTS
  * Helper Class to generate a couple of Objects (mainly for testing)
  * @author Thomas Pfau
  *
  */
-public class ObjectGenerator {
+public class WebObjectCreator {
 
-	private static final Logger LOGGER = LogManager.getLogger(ObjectGenerator.class);
+	private static final Logger LOGGER = LogManager.getLogger(WebObjectCreator.class);
 
-
-	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID, MongoClient client)
+	
+	// The session needs to already be authenticated have all headers set.
+	public static Future<JsonObject> createTask(WebClient webClient, String elementID)
 	{
-		Promise<APITask> taskPromise = Promise.promise();
+		Promise<JsonObject> taskPromise = Promise.promise();
 		try
-		{
-			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
-			String TaskCode = Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));
-			String TestDataFolder = ObjectGenerator.class.getClassLoader().getResource("FileTestData").getPath();
-			String dataDir = Files.createTempDirectory("TaskDataFolder").toAbsolutePath().toString();
-			FileUtils.copyDirectory(new File(TestDataFolder), new File(dataDir));
-			manager.createOrLoadElement(TaskDef.getString("name"),TaskDef.getString("codeType"),TaskDef.getString("codeVersion"))
-			.onSuccess(task -> {
-				LOGGER.debug("Task object created");
+		{					
+			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
+			String TaskCode = Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));
+			String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
+			JsonObject taskParameters = new JsonObject().put("codeType", TaskDef.getString("codeType")).put("codeVersion", TaskDef.getString("codeVersion")).put("name", TaskDef.getString("name"));			
+			SoileWebTest.createNewElement(webClient, elementID, taskParameters)
+			.onSuccess(TaskJson -> { // we have created a new Task Object. Now we need to fill it with data
+				String taskID = TaskJson.getString("UUID");
 				JsonArray resources = TaskDef.getJsonArray("resources", new JsonArray());
+				List<Future> composite = new LinkedList<>();
 				Promise<String> versionPromise = Promise.promise();
 				Future<String> versionFuture = versionPromise.future();
-				List<Future> composite = new LinkedList<>();
 				LinkedList<Future<String>> chain = new LinkedList<>();
 				chain.add(versionFuture);
 				for(int i = 0; i < resources.size(); ++i)
-				{
-					SimpleFileUpload upload = new SimpleFileUpload(Path.of(dataDir, resources.getString(i)).toString(), resources.getString(i));
+				{					
 					// create all in a compose chain...
 					String resourceName = resources.getString(i);
 					chain.add(chain.getLast().compose(newVersion -> {
 						LOGGER.debug("Adding File " + resourceName + " to Version " + newVersion);
-						return manager.handlePostFile(task.getUUID(), newVersion, resourceName, upload);					
+						return SoileWebTest.postTaskRessource(webClient, taskID, newVersion, resourceName,new File(Path.of(TestDataFolder, resourceName).toString()) , MimeMapping.getMimeTypeForFilename(resourceName) );										
 					}));
 					composite.add(chain.getLast());
 				}
-				versionPromise.complete(task.getCurrentVersion());
+				versionPromise.complete(TaskJson.getString("version"));
 				CompositeFuture.all(composite)
 				.onSuccess(done -> {
 					LOGGER.debug("File(s) added");
+					chain.getLast().onSuccess(latestVersion ->
+					{
+						//This is the version with all Files added. 
+						JsonObject update = new JsonObject();
+						update.put("code", TaskCode);
+						update.put("private", TaskDef.getBoolean("private"));
+						
+						
+					})
+					.onFailure(err -> taskPromise.fail(err));
+				})
+				.onFailure(err -> taskPromise.fail(err));
+			})
+			.onFailure(err -> taskPromise.fail(err));
+		}
+		catch(IOException e)
+		{
+			taskPromise.fail(e);
+		}
+		return taskPromise.future();
+	}
+		/*	manager.createOrLoadElement(TaskDef.getString("name"),TaskDef.getString("codeType"),TaskDef.getString("codeVersion"))
+			.onSuccess(task -> {
+				LOGGER.debug("Task object created");
+				
+				
+				versionPromise.complete(task.getCurrentVersion());
+				CompositeFuture.all(composite)
+				.onSuccess(done -> {
+					
 					chain.getLast().onSuccess(latestVersion ->
 					{
 					APITask apiTask = new APITask(TaskDef);				
@@ -124,7 +158,7 @@ public class ObjectGenerator {
 		Promise<APIExperiment> experimentPromise = Promise.promise();
 		try
 		{
-			JsonObject ExperimentDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/ExperimentData.json").getPath()))).getJsonObject(experimentName);
+			JsonObject ExperimentDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/ExperimentData.json").getPath()))).getJsonObject(experimentName);
 			APIExperiment apiExperiment = new APIExperiment();
 			apiExperiment.setPrivate(ExperimentDef.getBoolean("private"));
 			experimentManager.createOrLoadElement(ExperimentDef.getString("name"))
@@ -223,7 +257,7 @@ public class ObjectGenerator {
 		Promise<APIProject> projectPromise = Promise.promise();
 		try
 		{
-			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/ProjectData.json").getPath()))).getJsonObject(projectName);
+			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/ProjectData.json").getPath()))).getJsonObject(projectName);
 			APIProject apiProject = new APIProject();		
 			apiProject.setStart(projectDef.getString("start"));
 			projectManager.createOrLoadElement(projectDef.getString("name"))
@@ -320,5 +354,6 @@ public class ObjectGenerator {
 		 ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, client, vertx);
 		 ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, client, vertx);
 		 return buildAPIProject(projectManager, expManager, taskManager, client, projectName).map(res -> { return new JsonObject().put("UUID", res.getUUID()).put("version", res.getVersion());});
-	}
+	}			
+*/	
 }

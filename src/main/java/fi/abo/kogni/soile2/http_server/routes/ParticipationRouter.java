@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.http_server.routes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.http_server.auth.AccessHandler;
@@ -13,7 +12,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
-import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificHandler;
+import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
 import fi.abo.kogni.soile2.http_server.requestHandling.NonStaticHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
@@ -45,7 +44,7 @@ public class ParticipationRouter extends SoileRouter{
 
 	
 	NonStaticHandler libraryHandler;
-	IDSpecificHandler resourceHandler;
+	IDSpecificFileProvider resourceHandler;
 	ProjectInstanceHandler instanceHandler;
 	AccessHandler accessHandler;
 	SoileAuthorization authorizationRertiever;
@@ -58,7 +57,7 @@ public class ParticipationRouter extends SoileRouter{
 	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);
 
 
-	public ParticipationRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, ProjectInstanceHandler projHandler) {
+	public ParticipationRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, ProjectInstanceHandler projHandler, IDSpecificFileProvider fileProvider) {
 		eb = vertx.eventBus();
 		this.vertx = vertx;
 		
@@ -67,7 +66,8 @@ public class ParticipationRouter extends SoileRouter{
 		this.partHandler = partHandler;		
 		accessHandler = new AccessHandler(auth.getAuthorizationForOption(instanceType), new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client), new SoileRoleBasedAuthorizationHandler());		 	
 		dataLakeManager = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
-		libraryHandler = new NonStaticHandler(FileSystemAccess.RELATIVE, "data/libs/", "/lib/");
+		libraryHandler = new NonStaticHandler(FileSystemAccess.RELATIVE, "data/libs/", "/lib/");		
+		this.resourceHandler = fileProvider;
 	}
 	
 	public void submitResults(RoutingContext context)
@@ -206,13 +206,13 @@ public class ParticipationRouter extends SoileRouter{
 					{
 						try {
 							TaskObjectInstance currentTask = (TaskObjectInstance)project.getElement(participant.getProjectPosition());
-							eb.request(SoileConfigLoader.getVerticleProperty("getTaskInformationAddress"), new JsonObject().put("taskID", currentTask.getUUID()))
+							eb.request("soile.task.getVersionInfo", new JsonObject().put("taskID", currentTask.getUUID()))
 							.onSuccess(response -> {								
 								JsonObject responseBody = ((JsonObject) response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
 								context.response()
 								.setStatusCode(200)	
 								.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-								.end(new JsonObject().put("finished", false).put("codeType", responseBody.getString("codeType")).encode());
+								.end(new JsonObject().put("finished", false).put("codeType", responseBody.getJsonObject("codeType")).encode());
 							})
 							.onFailure(err -> handleError(err, context));
 						}
@@ -343,8 +343,9 @@ public class ParticipationRouter extends SoileRouter{
 					      // will normalize and handle all paths as UNIX paths
 					    String treatedPath = HttpUtils.removeDots(uriDecodedPath.replace('\\', '/'));
 						String path = treatedPath.substring(treatedPath.indexOf(requestedInstanceID)+requestedInstanceID.length());
-						GitFile targetResource = new GitFile(currentTask.getUUID(),currentTask.getVersion(),path);
-						resourceHandler.handle(context, targetResource);						
+						// For now we just add the "T"
+						GitFile targetResource = new GitFile("T" + currentTask.getUUID(),currentTask.getVersion(),path);
+						resourceHandler.returnResource(context, targetResource);						
 					}
 				})
 				.onFailure(err -> handleError(err, context));

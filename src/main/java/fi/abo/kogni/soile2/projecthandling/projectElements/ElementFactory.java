@@ -53,12 +53,7 @@ public class ElementFactory<T extends ElementBase> {
 			{
 				log.debug("No element with the given name existed. Creating a new one");
 				// otherwise, we can set the name and save the element.
-				element.setName(name);	
-				if(element.getElementType().equals(TargetElementType.TASK))
-				{
-					((Task)element).setCodetype(type);
-					((Task)element).setCodeVersion(version);
-				}
+				element.setName(name);					
 				element.save(client)						
 				.onSuccess( id -> {					
 					element.setUUID(id);					

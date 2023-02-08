@@ -62,7 +62,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 				context.response()
 				.setStatusCode(200)
 				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-				.end(apielement.getJson().encode());
+				.end(apielement.getAPIJson().encode());
 			})
 			.onFailure(err -> handleError(err, context));
 		})
@@ -73,7 +73,8 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	public void writeElement(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String elementID = params.pathParameter("id").getString();		
+		String elementID = params.pathParameter("id").getString();
+		String elementVersion = params.pathParameter("version").getString();
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{
@@ -201,7 +202,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 						context.response()
 						.setStatusCode(200)
 						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-						.end(apiElement.getJson().encode());			
+						.end(apiElement.getAPIJson().encode());			
 					}).onFailure(err -> handleError(err, context));	
 				})
 				.onFailure(err -> handleError(err, context));						

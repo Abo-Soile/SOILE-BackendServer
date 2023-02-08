@@ -31,7 +31,7 @@ public class ParticipantHandlerTest extends GitTest{
 		Async testAsync = context.async();
 		ObjectGenerator.buildAPIProject(ElementManager.getProjectManager(mongo_client, vertx), ElementManager.getExperimentManager(mongo_client, vertx), ElementManager.getTaskManager(mongo_client, vertx), mongo_client, "Testproject")
 		.onSuccess(apiProject-> {
-			projHandler.createProjectInstance(apiProject.getJson())
+			projHandler.createProjectInstance(apiProject.getAPIJson())
 			.onSuccess(projectInstance -> {			
 				LinkedList<Future> participantFutures = new LinkedList<Future>();
 				participantFutures.add(partHandler.createParticipant(projectInstance.getID()));
@@ -176,7 +176,7 @@ public class ParticipantHandlerTest extends GitTest{
 		ElementManager<Project> projectManager = ElementManager.getProjectManager(mongo_client, vertx);
 		ObjectGenerator.buildAPIProject(projectManager, ElementManager.getExperimentManager(mongo_client, vertx), ElementManager.getTaskManager(mongo_client, vertx), mongo_client, "Testproject2")
 		.onSuccess(apiProject-> {
-			projHandler.createProjectInstance(apiProject.getJson())
+			projHandler.createProjectInstance(apiProject.getAPIJson())
 			.onSuccess(projectInstance -> {				
 				projectManager.getGitJson(apiProject.getUUID(), apiProject.getVersion())
 				.onSuccess(gitJson -> {

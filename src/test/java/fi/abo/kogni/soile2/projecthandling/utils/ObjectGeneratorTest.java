@@ -69,10 +69,10 @@ public class ObjectGeneratorTest extends GitTest {
 							.onSuccess(currentTask -> {
 								switch(currentTask.getName())
 								{
-								case "Test1": context.assertEquals("psychopy", currentTask.getCodetype());break;
-								case "Test2": context.assertEquals("elang", currentTask.getCodetype());break;
-								case "Test3": context.assertEquals("psychopy", currentTask.getCodetype());break;
-								case "Test4": context.assertEquals("psychopy", currentTask.getCodetype());break;
+								case "Test1": context.assertFalse(currentTask.getPrivate());break;
+								case "Test2": context.assertFalse(currentTask.getPrivate());break;
+								case "Test3": context.assertFalse(currentTask.getPrivate());break;
+								case "Test4": context.assertFalse(currentTask.getPrivate());break;
 								default: context.fail("Found unexpected Task with name: " + currentTask.getName());
 								}
 								taskDataAsync.complete();
@@ -155,15 +155,15 @@ public class ObjectGeneratorTest extends GitTest {
 				taskManager.getAPIElementFromDB(apiTask.getUUID(), apiTask.getVersion())
 				.onSuccess(element -> {
 					APITask task = (APITask) element;
-					System.out.println("Task: " + task.getJson().encodePrettily());
-					context.assertEquals(1,task.getResources().size());					
+					System.out.println("Task: " + task.getAPIJson().encodePrettily());
+					context.assertEquals("elang",task.getCodeLanguage());					
 					gitAsync.complete();
 				}).onFailure(err -> context.fail(err));
 				Async dbAsync = context.async();
 				TaskFactory.loadElement(mongo_client, apiTask.getUUID())
 				.onSuccess(Task -> {
 					System.out.println("DBTask: " + Task.toJson().encodePrettily());
-					context.assertEquals(1, Task.getResources().size());
+					context.assertFalse(Task.getPrivate());
 					dbAsync.complete();							
 				})
 				.onFailure(err -> context.fail(err));

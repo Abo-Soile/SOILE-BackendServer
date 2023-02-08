@@ -32,40 +32,6 @@ public class Task extends ElementBase {
 		}
 	}
 
-	@JsonProperty("codeType")
-	public String getCodetype() {
-		return data.getString("codeType","");
-	}
-	public void setCodetype(String codeType) {
-		data.put("codeType", codeType);
-	}
-
-	
-	@JsonProperty("codeVersion")
-	public String getCodeVersion() {
-		return data.getString("codeVersion","");
-	}
-	public void setCodeVersion(String codeVersion) {
-		data.put("codeVersion", codeVersion);
-	}
-
-	
-	/**
-	 * This represents ALL resources used in any version of the task. 
-	 * @return
-	 */
-	@JsonProperty("resources")
-	public JsonArray getResources() {
-		return data.getJsonArray("resources");
-	}
-	/**
-	 * Add a set of resources.
-	 * @param resources
-	 */
-	public void setResources(JsonArray resources) {
-		data.put("resources", resources);
-	}
-	
 	/**
 	 * Add a specific resource
 	 * @param filename
@@ -77,21 +43,18 @@ public class Task extends ElementBase {
 	public void loadfromJson(JsonObject json)
 	{		
 		super.loadfromJson(json);
-		setResources(json.getJsonArray("resources",new JsonArray()));
-		setCodetype(json.getString("codeType", ""));
 	}
 	@Override
 	public JsonObject toJson(boolean provideUUID)
 	{		
-		return super.toJson(provideUUID).put("resources", getResources()).put("codeType", getCodetype()); 
+		return super.toJson(provideUUID); 
 	}
 	@Override
 	public JsonObject getUpdates()
 	{
 			JsonObject updateVersions = new JsonObject().put("versions", new JsonObject().put("$each", getVersions()));
 			JsonObject updateTags = new JsonObject().put("tags", new JsonObject().put("$each", getTags()));
-			JsonObject updateResources = new JsonObject().put("resources", new JsonObject().put("$each", getResources()));
-			JsonObject updates = new JsonObject().put("$addToSet", new JsonObject().mergeIn(updateVersions).mergeIn(updateResources).mergeIn(updateTags));
+			JsonObject updates = new JsonObject().put("$addToSet", new JsonObject().mergeIn(updateVersions).mergeIn(updateTags));
 			return updates;
 	}
 

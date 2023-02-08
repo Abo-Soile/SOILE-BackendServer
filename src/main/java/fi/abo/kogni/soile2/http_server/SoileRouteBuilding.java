@@ -16,6 +16,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthenticationBuilder;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileCookieCreationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileFormLoginHandler;
+import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
 import fi.abo.kogni.soile2.http_server.routes.ElementRouter;
 import fi.abo.kogni.soile2.http_server.routes.ParticipationRouter;
 import fi.abo.kogni.soile2.http_server.routes.ProjectInstanceRouter;
@@ -43,6 +44,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.Router;
@@ -71,6 +73,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private ParticipantHandler partHandler;
 	private ProjectInstanceHandler projHandler;
 	private TaskRouter taskRouter;
+	private ParticipationRouter partRouter;
+	private IDSpecificFileProvider fileProvider;
 	ConcurrentLinkedQueue<String> deployedVerticles;
 	DeploymentOptions soileOpts;
 	
@@ -87,6 +91,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		projHandler = new ProjectInstanceHandler(client, vertx);
 		partHandler = new ParticipantHandler(client, projHandler, vertx);
 		deployedVerticles = new ConcurrentLinkedQueue<>();
+		fileProvider = new IDSpecificFileProvider(resourceManager);
 		LOGGER.debug("Starting Routerbuilder");
 		deployVerticles()
 		.compose(this::createRouter)		
@@ -97,11 +102,14 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		.compose(this::setupExperimentAPI)
 		.compose(this::setupProjectAPI)
 		.compose(this::setupProjectexecutionAPI)
+		.compose(this::setupParticipationAPI)
 		.compose(this::setupUserAPI)					 
 		.onSuccess( routerBuilder ->
 		{
 			// add Debug, Logger and Session Handlers.						
 			soileRouter = routerBuilder.createRouter();
+			//as unfortunate as this is, we need to build a few routes manually, as they cannot be matched properly at the moment
+			setUpSpecialRoutes(soileRouter);
 			// now, add the cleanup callBack for the different Routers, which will cache data.
 			consumers.add(vertx.eventBus().consumer("soile.tempData.Cleanup", this::cleanUP));
 			startPromise.complete();
@@ -264,14 +272,13 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	 */
 	private Future<RouterBuilder> setupTaskAPI(RouterBuilder builder)
 	{
-		taskRouter = new TaskRouter( client, resourceManager, vertx, soileAuthorization);
+		taskRouter = new TaskRouter( client, fileProvider, vertx, soileAuthorization);
 		builder.operation("getTaskList").handler(taskRouter::getElementList);
 		builder.operation("getVersionsForTask").handler(taskRouter::getVersionList);
 		builder.operation("createTask").handler(taskRouter::create);
 		builder.operation("getTask").handler(taskRouter::getElement);
 		builder.operation("updateTask").handler(taskRouter::writeElement);
-		builder.operation("getResource").handler(taskRouter::getResource);
-		builder.operation("putResource").handler(taskRouter::postResource);
+
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
@@ -333,14 +340,12 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	 */
 	private Future<RouterBuilder> setupParticipationAPI(RouterBuilder builder)
 	{	
-		ParticipationRouter router = new ParticipationRouter(soileAuthorization, vertx, client, partHandler, projHandler);
-		builder.operation("submitResults").handler(router::submitResults);
-		builder.operation("getTaskType").handler(router::getTaskType);
-		builder.operation("runTask").handler(router::runTask);
-		builder.operation("signUpForProject").handler(router::signUpForProject);
-		builder.operation("uploadData").handler(router::uploadData);
-		builder.operation("getResourceForExecution").handler(router::getResourceForExecution);
-		builder.operation("getLib").handler(router::getLib);
+		partRouter = new ParticipationRouter(soileAuthorization, vertx, client, partHandler, projHandler, fileProvider);
+		builder.operation("submitResults").handler(partRouter::submitResults);
+		builder.operation("getTaskType").handler(partRouter::getTaskType);
+		builder.operation("runTask").handler(partRouter::runTask);
+		builder.operation("signUpForProject").handler(partRouter::signUpForProject);
+		builder.operation("uploadData").handler(partRouter::uploadData);		
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	/**
@@ -348,7 +353,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	 * @param builder
 	 * @return
 	 */
-	public Future<RouterBuilder> setupUserAPI(RouterBuilder builder)
+	private Future<RouterBuilder> setupUserAPI(RouterBuilder builder)
 	{
 		UserRouter router = new UserRouter(soileAuthorization, vertx, client);
 		builder.operation("registerUser").handler(router::registerUser);
@@ -362,5 +367,13 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("permissionChange").handler(router::permissionChange);
 		builder.operation("permissionOrRoleRequest").handler(router::permissionOrRoleRequest);				
 		return Future.<RouterBuilder>succeededFuture(builder);
+	}
+	
+	private void setUpSpecialRoutes(Router router)
+	{
+		router.route(HttpMethod.GET, "/run/:id/lib/*").handler(partRouter::getLib);
+		router.route(HttpMethod.GET, "/run/:id/*").handler(partRouter::getResourceForExecution);
+		router.route(HttpMethod.GET, "/task/:id/:version/resource/*").handler(taskRouter::getResource);
+		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(taskRouter::postResource);
 	}
 }

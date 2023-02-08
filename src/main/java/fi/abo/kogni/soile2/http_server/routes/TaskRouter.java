@@ -4,6 +4,7 @@ import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import io.vertx.core.Vertx;
@@ -22,9 +23,11 @@ import io.vertx.ext.web.validation.ValidationHandler;
  */
 public class TaskRouter extends ElementRouter<Task> {
 
-	public TaskRouter(MongoClient client, DataLakeResourceManager resManager, Vertx vertx, SoileAuthorization auth )
+	private IDSpecificFileProvider fileProvider;
+	public TaskRouter(MongoClient client, IDSpecificFileProvider resManager, Vertx vertx, SoileAuthorization auth )
 	{
 		super(ElementManager.getTaskManager(client,vertx),auth, vertx.eventBus(), client);
+		fileProvider = resManager;
 	}		
 	
 	public void postResource(RoutingContext context)
@@ -32,7 +35,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String elementID = params.pathParameter("id").getString();
 		String version = params.pathParameter("version").getString();
-		String filename = params.pathParameter("file").getString();		
+		String filename = params.pathParameter("*").getString(); 		
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{
@@ -57,11 +60,12 @@ public class TaskRouter extends ElementRouter<Task> {
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String elementID = params.pathParameter("id").getString();
-		String version = params.pathParameter("version").getString();
-		String filename = params.pathParameter("file").getString();
+		String version = params.pathParameter("version").getString();		
+		String filename = params.pathParameter("*").getString(); 		
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{
+			// Potentially update with fileProvider.
 			elementManager.handleGetFile(elementID, version, filename )
 			.onSuccess( datalakeFile -> {
 				context.response().
@@ -73,6 +77,8 @@ public class TaskRouter extends ElementRouter<Task> {
 		})
 		.onFailure(err -> handleError(err, context));
 	}
+	
+	//TODO: Implement Run methods.
 	
 	
 	
