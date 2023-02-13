@@ -2,6 +2,8 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
 import java.util.HashMap;
 
+import com.google.gson.JsonArray;
+
 import fi.aalto.scicomp.mathparser.MathHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import io.vertx.core.json.JsonObject;
@@ -57,4 +59,12 @@ public class Filter {
 		}
 		return "Success";
 	}
+	
+	public static FieldSpecifications getFieldSpecs()
+	{
+		return new FieldSpecifications().put(new FieldSpecification("instanceID", String.class, String::new, false))
+										.put(new FieldSpecification("options", JsonArray.class, JsonArray::new, true))
+										.put(new FieldSpecification("defaultOption", String.class, () -> "end", false));
+	}
+	
 }

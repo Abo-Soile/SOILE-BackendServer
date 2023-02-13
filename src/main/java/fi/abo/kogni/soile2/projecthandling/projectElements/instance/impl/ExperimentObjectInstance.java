@@ -154,5 +154,20 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 		user.endActiveExperiment(this.getInstanceID());
 		return sourceProject.getNextTask(getNext(),user);
 	}
+	
+	
+	
+	public static FieldSpecifications getFieldSpecs()
+	{
+		return new FieldSpecifications().put(new FieldSpecification("instanceID", String.class, String::new, false))
+										.put(new FieldSpecification("UUID", String.class, String::new, false))
+										.put(new FieldSpecification("name", String.class, () -> "", true))
+										.put(new FieldSpecification("tag", String.class, () -> "", true))
+										.put(new FieldSpecification("version", String.class, () -> "", false))
+										.put(new FieldSpecification("elements", JsonArray.class, JsonArray::new, false))
+										.put(new FieldSpecification("next", String.class, () -> "end", false))
+										.put(new FieldSpecification("randomize", Boolean.class, () -> false, true));
+	}
+	
 
 }

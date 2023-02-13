@@ -3,6 +3,10 @@ package fi.abo.kogni.soile2.projecthandling.apielements;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.Filter;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -15,8 +19,8 @@ public class APIProject extends APIElementBase<Project>{
 
 	
 	private String[] gitFields = new String[] {"name","tasks","experiments","filters","start"};
-	private Object[] gitDefaults = new Object[] {"",new JsonArray(),new JsonArray(),new JsonArray(),null};
-
+	private Object[] gitDefaults = new Object[] {"",new JsonArray(),new JsonArray(),new JsonArray(),null};		
+	private Function 
 	public APIProject() {
 		this(new JsonObject());
 	}
@@ -43,7 +47,12 @@ public class APIProject extends APIElementBase<Project>{
 	@JsonProperty("tasks")
 	public void setTasks(JsonArray tasks)
 	{
-		this.data.put("tasks", tasks);
+		JsonArray newTasks =  new JsonArray();		
+		for(int i = 0; i< tasks.size(); i++)
+		{
+			newTasks.add(FieldSpecifications.filterFieldBySpec(tasks.getJsonObject(i), TaskObjectInstance.getFieldSpecs()));
+		}
+		this.data.put("tasks", newTasks);
 	}
 
 	@JsonProperty("tasks")
@@ -61,7 +70,12 @@ public class APIProject extends APIElementBase<Project>{
 	@JsonProperty("experiments")
 	public void setExperiments(JsonArray experiments)
 	{
-		this.data.put("experiments", experiments);
+		JsonArray newExperiments =  new JsonArray();		
+		for(int i = 0; i< experiments.size(); i++)
+		{
+			newExperiments.add(FieldSpecifications.filterFieldBySpec(experiments.getJsonObject(i), ExperimentObjectInstance.getFieldSpecs()));
+		}
+		this.data.put("experiments", newExperiments);
 	}
 
 	@JsonProperty("experiments")
@@ -78,7 +92,12 @@ public class APIProject extends APIElementBase<Project>{
 	@JsonProperty("filters")
 	public void setFilters(JsonArray filters)
 	{
-		this.data.put("filters", filters);
+		JsonArray newFilters =  new JsonArray();		
+		for(int i = 0; i< filters.size(); i++)
+		{
+			newFilters.add(FieldSpecifications.filterFieldBySpec(filters.getJsonObject(i), Filter.getFieldSpecs()));
+		}
+		this.data.put("filters",newFilters);
 	}
 
 	@JsonProperty("filters")
@@ -91,6 +110,8 @@ public class APIProject extends APIElementBase<Project>{
 	{
 		this.data.getJsonArray("filters").add(filter);
 	}
+	
+
 	
 	
 	@Override

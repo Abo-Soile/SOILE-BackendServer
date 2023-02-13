@@ -114,5 +114,17 @@ public class TaskObjectInstance extends ElementInstanceBase {
 		return this.getInstanceID();
 	}
 
-
+	public static FieldSpecifications getFieldSpecs()
+	{
+		return new FieldSpecifications().put(new FieldSpecification("UUID", String.class, String::new, false))
+										.put(new FieldSpecification("name", String.class, () -> "", true))
+										.put(new FieldSpecification("tag", String.class, () -> "", true))
+										.put(new FieldSpecification("version", String.class, () -> "", false))
+										.put(new FieldSpecification("instanceID", String.class, String::new, false))										
+										.put(new FieldSpecification("filter", String.class, () -> "", true))
+										.put(new FieldSpecification("outputs", JsonArray.class, JsonArray::new, true))
+										.put(new FieldSpecification("codeType", String.class, () -> "", false))
+										.put(new FieldSpecification("next", String.class, () -> "end", false));
+										
+	}
 }
