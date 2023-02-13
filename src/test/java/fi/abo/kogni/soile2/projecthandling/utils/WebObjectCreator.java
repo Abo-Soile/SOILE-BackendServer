@@ -67,7 +67,7 @@ public class WebObjectCreator {
 			JsonObject taskParameters = new JsonObject().put("codeType", codeType.getString("language")).put("codeVersion", codeType.getString("version")).put("name", TaskDef.getString("name"));			
 			SoileWebTest.createNewElement(webClient, "task", taskParameters)
 			.onSuccess(TaskJson -> { // we have created a new Task Object. Now we need to fill it with data
-				LOGGER.info("Task " + elementID + " Initialized: " + TaskJson.getString("UUID") + "@" + TaskJson.getString("version"));
+				LOGGER.debug("Task " + elementID + " Initialized: " + TaskJson.getString("UUID") + "@" + TaskJson.getString("version"));
 				String taskID = TaskJson.getString("UUID");
 				JsonArray resources = TaskDef.getJsonArray("resources", new JsonArray());
 				List<Future> composite = new LinkedList<>();
@@ -95,12 +95,12 @@ public class WebObjectCreator {
 						update.put("private", TaskDef.getBoolean("private", false));						
 						SoileWebTest.POST(webClient, "/task/" + taskID + "/" + latestVersion , null, update)
 						.onSuccess(response -> {
-							LOGGER.info("Task " + elementID + " created");
+							LOGGER.debug("Task " + elementID + " created");
 							taskPromise.complete(response.bodyAsJsonObject().put("name", TaskDef.getString("name"))
 																			.put("UUID", taskID)
-																			.put("code", TaskCode)
 																			.put("private", TaskDef.getBoolean("private", false))
 																			.put("codeType", codeType)
+																			.put("code", TaskCode)
 																			.put("resources", resources));
 						}).onFailure(err -> taskPromise.fail(err));
 					})
@@ -164,7 +164,7 @@ public class WebObjectCreator {
 			JsonObject experimentSettings = new JsonObject().put("name", ExperimentDef.getString("name")).put("private", ExperimentDef.getBoolean("private", false));
 			SoileWebTest.createNewElement(webClient, "experiment", experimentSettings)
 			.onSuccess(experimentJson -> {
-				LOGGER.info("Experiment " + experimentName + " Initialized: " + experimentJson.getString("UUID") + "@" + experimentJson.getString("version"));
+				LOGGER.debug("Experiment " + experimentName + " Initialized: " + experimentJson.getString("UUID") + "@" + experimentJson.getString("version"));
 				String id = experimentJson.getString("UUID");
 				String version = experimentJson.getString("version");								
 				ConcurrentHashMap<String, JsonObject> elements = new ConcurrentHashMap();
@@ -226,7 +226,7 @@ public class WebObjectCreator {
 					.onSuccess(response -> {						
 						SoileWebTest.GET(webClient, "/experiment/" + id + "/" + response.bodyAsJsonObject().getString("version") , null, null)
 						.onSuccess(res -> {
-							LOGGER.info("Experiment " + experimentName +  "  created and retrieved" );							
+							LOGGER.debug("Experiment " + experimentName +  "  created and retrieved" );							
 							experimentPromise.complete(res.bodyAsJsonObject());
 						})
 						.onFailure(err -> {

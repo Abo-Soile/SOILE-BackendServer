@@ -21,6 +21,7 @@ public class FieldSpecification
 		return fieldName;
 	}
 	public Class getFieldType() {
+		
 		return fieldType;
 	}
 	public Object getDefaultValue() {

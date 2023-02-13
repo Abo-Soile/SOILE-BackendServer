@@ -2,6 +2,7 @@ package fi.abo.kogni.soile2.projecthandling.apielements;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -161,4 +162,9 @@ public class APITask extends APIElementBase<Task> {
 		});			
 		return CompositeFuture.all(loadedList).map(true);
 	}	
+	@Override
+	public Function<Object,Object> getFieldFilter(String fieldName)
+	{
+		return (x) -> { return x;};
+	}
 }

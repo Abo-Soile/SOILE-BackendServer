@@ -116,6 +116,7 @@ public class TaskObjectInstance extends ElementInstanceBase {
 
 	public static FieldSpecifications getFieldSpecs()
 	{
+		
 		return new FieldSpecifications().put(new FieldSpecification("UUID", String.class, String::new, false))
 										.put(new FieldSpecification("name", String.class, () -> "", true))
 										.put(new FieldSpecification("tag", String.class, () -> "", true))
@@ -123,7 +124,7 @@ public class TaskObjectInstance extends ElementInstanceBase {
 										.put(new FieldSpecification("instanceID", String.class, String::new, false))										
 										.put(new FieldSpecification("filter", String.class, () -> "", true))
 										.put(new FieldSpecification("outputs", JsonArray.class, JsonArray::new, true))
-										.put(new FieldSpecification("codeType", String.class, () -> "", false))
+										.put(new FieldSpecification("codeType", JsonObject.class, () -> new JsonObject().put("language", "").put("version", ""), false))
 										.put(new FieldSpecification("next", String.class, () -> "end", false));
 										
 	}

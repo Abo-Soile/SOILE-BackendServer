@@ -75,7 +75,7 @@ public class WebObjectGeneratorTest extends SoileWebTest {
 
 		Async setupAsync = context.async();
 		WebClientSession currentSession = createSession();
-		createUser(vertx, "TestUser", "testPassword", Roles.Admin)
+		createUser(vertx, "TestUser", "testPassword", Roles.Researcher)
 		.onSuccess(userCreated -> {
 			authenticateSession(currentSession, "TestUser", "testPassword")
 			.onSuccess(authed -> {
@@ -119,6 +119,7 @@ public class WebObjectGeneratorTest extends SoileWebTest {
 		.onSuccess(currentSession -> {
 			WebObjectCreator.createExperiment(currentSession, "TestExperiment1")
 			.onSuccess(experimentObject -> {
+				System.out.println(experimentObject.encodePrettily());
 				context.assertEquals(2, experimentObject.getJsonArray("elements",new JsonArray()).size());
 				JsonArray items = experimentObject.getJsonArray("elements");
 				for(int i = 0; i < items.size(); ++i)
@@ -162,12 +163,12 @@ public class WebObjectGeneratorTest extends SoileWebTest {
 			WebObjectCreator.createProject(session, "Testproject")
 			.onSuccess( projectData -> {
 				System.out.println("Project created");
-				/*createAuthedSession("TestUser2", "testPassword", Roles.Researcher)
+				createAuthedSession("AnotherUser", "testPassword", Roles.Researcher)
 				.onSuccess(otherUserSession -> {
 					getElementList(otherUserSession, "experiment")
 					.onSuccess(expList -> {					
 						// check, that the created Elements actually exist.
-						context.assertEquals(2, expList.size()); // one private experiment
+						context.assertEquals(1, expList.size()); // one private experiment
 						elistAsync2.complete(); 
 					})
 					.onFailure(err -> context.fail(err));
@@ -181,13 +182,13 @@ public class WebObjectGeneratorTest extends SoileWebTest {
 
 					getElementList(otherUserSession, "task")
 					.onSuccess(list -> {
-						context.assertEquals(6,list.size()); // one private task
+						context.assertEquals(5,list.size()); // one private task
 						tlistAsync2.complete();
 					})
 					.onFailure(err -> context.fail(err));
 					
 				})
-				.onFailure(err -> context.fail(err));		*/		
+				.onFailure(err -> context.fail(err));				
 
 				getElementList(session, "experiment")
 				.onSuccess(expList -> {					

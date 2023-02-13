@@ -250,7 +250,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 			// if the types match or the current Obj is null, replace it.
 			if((oldObj == null) || (newObj != null && newObj.getClass().equals(oldObj.getClass())))
 			{
-				data.put(field, newObj);
+				data.put(field, getFieldFilter(field).apply(newObj));
 			}
 
 		}

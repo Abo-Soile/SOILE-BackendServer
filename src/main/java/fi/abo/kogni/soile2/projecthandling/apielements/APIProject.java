@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
+import java.util.function.Function;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
@@ -20,15 +22,27 @@ public class APIProject extends APIElementBase<Project>{
 	
 	private String[] gitFields = new String[] {"name","tasks","experiments","filters","start"};
 	private Object[] gitDefaults = new Object[] {"",new JsonArray(),new JsonArray(),new JsonArray(),null};		
-	private Function 
+	private Function<Object, Object>[] elementCheckers;   
 	public APIProject() {
 		this(new JsonObject());
+		
 	}
 
 	
 	public APIProject(JsonObject data) {
 		super(data);
+		createFunctionCheckers();
 		loadGitJson(data);		
+	}
+	
+	
+	private void createFunctionCheckers()
+	{
+		this.elementCheckers = new Function[] { (x) -> {return x;}, 
+												(x) -> FieldSpecifications.applySpecToArray((JsonArray)x, TaskObjectInstance.getFieldSpecs()), 
+												(x) -> FieldSpecifications.applySpecToArray((JsonArray)x, ExperimentObjectInstance.getFieldSpecs()), 
+												(x) -> FieldSpecifications.applySpecToArray((JsonArray)x, Filter.getFieldSpecs()), 
+												(x) ->  {return x;}}; 
 	}
 	
 	@JsonProperty("start")
@@ -144,7 +158,23 @@ public class APIProject extends APIElementBase<Project>{
 	public void loadGitJson(JsonObject json) {
 		for(int i = 0; i < gitFields.length ; ++i)
 		{
-			this.data.put(gitFields[i], json.getValue(gitFields[i], gitDefaults[i]));	
+			this.data.put(gitFields[i], elementCheckers[i].apply(json.getValue(gitFields[i], gitDefaults[i])));	
+		}
+	}
+	
+	
+	public Function<Object,Object> getFieldFilter(String fieldName)
+	{		
+		switch(fieldName)			
+		{
+		case "tasks" :
+			return (x) -> {return FieldSpecifications.applySpecToArray((JsonArray)x, TaskObjectInstance.getFieldSpecs());};			
+		case "experiments" :
+			return (x) -> {return FieldSpecifications.applySpecToArray((JsonArray)x, ExperimentObjectInstance.getFieldSpecs());};
+		case "filters" :
+			return (x) -> {return FieldSpecifications.applySpecToArray((JsonArray)x, Filter.getFieldSpecs());};		
+		default:
+			return (x) -> {return x;};
 		}
 	}
 }

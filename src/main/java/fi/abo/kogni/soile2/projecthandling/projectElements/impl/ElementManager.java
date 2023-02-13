@@ -325,8 +325,8 @@ public class ElementManager<T extends ElementBase> {
 				boolean addElement = true;
 				log.debug("Retrieved element: \n " + current.encodePrettily());
 				if(current.getBoolean("private", false))
-				{
-					if(!permissions.contains(current.getString("uuid")))
+				{					
+					if(!permissions.contains(current.getString("_id")))
 					{
 						addElement = false;
 					}

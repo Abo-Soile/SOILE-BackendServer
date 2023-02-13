@@ -1,6 +1,9 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
 
+import java.util.Set;
+import java.util.function.Function;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
@@ -161,6 +164,8 @@ public interface APIElement<T extends ElementBase> {
 	 * Update this APIElement from a Json. but only use fields that are present in this element.
 	 */
 	void updateFromJson(JsonObject update);
+	
+	Function<Object,Object> getFieldFilter(String fieldName); 
 }
 
 

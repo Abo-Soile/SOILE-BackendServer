@@ -113,6 +113,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		{
 			authorizationRertiever.getGeneralPermissions(context.user(),elementManager.getElementSupplier().get().getElementType())
 			.onSuccess( permissions -> {
+				LOGGER.debug(permissions.encodePrettily());
 				elementManager.getElementList(permissions)
 				.onSuccess(elementList -> {	
 					// this list needs to be filtered by access
@@ -211,7 +212,6 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 			elementManager.createElement(nameParam.get(0), type, version)
 			.onSuccess(element -> {	
 				LOGGER.debug("Element Created");
-				LOGGER.debug(element.toJson().encodePrettily());
 				JsonObject permissionChangeRequest = new JsonObject()
 						.put("username", context.user().principal().getString("username"))
 						.put("command", "add")
@@ -219,11 +219,11 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 																	  .put("permissionsSettings",new JsonArray().add(new JsonObject().put("target", element.getUUID())
 																			  														.put("type", PermissionType.FULL.toString()))
 																		  )
-							);						
-				LOGGER.debug(permissionChangeRequest.encodePrettily());
+							);	
+				LOGGER.debug("Requesting permission change");
 				eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChangeRequest)
 				.onSuccess( reply -> {
-					LOGGER.debug("Permissions added to user");
+					LOGGER.debug("Permissions added to user for "+ nameParam + "/" + element.getUUID());
 					elementManager.getAPIElementFromDB(element.getUUID(), element.getCurrentVersion())
 					.onSuccess(apiElement -> {
 						LOGGER.debug("Api element created");
