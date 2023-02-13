@@ -118,6 +118,7 @@ public class GitManager{
 		})
 		.onFailure(fail ->
 		{
+			log.debug(fail);
 			dataPromise.fail(fail);
 		});
 		return dataPromise.future();	

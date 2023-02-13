@@ -51,7 +51,7 @@ public class APIExperiment extends APIElementBase<Experiment> {
 		JsonObject gitData = new JsonObject();
 		for(int i = 0; i < gitFields.length ; ++i)
 		{
-			gitData.put(gitFields[i], data.getValue(gitFields[i], gitDefaults[i]));	
+			gitData.put(gitFields[i], data.getValue(gitFields[i], gitDefaults[i]));			
 		}
 		return gitData;
 	}

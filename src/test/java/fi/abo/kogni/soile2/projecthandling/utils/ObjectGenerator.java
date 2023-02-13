@@ -146,7 +146,7 @@ public class ObjectGenerator {
 									experiment.addElement(task.getUUID());
 									JsonObject taskInstance = new JsonObject();
 									taskInstance.put("instanceID", current.getString("instanceID"))
-									.put("next", current.getString("next", null))
+									.put("next", current.getString("next", "end"))
 									.put("UUID", task.getUUID())
 									.put("version", task.getVersion())
 									.put("filter", current.getString("filter",""))
@@ -169,7 +169,7 @@ public class ObjectGenerator {
 									experiment.addElement(subexperiment.getUUID());
 									JsonObject experimentInstance = new JsonObject();
 									experimentInstance.put("instanceID", current.getString("instanceID"))
-									.put("next", current.getString("next", null))
+									.put("next", current.getString("next", "end"))
 									.put("UUID", subexperiment.getUUID())
 									.put("version", subexperiment.getVersion())
 									.put("randomize", current.getBoolean("randomize",false))
@@ -242,7 +242,7 @@ public class ObjectGenerator {
 								project.addElement(task.getUUID());
 								JsonObject taskInstance = new JsonObject();
 								taskInstance.put("instanceID", current.getString("instanceID"))
-								.put("next", current.getString("next", null))
+								.put("next", current.getString("next", "end"))
 								.put("UUID", task.getUUID())
 								.put("version", task.getVersion())
 								.put("filter", current.getString("filter",""))
@@ -275,7 +275,7 @@ public class ObjectGenerator {
 									project.addElement(experiment.getUUID());						
 									JsonObject expinstance = experiment.getAPIJson();
 									expinstance.put("instanceID",current.getString("instanceID"))
-									.put("next", current.getString("next", null))
+									.put("next", current.getString("next", "end"))
 									.put("random", current.getBoolean("random", true));
 									experiments.put(current.getString("name"), expinstance);								
 								})

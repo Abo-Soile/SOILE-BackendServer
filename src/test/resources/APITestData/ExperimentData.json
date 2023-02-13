@@ -23,21 +23,52 @@
 	{
 		"name" : "TestExperiment2",
 		"private" : true,
-		"items": [{"type": "task", "name": "Test3","instanceID": "tabcdefg4", "next": "fabcdefg2"},				  
+		"items": [{"type": "task", "name": "Test3","instanceID": "tabcdefg4", "next": "fabcdefg2", "outputs": ["smoker"]},				  
 				  {"type": "task", "name": "Test4","instanceID": "tabcdefg5"},
+				  {
+				   "type": "filter",
+				   "name": "Filter2",
+				   "instanceID": "fabcdefg2", 
+				   "data":{				   									
+						"options": [
+									{
+										"filter": "tabcdefg4.smoker = 1",
+										"next": "tabcdefg5"
+									}								
+							],
+						"defaultOption": "end"											
+						}
+					}
+				]
+	}
+	
+	
+	,
+	"TestExperiment3":
+	{
+		"name" : "TestExperiment3",
+		"private" : true,
+		"randomize" : true,
+		"items": [{"type": "task", "name": "Test3","instanceID": "test1inExp", "next": "filterInExp", "outputs": ["smoker"]},				  
+				  {"type": "task", "name": "Test4","instanceID": "test2inExp"},
 				  {
 				   "type": "filter",
 				   "name": "Filter2", 
 				   "data":{
-				   		"instanceID": "fabcdefg2",								
+				   		"instanceID": "filterInExp",								
 						"options": [
 									{
-										"filter": "tabcdefg2.smoker = 1",
-										"next": "tabcdefg5"
+										"filter": "test1inExp.smoker = 1",
+										"next": "test2inExp"
 									}								
 							],
-						"defaultOption": ""											
+						"defaultOption": "firstExp"											
 						}
+					},
+					{
+						"type" : "experiment",
+						"name" : "TestExperiment2",
+						"instanceID" : "firstExp"						
 					}
 				]
 	}

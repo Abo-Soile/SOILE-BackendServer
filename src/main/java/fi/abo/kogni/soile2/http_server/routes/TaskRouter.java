@@ -1,5 +1,8 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
@@ -23,6 +26,8 @@ import io.vertx.ext.web.validation.ValidationHandler;
  */
 public class TaskRouter extends ElementRouter<Task> {
 
+	private static final Logger LOGGER = LogManager.getLogger(ElementRouter.class);
+
 	private IDSpecificFileProvider fileProvider;
 	public TaskRouter(MongoClient client, IDSpecificFileProvider resManager, Vertx vertx, SoileAuthorization auth )
 	{
@@ -31,11 +36,12 @@ public class TaskRouter extends ElementRouter<Task> {
 	}		
 	
 	public void postResource(RoutingContext context)
-	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String elementID = params.pathParameter("id").getString();
-		String version = params.pathParameter("version").getString();
-		String filename = params.pathParameter("*").getString(); 		
+	{				
+		LOGGER.debug("Trying to post a resource");
+		LOGGER.debug(context.pathParam("id") + "/" + context.pathParam("version") + "/" + context.pathParam("*") );				
+		String elementID = context.pathParam("id");
+		String version = context.pathParam("version");
+		String filename = context.pathParam("*"); 		
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{
@@ -58,10 +64,9 @@ public class TaskRouter extends ElementRouter<Task> {
 	
 	public void getResource(RoutingContext context)
 	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String elementID = params.pathParameter("id").getString();
-		String version = params.pathParameter("version").getString();		
-		String filename = params.pathParameter("*").getString(); 		
+		String elementID = context.pathParam("id");
+		String version = context.pathParam("version");
+		String filename = context.pathParam("*"); 	
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{

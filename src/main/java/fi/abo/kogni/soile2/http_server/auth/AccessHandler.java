@@ -1,7 +1,11 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.http_server.routes.ElementRouter;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.auth.User;
@@ -13,6 +17,7 @@ public class AccessHandler{
 	MongoAuthorization mongoAuth;
 	SoileIDBasedAuthorizationHandler instanceIDAccessHandler;
 	SoileRoleBasedAuthorizationHandler roleHandler;
+	private static final Logger LOGGER = LogManager.getLogger(AccessHandler.class);
 
 	public AccessHandler(MongoAuthorization mongoAuth, SoileIDBasedAuthorizationHandler instanceIDAccessHandler,
 			SoileRoleBasedAuthorizationHandler roleHandler) {
@@ -33,13 +38,17 @@ public class AccessHandler{
 	 */
 	public Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission, boolean adminAllowed) {
 		// TODO Auto-generated method stub
-		Promise<Void> accessPromise = Promise.<Void>promise();
+		LOGGER.debug("Requesting Authorizations for " + user.attributes().encodePrettily() + user.principal().encodePrettily());
+		Promise<Void> accessPromise = Promise.<Void>promise();		
 		mongoAuth.getAuthorizations(user)
 		.onSuccess(Void -> {
+			LOGGER.debug("Authorizations added");			
 			instanceIDAccessHandler.authorize(user, id, adminAllowed, requiredPermission)
 			.onSuccess(acceptID -> {
+				LOGGER.debug("Instance IDs accepted");
 				roleHandler.authorize(user, requiredRole)
 				.onSuccess(acceptRole -> {
+					LOGGER.debug("Role checked");
 					// both role and permission checks are successfull.
 					accessPromise.complete();
 				})
@@ -48,6 +57,8 @@ public class AccessHandler{
 			.onFailure(err -> accessPromise.fail(err));
 		})
 		.onFailure(err -> {
+			LOGGER.error(err);
+			err.printStackTrace(System.out);
 			accessPromise.fail(new HttpException(500,err.getMessage()));
 		});
 		return accessPromise.future();

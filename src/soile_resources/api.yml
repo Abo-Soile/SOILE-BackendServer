@@ -390,8 +390,8 @@ paths:
                   description: Must not include any @ symbols
                 command:
                   type: string
-                  example: 'setCommand'
-                  description: the type of change. setCommand will replace any permissions currently present, addCommand will add permissions, removeCommand will remove them.
+                  example: 'set'
+                  description: the type of change. set will replace any permissions currently present (only admins can do this), add will add permissions (can be called by a user who has full permission for the relevant resources), remove will remove them (same as add).
                 permissionsProperties:
                   type: object
                   properties:
@@ -515,11 +515,11 @@ paths:
             type : string            
       responses:
         '200':
-          description: A List of tasks versions, with Tags and Date information
+          description: A List of Files as a Json Array. Folders are represented as JsonObjects
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/ElementVersions'
+              schema: 
+                $ref: '#/components/schemas/FileDirectory'
                 
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -571,11 +571,13 @@ paths:
                  $ref: '#/components/schemas/Task'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          description: "Name already exists" 
         '400':
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
-  /task/{id}/{version}/:
+  /task/{id}/{version}:
     get:
       security:
         - cookieAuth: []
@@ -657,7 +659,7 @@ paths:
              $ref: '#/components/schemas/Task'
         description: In addition to the required fields, this submission also needs a tag. Otherwise the only way to obtain this version again is by providing the returned version id.
         
-  /task/{id}/{version}/resource/{file}:
+  /task/{id}/{version}/resource/*:
     get:
       security:
         - cookieAuth: []
@@ -681,15 +683,6 @@ paths:
           description: version of the requested task, can be either a tag or a commit id
           schema:
             type : string
-            
-        - name: file
-          in: path
-          required: true
-          description: The file requested (simple filename request)
-          schema:
-            type : string
-            
-          example: "car.png"
       responses:
         '200':
           description: The requested file, headers set according to the file name/type. 
@@ -722,22 +715,12 @@ paths:
           description: UUID of the task
           schema:
             type : string
-            
         - name: version
           in: path
           required: true
           description: version of the requested task, can be either a tag or a commit id
           schema:
             type : string
-            
-        - name: file
-          in: path
-          required: true
-          description: The file requested (simple filename request)
-          schema:
-            type : string
-            
-          example: "car.png"
       responses:
         '200':
           $ref: '#/components/responses/ObjectUpdated'
@@ -751,10 +734,13 @@ paths:
           $ref: '#/components/responses/ResourceDoesNotExist'  
       requestBody:
         content:
-          application/octet-stream:
+          multipart/form-data:
             schema:
-              type: string
-              format: binary
+              type: object
+              properties:
+                file: 
+                  type: string
+                  format: binary
 
 
   /project/list:
@@ -846,7 +832,9 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
-  /project/{id}/{version}/:
+        '409':
+          description: "Name already exists"
+  /project/{id}/{version}:
     get:
       security:
         - cookieAuth: []
@@ -1327,12 +1315,16 @@ paths:
                 type: object
                 properties: 
                   codeType:
-                    type: string
-                    description: the code type (javascript for psychoJS, qmarkup or elang for soile questionaire markup and experiment language)
-                    example: "qmarkup"
-                  codeVersion:
-                    type: string
-                    description: The version of the code. Primarily necessary for PsychoJS code, as code might depend on specific versions of PsychoJS.
+                    type: object
+                    properties:
+                      language:
+                        type: string
+                        description: the code type (javascript for psychoJS, qmarkup or elang for soile questionaire markup and experiment language)
+                        example: "qmarkup"
+                      version: 
+                        type: string
+                        description: the version of the code type.
+                        example: "1.0"
                   finished:
                     type: boolean
                     description: Whether this project is finished. clear indicator that this is finished in addition to the next property being undefined.
@@ -1342,7 +1334,7 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call
-  /run/{id}/:  
+  /run/{id}:  
     get:
       security:
         - cookieAuth: []
@@ -1628,8 +1620,9 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
-          
-  /experiment/{id}/{version}/:
+        '409':
+          description: "Name already exists"
+  /experiment/{id}/{version}:
     get:
       security:
         - cookieAuth: []
@@ -2030,9 +2023,6 @@ components:
     
     BasicElementData:
       type: object
-      required:
-        - UUID
-        - name
       properties:
         UUID:
           type: string
@@ -2142,9 +2132,6 @@ components:
               type: string
               example: "... Multiline actual code ..."
               description: The code of this task. 
-            tag:
-              type: string
-              description: A Tag for this version, will be used to retrieve actual versions of the task. Must be a valid github tag id
           description: A Task is the smallest unit within a project and commonly specifies a questionaire or test like e.g. a reaction test. The optional fields are required if the task is an instance within an experiment. The required fields only represent the task template as stored in the task database.
           
     TaskInstance:
@@ -2152,6 +2139,11 @@ components:
         - $ref: '#/components/schemas/BasicElementData'
         - $ref: '#/components/schemas/ElementInstance'
         - type: object
+          required:
+            - codeType
+            - next
+            - UUID
+            - version
           properties:
             filter: 
               type: string
@@ -2166,18 +2158,25 @@ components:
             next:
               type: string
               example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
-              description: Which element to perform after this task, cannot point back to itself! And will only be present in instances not in the generation step. This has the same
+              description: Which element to perform after this task, cannot point back to itself! A value of "end" will indicate no next item. 
+                This is only present in instances, not in 
                 This will need to opint to an instanceID of another task or experiment. 
             codeType:
-              type: string
-              example: qlang
-              description: What kind of code this task has, either elang (soile experiment language), qlang (soile questionaire language), or javascript (PsychoJS code)
+              type: object
+              properties:
+                language:
+                  type: string
+                  description: the code type (javascript for psychoJS, qmarkup or elang for soile questionaire markup and experiment language)
+                  example: "qmarkup"
+                version: 
+                  type: string
+                  description: the version of the code type.
+                  example: "1.0"
               
     DBTask:
       allOf: 
         - $ref: '#/components/schemas/DBElement'
-        - $ref: '#/components/schemas/TaskProperties'
-          
+
     TaskProperties:
       type: object
       properties:
@@ -2186,24 +2185,18 @@ components:
           properties:
             language:
               type: string
-              example: qlang
+              example: qmarkup
               description: What kind of code this task has, either elang (soile experiment language), qlang (soile questionaire language), or (PsychoPy)javascript
             version:
               type: string
               example: "2022.2.5"
-        resources:
-          type: array
-          items: 
-            type: string
-            example: "images/apple.jpg"
-          description: names of resources used in this task. This will be used based on the task UUID and version to obtain the correct files.      
-    
+
     FilterInstance:
       allOf:
       - $ref: '#/components/schemas/ElementInstance'
       - type: object
         required: 
-          - defaultNext
+          - defaultOption
         properties:
           options: 
             description: Filters participants into one of the available options. 
@@ -2211,16 +2204,20 @@ components:
             type: array
             items: 
               type: object
+              required:
+                - filter
+                - next
               properties: 
                 filter: 
                   type: string
                   example: TaskInstanceID1.output1 * TaskInstanceID2.output2 > 4
                   description: A Filter that indicates whether the next element used is the next of this item. Filter should be mutually exclusive
-                next: 
+                next:
                   type: string
                   example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
-                  description: Which element to perform after this task, cannot point back to itself! And will only be present in instances not in the generation step. This has the same
-                    This will need to opint to an instanceID of another task or experiment.
+                  description: Which element to perform after this task, cannot point back to itself! A value of "end" will indicate no next item. 
+                    This is only present in instances, not in 
+                    This will need to opint to an instanceID of another task, experiment or filter. 
           defaultOption:
                   type: string
                   example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
@@ -2233,18 +2230,23 @@ components:
               
     ExperimentInstance:
       allOf:
+        - $ref: '#/components/schemas/BasicElementData'
         - $ref: '#/components/schemas/ExperimentProperties'
         - $ref: '#/components/schemas/ElementInstance'
         - type: object
+          required:
+            - elements
+            - next
+            - UUID
+            - version
           properties:
             next:
               type: string
               example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
-              description: Which element to perform after this task, cannot point back to itself! And will only be present in instances not in the generation step. This has the same
+              description: Which element to perform after this task, cannot point back to itself! A value of "end" will indicate no next item. 
+                This is only present in instances, not in 
                 This will need to opint to an instanceID of another task or experiment. 
-            randomize: 
-              type: boolean
-              description: Whether the order of execution of the tasks in this experiment is randomized. If they are, no item in elements is allowed to be a filter. If randomized, all tasks and experiments in this experiment must point to this experiment as their next item.
+                
     ExperimentProperties:
       type: object
       properties:
@@ -2258,12 +2260,16 @@ components:
                 description: either "experiment" or "task" or "filter"
               data:
                 description: one of either task or experiment or filter (as defined by the elementtype). Experiments are expected to be not nested for more than one level. The first element in this 
-                oneOf:
-                  - $ref: '#/components/schemas/TaskInstance'
+                anyOf:
                   - $ref: '#/components/schemas/ExperimentInstance'
                   - $ref: '#/components/schemas/FilterInstance'
-          description: Instances of tasks, further experiments or Filters, need to have instance IDs etc pp project back-reference, etc. The first element in this list will be assumed to be the starting element for this Experiment. Any element that does NOT have a next element being set will be assumed to be an end element. After which the instantiated experiments "next" element is called.
+                  - $ref: '#/components/schemas/TaskInstance'
 
+          description: Instances of tasks, further experiments or Filters, need to have instance IDs etc pp project back-reference, etc. The first element in this list will be assumed to be the starting element for this Experiment. Any element that does NOT have a next element being set will be assumed to be an end element. After which the instantiated experiments "next" element is called.
+        randomize: 
+          type: boolean
+          description: Whether the order of execution of the tasks in this experiment is randomized. If they are, no item in elements is allowed to be a filter. If randomized, all tasks and experiments in this experiment must point to this experiment as their next item.
+            
     DBExperiment: 
       allOf:
       - $ref : '#/components/schemas/DBElement'
@@ -2412,6 +2418,14 @@ components:
               description: The instance UUID of the task 
           description: Download data for all participants for the given task.
       description: TODO, Allow individual file download for users and tasks.
+    FileDirectory:
+      type: array
+      items:
+        oneOf:
+          - $ref : '#/components/schemas/FileDirectory'
+          - type: string
+            description: A Filename in the directory
+            
     DBDownloadScheme:
       type: object
       properties:

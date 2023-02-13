@@ -87,7 +87,11 @@ public abstract class SoileVerticleTest extends MongoTest {
 				.setDefaultHost("localhost")
 				.setDefaultPort(port)
 				.setSsl(true)
-				.setTrustOptions(new JksOptions().setPath("server-keystore.jks").setPassword("secret"));
+				.setTrustOptions(new JksOptions().setPath("server-keystore.jks").setPassword("secret"))
+				.setIdleTimeout(0)
+				.setConnectTimeout(3600)
+				.setKeepAliveTimeout(0);
+		
 		httpClient = vertx.createHttpClient(copts);
 		webclient = WebClient.wrap(httpClient);		
 			

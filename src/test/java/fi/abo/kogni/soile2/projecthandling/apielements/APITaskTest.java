@@ -54,6 +54,28 @@ public class APITaskTest extends SoileVerticleTest {
 		})
 		.onFailure(err -> context.fail(err));
 	}
+	
+	
+	@Test
+	public void testAPIStoreLoad(TestContext context)
+	{		
+		System.out.println("--------------------  Testing Task Save/Load ----------------------");
+		Async testAsync = context.async();
+		ElementManager<Task> TaskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client, vertx);
+		DataLakeResourceManager grm = new DataLakeResourceManager(vertx);
+		ObjectGenerator.buildAPITask(TaskManager, "FirstTask", mongo_client)
+		.onSuccess(apiTask -> {
+			System.out.println(apiTask.getGitJson().encodePrettily());
+			// create a new upload.
+			TaskManager.getAPIElementFromDB(apiTask.getUUID(), apiTask.getVersion())
+			.onSuccess(retrievedAPITask -> {
+				context.assertEquals(apiTask.getGitJson(), retrievedAPITask.getGitJson());
+				testAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
 
 }
 

@@ -232,8 +232,8 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Check, whether the language and version are possible.
-	 * @param language the language (e.g. qlang, elang or psychopy
-	 * @param version the version (1.0 for elang or qlang, and e.g. 2022.2.5 for psychopy)
+	 * @param language the language (e.g. qmarkup, elang or psychopy
+	 * @param version the version (1.0 for elang or qmarkup, and e.g. 2022.2.5 for psychopy)
 	 * @return
 	 */
 

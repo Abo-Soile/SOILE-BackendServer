@@ -54,7 +54,7 @@ public class ElementManager<T extends ElementBase> {
 	TargetElementType type;
 	ElementDataHandler<T> dataHandler;
 	public static final Logger log = LogManager.getLogger(ElementManager.class);
-	private static DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	//private static DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SS");
 
 	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, Vertx vertx)
 	{
@@ -110,6 +110,11 @@ public class ElementManager<T extends ElementBase> {
 				String initVersion = (String) reply.body();
 				//create an empty project file.
 				JsonObject gitData = GitManager.buildBasicGitElement(name, this.type);
+				if(gitData.containsKey("codeType"))
+				{
+					// this is a task.
+					gitData.put("codeType", new JsonObject().put("language", type).put("version", languageversion));
+				}
 				eb.request("soile.git.writeGitFile", new GitFile("Object.json", getGitIDForUUID(element.getUUID()), initVersion).toJson().put("data",gitData))
 				.onSuccess(versionreply -> {
 					String version = (String) versionreply.body();
@@ -368,7 +373,7 @@ public class ElementManager<T extends ElementBase> {
 			for(int i = 0; i < tagArray.size(); i++)
 			{
 				JsonObject current = tagArray.getJsonObject(i);								
-				current.put("date", dateFormatter.format(versionMap.get(current.getString("version"))));
+				current.put("date", versionMap.get(current.getString("version")).getTime());
 				result.add(current);
 			}
 			listPromise.complete(result);
@@ -402,7 +407,7 @@ public class ElementManager<T extends ElementBase> {
 
 				result.add(new JsonObject()
 						.put("version", currentVersion.getString("version"))
-						.put("date", dateFormatter.format(new Date(currentVersion.getLong("timestamp"))))						
+						.put("date", currentVersion.getLong("timestamp"))						
 						);				
 			}
 			listPromise.complete(result);

@@ -305,7 +305,7 @@ public abstract class ProjectInstance implements AccessElement{
 	public String getNextTask(String nextElementID, Participant user)
 	{
 		// if we don't get a nextElementID, we are done with the Project.
-		if("".equals(nextElementID) || nextElementID == null)
+		if(nextElementID == null || "".equals(nextElementID) || "end".equals(nextElementID))
 		{
 			return null;
 		}

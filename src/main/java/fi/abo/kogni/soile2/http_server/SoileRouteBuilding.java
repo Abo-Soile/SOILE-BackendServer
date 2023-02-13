@@ -278,7 +278,6 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("createTask").handler(taskRouter::create);
 		builder.operation("getTask").handler(taskRouter::getElement);
 		builder.operation("updateTask").handler(taskRouter::writeElement);
-
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
@@ -373,7 +372,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	{
 		router.route(HttpMethod.GET, "/run/:id/lib/*").handler(partRouter::getLib);
 		router.route(HttpMethod.GET, "/run/:id/*").handler(partRouter::getResourceForExecution);
-		router.route(HttpMethod.GET, "/task/:id/:version/resource/*").handler(taskRouter::getResource);
+		router.route(HttpMethod.GET, "/task/:id/:version/resource/*").handler(taskRouter::getResource);		
 		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(taskRouter::postResource);
 	}
 }

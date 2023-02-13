@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.projecthandling.exceptions.NoCodeTypeChangeException;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
@@ -15,6 +16,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -136,9 +138,26 @@ public class APITask extends APIElementBase<Task> {
 			codePromise.complete(true);
 		})
 		.onFailure(err -> {
-			LOGGER.debug("Failed to load Code File");
-			err.printStackTrace(System.out);
-			codePromise.fail(err);
+			if(err instanceof ReplyException)
+			{
+				int errorCode = ((ReplyException)err).failureCode();
+				if(errorCode == gitProviderVerticle.FILE_DOES_NOT_EXIST_FOR_VERSION)
+				{
+					// this is fine, could be that it wasn't generated yet, we will return an empty string then.
+					setCode("");
+					codePromise.complete(true);
+				}
+				else
+				{
+					codePromise.fail(err);		
+				}
+			}
+			else
+			{
+				LOGGER.debug("Failed to load Code File");
+				err.printStackTrace(System.out);
+				codePromise.fail(err);
+			}
 		});			
 		return CompositeFuture.all(loadedList).map(true);
 	}	

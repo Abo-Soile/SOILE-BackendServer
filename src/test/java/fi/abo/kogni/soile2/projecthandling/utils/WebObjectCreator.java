@@ -1,7 +1,6 @@
 package fi.abo.kogni.soile2.projecthandling.utils;
 
 import java.io.File;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,30 +9,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
-import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
-import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
-import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.impl.MimeMapping;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.mongo.MongoClient;
-import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientSession;
+import io.vertx.ext.web.handler.HttpException;
 
 /**
  * THIS CLASS IS NOT INTENDED TO BE USED IN THE FINAL PRODUCT, IT IS A HELPER CLASS FOR TESTS TO CREATE OBJECTS
@@ -46,8 +33,29 @@ public class WebObjectCreator {
 	private static final Logger LOGGER = LogManager.getLogger(WebObjectCreator.class);
 
 	
+	/**
+	 * Create a new Task or retrieve the data for the latest version of the task.
+	 * @param webClient
+	 * @param elementID
+	 * @return
+	 */
+	public static Future<JsonObject> createOrRetrieveTask(WebClientSession webClient, String elementID)
+	{				
+			Promise<JsonObject> infoPromise = Promise.promise();
+			createTask(webClient, elementID)
+			.onSuccess(res -> {
+				SoileWebTest.getElement(webClient, "task", res.getString("UUID"), res.getString("version"))
+				.onSuccess(json -> infoPromise.complete(json))
+				.onFailure(err -> infoPromise.fail(err));
+			})
+			.onFailure(err -> {
+				finishPromiseOnError(webClient, elementID, "task", err, infoPromise);
+			});
+			return infoPromise.future();
+	}
+	
 	// The session needs to already be authenticated have all headers set.
-	public static Future<JsonObject> createTask(WebClient webClient, String elementID)
+	static Future<JsonObject> createTask(WebClientSession webClient, String elementID)
 	{
 		Promise<JsonObject> taskPromise = Promise.promise();
 		try
@@ -55,9 +63,11 @@ public class WebObjectCreator {
 			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
 			String TaskCode = Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));
 			String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
-			JsonObject taskParameters = new JsonObject().put("codeType", TaskDef.getString("codeType")).put("codeVersion", TaskDef.getString("codeVersion")).put("name", TaskDef.getString("name"));			
-			SoileWebTest.createNewElement(webClient, elementID, taskParameters)
+			JsonObject codeType = TaskDef.getJsonObject("codeType");
+			JsonObject taskParameters = new JsonObject().put("codeType", codeType.getString("language")).put("codeVersion", codeType.getString("version")).put("name", TaskDef.getString("name"));			
+			SoileWebTest.createNewElement(webClient, "task", taskParameters)
 			.onSuccess(TaskJson -> { // we have created a new Task Object. Now we need to fill it with data
+				LOGGER.info("Task " + elementID + " Initialized: " + TaskJson.getString("UUID") + "@" + TaskJson.getString("version"));
 				String taskID = TaskJson.getString("UUID");
 				JsonArray resources = TaskDef.getJsonArray("resources", new JsonArray());
 				List<Future> composite = new LinkedList<>();
@@ -69,24 +79,30 @@ public class WebObjectCreator {
 				{					
 					// create all in a compose chain...
 					String resourceName = resources.getString(i);
-					chain.add(chain.getLast().compose(newVersion -> {
-						LOGGER.debug("Adding File " + resourceName + " to Version " + newVersion);
+					chain.add(chain.getLast().compose(newVersion -> {						
 						return SoileWebTest.postTaskRessource(webClient, taskID, newVersion, resourceName,new File(Path.of(TestDataFolder, resourceName).toString()) , MimeMapping.getMimeTypeForFilename(resourceName) );										
 					}));
 					composite.add(chain.getLast());
 				}
 				versionPromise.complete(TaskJson.getString("version"));
 				CompositeFuture.all(composite)
-				.onSuccess(done -> {
-					LOGGER.debug("File(s) added");
+				.onSuccess(done -> {					
 					chain.getLast().onSuccess(latestVersion ->
 					{
 						//This is the version with all Files added. 
 						JsonObject update = new JsonObject();
 						update.put("code", TaskCode);
-						update.put("private", TaskDef.getBoolean("private"));
-						
-						
+						update.put("private", TaskDef.getBoolean("private", false));						
+						SoileWebTest.POST(webClient, "/task/" + taskID + "/" + latestVersion , null, update)
+						.onSuccess(response -> {
+							LOGGER.info("Task " + elementID + " created");
+							taskPromise.complete(response.bodyAsJsonObject().put("name", TaskDef.getString("name"))
+																			.put("UUID", taskID)
+																			.put("code", TaskCode)
+																			.put("private", TaskDef.getBoolean("private", false))
+																			.put("codeType", codeType)
+																			.put("resources", resources));
+						}).onFailure(err -> taskPromise.fail(err));
 					})
 					.onFailure(err -> taskPromise.fail(err));
 				})
@@ -99,75 +115,58 @@ public class WebObjectCreator {
 			taskPromise.fail(e);
 		}
 		return taskPromise.future();
-	}
-		/*	manager.createOrLoadElement(TaskDef.getString("name"),TaskDef.getString("codeType"),TaskDef.getString("codeVersion"))
-			.onSuccess(task -> {
-				LOGGER.debug("Task object created");
-				
-				
-				versionPromise.complete(task.getCurrentVersion());
-				CompositeFuture.all(composite)
-				.onSuccess(done -> {
-					
-					chain.getLast().onSuccess(latestVersion ->
-					{
-					APITask apiTask = new APITask(TaskDef);				
-					apiTask.loadGitJson(TaskDef);
-					apiTask.setCode(TaskCode);
-					apiTask.setVersion(latestVersion);
-					apiTask.setUUID(task.getUUID());			
-					task.setPrivate(apiTask.getPrivate());				
-					task.save(client)
-					.onSuccess(res -> {
-						LOGGER.debug("Task saved");
-
-						manager.updateElement(apiTask)
-						.onSuccess(newVersion -> {
-							LOGGER.debug("Api Task Updated");
-							apiTask.setVersion(newVersion);
-							try {
-								FileUtils.deleteDirectory(new File(dataDir));
-							}
-							catch(IOException e)
-							{
-								
-							}
-							taskPromise.complete(apiTask);							
-						})
-						.onFailure(err -> taskPromise.fail(err));
-
-					})
-					.onFailure(err -> taskPromise.fail(err));
-					})
-					.onFailure(err -> taskPromise.fail(err));
-				})
-				.onFailure(err -> taskPromise.fail(err));
-				
-			})
-			.onFailure(fail -> taskPromise.fail(fail));
-		}
-		catch(IOException e)
-		{
-			taskPromise.fail(e);
-		}
-		return taskPromise.future();
-	}
-
-	public static Future<APIExperiment> buildAPIExperiment(ElementManager<Experiment> experimentManager,ElementManager<Task> taskManager,MongoClient client, String experimentName)
+	}	
+	
+	public static Future<JsonObject> createOrRetrieveExperiment(WebClientSession webClient, String experimentName)
 	{
-		Promise<APIExperiment> experimentPromise = Promise.promise();
+		Promise<JsonObject> infoPromise = Promise.promise();
+		createExperiment(webClient, experimentName)
+		.onSuccess(res -> {
+			SoileWebTest.getElement(webClient, "experiment", res.getString("UUID"), res.getString("version"))
+			.onSuccess(json -> infoPromise.complete(json))
+			.onFailure(err -> infoPromise.fail(err));
+		})
+		.onFailure(err -> {
+			finishPromiseOnError(webClient, experimentName,"experiment", err, infoPromise);
+		});
+		return infoPromise.future();
+	}
+	
+	
+	static void finishPromiseOnError(WebClientSession session, String elementName, String elementType, Throwable err, Promise<JsonObject> promise)
+	{
+		if(err instanceof HttpException){
+			if(((HttpException)err).getStatusCode() == 409)
+			{
+				SoileWebTest.retrieveElementByName(session, elementName, elementType)
+				.onSuccess(res -> promise.complete(res))
+				.onFailure(err2 -> promise.fail(err2));				
+			}
+			else
+			{
+				promise.fail(err);
+			}
+		}
+		else
+		{
+			promise.fail(err);
+		}
+	}
+		 
+	
+	
+	public static Future<JsonObject> createExperiment(WebClientSession webClient, String experimentName)
+	{
+		Promise<JsonObject> experimentPromise = Promise.promise();
 		try
 		{
 			JsonObject ExperimentDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/ExperimentData.json").getPath()))).getJsonObject(experimentName);
-			APIExperiment apiExperiment = new APIExperiment();
-			apiExperiment.setPrivate(ExperimentDef.getBoolean("private"));
-			experimentManager.createOrLoadElement(ExperimentDef.getString("name"))
-			.onSuccess(experiment -> {	
-				experiment.setPrivate(apiExperiment.getPrivate());
-				apiExperiment.setName(experiment.getName());
-				apiExperiment.setVersion(experiment.getCurrentVersion());
-				apiExperiment.setUUID(experiment.getUUID());				
-
+			JsonObject experimentSettings = new JsonObject().put("name", ExperimentDef.getString("name")).put("private", ExperimentDef.getBoolean("private", false));
+			SoileWebTest.createNewElement(webClient, "experiment", experimentSettings)
+			.onSuccess(experimentJson -> {
+				LOGGER.info("Experiment " + experimentName + " Initialized: " + experimentJson.getString("UUID") + "@" + experimentJson.getString("version"));
+				String id = experimentJson.getString("UUID");
+				String version = experimentJson.getString("version");								
 				ConcurrentHashMap<String, JsonObject> elements = new ConcurrentHashMap();
 				List<Future> partFutures = new LinkedList<Future>();
 				for(Object item : ExperimentDef.getJsonArray("items"))
@@ -176,39 +175,37 @@ public class WebObjectCreator {
 					if(current.getString("type").equals("task"))
 					{
 						partFutures.add(
-								buildAPITask(taskManager, current.getString("name"), client).onSuccess(task -> {
-									experiment.addElement(task.getUUID());
-									JsonObject taskInstance = new JsonObject();
+								createOrRetrieveTask(webClient, current.getString("name"))
+								.onSuccess(taskInstance -> {																																			
 									taskInstance.put("instanceID", current.getString("instanceID"))
-									.put("next", current.getString("next", null))
-									.put("UUID", task.getUUID())
-									.put("version", task.getVersion())
-									.put("filter", current.getString("filter",""))
-									.put("name", task.getName())
+									.put("next", current.getString("next", "end"))									
+									.put("filter", current.getString("filter",""))									
 									.put("outputs", current.getJsonArray("outputs",new JsonArray()));
-									elements.put(current.getString("name"), new JsonObject().put("elementType", "task")
+									taskInstance.remove("code");
+									elements.put(current.getString("instanceID"), new JsonObject().put("elementType", "task")
 											.put("data",taskInstance));
 								})
 								);
 					}
 					if(current.getString("type").equals("filter"))
 					{
-						elements.put(current.getString("name"), new JsonObject().put("elementType", "filter")
-								.put("data",current.getJsonObject("data")));
+						elements.put(current.getString("instanceID"), new JsonObject().put("elementType", "filter")
+								.put("data",current.getJsonObject("data").put("instanceID", current.getString("instanceID"))));
 					}					
 					if(current.getString("type").equals("experiment"))
 					{
 						partFutures.add(
-								buildAPIExperiment(experimentManager, taskManager, client, current.getString("name")).onSuccess(subexperiment -> {
-									experiment.addElement(subexperiment.getUUID());
+								createOrRetrieveExperiment(webClient,current.getString("name")).onSuccess(subexperiment -> {
+									
 									JsonObject experimentInstance = new JsonObject();
 									experimentInstance.put("instanceID", current.getString("instanceID"))
 									.put("next", current.getString("next", null))
-									.put("UUID", subexperiment.getUUID())
-									.put("version", subexperiment.getVersion())
+									.put("UUID", subexperiment.getString("UUID"))
+									.put("version", subexperiment.getString("version"))
 									.put("randomize", current.getBoolean("randomize",false))
-									.put("name", subexperiment.getName());
-									elements.put(current.getString("name"), 
+									.put("name", subexperiment.getString("name"))
+									.put("elements", subexperiment.getJsonArray("elements"));
+									elements.put(current.getString("instanceID"), 
 											new JsonObject().put("elementType", "experiment")
 											.put("data", experimentInstance));
 								})
@@ -219,16 +216,23 @@ public class WebObjectCreator {
 				//deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
 				CompositeFuture.all(partFutures).mapEmpty().onSuccess(Void -> {
 					// once all is done, we put it in in the right order.
+					JsonArray items = experimentJson.getJsonArray("elements");
 					for(Object item : ExperimentDef.getJsonArray("items"))
 					{
 						JsonObject current = (JsonObject) item;
-
-						apiExperiment.getElements().add(elements.get(current.getString("name")));
+						items.add(elements.get(current.getString("instanceID")));
 					}
-					experimentManager.updateElement(apiExperiment)
-					.onSuccess(newVersion -> { 
-						apiExperiment.setVersion(newVersion);
-						experimentPromise.complete(apiExperiment);
+					SoileWebTest.POST(webClient, "/experiment/" + id + "/" + version , null, experimentJson)					
+					.onSuccess(response -> {						
+						SoileWebTest.GET(webClient, "/experiment/" + id + "/" + response.bodyAsJsonObject().getString("version") , null, null)
+						.onSuccess(res -> {
+							LOGGER.info("Experiment " + experimentName +  "  created and retrieved" );							
+							experimentPromise.complete(res.bodyAsJsonObject());
+						})
+						.onFailure(err -> {
+							experimentPromise.fail(err);
+						});
+						
 					})
 					.onFailure(err -> {
 						experimentPromise.fail(err);
@@ -248,70 +252,62 @@ public class WebObjectCreator {
 		return experimentPromise.future();
 	}
 
-
-	public static Future<APIProject> buildAPIProject(ElementManager<Project> projectManager, 
-													 ElementManager<Experiment> expManager,
-													 ElementManager<Task> taskManager, 
-													 MongoClient client, String projectName)
+	public static Future<JsonObject> createProject(WebClientSession webClient, String projectName)
 	{
-		Promise<APIProject> projectPromise = Promise.promise();
+		Promise<JsonObject> projectPromise = Promise.promise();
 		try
 		{
 			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/ProjectData.json").getPath()))).getJsonObject(projectName);
-			APIProject apiProject = new APIProject();		
-			apiProject.setStart(projectDef.getString("start"));
-			projectManager.createOrLoadElement(projectDef.getString("name"))
-			.onSuccess(project -> {							
-				apiProject.setName(project.getName());
-				apiProject.setVersion(project.getCurrentVersion());
-				apiProject.setUUID(project.getUUID());							
+			JsonObject projectSettings = new JsonObject().put("name", projectDef.getString("name"))
+														 .put("private", projectDef.getBoolean("private", false));
+			SoileWebTest.createNewElement(webClient, "project", projectSettings)			
+			.onSuccess(projectJson -> {							
+				String id = projectJson.getString("UUID");
+				String version = projectJson.getString("version");
+				JsonArray projectTasks = projectJson.getJsonArray("tasks");
+				JsonArray projectFilters = projectJson.getJsonArray("filters");
+				JsonArray projectExperiments = projectJson.getJsonArray("experiments");
 				ConcurrentHashMap<String, JsonObject> tasks = new ConcurrentHashMap();
 				List<Future> taskFutures = new LinkedList<Future>();
 				for(Object item : projectDef.getJsonArray("tasks"))
 				{
 					JsonObject current = (JsonObject) item;
 					taskFutures.add(
-							buildAPITask(taskManager, current.getString("name"), client)
+							createOrRetrieveTask(webClient,current.getString("name"))
 							.onSuccess(task -> {
-								project.addElement(task.getUUID());
-								JsonObject taskInstance = new JsonObject();
-								taskInstance.put("instanceID", current.getString("instanceID"))
-								.put("next", current.getString("next", null))
-								.put("UUID", task.getUUID())
-								.put("version", task.getVersion())
-								.put("filter", current.getString("filter",""))
-								.put("name", task.getName())
-								.put("outputs", current.getJsonArray("outputs",new JsonArray()));
-								tasks.put(current.getString("name"), taskInstance);
+								task.put("instanceID", current.getString("instanceID"));
+								task.put("next", current.getString("next"));
+								task.put("outputs", current.getJsonArray("outputs", new JsonArray()));
+								tasks.put(current.getString("instanceID"), task);
 							})
-							);
+					);
 				}
 				CompositeFuture.all(taskFutures).mapEmpty().onSuccess(Void -> {
+					// all tasks created. now we add them to the project;
 					LinkedList<JsonObject> taskList = new LinkedList<JsonObject>();
 					taskList.addAll(tasks.values());
 					JsonArray taskArray = new JsonArray(taskList);
-					apiProject.setTasks(taskArray);
+					projectTasks.addAll(taskArray);
 					// and now we do the experiments. Since they could in theory refer back to the same unique tasks, we need to have created the tasks first.
 					ConcurrentHashMap<String, JsonObject> experiments = new ConcurrentHashMap();
 					List<Future> experimentFutures = new LinkedList<Future>();
-					// and for filters. This should work even without
-					JsonArray filters = apiProject.getFilters();
+					// and for filters. This should work even without					
 					for(Object item : projectDef.getJsonArray("filters", new JsonArray()))
 					{
-						filters.add(item);
+						projectFilters.add(item);
 					}
 					for(Object item : projectDef.getJsonArray("experiments"))
 					{
 						JsonObject current = (JsonObject) item;
 						experimentFutures.add(
-								buildAPIExperiment(expManager, taskManager, client, current.getString("name"))
+								createOrRetrieveExperiment(webClient, current.getString("name"))
 								.onSuccess(experiment -> {
-									project.addElement(experiment.getUUID());						
-									JsonObject expinstance = experiment.getAPIJson();
-									expinstance.put("instanceID",current.getString("instanceID"))
-									.put("next", current.getString("next", null))
+									
+									
+									experiment.put("instanceID",current.getString("instanceID"))
+									.put("next", current.getString("next", "end"))
 									.put("random", current.getBoolean("random", true));
-									experiments.put(current.getString("name"), expinstance);								
+									experiments.put(current.getString("instanceID"), experiment);								
 								})
 								);						
 					}
@@ -321,17 +317,25 @@ public class WebObjectCreator {
 						LinkedList<JsonObject> expList = new LinkedList<JsonObject>();
 						expList.addAll(experiments.values());
 						JsonArray expArray = new JsonArray(expList);
-						apiProject.setExperiments(expArray);
-						projectManager.updateElement(apiProject)
-						.onSuccess( newVersion -> {
-								apiProject.setVersion(newVersion);
-								// Saving the associated project.								
-								projectPromise.complete(apiProject);															
+						projectExperiments.addAll(expArray);
+						SoileWebTest.POST(webClient, "/project/" + id + "/" + version , null, projectJson)					
+						.onSuccess(response -> {						
+							SoileWebTest.GET(webClient, "/project/" + id + "/" + response.bodyAsJsonObject().getString("version") , null, null)
+							.onSuccess(res -> {														
+								projectPromise.complete(res.bodyAsJsonObject());
 							})
-							.onFailure(err -> projectPromise.fail(err));
+							.onFailure(err -> {
+								projectPromise.fail(err);
+							});
+							
 						})
-						.onFailure(err -> projectPromise.fail(err));
-					
+						.onFailure(err -> {
+							projectPromise.fail(err);
+						});
+					})
+					.onFailure(err -> {
+						projectPromise.fail(err);
+					});	
 
 				})
 				.onFailure(err -> projectPromise.fail(err));
@@ -348,12 +352,4 @@ public class WebObjectCreator {
 		return projectPromise.future();
 	}
 	
-	public static Future<JsonObject> createProject(MongoClient client, Vertx vertx, String projectName)
-	{
-		ElementManager<Project> projectManager = new ElementManager<>(Project::new, APIProject::new, client, vertx); 
-		 ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, client, vertx);
-		 ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, client, vertx);
-		 return buildAPIProject(projectManager, expManager, taskManager, client, projectName).map(res -> { return new JsonObject().put("UUID", res.getUUID()).put("version", res.getVersion());});
-	}			
-*/	
 }

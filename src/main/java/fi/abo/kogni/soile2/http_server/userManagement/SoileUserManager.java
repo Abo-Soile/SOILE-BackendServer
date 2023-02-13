@@ -159,6 +159,10 @@ public class SoileUserManager implements MongoUserUtil{
 		Promise<JsonArray> resultsPromise = Promise.promise();
 		client.findWithOptions(authnOptions.getCollectionName(), Query, options)
 		.onSuccess(result -> {
+			for(JsonObject current : result)
+			{
+				current.put(authzOptions.getRoleField(), current.getJsonArray(authzOptions.getRoleField()).getValue(0));
+			}
 			resultsPromise.complete(new JsonArray(result));
 		})
 		.onFailure(err -> resultsPromise.fail(err));
@@ -253,7 +257,7 @@ public class SoileUserManager implements MongoUserUtil{
 			  resultHandler.handle(Future.failedFuture(new InvalidRoleException(role)));
 			  return this;
 		  }
-		JsonObject updateObject = new JsonObject().put("$set", new JsonObject().put(options.getRoleField(), role));
+		JsonObject updateObject = new JsonObject().put("$set", new JsonObject().put(options.getRoleField(), new JsonArray().add(role)));
 		client.updateCollection(options.getCollectionName(), queryObject, updateObject)
 		.onComplete(res -> {
 			resultHandler.handle(res);				
@@ -777,6 +781,10 @@ public class SoileUserManager implements MongoUserUtil{
 							  try
 							  {
 								  Roles.valueOf(command.getString(key));
+								  if(command.getValue("userRole") instanceof String)
+								  {
+									  command.put("userRole", new JsonArray().add(command.getValue(key)));
+								  }
 							  }
 							  catch(IllegalArgumentException e)
 							  {
@@ -788,7 +796,7 @@ public class SoileUserManager implements MongoUserUtil{
 			}
 			if(!target.equals(""))
 			{
-				updates.put(target, command.getString(key));
+				updates.put(target, command.getValue(key));
 			}
 		}
 		LOGGER.debug("Updates are:" + updates.encode());
@@ -856,7 +864,7 @@ public class SoileUserManager implements MongoUserUtil{
 	
 	private JsonObject getDefaultFields()
 	{
-		return new JsonObject().put(SoileConfigLoader.getUserdbField("userRolesField"), Roles.Participant.toString())
+		return new JsonObject().put(SoileConfigLoader.getUserdbField("userRolesField"), new JsonArray().add(Roles.Participant.toString()))
 								.put(SoileConfigLoader.getUserdbField("experimentPermissionsField"), new JsonArray())
 								.put(SoileConfigLoader.getUserdbField("instancePermissionsField"), new JsonArray())
 								.put(SoileConfigLoader.getUserdbField("projectPermissionsField"), new JsonArray())
