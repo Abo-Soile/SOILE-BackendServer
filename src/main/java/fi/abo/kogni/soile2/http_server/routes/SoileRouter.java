@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
 
@@ -25,29 +26,39 @@ public class SoileRouter {
 	 */
 	void handleError(Throwable err, RoutingContext context)
 	{
-		LOGGER.debug(err);
+		LOGGER.info(err);
+		err.printStackTrace(System.out);
 		if(err instanceof ElementNameExistException)
-		{
-			context.fail(409);
+		{	
+			sendError(context, 409, err.getMessage());			
 			return;
 		}
 		if(err instanceof ObjectDoesNotExist)
 		{
-			context.fail(410);
+			sendError(context, 410, err.getMessage());			
 			return;
 		}
 		if(err instanceof HttpException)
 		{
 			HttpException e = (HttpException) err;
-			context.fail(e.getStatusCode());
+			sendError(context, e.getStatusCode(), err.getMessage());						
 			return;
 		}
 		if(err.getCause() instanceof ReplyException)
 		{
 			ReplyException rerr = (ReplyException)err.getCause();
-			context.fail(rerr.failureCode());
+			sendError(context, rerr.failureCode(), rerr.getMessage());			
 			return;
 		}
-		context.fail(400, err);
+		
+		sendError(context, 400, err.getMessage());
 	}
+	
+	void sendError(RoutingContext context, int code, String message)
+	{		
+		context.response()
+		.setStatusCode(code)
+		.end(message);
+	}
+	
 }

@@ -90,6 +90,9 @@ public class SoileFormLoginHandler extends AuthenticationHandlerImpl<Authenticat
 					ctx.fail(((HttpException)fail.getCause()).getStatusCode());
 				}
 			});
+		})
+		.onFailure(err -> {
+			ctx.fail(500,err);
 		});
 	  }
 

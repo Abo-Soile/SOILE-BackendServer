@@ -37,6 +37,7 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 
@@ -105,14 +106,14 @@ public class ProjectInstanceRouter extends SoileRouter {
 						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
 						.end(new JsonObject().put("projectID",instance.getID()).encode());												
 					})
-					.onFailure(err -> context.fail(500, err));
+					.onFailure(err -> handleError(new HttpException(500, err.getMessage()), context));
 				})
-				.onFailure(err -> context.fail(500, err));
+				.onFailure(err -> handleError(new HttpException(500, err.getMessage()), context));
 			})
-			.onFailure(err -> context.fail(403, err));
+			.onFailure(err -> handleError(new HttpException(403, err.getMessage()), context));
 		})
 		.onFailure(err -> {
-			context.fail(500,err);
+			handleError(new HttpException(500, err.getMessage()), context);
 		});		
 	}
 

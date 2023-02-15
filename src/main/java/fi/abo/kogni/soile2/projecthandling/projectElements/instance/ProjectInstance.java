@@ -14,6 +14,8 @@ import fi.abo.kogni.soile2.projecthandling.exceptions.ProjectIsInactiveException
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecification;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FilterObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -292,7 +294,7 @@ public abstract class ProjectInstance implements AccessElement{
 	 * @return a list of the element IDs in this project
 	 */
 	public List<String> getElements()
-	{
+	{		
 		return List.copyOf(elements.keySet());
 	}
 	
@@ -487,4 +489,7 @@ public abstract class ProjectInstance implements AccessElement{
 	 * @return A successfull future, if the token is available.
 	 */
 	public abstract Future<Void> useToken(String token);
+	
+	
+	
 }

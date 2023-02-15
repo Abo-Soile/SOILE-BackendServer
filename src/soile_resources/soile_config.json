@@ -58,7 +58,7 @@
 		"ownerField" : "ownedExperiments",
 		"collaboratorField" : "collaboratedExperiments",
 		"participantField" : "participantIn",
-		"userRolesField" : "userRoles",	
+		"userRolesField" : "role",	
 		"usernameCredentialField" : "username",
 		"passwordField" : "password",
 		"passwordCredentialField" : "password",
@@ -82,7 +82,7 @@
 		"userOwnes" : "ownerOf",
 		"userCollaborates" : "collaboratorOf",
 		"userParticipates" : "participantOf",
-		"userRoles" : "roles" 
+		"userRoles" : "role" 
 	},
 
 	"communication" : {		

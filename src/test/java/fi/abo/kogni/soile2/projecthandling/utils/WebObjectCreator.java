@@ -222,6 +222,8 @@ public class WebObjectCreator {
 						JsonObject current = (JsonObject) item;
 						items.add(elements.get(current.getString("instanceID")));
 					}
+					// set private
+					experimentJson.put("private", ExperimentDef.getValue("private"));
 					SoileWebTest.POST(webClient, "/experiment/" + id + "/" + version , null, experimentJson)					
 					.onSuccess(response -> {						
 						SoileWebTest.GET(webClient, "/experiment/" + id + "/" + response.bodyAsJsonObject().getString("version") , null, null)

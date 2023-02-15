@@ -43,8 +43,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	private static final Logger LOGGER = LogManager.getLogger(ElementRouter.class);
 
 	public ElementRouter(ElementManager<T> manager, SoileAuthorization auth, EventBus eb, MongoClient client)
-	{		
-		
+	{				
 		authorizationRertiever = auth;
 		T tempElement = manager.getElementSupplier().get();		
 		elementManager = manager;
@@ -184,13 +183,13 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 			String version = null;
 			if(nameParam.size() != 1) {
 				LOGGER.debug("Invalid name parameter");
-				context.fail(400, new HttpException(400, "Must have exactly one codetype, codeVersion and name parameter"));
+				handleError(new HttpException(400, "Must have exactly one codetype, codeVersion and name parameter"), context);
 				return;
 				}
 			if( elementManager.getElementSupplier().get().getElementType() == TargetElementType.TASK  && (typeParam.size() != 1 || versionParam.size() != 1))
 			{
 				LOGGER.debug("Invalid CodeType/Version");
-				context.fail(400, new HttpException(400, "Must have exactly one codetype and codeVersion parameter"));
+				handleError(new HttpException(400, "Must have exactly one codetype and codeVersion parameter"), context);
 			}						
 			else{
 				
@@ -203,7 +202,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 					{
 						LOGGER.debug("Innvalid Task Version/Code Type");
 						// this could be a bit more explicit
-						context.fail(400, new HttpException(400, "Invalid codeType/version Parameter"));
+						handleError(new HttpException(400, "Invalid codeType/version Parameter"), context);
 						return;
 					}
 				}
@@ -216,14 +215,14 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 						.put("username", context.user().principal().getString("username"))
 						.put("command", "add")
 						.put("permissionsProperties", new JsonObject().put("elementType", getTypeID(element.getTypeID()))
-																	  .put("permissionsSettings",new JsonArray().add(new JsonObject().put("target", element.getUUID())
+																	  .put("permissionSettings",new JsonArray().add(new JsonObject().put("target", element.getUUID())
 																			  														.put("type", PermissionType.FULL.toString()))
 																		  )
 							);	
 				LOGGER.debug("Requesting permission change");
 				eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChangeRequest)
 				.onSuccess( reply -> {
-					LOGGER.debug("Permissions added to user for "+ nameParam + "/" + element.getUUID());
+					LOGGER.info("Permissions added to user for "+ nameParam + "/" + element.getUUID());
 					elementManager.getAPIElementFromDB(element.getUUID(), element.getCurrentVersion())
 					.onSuccess(apiElement -> {
 						LOGGER.debug("Api element created");

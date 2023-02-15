@@ -152,15 +152,15 @@ public class ObjectGenerator {
 									.put("filter", current.getString("filter",""))
 									.put("name", task.getName())
 									.put("outputs", current.getJsonArray("outputs",new JsonArray()));
-									elements.put(current.getString("name"), new JsonObject().put("elementType", "task")
+									elements.put(current.getString("instanceID"), new JsonObject().put("elementType", "task")
 											.put("data",taskInstance));
 								})
 								);
 					}
 					if(current.getString("type").equals("filter"))
 					{
-						elements.put(current.getString("name"), new JsonObject().put("elementType", "filter")
-								.put("data",current.getJsonObject("data")));
+						elements.put(current.getString("instanceID"), new JsonObject().put("elementType", "filter")
+								.put("data",current.getJsonObject("data").put("instanceID", current.getString("instanceID"))));
 					}					
 					if(current.getString("type").equals("experiment"))
 					{
@@ -174,7 +174,7 @@ public class ObjectGenerator {
 									.put("version", subexperiment.getVersion())
 									.put("randomize", current.getBoolean("randomize",false))
 									.put("name", subexperiment.getName());
-									elements.put(current.getString("name"), 
+									elements.put(current.getString("instanceID"), 
 											new JsonObject().put("elementType", "experiment")
 											.put("data", experimentInstance));
 								})
@@ -189,7 +189,7 @@ public class ObjectGenerator {
 					{
 						JsonObject current = (JsonObject) item;
 
-						apiExperiment.getElements().add(elements.get(current.getString("name")));
+						apiExperiment.getElements().add(elements.get(current.getString("instanceID")));
 					}
 					experimentManager.updateElement(apiExperiment)
 					.onSuccess(newVersion -> { 

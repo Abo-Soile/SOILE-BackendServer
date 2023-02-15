@@ -20,7 +20,7 @@ import io.vertx.ext.web.multipart.MultipartForm;
 
 public abstract class SoileWebTest extends SoileVerticleTest implements UserVerticleTest{
 
-	public Future<HttpResponse<Buffer>> GET(String targetURL, JsonObject queryParameters, Object queryBody)
+/*	public Future<HttpResponse<Buffer>> GET(String targetURL, JsonObject queryParameters, Object queryBody)
 	{
 		return GET(webclient, targetURL, queryParameters, queryBody);
 	}
@@ -28,7 +28,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	public Future<HttpResponse<Buffer>> POST(String targetURL, JsonObject queryParameters, Object queryBody)
 	{
 		return POST(webclient, targetURL, queryParameters, queryBody);
-	}
+	}*/
 
 
 	public static Future<HttpResponse<Buffer>> GET(WebClient client, String targetURL, JsonObject queryParameters, Object queryBody)
@@ -46,7 +46,8 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		if(queryBody == null)
 		{
 			return request.send().compose(SoileWebTest::handleError).onFailure(err -> {
-				System.out.println("Request object was: " + queryParameters == null ? queryParameters : queryParameters.encodePrettily());
+				System.out.println(err);
+				System.out.println("Request object was: " + queryParameters + "/" + queryBody);
 			});
 		}
 		else
@@ -141,7 +142,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		if(queryBody == null)
 		{
 			return request.send().compose(SoileWebTest::handleError).onFailure(err -> {
-				System.out.println("Request object was: " + queryParameters == null ? queryParameters : queryParameters.encodePrettily());
+				System.out.println("Request object was: " + queryParameters);
 			});
 		}
 		else
@@ -280,7 +281,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	{
 		Promise<HttpResponse<Buffer>> responsePromise = Promise.<HttpResponse<Buffer>>promise();
 		MultiMap map = createFormFromJson(new JsonObject().put("username", username).put("password", password).put("remember", "0"));
-		POST("/login", null , map)
+		POST(webclient,"/login", null , map)
 		.onSuccess(response -> {
 			responsePromise.complete(response);
 		})
@@ -300,11 +301,18 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		}
 	}
 
-	protected Future<WebClientSession> createAuthedSession(String username, String password, Roles role)
+	protected Future<WebClientSession> createUserAndAuthedSession(String username, String password, Roles role)
 	{
 		WebClientSession currentSession = createSession();
 		return createUser(vertx, username, password, role)
 				.compose(userCreated -> { return authenticateSession(currentSession, username, password);})
+				.compose(authed -> {return Future.succeededFuture(currentSession);});
+	}
+	
+	protected Future<WebClientSession> createAuthedSession(String username, String password)
+	{
+		WebClientSession currentSession = createSession();
+		return authenticateSession(currentSession, username, password)
 				.compose(authed -> {return Future.succeededFuture(currentSession);});
 	}
 }

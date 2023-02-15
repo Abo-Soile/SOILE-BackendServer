@@ -34,7 +34,7 @@ public interface UserVerticleTest {
 			if(role != null)
 			{
 				updateDetails = true;
-				userData.put("userRole", role.toString());
+				userData.put("role", role.toString());
 			}
 			if(updateDetails)
 			{				

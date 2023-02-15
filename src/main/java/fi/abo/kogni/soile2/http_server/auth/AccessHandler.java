@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
-import fi.abo.kogni.soile2.http_server.routes.ElementRouter;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.auth.User;
@@ -37,31 +36,39 @@ public class AccessHandler{
 	 * @return A successful future if the user has the required permissions.
 	 */
 	public Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission, boolean adminAllowed) {
-		// TODO Auto-generated method stub
-		LOGGER.debug("Requesting Authorizations for " + user.attributes().encodePrettily() + user.principal().encodePrettily());
-		Promise<Void> accessPromise = Promise.<Void>promise();		
-		mongoAuth.getAuthorizations(user)
-		.onSuccess(Void -> {
-			LOGGER.debug("Authorizations added");			
-			instanceIDAccessHandler.authorize(user, id, adminAllowed, requiredPermission)
-			.onSuccess(acceptID -> {
-				LOGGER.debug("Instance IDs accepted");
-				roleHandler.authorize(user, requiredRole)
-				.onSuccess(acceptRole -> {
-					LOGGER.debug("Role checked");
-					// both role and permission checks are successfull.
-					accessPromise.complete();
-				})
-				.onFailure(err -> accessPromise.fail(err));
-			})
-			.onFailure(err -> accessPromise.fail(err));
-		})
-		.onFailure(err -> {
-			LOGGER.error(err);
-			err.printStackTrace(System.out);
-			accessPromise.fail(new HttpException(500,err.getMessage()));
-		});
-		return accessPromise.future();
+		return checkAccess(user, id, requiredRole, requiredPermission, adminAllowed, mongoAuth, instanceIDAccessHandler);
 	}
 
+	
+	protected Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission,
+			boolean adminAllowed, MongoAuthorization authProvider, SoileIDBasedAuthorizationHandler IDAccessHandler)
+	{
+		Promise<Void> accessPromise = Promise.<Void>promise();
+		authProvider.getAuthorizations(user)
+		.onSuccess(Void -> {
+			roleHandler.authorize(user, requiredRole)
+			.onSuccess(acceptRole -> {
+				if( id != null)
+				{
+					IDAccessHandler.authorize(user, id, adminAllowed, requiredPermission)
+					.onSuccess(acceptID -> {
+						// both role and permission checks are successfull.
+						accessPromise.complete();
+					})
+					.onFailure(err -> accessPromise.fail(err));
+				}
+				else
+				{
+					accessPromise.complete();
+				}
+			})
+			.onFailure(err -> accessPromise.fail(err));			
+		})
+		.onFailure(err -> {
+			accessPromise.fail(new HttpException(500,err.getMessage()));
+		});
+
+		return accessPromise.future();
+	}
+	
 }

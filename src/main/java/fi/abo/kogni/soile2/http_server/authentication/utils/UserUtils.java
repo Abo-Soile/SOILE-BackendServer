@@ -53,8 +53,7 @@ public class UserUtils {
 	 */
 	public static User buildUserForDBEntry(JsonObject userJson, String username)
 	{
-	    	User user = User.fromName(userJson.getString(SoileConfigLoader.getUserdbField("usernameField")));
-	    	LOGGER.error(userJson.encodePrettily());
+	    	User user = User.fromName(userJson.getString(SoileConfigLoader.getUserdbField("usernameField")));	    	
 	    	user.principal().put(SoileConfigLoader.getSessionProperty("validSessionCookies"), userJson.getValue(SoileConfigLoader.getUserdbField("storedSessions")));
 	    	return user;					
 	}

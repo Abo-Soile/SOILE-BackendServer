@@ -13,6 +13,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -115,7 +116,7 @@ public class WebObjectGeneratorTest extends SoileWebTest {
 		System.out.println("--------------------  Testing Task generation ----------------------");
 
 		Async setupAsync = context.async();
-		createAuthedSession("TestAdmin", "testPassword", Roles.Researcher)
+		createUserAndAuthedSession("TestAdmin", "testPassword", Roles.Researcher)
 		.onSuccess(currentSession -> {
 			WebObjectCreator.createExperiment(currentSession, "TestExperiment1")
 			.onSuccess(experimentObject -> {
@@ -152,7 +153,7 @@ public class WebObjectGeneratorTest extends SoileWebTest {
 	{		
 		System.out.println("--------------------  Testing Project Generation ----------------------");
 		Async projAsync = context.async();
-		createAuthedSession("TestUser", "testPassword", Roles.Researcher)
+		createUserAndAuthedSession("TestUser", "testPassword", Roles.Researcher)
 		.onSuccess(session -> {
 			Async plistAsync = context.async();
 			Async elistAsync = context.async();
@@ -163,7 +164,7 @@ public class WebObjectGeneratorTest extends SoileWebTest {
 			WebObjectCreator.createProject(session, "Testproject")
 			.onSuccess( projectData -> {
 				System.out.println("Project created");
-				createAuthedSession("AnotherUser", "testPassword", Roles.Researcher)
+				createUserAndAuthedSession("AnotherUser", "testPassword", Roles.Researcher)
 				.onSuccess(otherUserSession -> {
 					getElementList(otherUserSession, "experiment")
 					.onSuccess(expList -> {					
@@ -218,5 +219,4 @@ public class WebObjectGeneratorTest extends SoileWebTest {
 		})
 		.onFailure(err -> context.fail(err));
 	}
-
 }

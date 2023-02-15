@@ -49,7 +49,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/RegistrationInformation'
         description: The data for the user to be created (at least, username, password and email are required necessary).          
   /test/auth:
     get:
@@ -276,6 +276,10 @@ paths:
       responses:
         '200':
           description: "Successful update"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestrictedUserInfo'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -1751,6 +1755,31 @@ components:
           type: string
           example: MyUser
           description: Must not include any @ symbols
+        role:
+          type: string
+          example: Participant
+          description: The role of the user. not necessarily available
+    RegistrationInformation:
+      type: object
+      required:
+        - username
+        - password
+        - email
+      properties:
+        fullname:
+          type: string
+          example: Jon Doe
+        email:
+          type: string
+          example: 'me@domain.org'
+          description: must be a valid email address 
+        username:
+          type: string
+          example: MyUser
+          description: Must not include any @ symbol
+        password:
+          type: string
+          example: '****sss***'
           
     RestrictedUserInfo:
       allOf:
@@ -1764,7 +1793,7 @@ components:
               type: string
               example: 'me@domain.org'
               description: must be a valid email address
-            userRole:
+            role:
               type: string
               description: The user Role, can only be changed by an admin. If supplied, it is necessary to be an admin, or the access will fail even if no change happened.
     dbData:
@@ -2038,9 +2067,6 @@ components:
         tag:
           type: string
           description: A Tag that either is assciated with the given version, or should be associated with it. When submitted with an update, the corresponding version will be tagged with this tag.
-        private: 
-          type: boolean
-          description: Whether this element is private or generally accessible. If not set, can be accessed by anyone.
     ElementInstance:
       type: object
       required:
@@ -2077,7 +2103,12 @@ components:
             description: Has to have the form of a uuid
           name:
             type: string
-            
+    APIElement:
+      type: object
+      properties:
+        private: 
+          type: boolean
+          description: Whether this element is private or generally accessible. If not set, can be accessed by anyone.
     DBElement:
       type: object
       properties:
@@ -2126,6 +2157,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/BasicElementData'
         - $ref: '#/components/schemas/TaskProperties'
+        - $ref: '#/components/schemas/APIElement'
         - type: object
           properties:
             code:
@@ -2226,6 +2258,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/BasicElementData'
         - $ref: '#/components/schemas/ExperimentProperties'
+        - $ref: '#/components/schemas/APIElement'
       description: An experiment, either a general Experiment or an instance within a project.              
               
     ExperimentInstance:
@@ -2287,6 +2320,7 @@ components:
       allOf:
       - $ref: '#/components/schemas/BasicElementData'
       - $ref: '#/components/schemas/ProjectElements'
+      - $ref: '#/components/schemas/APIElement'
       
     ProjectInstance:
       type: object

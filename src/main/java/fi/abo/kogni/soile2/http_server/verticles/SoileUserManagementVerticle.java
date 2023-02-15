@@ -30,6 +30,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.web.handler.HttpException;
 /**
  * This class provides functionality for the user management of a soile project. it processes messages addressed to 
  * the {UserManagement_prefix} and a command suffix.
@@ -100,6 +101,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("setUserInfo"), this::setUserInfo));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getUserInfo"), this::getUserInfo));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getAccessRequest"), this::getUserAccessInfo));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("setPassword"), this::setPassword));
 	}
 		
 
@@ -434,7 +436,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 * 		   permissionsProperties
 	 * 			{
 	 * 			 elementType: "task"/"experiment"/"project"/"instance"
-	 * 			 permissionsSettings:
+	 * 			 permissionSettings:
 	 * 				[
 	 * 					{
 	 * 						type: "READ"/"READ_WRITE"/"FULL"/"EXECUTE"
@@ -446,7 +448,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 * @param msg
 	 */
 	void permissionOrRoleChange(Message<JsonObject> msg)
-	{
+	{		
 		//make sure we actually get the right thing
 		if (msg.body() instanceof JsonObject)
 		{
@@ -456,7 +458,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			String changeType = command.getString("command");			
 			String role = command.getString("role");
 			JsonObject permissions = command.getJsonObject("permissionsProperties");
-			LOGGER.debug(permissions);
+			LOGGER.info(command.encodePrettily());
 			LOGGER.debug(role);
 			
 			if(permissions != null && role != null) 
@@ -473,22 +475,26 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 					if(res.succeeded())
 					{
 						msg.reply(SoileCommUtils.successObject());
+						
 					}
 					else
 					{
 						LOGGER.error("Could not update permissions for request:\n" + command.encodePrettily() );
 						handleError(res.cause(), msg);						
-					}					
+					}						
 				});
+				return;
 			}
 			if(permissions != null)
 			{
 				try
 				{
-					JsonArray alteredPermissions = convertPermissionsArray(permissions.getJsonArray("permissionsSettings"));					
+					
+					JsonArray alteredPermissions = convertPermissionsArray(permissions.getJsonArray("permissionSettings"));					
 					userManager.changePermissions(userName, getOptionForType(permissions.getString("elementType")), alteredPermissions, getChange(changeType), res -> {
 						if(res.succeeded())
 						{
+							LOGGER.info("Replying to request");
 							msg.reply(SoileCommUtils.successObject());
 						}
 						else
@@ -497,13 +503,15 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 							handleError(res.cause(), msg);	
 						}	
 					});
+					return;
 				}
-				catch(InvalidPermissionTypeException e)
+				catch(HttpException e)
 				{
 					handleError(e, msg);					
 					return;
 				}
 			}
+			handleError(new HttpException(400, "Need either Permissions or Roles to set"),msg);
 
 		}
 		else
@@ -526,7 +534,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			// translate back into PermissionSettings
 			JsonObject response = new JsonObject();			
 			response.put("username",username)
-					.put("role", res.getString(SoileConfigLoader.getUserdbField("userRolesField")))
+					.put("role", res.getJsonArray(SoileConfigLoader.getUserdbField("userRolesField")).getString(0))
 					.put("permissions", new JsonObject()
 										.put("tasks", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("taskPermissionsField"))))
 										.put("projects", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("projectPermissionsField"))))
@@ -589,6 +597,22 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		String username = (String) command.remove("username");
 		userManager.setUserInfo(username, command)
 		.onSuccess(res -> {
+			msg.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, res));
+		})
+		.onFailure(err -> handleError(err, msg));						    							
+	}
+
+	/**
+	 * Set the password for the user given in the message to the password given in the message 
+	 * @param msg
+	 */
+	void setPassword(Message<JsonObject> msg)
+	{
+		JsonObject command = msg.body();			
+		String username = (String) command.remove("username");
+		String password = (String) command.remove("password");
+		userManager.setPassword(username, password)
+		.onSuccess(res -> {
 			msg.reply(SoileCommUtils.successObject());
 		})
 		.onFailure(err -> handleError(err, msg));						    							
@@ -613,7 +637,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			JsonObject response = new JsonObject();
 			response.put("username", res.getString(SoileConfigLoader.getUserdbField("usernameField")))
 					.put("fullname", res.getString(SoileConfigLoader.getUserdbField("userFullNameField")))
-					.put("role", res.getString(SoileConfigLoader.getUserdbField("userRolesField")))
+					.put("role", res.getJsonArray(SoileConfigLoader.getUserdbField("userRolesField")).getString(0))
 					.put("email", res.getString(SoileConfigLoader.getUserdbField("userEmailField")));
 			msg.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, response));
 		})
@@ -660,7 +684,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			request.fail(HttpURLConnection.HTTP_CONFLICT, "Email already in use");
 			return;
 		}
-		if(error instanceof InvalidPermissionTypeException || error instanceof InvalidRoleException || error instanceof InvalidEmailAddress)
+		if(error instanceof InvalidPermissionTypeException || error instanceof InvalidRoleException || error instanceof InvalidEmailAddress || error instanceof HttpException)
 		{
 			request.fail(HttpURLConnection.HTTP_BAD_REQUEST, message);
 			return;
@@ -676,21 +700,19 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 * @param change - The string indicating the type of change.
 	 * @return the {@link PermissionChange} Object.
 	 */
-	private PermissionChange getChange(String change)
+	public static PermissionChange getChange(String change) throws HttpException
 	{
-		if(change.equals("set"))
+		switch(change)
 		{
+		case "set": 
 			return PermissionChange.Replace;
-		}
-		if(change.equals("add"))
-		{
+		case "add": 
 			return PermissionChange.Add;
-		}
-		if(change.equals("remove"))
-		{
+		case "remove":
 			return PermissionChange.Remove;
+		default: 
+			throw new HttpException(400, "Invalid Permission change type");
 		}
-		return null;
 	}
 
 	/**
@@ -718,9 +740,9 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 * @return A list of concatenated strings.
 	 * @throws InvalidPermissionTypeException if the type is not one of the types indicated above.
 	 */
-	private JsonArray convertPermissionsArray(JsonArray sourceArray) throws InvalidPermissionTypeException
+	private JsonArray convertPermissionsArray(JsonArray sourceArray) throws HttpException
 	{
-		LOGGER.debug(sourceArray);
+		LOGGER.info(sourceArray);
 		JsonArray result = new JsonArray();
 		for(int i = 0; i < sourceArray.size(); ++i)
 		{
@@ -732,7 +754,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			}
 			catch(IllegalArgumentException | NullPointerException e)
 			{
-				throw new InvalidPermissionTypeException(permissionType + " is not a valid type for permissions");
+				throw new HttpException(400, permissionType + " is not a valid type for permissions");
 			}
 			result.addAll(SoilePermissionProvider.buildPermissionStringFromAPIPermission(currentPermission));
 		}
