@@ -10,13 +10,10 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
-import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
-import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
 import fi.abo.kogni.soile2.http_server.requestHandling.NonStaticHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
@@ -58,13 +55,12 @@ public class ParticipationRouter extends SoileRouter{
 
 
 	public ParticipationRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, ProjectInstanceHandler projHandler, IDSpecificFileProvider fileProvider) {
+		super(auth,client);
 		eb = vertx.eventBus();
-		this.vertx = vertx;
-		
-		authorizationRertiever = auth;
+		this.vertx = vertx;			
 		instanceHandler = projHandler;
 		this.partHandler = partHandler;		
-		accessHandler = new AccessHandler(auth.getAuthorizationForOption(instanceType), new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client), new SoileRoleBasedAuthorizationHandler());		 	
+		accessHandler = new AccessHandler(getAuthForType(instanceType), instanceIDAccessHandler, roleHandler);		 	
 		dataLakeManager = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
 		libraryHandler = new NonStaticHandler(FileSystemAccess.RELATIVE, "data/libs/", "/lib/");		
 		this.resourceHandler = fileProvider;

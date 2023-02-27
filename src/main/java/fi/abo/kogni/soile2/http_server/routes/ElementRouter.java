@@ -43,13 +43,14 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	private static final Logger LOGGER = LogManager.getLogger(ElementRouter.class);
 
 	public ElementRouter(ElementManager<T> manager, SoileAuthorization auth, EventBus eb, MongoClient client)
-	{				
+	{		
+		super(auth,client);
 		authorizationRertiever = auth;
 		T tempElement = manager.getElementSupplier().get();		
 		elementManager = manager;
-		accessHandler = new AccessHandler(auth.getAuthorizationForOption(tempElement.getElementType()),
-										  new SoileIDBasedAuthorizationHandler(tempElement.getTargetCollection(), client),
-										  new SoileRoleBasedAuthorizationHandler());
+		accessHandler = new AccessHandler(getAuthForType(tempElement.getElementType()),
+										  getHandlerForType(tempElement.getElementType()),
+										  roleHandler);
 		this.eb = eb;
 	}
 
@@ -214,7 +215,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 				JsonObject permissionChangeRequest = new JsonObject()
 						.put("username", context.user().principal().getString("username"))
 						.put("command", "add")
-						.put("permissionsProperties", new JsonObject().put("elementType", getTypeID(element.getTypeID()))
+						.put("permissionsProperties", new JsonObject().put("elementType", element.getElementType().toString())
 																	  .put("permissionSettings",new JsonArray().add(new JsonObject().put("target", element.getUUID())
 																			  														.put("type", PermissionType.FULL.toString()))
 																		  )
@@ -239,7 +240,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	}
 
-	private String getTypeID(String typeID)
+	/*private String getTypeID(String typeID)
 	{
 		switch(typeID)
 		{
@@ -248,5 +249,5 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		case "T": return SoileConfigLoader.TASK;
 		default: return SoileConfigLoader.INSTANCE;			
 		}
-	}
+	}*/
 }

@@ -1,11 +1,10 @@
 package fi.abo.kogni.soile2.http_server.verticles;
 
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
@@ -53,34 +52,39 @@ public class PermissionVerticle extends AbstractVerticle {
 	
 	private void checkPermissions(Message<JsonObject> permissionMessage)
 	{
-		JsonObject request = permissionMessage.body();		
-		String targetCollection = getCollectionName(request.getString("elementType"));
-		JsonArray permissions = request.getJsonArray("permissionSettings");
-		JsonArray targets = new JsonArray();
-		for(int i = 0; i < permissions.size(); ++i)
-		{
-			targets.add(permissions.getJsonObject(i).getString("target"));			
+		try {
+			JsonObject request = permissionMessage.body();		
+			String targetCollection = SoileConfigLoader.getDataBaseforElement(TargetElementType.valueOf(request.getString("elementType")));
+			JsonArray permissions = request.getJsonArray("permissionSettings");
+			JsonArray targets = new JsonArray();
+			for(int i = 0; i < permissions.size(); ++i)
+			{
+				targets.add(permissions.getJsonObject(i).getString("target"));			
+			}
+			client.findWithOptions(targetCollection, new JsonObject().put("_id", new JsonObject().put("$in", targets)), new FindOptions().setFields(new JsonObject().put("_id", 1)))
+			.onSuccess(res -> {
+				for(int i = 0; i < res.size(); ++i)
+				{
+					targets.remove(res.get(i).getString("_id"));
+				}
+				if(targets.size() != 0)
+				{
+					// two options: 1. targets had non unique entries, which is not allowed (then targets.
+					// 				2. one or more items does not exist.
+					// TODO: create a more helpful message.
+					permissionMessage.fail(400, "Invalid or duplicate permissions in requested changes");
+				}
+				else
+				{
+					permissionMessage.reply(SoileCommUtils.successObject());
+				}
+			})
+			.onFailure(err -> permissionMessage.fail(500, err.getMessage()));
 		}
-		client.findWithOptions(targetCollection, new JsonObject().put("_id", new JsonObject().put("$in", targets)), new FindOptions().setFields(new JsonObject().put("_id", 1)))
-		.onSuccess(res -> {
-			for(int i = 0; i < res.size(); ++i)
-			{
-				targets.remove(res.get(i).getString("_id"));
-			}
-			if(targets.size() != 0)
-			{
-				// two options: 1. targets had non unique entries, which is not allowed (then targets.
-				// 				2. one or more items does not exist.
-				// TODO: create a more helpful message.
-				permissionMessage.fail(400, "Invalid or duplicate permissions in requested changes");
-			}
-			else
-			{
-				permissionMessage.reply(SoileCommUtils.successObject());
-			}
-		})
-		.onFailure(err -> permissionMessage.fail(500, err.getMessage()));
-		
+		catch(Exception err)
+		{
+			permissionMessage.fail(400, err.getMessage());
+		}
 	}
 	
 	

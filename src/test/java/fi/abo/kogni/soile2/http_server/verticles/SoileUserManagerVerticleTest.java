@@ -241,7 +241,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 			Async PermissionTest = context.async();
 			JsonObject addPermissionChange = new JsonObject().put("username", "NewUser")
 					  										 .put("command", "add")
-														     .put("permissionsProperties", new JsonObject().put("elementType", "task")
+														     .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
 																  										.put("permissionSettings", new JsonArray().add(aPermission).add(bPermission).add(a2Permission)));					
 			eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), addPermissionChange)
 			.onSuccess(add -> {
@@ -254,7 +254,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 					context.assertTrue(taskPermissions.contains(bPermissionTest));
 					JsonObject removePermissionChange = new JsonObject().put("username", "NewUser")
 																		.put("command", "remove")
-																	    .put("permissionsProperties", new JsonObject().put("elementType", "task")
+																	    .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
 																			  										.put("permissionSettings", new JsonArray().add(aPermission)));					
 					eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), removePermissionChange)
 					.onSuccess(removed -> {
@@ -266,7 +266,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 							context.assertTrue(taskPermissions2.contains(a2PermissionTest));
 							JsonObject setPermissionChange = new JsonObject().put("username", "NewUser")
 									.put("command", "set")
-								    .put("permissionsProperties", new JsonObject().put("elementType", "task")
+								    .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
 										  										.put("permissionSettings", new JsonArray().add(aPermission)));
 							eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), setPermissionChange)
 							.onSuccess(set -> {
@@ -291,9 +291,10 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				})
 				.onFailure(err ->context.fail(err));
 			})
-			.onFailure(success -> {				
+			.onFailure(err -> {	
+				context.fail(err);
 			});
-			JsonObject failObject = new JsonObject().put("username", "NewUser2").put("role", Roles.Researcher).put("permissionsProperties", new JsonObject().put("elementType", "task")
+			JsonObject failObject = new JsonObject().put("username", "NewUser2").put("role", Roles.Researcher).put("permissionsProperties", new JsonObject().put("elementType", "TASK")
 						.put("permissionSettings", new JsonArray().add(aPermission)));
 			Async failRequestForDuplicate = context.async();  
 			// Fail dual request
@@ -588,21 +589,21 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				.put("target", "inst2");
 		JsonObject taskPermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "task")
+		     .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
 				  										.put("permissionSettings", new JsonArray().add(taskPermission)));					
 
 		JsonObject projectPermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "project")
+		     .put("permissionsProperties", new JsonObject().put("elementType", "PROJECT")
 				  										.put("permissionSettings", new JsonArray().add(projPermission)));
 		
 		JsonObject experimentPermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "experiment")
+		     .put("permissionsProperties", new JsonObject().put("elementType", "EXPERIMENT")
 				  										.put("permissionSettings", new JsonArray().add(expPermission)));
 		JsonObject instancePermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "instance")
+		     .put("permissionsProperties", new JsonObject().put("elementType", "INSTANCE")
 				  										.put("permissionSettings", new JsonArray().add(instPermission).add(inst2Permission)));
 		
 		//create a few users

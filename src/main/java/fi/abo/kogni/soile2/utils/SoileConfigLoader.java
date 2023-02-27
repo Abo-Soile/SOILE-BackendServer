@@ -2,6 +2,7 @@ package fi.abo.kogni.soile2.utils;
 
 import java.util.Set;
 
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
@@ -37,10 +38,10 @@ public class SoileConfigLoader {
 	public static final String Participant = "Participant";
 	public static final String Collaborator = "Collaborator";	
 	
-	public static final String EXPERIMENT = "experiment";
+/*	public static final String EXPERIMENT = "experiment";
 	public static final String PROJECT = "project";
 	public static final String TASK = "task";
-	public static final String INSTANCE = "instance";	
+	public static final String INSTANCE = "instance";*/	
 	
 	private static JsonObject dbCfg;
 	private static JsonObject userdbFields;
@@ -405,5 +406,20 @@ public class SoileConfigLoader {
 		res.setRoleField(getUserdbField("userRolesField"));
 		res.setUsernameField(getUserdbField("usernameField"));				
 		return res;
+	}
+	
+	/**
+	 * Get the database associated with a given element type
+	 */
+	public static String getDataBaseforElement(TargetElementType type)
+	{
+		switch(type)
+		{
+		case TASK: return dbCfg.getString("taskCollection");
+		case EXPERIMENT: return dbCfg.getString("experimentCollection");
+		case PROJECT: return dbCfg.getString("projectCollection");
+		case INSTANCE: return dbCfg.getString("projectInstanceCollection");
+		default: return null;
+		}
 	}
 }

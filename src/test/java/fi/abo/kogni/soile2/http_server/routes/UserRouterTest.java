@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
@@ -81,12 +79,12 @@ public void permissionChangeTest(TestContext context)
 	JsonArray permissionSettings = new JsonArray();
 	JsonObject permissionChange = new JsonObject().put("username","NonAdmin")
 			.put("command", "add")
-			.put("permissionsProperties", new JsonObject().put("elementType", "experiment")
+			.put("permissionsProperties", new JsonObject().put("elementType", "EXPERIMENT")
 					.put("permissionSettings", permissionSettings));
 
 	JsonObject permissionChangeOther = new JsonObject().put("username","OtherUser")
 			.put("command", "add")
-			.put("permissionsProperties", new JsonObject().put("elementType", "experiment")
+			.put("permissionsProperties", new JsonObject().put("elementType", "EXPERIMENT")
 					.put("permissionSettings", permissionSettings));
 	Async testAsync = context.async();
 	createUser(vertx, "OtherUser", "otherpw")

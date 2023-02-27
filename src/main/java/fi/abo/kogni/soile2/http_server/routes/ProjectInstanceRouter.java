@@ -66,19 +66,12 @@ public class ProjectInstanceRouter extends SoileRouter {
 
 
 	public ProjectInstanceRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, ProjectInstanceHandler projHandler) {
+		super(auth,client);
 		eb = vertx.eventBus();
-		this.vertx = vertx;
-		
-		authorizationRertiever = auth;
+		this.vertx = vertx;		
 		instanceHandler = projHandler;
-		this.partHandler = partHandler;
-		MongoAuthorization mongoAuth = auth.getAuthorizationForOption(instanceType);
-		SoileRoleBasedAuthorizationHandler roleHandler = new SoileRoleBasedAuthorizationHandler();
-		
-		SoileIDBasedAuthorizationHandler instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client);
-		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Project().getTargetCollection(), client);
+		this.partHandler = partHandler;						
 		dataLakeManager = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
-		instanceAccessHandler = new AccessHandler(mongoAuth, instanceIDAccessHandler, roleHandler);
 	}
 
 	public void startProject(RoutingContext context)
@@ -96,7 +89,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 				.onSuccess(instance -> {
 					JsonObject permissionChange = new JsonObject().put("command", "addCommand")
 							.put("username", context.user().principal().getString("username"))
-							.put("permissions", new JsonObject().put("elementType", SoileConfigLoader.INSTANCE)
+							.put("permissions", new JsonObject().put("elementType", TargetElementType.INSTANCE)
 									.put("permissions", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
 											.put("target", instance.getID()))));
 					eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG,"permissionOrRoleChange"), permissionChange)

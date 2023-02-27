@@ -43,33 +43,14 @@ import io.vertx.ext.web.validation.ValidationHandler;
 public class UserRouter extends SoileRouter {
 
 	EventBus eb;
-	SoileAuthorization authorizationRertiever;
-	SoileRoleBasedAuthorizationHandler roleHandler;
-	MongoAuthorization projectAuth;
-	MongoAuthorization experimentAuth;
-	MongoAuthorization taskAuth;
-	MongoAuthorization instanceAuth;
-	SoileIDBasedAuthorizationHandler taskIDAccessHandler;
-	SoileIDBasedAuthorizationHandler projectIDAccessHandler;
-	SoileIDBasedAuthorizationHandler experimentIDAccessHandler;
-	SoileIDBasedAuthorizationHandler instanceIDAccessHandler;
+
 
 	private static Logger LOGGER = LogManager.getLogger(UserRouter.class.getName()); 
 
 
 	public UserRouter(SoileAuthorization auth, Vertx vertx, MongoClient client)
 	{
-		authorizationRertiever = auth;
-		projectAuth = auth.getAuthorizationForOption(TargetElementType.PROJECT);
-		experimentAuth = auth.getAuthorizationForOption(TargetElementType.EXPERIMENT);
-		taskAuth = auth.getAuthorizationForOption(TargetElementType.TASK);
-		instanceAuth = auth.getAuthorizationForOption(TargetElementType.INSTANCE);		
-		taskIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Task().getTargetCollection(), client);
-		experimentIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Experiment().getTargetCollection(), client);
-		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Project().getTargetCollection(), client);
-		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client);
-
-		roleHandler = new SoileRoleBasedAuthorizationHandler();
+		super(auth,client);
 		this.eb = vertx.eventBus();
 	}
 
@@ -248,7 +229,12 @@ public class UserRouter extends SoileRouter {
 			.onSuccess(allowed -> {			
 				LOGGER.info("User has all required permissions");
 				handleUserManagerCommand(context, "permissionOrRoleChange", userData, MessageResponseHandler.createDefaultHandler(200));			
-			}).onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+			/*.recover(err -> {
+				LOGGER.error("Request errored, trying to recover with failed future");
+				return Future.failedFuture(err);
+			});*/
 		})
 		.onFailure(err -> handleError(err, context));
 	}
@@ -424,26 +410,5 @@ public class UserRouter extends SoileRouter {
 		return accessPromise.future();
 	}
 	
-	SoileIDBasedAuthorizationHandler getHandlerForType(String type)
-	{		
-		switch(type)
-		{
-			case SoileConfigLoader.PROJECT: return projectIDAccessHandler;
-			case SoileConfigLoader.EXPERIMENT: return experimentIDAccessHandler;
-			case SoileConfigLoader.TASK: return taskIDAccessHandler;
-			case SoileConfigLoader.INSTANCE: return instanceIDAccessHandler;
-			default: return taskIDAccessHandler;
-		}
-	}
-	MongoAuthorization getAuthForType(String type)
-	{		
-		switch(type)
-		{
-			case SoileConfigLoader.PROJECT: return projectAuth;
-			case SoileConfigLoader.EXPERIMENT: return experimentAuth;
-			case SoileConfigLoader.TASK: return taskAuth;
-			case SoileConfigLoader.INSTANCE: return instanceAuth;
-			default: return taskAuth;
-		}
-	}
+
 }
