@@ -66,17 +66,13 @@ public class TimeStampedMap<K,T> {
 		Promise<T> itemPromise = Promise.<T>promise();
 		if(expData == null)
 		{
-			retriever.getElement(itemID).onComplete(result -> {
-				if(result.succeeded())
-				{
-					this.putData(itemID, result.result());
-					itemPromise.complete(result.result());
-				}
-				else
-				{
-					itemPromise.fail(result.cause());
-				}
-			});			
+			retriever.getElement(itemID).onSuccess(result -> {
+					this.putData(itemID, result);
+					itemPromise.complete(result);
+			})
+			.onFailure(err -> {
+				itemPromise.fail(err);
+			});
 		}
 		else
 		{

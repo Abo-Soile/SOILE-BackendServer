@@ -100,7 +100,9 @@ public abstract class ProjectInstance implements AccessElement{
 		ProjectInstance p = factory.createInstance();
 		LOGGER.debug(p);
 		LOGGER.debug(factory);
-		p.load(instantiationInfo).onSuccess(dataJson -> {
+		LOGGER.debug(instantiationInfo.encodePrettily());
+		p.load(instantiationInfo)
+		.onSuccess(dataJson -> {
 			LOGGER.debug("Trying to set up project from data: \n " + dataJson.encodePrettily());
 			p.setupProject(dataJson);
 			projPromise.complete(p);
@@ -163,7 +165,11 @@ public abstract class ProjectInstance implements AccessElement{
 	{
 		return toDBJson().encodePrettily() + elements.toString();
 	}
-	
+
+	public String getShortCut()
+	{
+		return shortcut;
+	}
 	/**
 	 * Parse an experiment from the given experiment Json. 
 	 * @param experiment
@@ -215,9 +221,12 @@ public abstract class ProjectInstance implements AccessElement{
 					.put("_id",instanceID)
 					.put("sourceUUID",sourceUUID)
 					.put("version", version)
-					.put("name", name)
-					.put("shortcut", shortcut)
-					.put("isActive", isActive);				
+					.put("name", name)					
+					.put("isActive", isActive);
+			if(shortcut != null)
+			{
+				dbData.put("shortcut", shortcut);
+			}
 		return dbData;
 	}			
 	

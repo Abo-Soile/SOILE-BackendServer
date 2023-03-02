@@ -4,18 +4,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
-import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
-import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.eventbus.ReplyException;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
@@ -65,7 +63,7 @@ public class SoileRouter {
 	void handleError(Throwable err, RoutingContext context)
 	{
 		LOGGER.info(err);
-		err.printStackTrace(System.out);
+		err.printStackTrace(System.out);;
 		if(err instanceof ElementNameExistException)
 		{	
 			sendError(context, 409, err.getMessage());			
@@ -88,7 +86,12 @@ public class SoileRouter {
 			sendError(context, rerr.failureCode(), rerr.getMessage());			
 			return;
 		}
-		
+		if(err instanceof ReplyException)
+		{	
+			ReplyException rerr = (ReplyException)err;
+			sendError(context, rerr.failureCode(), rerr.getMessage());			
+			return;
+		}
 		sendError(context, 400, err.getMessage());
 	}
 	

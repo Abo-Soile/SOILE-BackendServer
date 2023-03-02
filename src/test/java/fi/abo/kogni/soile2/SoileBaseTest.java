@@ -2,16 +2,20 @@ package fi.abo.kogni.soile2;
 
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.security.SecureRandom;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
+import fi.abo.kogni.soile2.projecthandling.projectElements.ProjectTest;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
@@ -116,6 +120,13 @@ public abstract class SoileBaseTest {
 		{
 			context.fail(e);
 		}
+	}
+	
+	protected boolean areFilesEqual(File f1, File f2) throws IOException
+	{		
+		InputStream inputStream1 = new FileInputStream(f1);
+		InputStream inputStream2 = new FileInputStream(f2);
+		return IOUtils.contentEquals(inputStream1, inputStream2);				
 	}
 }
 

@@ -39,13 +39,11 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	ElementManager<T> elementManager;
 	EventBus eb;
 	AccessHandler accessHandler;
-	SoileAuthorization authorizationRertiever;
 	private static final Logger LOGGER = LogManager.getLogger(ElementRouter.class);
 
 	public ElementRouter(ElementManager<T> manager, SoileAuthorization auth, EventBus eb, MongoClient client)
 	{		
 		super(auth,client);
-		authorizationRertiever = auth;
 		T tempElement = manager.getElementSupplier().get();		
 		elementManager = manager;
 		accessHandler = new AccessHandler(getAuthForType(tempElement.getElementType()),

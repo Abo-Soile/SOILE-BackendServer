@@ -401,7 +401,7 @@ paths:
                   properties:
                     elementType: 
                       type: string
-                      description: "whether the permission is a 'task', 'project', 'experiment' or 'instance'"
+                      description: "whether the permission is a 'TASK', 'PROJECT', 'EXPERIMENT' or 'INSTANCE'"
                       example: "instance"
                     permissionSettings:
                       $ref : '#/components/schemas/PermissionsSettings'
@@ -1346,6 +1346,7 @@ paths:
         - tokenAuth: []
       tags:
         - projectexecution
+        - participation
       summary: Get the next unfinished task for the authorized user. 
       operationId: runTask
       description: >-
@@ -1381,6 +1382,7 @@ paths:
         - tokenAuth: []
       tags:
         - projectexecution
+        - participation
       summary: Get a library for a project
       operationId: getLib
       description: >-
@@ -1411,14 +1413,14 @@ paths:
 
           
   /projectexec/{id}/signUp:  
-    get:
+    post:
       security:
         - {} # Security on this endpoint is optional. Calling this in an authenticated manner will add a user to the participant. Calling it in a non authenticated manner will create a token that can be used for future authentication.
         - cookieAuth: []
         - JWTAuth: []
-        - tokenAuth: []
       tags:
         - projectexecution
+        - participation
       summary: signUp for a project with a one-time signUp Code. 
       operationId: signUpForProject
       description: >-
@@ -1434,17 +1436,18 @@ paths:
           in: query
           schema:
             type: string
-          required: true
+          required: false
       responses:
         '200':
           description: The authenticated user is now signed up.
           content:
             application/json:
               schema:
-                type: string
-                example: abcdef-gehikl23541-4526-234
-                description: The token to use. If this was an authenticated user, no token is returned, but a participant is associated to the user
-        
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: a token that needs to be used for further authentication against participation end points to   associate results and data with a specific user.
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -1453,7 +1456,55 @@ paths:
           description: Code invalid
         '406':
           description: User is finished.
-          
+  /projectexec/{id}/createtokens:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - projectexecution
+      summary: create accesstokens for the project
+      operationId: createTokens
+      description: >-
+                   Create access tokens that can be used to invite people to the project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project instance
+          schema:
+            type : string
+        - name: count
+          in: query
+          schema:
+            type: integer
+        - name: unique
+          in: query
+          description: If true, a general master access token is generated, which can be used multiple times and cannot be traced. Signing up with this token returns a temporary token 
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: A Set of access tokens generated for the given project. 
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      type: string
+                      description: Access tokens usable with the project.
+                  - type: string
+                    description: A Master access token
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: Not authorized to create tokens
+        '406':
+          description: User is finished.
+  
   /projectexec/{id}/uploaddata:  
     post:
       security:
@@ -1907,6 +1958,9 @@ components:
         token:
           type: string
           description: optional token. if a participant has a token, this token can be used to authenticate to run a specific project with a given 
+        accessToken:
+          type: string
+          description: The access token that was used to create this participant
         project:
           type: string
           description: The project this participant is in.

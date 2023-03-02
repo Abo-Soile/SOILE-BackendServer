@@ -239,7 +239,7 @@ public class ElementManager<T extends ElementBase> {
 	public Future<String> updateElement(APIElement<T> newData)
 	{
 		Promise<String> elementPromise = Promise.promise();
-		GitFile currentVersion = new GitFile("Object.json", getGitIDForUUID(newData.getUUID()), newData.getVersion());
+		GitFile currentVersion = new GitFile("Object.json", getGitIDForUUID(newData.getUUID()), newData.getVersion());		
 		// This will return an updated Element given the newData object, so we don't need to update the internals of the object
 		// but can directly go on to write and save the data. 
 		newData.getDBElement(client, factory).onSuccess(element -> 

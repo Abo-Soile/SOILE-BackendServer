@@ -316,7 +316,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 				userManager.deleteUser(userName)				
 				.onSuccess(res -> {
 					LOGGER.debug("Removed user " + command.getString("username"));
-
 					handleError(err, msg);	
 				})
 				.onFailure(crit -> {
@@ -460,9 +459,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 				String changeType = command.getString("command");			
 				String role = command.getString("role");
 				JsonObject permissions = command.getJsonObject("permissionsProperties");
-				LOGGER.info(command.encodePrettily());
-				LOGGER.debug(role);
-
 				if(permissions != null && role != null) 
 				{
 					msg.fail(HttpURLConnection.HTTP_BAD_REQUEST, "Cannot change permission and role settings at the same time");
@@ -493,7 +489,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 					{
 
 						JsonArray alteredPermissions = convertPermissionsArray(permissions.getJsonArray("permissionSettings"));
-						LOGGER.info("Altered Permissions extracted");
 						userManager.changePermissions(userName, getOptionForType(permissions.getString("elementType")), alteredPermissions, getChange(changeType), res -> {
 							if(res.succeeded())
 							{
@@ -660,6 +655,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 */
 	private void handleError(Throwable error, Message request)
 	{
+		error.printStackTrace(System.out);
 		handleError(error, request, null);
 	}
 
@@ -691,11 +687,18 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			request.fail(HttpURLConnection.HTTP_CONFLICT, "Email already in use");
 			return;
 		}
-		if(error instanceof InvalidPermissionTypeException || error instanceof InvalidRoleException || error instanceof InvalidEmailAddress || error instanceof HttpException)
+		if(error instanceof InvalidPermissionTypeException || error instanceof InvalidRoleException || error instanceof InvalidEmailAddress)
 		{
 			request.fail(HttpURLConnection.HTTP_BAD_REQUEST, message);
 			return;
 		}
+		if(error instanceof HttpException)
+		{
+			HttpException err = (HttpException)error;
+			request.fail(err.getStatusCode(), err.getPayload());
+			return;
+		}
+		
 		LOGGER.error("Got an internal Server error");
 		LOGGER.error(error);
 		request.fail(500, message);
@@ -756,7 +759,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 */
 	private JsonArray convertPermissionsArray(JsonArray sourceArray) throws HttpException
 	{
-		LOGGER.info(sourceArray);
+		
 		JsonArray result = new JsonArray();
 		for(int i = 0; i < sourceArray.size(); ++i)
 		{

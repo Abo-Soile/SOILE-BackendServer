@@ -60,12 +60,12 @@ public class SoileAuthenticationBuilder {
 	 * @param vertx
 	 * @return a Auth Provider using Cookies for auth
 	 */
-	public synchronized SimpleAuthenticationHandler getTokenAuthProvider(ParticipantHandler partHandler)
+	public synchronized SimpleAuthenticationHandler getTokenAuthProvider(ParticipantHandler partHandler, MongoClient client)
 	{
 		if(tokenHandler == null)
 		{		
 			tokenHandler = SimpleAuthenticationHandler.create();
-			TokenAuthProvider tokenAuth= new TokenAuthProvider(partHandler);
+			TokenAuthProvider tokenAuth= new TokenAuthProvider(partHandler, client);
 			tokenHandler.authenticate(tokenAuth::authenticate);		
 		}
 		return tokenHandler;

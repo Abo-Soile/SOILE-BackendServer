@@ -29,10 +29,10 @@ public class CompiledCodeRetriever implements DataRetriever<GitFile, String> {
 	@Override
 	public Future<String> getElement(GitFile key) {
 		Promise<String> codePromise = Promise.promise();
-		eb.request("soile.git.getGitFileContentsAsJson", key.toJson())
+		eb.request("soile.git.getGitFileContents", key.toJson())
 		.onSuccess(reply -> {
-			JsonObject objectJson = (JsonObject) reply.body();
-			compileCode(objectJson.getString("code"))
+			String code = (String) reply.body();
+			compileCode(code)
 			.onSuccess(compiledCode-> {
 				codePromise.complete(compiledCode);
 			})

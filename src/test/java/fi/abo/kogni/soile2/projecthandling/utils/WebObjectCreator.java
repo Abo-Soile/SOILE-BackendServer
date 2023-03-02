@@ -266,6 +266,7 @@ public class WebObjectCreator {
 			.onSuccess(projectJson -> {							
 				String id = projectJson.getString("UUID");
 				String version = projectJson.getString("version");
+				projectJson.put("start", projectDef.getString("start"));
 				JsonArray projectTasks = projectJson.getJsonArray("tasks");
 				JsonArray projectFilters = projectJson.getJsonArray("filters");
 				JsonArray projectExperiments = projectJson.getJsonArray("experiments");
@@ -277,10 +278,15 @@ public class WebObjectCreator {
 					taskFutures.add(
 							createOrRetrieveTask(webClient,current.getString("name"))
 							.onSuccess(task -> {
-								task.put("instanceID", current.getString("instanceID"));
-								task.put("next", current.getString("next"));
-								task.put("outputs", current.getJsonArray("outputs", new JsonArray()));
-								tasks.put(current.getString("instanceID"), task);
+								JsonObject newTask = new JsonObject();
+								newTask.put("instanceID", current.getString("instanceID"));
+								newTask.put("next", current.getString("next"));
+								newTask.put("outputs", current.getJsonArray("outputs", new JsonArray()));
+								newTask.put("UUID", task.getString("UUID"));
+								newTask.put("name", task.getString("name"));
+								newTask.put("version", task.getString("version"));
+								newTask.put("codeType", task.getJsonObject("codeType"));
+								tasks.put(current.getString("instanceID"), newTask);
 							})
 					);
 				}
@@ -320,6 +326,7 @@ public class WebObjectCreator {
 						expList.addAll(experiments.values());
 						JsonArray expArray = new JsonArray(expList);
 						projectExperiments.addAll(expArray);
+						System.out.println("Supplied json for update: \n" + projectJson.encodePrettily());
 						SoileWebTest.POST(webClient, "/project/" + id + "/" + version , null, projectJson)					
 						.onSuccess(response -> {						
 							SoileWebTest.GET(webClient, "/project/" + id + "/" + response.bodyAsJsonObject().getString("version") , null, null)

@@ -149,7 +149,7 @@ public class APIProject extends APIElementBase<Project>{
 		JsonObject gitData = new JsonObject();
 		for(int i = 0; i < gitFields.length ; ++i)
 		{
-			gitData.put(gitFields[i], data.getValue(gitFields[i], gitDefaults[i]));	
+			gitData.put(gitFields[i], data.getValue(gitFields[i], gitDefaults[i]));
 		}
 		return gitData;
 	}
@@ -158,7 +158,7 @@ public class APIProject extends APIElementBase<Project>{
 	public void loadGitJson(JsonObject json) {
 		for(int i = 0; i < gitFields.length ; ++i)
 		{
-			this.data.put(gitFields[i], elementCheckers[i].apply(json.getValue(gitFields[i], gitDefaults[i])));	
+			this.data.put(gitFields[i], elementCheckers[i].apply(json.getValue(gitFields[i], gitDefaults[i])));
 		}
 	}
 	

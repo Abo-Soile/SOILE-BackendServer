@@ -57,6 +57,9 @@ public class ElementDataHandler<T extends Element>{
 		gitElements.getData(f)
 		.onSuccess(datalakeFile -> {			
 			filePromise.complete(datalakeFile);
+		})
+		.onFailure(err -> {
+			filePromise.fail(err);
 		});
 		return filePromise.future();
 	}

@@ -88,12 +88,13 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 	
 	private void compileGitCode(Message<JsonObject> codeLocation)
 	{
-		String type = codeLocation.body().getString("type");
+		JsonObject type = codeLocation.body().getJsonObject("type");
 		String id = codeLocation.body().getString("taskID");
 		String version = codeLocation.body().getString("version");
-		CodeProvider provider = getProviderForType(type);
+		LOGGER.info(codeLocation.body().encodePrettily());
+		CodeProvider provider = getProviderForType(type.getString("language"));
 		// this is always a Task object (and we expect the actual ID of the task, so we supplement it with the ID Type to get the correct repository).
-		GitFile f = new GitFile("Object.json", new Task().getTypeID() + id, version);		
+		GitFile f = new GitFile("Code.obj", new Task().getTypeID() + id, version);		
 		provider.getCode(f)
 		.onSuccess(compiledCode -> {			
 			codeLocation.reply(new JsonObject().put("code", compiledCode));

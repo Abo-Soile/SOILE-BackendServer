@@ -3,6 +3,7 @@ package fi.abo.kogni.soile2.http_server.routes;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,8 +26,10 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
@@ -53,17 +56,12 @@ public class ProjectInstanceRouter extends SoileRouter {
 	ProjectInstanceHandler instanceHandler;
 	AccessHandler instanceAccessHandler;
 	AccessHandler projectAccessHandler;
-	SoileAuthorization authorizationRertiever;
-	SoileIDBasedAuthorizationHandler projectIDAccessHandler;
 	ParticipantHandler partHandler;
-	TargetElementType instanceType = TargetElementType.INSTANCE;
-	MongoAuthorization mongoAuth;
 	ParticipantDataLakeManager dataLakeManager;
 	EventBus eb;
 	Vertx vertx;
 	
-	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);
-
+	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);	
 
 	public ProjectInstanceRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, ProjectInstanceHandler projHandler) {
 		super(auth,client);
@@ -72,41 +70,43 @@ public class ProjectInstanceRouter extends SoileRouter {
 		instanceHandler = projHandler;
 		this.partHandler = partHandler;						
 		dataLakeManager = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
+		instanceAccessHandler = new AccessHandler(instanceAuth, instanceIDAccessHandler, roleHandler);
+		projectAccessHandler = new AccessHandler(projectAuth, projectIDAccessHandler, roleHandler);
 	}
-
+	
 	public void startProject(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String id = params.pathParameter("id").getString();
 		String version = params.pathParameter("version").getString();		
-		JsonObject projectData = params.body().getJsonObject().put("uuid", id).put("version", version).mergeIn(context.body().asJsonObject());
+		JsonObject projectData = params.body().getJsonObject().put("sourceUUID", id).put("version", version).mergeIn(context.body().asJsonObject());
 		// we need to check, whether the user has access to the actual project indicated.
-		mongoAuth.getAuthorizations(context.user())
+		projectAuth.getAuthorizations(context.user())
 		.onSuccess(Void -> {
 			projectIDAccessHandler.authorize(context.user(), id, false, PermissionType.READ)			
 			.onSuccess(canCreate -> {
 				instanceHandler.createProjectInstance(projectData)
 				.onSuccess(instance -> {
-					JsonObject permissionChange = new JsonObject().put("command", "addCommand")
-							.put("username", context.user().principal().getString("username"))
-							.put("permissions", new JsonObject().put("elementType", TargetElementType.INSTANCE)
-									.put("permissions", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
-											.put("target", instance.getID()))));
-					eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG,"permissionOrRoleChange"), permissionChange)
+					JsonObject permissionChange = new JsonObject().put("command", "add")
+																  .put("username", context.user().principal().getString("username"))
+																  .put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.INSTANCE.toString())
+																		  .put("permissionSettings", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
+																				  												  		 .put("target", instance.getID()))));
+					eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChange)
 					.onSuccess(success -> {
 						// instance was created, access was updated, everything worked fine. Now
 						context.response().setStatusCode(200)
 						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
 						.end(new JsonObject().put("projectID",instance.getID()).encode());												
 					})
-					.onFailure(err -> handleError(new HttpException(500, err.getMessage()), context));
+					.onFailure(err -> handleError(err, context));
 				})
-				.onFailure(err -> handleError(new HttpException(500, err.getMessage()), context));
+				.onFailure(err -> handleError(err, context));
 			})
 			.onFailure(err -> handleError(new HttpException(403, err.getMessage()), context));
 		})
 		.onFailure(err -> {
-			handleError(new HttpException(500, err.getMessage()), context);
+			handleError(err, context);
 		});		
 	}
 
@@ -115,7 +115,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
 		.onSuccess(Void -> 
 		{
-			authorizationRertiever.getGeneralPermissions(context.user(),instanceType)
+			authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.INSTANCE)
 			.onSuccess( permissions -> {
 				instanceHandler.getProjectList(permissions)
 				.onSuccess(elementList -> {	
@@ -308,7 +308,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 				        .setStatusCode(200)
 				        .setChunked(true);
 						pump.pipeTo(context.response()).onSuccess(success -> {
-							LOGGER.info("Download " + dlID + " successfullytransmitted");
+							LOGGER.debug("Download " + dlID + " successfullytransmitted");
 						}).onFailure(err -> {
 							LOGGER.error("Download " + dlID + " failed");
 							LOGGER.error(err);
@@ -388,5 +388,59 @@ public class ProjectInstanceRouter extends SoileRouter {
 		}
 		
 	}
-
+	
+	
+	public void createTokens(RoutingContext context)
+	{				
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		
+		boolean unique = params.queryParameter("unique") == null ? false : params.queryParameter("unique").getBoolean();
+		int count = params.queryParameter("count") == null ? 0 : params.queryParameter("count").getInteger();
+		
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,false)
+		.onSuccess(Void -> 
+		{
+			instanceHandler.loadProject(requestedInstanceID)
+			.onSuccess(instance -> {
+				if(unique)
+				{
+					instance.createPermanentAccessToken()
+					.onSuccess(token -> {
+						context.response()
+						.setStatusCode(200)
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+						.end(token);
+					})
+					.onFailure(err -> handleError(err, context));
+				}
+				else
+				{
+					
+					instance.createAccessTokens(count).
+					onSuccess(tokenArray -> {
+						LOGGER.debug("Replying with: \n " + tokenArray.encodePrettily());
+						context.response()
+						.setStatusCode(200)
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+						.end(tokenArray.encode());
+					})
+					.onFailure(err -> handleError(err, context));
+				}
+				
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));			
+	}	
+		
+	public void handleRequest(RoutingContext context, Handler<RoutingContext> method)
+	{
+		instanceHandler.getProjectIDForPath(context.pathParam("id"))
+		.onSuccess(newID -> {
+			context.pathParams().put("id", newID);
+			method.handle(context);
+		})
+		.onFailure(err -> handleError(err, context));
+	}
 }

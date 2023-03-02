@@ -2,10 +2,9 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
 import java.util.HashMap;
 
-import com.google.gson.JsonArray;
-
 import fi.aalto.scicomp.mathparser.MathHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 

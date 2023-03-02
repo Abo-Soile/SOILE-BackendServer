@@ -245,7 +245,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	{
 		for(String field : data.fieldNames())
 		{
-			Object newObj = update.getValue(field, null);
+			Object newObj = update.getValue(field, null);			
 			Object oldObj = data.getValue(field);
 			// if the types match or the current Obj is null, replace it.
 			if((oldObj == null) || (newObj != null && newObj.getClass().equals(oldObj.getClass())))

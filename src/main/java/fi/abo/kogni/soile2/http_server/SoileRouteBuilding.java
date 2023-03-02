@@ -219,7 +219,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		handler = new SoileAuthenticationBuilder();
 		builder.securityHandler("cookieAuth",handler.getCookieAuthProvider(vertx, client, cookieHandler))
 			   .securityHandler("JWTAuth", JWTAuthHandler.create(handler.getJWTAuthProvider(vertx)))
-			   .securityHandler("tokenAuth", handler.getTokenAuthProvider(partHandler));
+			   .securityHandler("tokenAuth", handler.getTokenAuthProvider(partHandler, client));
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
@@ -321,14 +321,15 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private Future<RouterBuilder> setupProjectexecutionAPI(RouterBuilder builder)
 	{
 		ProjectInstanceRouter router = new ProjectInstanceRouter(soileAuthorization, vertx, client, partHandler, projHandler);
-		builder.operation("listDownloadData").handler(router::listDownloadData);
+		builder.operation("listDownloadData").handler(context -> {router.handleRequest(context, router::listDownloadData);});
 		builder.operation("startProject").handler(router::startProject);
 		builder.operation("getRunningProjectList").handler(router::getRunningProjectList);
-		builder.operation("stopProject").handler(router::stopProject);
-		builder.operation("deleteProject").handler(router::deleteProject);
-		builder.operation("getProjectResults").handler(router::getProjectResults);
-		builder.operation("downloadResults").handler(router::downloadResults);
-		builder.operation("downloadTest").handler(router::downloadTest);		
+		builder.operation("stopProject").handler(context -> {router.handleRequest(context,router::stopProject);});
+		builder.operation("deleteProject").handler(context -> {router.handleRequest(context,router::deleteProject);});
+		builder.operation("getProjectResults").handler(context -> {router.handleRequest(context,router::getProjectResults);});
+		builder.operation("downloadResults").handler(context -> {router.handleRequest(context,router::downloadResults);});
+		builder.operation("downloadTest").handler(context -> {router.handleRequest(context,router::downloadTest);});
+		builder.operation("createTokens").handler(context -> {router.handleRequest(context,router::createTokens);});		
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
@@ -340,11 +341,11 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private Future<RouterBuilder> setupParticipationAPI(RouterBuilder builder)
 	{	
 		partRouter = new ParticipationRouter(soileAuthorization, vertx, client, partHandler, projHandler, fileProvider);
-		builder.operation("submitResults").handler(partRouter::submitResults);
-		builder.operation("getTaskType").handler(partRouter::getTaskType);
-		builder.operation("runTask").handler(partRouter::runTask);
-		builder.operation("signUpForProject").handler(partRouter::signUpForProject);
-		builder.operation("uploadData").handler(partRouter::uploadData);		
+		builder.operation("submitResults").handler(context -> {partRouter.handleRequest(context,partRouter::submitResults);});
+		builder.operation("getTaskType").handler(context -> {partRouter.handleRequest(context,partRouter::getTaskType);});
+		builder.operation("runTask").handler(context -> {partRouter.handleRequest(context,partRouter::runTask);});
+		builder.operation("signUpForProject").handler(context -> {partRouter.handleRequest(context,partRouter::signUpForProject);});
+		builder.operation("uploadData").handler(context -> {partRouter.handleRequest(context,partRouter::uploadData);});		
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	/**

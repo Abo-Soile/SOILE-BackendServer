@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.datamanagement.git.GitElement;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
@@ -246,7 +247,21 @@ public class GitManagerVerticle extends AbstractVerticle{
 	{
 		if( err instanceof ReplyException)
 		{
-			request.fail(((ReplyException)err).failureCode(), err.getMessage());
+			int statusCode = ((ReplyException) err).failureCode();
+			int returnCode = 400; 
+			switch(statusCode)
+			{
+				case gitProviderVerticle.NO_VERSION: returnCode = 400; break;
+				case gitProviderVerticle.INVALID_REQUEST: returnCode = 400; break;
+				case gitProviderVerticle.BRANCH_DOES_NOT_EXIST: returnCode = 404; break;
+				case gitProviderVerticle.REPO_DOES_NOT_EXIST: returnCode = 404; break;
+				case gitProviderVerticle.FILE_DOES_NOT_EXIST_FOR_VERSION: returnCode = 404; break;
+				case gitProviderVerticle.REPO_ALREADY_EXISTS: returnCode = 409; break;
+				case gitProviderVerticle.GIT_ERROR: returnCode = 500; break;
+				case gitProviderVerticle.FOLDER_NOT_DIRECTORY: returnCode = 400; break;
+				case gitProviderVerticle.REPO_NOT_DELETED: returnCode = 500; break;						
+			}
+			request.fail(returnCode, err.getMessage());
 		}
 		else
 		{

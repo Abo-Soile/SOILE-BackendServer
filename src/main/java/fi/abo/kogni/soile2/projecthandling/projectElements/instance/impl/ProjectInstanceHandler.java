@@ -31,6 +31,7 @@ public class ProjectInstanceHandler {
 	private TimeStampedMap<String, ProjectInstance> projects;
 	private String dataLakeFolder;
 	private ProjectInstanceManager manager;	 
+	
 	/**
 	 * Default constructor that sets up a Manager with DB connections.
 	 * @param participants the participants handler to obtain participants
@@ -38,10 +39,7 @@ public class ProjectInstanceHandler {
 	 * @param client the mongoclient for connecting to the mongo database
 	 */
 	public ProjectInstanceHandler(MongoClient client, Vertx vertx) {
-		super();
-		this.dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
-		this.manager = new ProjectInstanceManager(client, vertx);
-		projects = new TimeStampedMap<String, ProjectInstance>(manager, 1000*60*60);
+		this(client, new ProjectInstanceManager(client, vertx) );		
 	}
 
 	/**
@@ -64,6 +62,7 @@ public class ProjectInstanceHandler {
 	public void cleanup()
 	{
 		projects.cleanUp();
+		manager.cleanUp();
 	}
 	/**
 	 * Get a list of all Files associated with the specified {@link DBParticipant} within this {@link ProjectInstance}.
@@ -167,6 +166,17 @@ public class ProjectInstanceHandler {
 	public Future<JsonArray> getProjectList(JsonArray Permissions)
 	{
 		return manager.getProjectInstanceStatus(Permissions);
+	}
+	
+	
+	/**
+	 * Get the project ID for a given Path-ID (i.e. translate potential shortcuts).  
+	 * @param pathID the {id} path parameter  
+	 * @return A future of the actual path.
+	 */
+	public Future<String> getProjectIDForPath(String pathID)
+	{
+		return manager.getProjectIDForPathID(pathID);
 	}
 	
 }

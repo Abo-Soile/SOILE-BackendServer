@@ -14,7 +14,7 @@ import io.vertx.ext.web.handler.HttpException;
 public class AccessHandler{
 	
 	MongoAuthorization mongoAuth;
-	SoileIDBasedAuthorizationHandler instanceIDAccessHandler;
+	SoileIDBasedAuthorizationHandler idAccessHandler;
 	SoileRoleBasedAuthorizationHandler roleHandler;
 	private static final Logger LOGGER = LogManager.getLogger(AccessHandler.class);
 
@@ -22,7 +22,7 @@ public class AccessHandler{
 			SoileRoleBasedAuthorizationHandler roleHandler) {
 		super();
 		this.mongoAuth = mongoAuth;
-		this.instanceIDAccessHandler = instanceIDAccessHandler;
+		this.idAccessHandler = instanceIDAccessHandler;
 		this.roleHandler = roleHandler;
 	}
 
@@ -36,13 +36,17 @@ public class AccessHandler{
 	 * @return A successful future if the user has the required permissions.
 	 */
 	public Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission, boolean adminAllowed) {
-		return checkAccess(user, id, requiredRole, requiredPermission, adminAllowed, mongoAuth, instanceIDAccessHandler);
+		return checkAccess(user, id, requiredRole, requiredPermission, adminAllowed, mongoAuth, idAccessHandler);
 	}
 
 	
 	protected Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission,
 			boolean adminAllowed, MongoAuthorization authProvider, SoileIDBasedAuthorizationHandler IDAccessHandler)
 	{
+		if(user == null)
+		{
+			return Future.failedFuture(new HttpException(403,"Not authenticated"));
+		}
 		Promise<Void> accessPromise = Promise.<Void>promise();
 		authProvider.getAuthorizations(user)
 		.onSuccess(Void -> {

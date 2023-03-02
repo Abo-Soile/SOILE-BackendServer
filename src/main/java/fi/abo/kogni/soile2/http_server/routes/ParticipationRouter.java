@@ -20,9 +20,12 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObj
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonArray;
@@ -39,7 +42,7 @@ import io.vertx.ext.web.validation.ValidationHandler;
 
 public class ParticipationRouter extends SoileRouter{
 
-	
+
 	NonStaticHandler libraryHandler;
 	IDSpecificFileProvider resourceHandler;
 	ProjectInstanceHandler instanceHandler;
@@ -50,7 +53,7 @@ public class ParticipationRouter extends SoileRouter{
 	ParticipantDataLakeManager dataLakeManager;
 	EventBus eb;
 	Vertx vertx;
-	
+
 	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);
 
 
@@ -65,12 +68,12 @@ public class ParticipationRouter extends SoileRouter{
 		libraryHandler = new NonStaticHandler(FileSystemAccess.RELATIVE, "data/libs/", "/lib/");		
 		this.resourceHandler = fileProvider;
 	}
-	
+
 	public void submitResults(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> 
 		{
 			instanceHandler.loadProject(requestedInstanceID)
@@ -92,13 +95,13 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
-	
+
 	public void uploadData(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		
-		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,true)
+
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.EXECUTE,true)
 		.onSuccess(Void -> 
 		{
 			if(context.fileUploads().size() != 1)
@@ -121,7 +124,7 @@ public class ParticipationRouter extends SoileRouter{
 							.setStatusCode(200)						
 							.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
 							.end(new JsonObject().put("id", id).encode());
-							
+
 						})
 						.onFailure(err -> handleError(err, context));
 
@@ -134,56 +137,114 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));
 	}
-	
+
 	public void signUpForProject(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		String token = params.queryParameter("token").getString();
-		instanceHandler.loadProject(requestedInstanceID)
-		.onSuccess(project -> {				
-			project.useToken(token)
-			.onSuccess( tokenUsed -> {
-				if(context.user() != null)
-				{
-					// we will add execute access to the current user.					
-					
-					JsonObject userData = new JsonObject();
-					userData.put("username", context.user().principal().getString("username"));
-					userData.put("command", "add");
-					userData.put("permissions", new JsonArray().add(new JsonObject().put("target", requestedInstanceID).put("type", PermissionType.EXECUTE.toString())));							
-					eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"),userData).onSuccess( response ->
+		String token = params.queryParameter("token") != null ? params.queryParameter("token").getString() : null;
+		// no token, so this is either an invalid call or a user signup.
+		if(token == null)
+		{ 
+			// if we don't have a token, an authed user can also sign up to a project (even though it's not needed)
+			accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
+			.onSuccess(authed -> {
+				instanceHandler.loadProject(requestedInstanceID)
+				.onSuccess(project -> {
+					// this will connect the user with a new participant if they haven't already got one.
+					getParticpantForUser(context.user(), project)
+					.onSuccess( participant ->
 					{
-						// all done;
-						context.response()
-						.setStatusCode(200)						
-						.end();
+						project.startProject(participant)
+						.onSuccess(position -> {
+							context.response()
+							.setStatusCode(200)						
+							.end();	
+						})
+						.onFailure(err -> handleError(err, context));
+
 					})
 					.onFailure(err -> handleError(err, context));
-				}
-				else
-				{
-					// we don't have a user, so we set up a oken user.
-					partHandler.createTokenUser(project)
-					.onSuccess(participant -> {
-						context.response()
-						.setStatusCode(200)						
-						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-						.end(new JsonObject().put("token", participant.getToken()).encode());
-					})
-					.onFailure(err -> handleError(err, context));
-				}
+				})
+				.onFailure(err -> handleError(err, context));
 			})
 			.onFailure(err -> handleError(err, context));
-		})
-		.onFailure(err -> handleError(err, context));
+
+		}
+		else
+		{
+			// we got a token. This can be either associated with a user or not.
+			instanceHandler.loadProject(requestedInstanceID)
+			.onSuccess(project -> {				
+				project.useToken(token)
+				.onSuccess( tokenUsed -> {
+					partHandler.createTokenParticipant(project, token)
+					.onSuccess(participant -> {
+						// if the principal is empty, that means we have not used authentication, but passed through 
+						// the auth-less route
+						if(context.user().principal().isEmpty())
+						{
+							// we don't have a user, so we just respond with the token after we started the project for this user. 
+							project.startProject(participant)
+							.onSuccess(position -> {
+								context.response()
+								.setStatusCode(200)						
+								.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+								.end(new JsonObject().put("token", participant.getToken()).encode());
+							})
+							.onFailure(err -> handleError(err, context));	
+						}
+						else
+						{
+							// so the user is nt empty, i.e. we build a new participant for this user (if it doesn't exist)
+							// we will add execute access to the current user.					
+							LOGGER.info("Found user: \n" + context.user().principal().encodePrettily());
+							LOGGER.info("Found user: \n" + context.user().attributes().encodePrettily());
+							JsonObject userData = new JsonObject();
+							userData.put("username", context.user().principal().getString("username"));
+							userData.put("command", "add");
+							userData.put("permissions", new JsonArray().add(new JsonObject().put("target", requestedInstanceID).put("type", PermissionType.EXECUTE.toString())));							
+							eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"),userData)
+							.onSuccess( permissionAdded ->
+							{	
+								JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
+										.put("projectID", requestedInstanceID)
+										.put("participantID", participant.getID());
+								eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticpantInProject"),partData)
+								.onSuccess( participantAdded ->
+								{
+									project.startProject(participant)
+									.onSuccess(position -> {
+										context.response()
+										.setStatusCode(200)						
+										.end(new JsonObject().put("token", participant.getToken()).encode());
+									})
+									.onFailure(err -> handleError(err, context));	
+								})
+								.onFailure(err -> handleError(err, context));
+								// all done;
+
+							})
+							.onFailure(err -> handleError(err, context));
+							
+						}
+					})
+					.onFailure(err -> handleError(err, context));
+
+
+
+				})
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+		}
 	}
-	
+
 	public void getTaskType(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
 			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
@@ -202,7 +263,8 @@ public class ParticipationRouter extends SoileRouter{
 					{
 						try {
 							TaskObjectInstance currentTask = (TaskObjectInstance)project.getElement(participant.getProjectPosition());
-							eb.request("soile.task.getVersionInfo", new JsonObject().put("taskID", currentTask.getUUID()))
+
+							eb.request("soile.task.getVersionInfo", new JsonObject().put("taskID", currentTask.getUUID()).put("version", currentTask.getVersion()))
 							.onSuccess(response -> {								
 								JsonObject responseBody = ((JsonObject) response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
 								context.response()
@@ -228,14 +290,14 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));		
 	}
-	
-	
+
+
 	public void runTask(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		
-		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
 			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
@@ -254,9 +316,9 @@ public class ParticipationRouter extends SoileRouter{
 						// Try catch block.
 						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
 						eb.request(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"),
-							   new JsonObject().put("taskID", currentTask.getUUID())
-									   		   .put("type", currentTask.getCodeType())
-									   		   .put("version", currentTask.getVersion()))
+								new JsonObject().put("taskID", currentTask.getUUID())
+								.put("type", currentTask.getCodeType())
+								.put("version", currentTask.getVersion()))
 						.onSuccess(response -> {
 							JsonObject responseBody = (JsonObject) response.body();
 							context.response()
@@ -273,13 +335,13 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));		
 	}			
-		
+
 	public void getLib(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		
-		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
 			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
@@ -297,7 +359,7 @@ public class ParticipationRouter extends SoileRouter{
 					{
 						//ok handle this with the NonStatic Handler
 						libraryHandler.handle(context);
-						
+
 					}
 				})
 				.onFailure(err -> handleError(err, context));
@@ -306,13 +368,13 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));		
 	}
-	
+
 	public void getResourceForExecution(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		
-		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.READ,false)
+
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
 			instanceHandler.loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
@@ -331,13 +393,13 @@ public class ParticipationRouter extends SoileRouter{
 						// Ok, this is a request for resources for a file referenced from git. 
 						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
 						String uriDecodedPath = URIDecoder.decodeURIComponent(context.normalizedPath(), false);
-					      // if the normalized path is null it cannot be resolved
-					      if (uriDecodedPath == null) {
-					        context.next();
-					        return;
-					      }
-					      // will normalize and handle all paths as UNIX paths
-					    String treatedPath = HttpUtils.removeDots(uriDecodedPath.replace('\\', '/'));
+						// if the normalized path is null it cannot be resolved
+						if (uriDecodedPath == null) {
+							context.next();
+							return;
+						}
+						// will normalize and handle all paths as UNIX paths
+						String treatedPath = HttpUtils.removeDots(uriDecodedPath.replace('\\', '/'));
 						String path = treatedPath.substring(treatedPath.indexOf(requestedInstanceID)+requestedInstanceID.length());
 						// For now we just add the "T"
 						GitFile targetResource = new GitFile("T" + currentTask.getUUID(),currentTask.getVersion(),path);
@@ -350,22 +412,28 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));		
 	}
-	
-	
+
+
+	Future<Participant> getParticpantForUser(User user, ProjectInstance project)
+	{
+		return getParticpantForUser(user, project, false);
+	}
+
 	/**
 	 * Get the participant for the current user. 
 	 * @param user the authenticated {@link User} from a routing context
 	 * @param project the {@link ProjectInstance} for which the participant is requested. If there is none yet, one will be created.
+	 * @param failIfExist Fail the retrieval if the participant already exists (to avoid double signup);
 	 * @return
 	 */
-	Future<Participant> getParticpantForUser(User user, ProjectInstance project)
+	Future<Participant> getParticpantForUser(User user, ProjectInstance project, boolean failIfExist)
 	{
-		
+
 		if(user.principal().getString("username") == null)
 		{
 			// This is a Token User!
 			return partHandler.getParticipantForToken(user.principal().getString("access_token"), project.getID());
-			
+
 		}
 		else
 		{
@@ -376,11 +444,18 @@ public class ParticipationRouter extends SoileRouter{
 				JsonObject responseObject = (JsonObject) response;
 				if(responseObject.getString("participantID") != null)
 				{
-					partHandler.getParticipant(responseObject.getString("participantID"))
-					.onSuccess(particpant -> {
-						partPromise.complete(particpant);
-					})
-					.onFailure(err -> partPromise.fail(err));
+					if(failIfExist)
+					{
+						partPromise.fail(new HttpException(409,"Already signed up"));
+					}
+					else
+					{
+						partHandler.getParticipant(responseObject.getString("participantID"))
+						.onSuccess(particpant -> {
+							partPromise.complete(particpant);
+						})
+						.onFailure(err -> partPromise.fail(err));
+					}
 				}
 				// doesn't have one in this project yet, so we create one.
 				else
@@ -401,6 +476,16 @@ public class ParticipationRouter extends SoileRouter{
 			.onFailure(err -> partPromise.fail(err));
 			return partPromise.future();
 		}
-		
+
+	}		
+
+	public void handleRequest(RoutingContext context, Handler<RoutingContext> method)
+	{
+		instanceHandler.getProjectIDForPath(context.pathParam("id"))
+		.onSuccess(newID -> {
+			context.pathParams().put("id", newID);
+			method.handle(context);
+		})
+		.onFailure(err -> handleError(err, context));
 	}
 }

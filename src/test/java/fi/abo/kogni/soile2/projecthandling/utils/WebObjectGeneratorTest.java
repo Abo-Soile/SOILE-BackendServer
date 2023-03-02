@@ -2,18 +2,8 @@ package fi.abo.kogni.soile2.projecthandling.utils;
 
 import org.junit.Test;
 
-import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
-import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
-import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
-import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
-import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -46,6 +36,7 @@ public class WebObjectGeneratorTest extends SoileWebTest {
 						context.assertEquals(taskID, newData.getString("UUID"));
 						context.assertEquals(taskVersion, newData.getString("version"));
 						context.assertEquals(taskData.getString("code"), newData.getString("code"));
+						context.assertTrue(taskData.getString("code").contains("intermezzo"));
 						taskInfoAsync.complete();
 					})
 					.onFailure(err -> context.fail(err));
@@ -59,8 +50,9 @@ public class WebObjectGeneratorTest extends SoileWebTest {
 						context.assertEquals(taskData.getString("name"), taskList.getJsonObject(0).getValue("name"));
 						taskListAsync.complete();
 					})
-					.onFailure(err -> context.fail(err));		
+					.onFailure(err -> context.fail(err));
 					setupAsync.complete();
+					
 				})
 				.onFailure(err -> context.fail(err));			 
 			})

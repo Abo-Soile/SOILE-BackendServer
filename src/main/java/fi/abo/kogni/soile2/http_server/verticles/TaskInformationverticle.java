@@ -86,6 +86,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 	{
 		String taskID = request.body().getString("taskID");
 		String version = request.body().getString("version");
+		LOGGER.debug(request.body());
 		taskManager.getAPIElementFromDB(taskID, version)
 		.onSuccess(task -> {			
 			APITask currentTask = (APITask)task; 

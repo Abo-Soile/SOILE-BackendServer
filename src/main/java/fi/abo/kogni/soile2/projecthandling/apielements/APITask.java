@@ -142,7 +142,7 @@ public class APITask extends APIElementBase<Task> {
 			if(err instanceof ReplyException)
 			{
 				int errorCode = ((ReplyException)err).failureCode();
-				if(errorCode == gitProviderVerticle.FILE_DOES_NOT_EXIST_FOR_VERSION)
+				if(errorCode == 404) // not found
 				{
 					// this is fine, could be that it wasn't generated yet, we will return an empty string then.
 					setCode("");

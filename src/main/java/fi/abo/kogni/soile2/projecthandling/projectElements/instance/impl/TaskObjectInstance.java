@@ -49,15 +49,15 @@ public class TaskObjectInstance extends ElementInstanceBase {
 	   * @return
 	   */
 	  @JsonProperty("codeType")
-	  public String getCodeType() {
-	    return data.getString("codeType");
+	  public JsonObject getCodeType() {
+	    return data.getJsonObject("codeType");
 	  }
 	  
 	  /**
 	   * Set the type of code used in this task (elang, qmarkup, Javascript)
 	   * @param type The code type
 	   */
-	  public void setCodeType(String type) {
+	  public void setCodeType(JsonObject type) {
 		  data.put("codeType",type);
 	  }
 

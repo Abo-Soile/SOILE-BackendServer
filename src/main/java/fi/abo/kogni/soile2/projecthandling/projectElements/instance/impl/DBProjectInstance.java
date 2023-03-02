@@ -193,10 +193,10 @@ public class DBProjectInstance extends ProjectInstance{
 	}
 
 	@Override
-	public Future<JsonArray> createAccessTokens(int count) {
-		Promise<JsonArray> tokenPromise = Promise.promise();
+	public Future<JsonArray> createAccessTokens(int count) {		 
+		Promise<JsonArray> tokenPromise = Promise.promise();				
 		JsonObject query = new JsonObject().put("_id", instanceID);
-		client.findOne(getTargetCollection(), query, new JsonObject().put("accessTokens", 1))
+		client.findOne(getTargetCollection(), query, new JsonObject().put("accessTokens", 1).put("usedTokens", 1))
 		.onSuccess( res -> {
 			// TODO: Check, whether there are more efficient ways to do this...
 			JsonArray newTokens = new JsonArray();
@@ -205,7 +205,12 @@ public class DBProjectInstance extends ProjectInstance{
 			{
 				currentTokens.add(o);
 			}
+			for(Object o : res.getJsonArray("usedTokens", new JsonArray()))
+			{
+				currentTokens.add(o);
+			}
 			int previoussize = currentTokens.size();
+			LOGGER.info("Previously there were: " + currentTokens.size() + " tokens. " + count + " tokens will be created");
 			while(currentTokens.size() < previoussize + count)
 			{
 				VertxContextPRNG rng = VertxContextPRNG.current();
@@ -256,7 +261,11 @@ public class DBProjectInstance extends ProjectInstance{
 				}
 				else
 				{
-					tokenUsedPromise.complete();
+					client.updateCollection(getTargetCollection(), query, new JsonObject().put("$push", new JsonObject().put("usedTokens",token)))
+					.onSuccess( tokenUsed -> {
+						tokenUsedPromise.complete();
+					})
+					.onFailure(err -> tokenUsedPromise.fail(err));
 				}
 		})
 		.onFailure(err -> tokenUsedPromise.fail(err));
