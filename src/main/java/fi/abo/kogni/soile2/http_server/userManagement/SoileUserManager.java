@@ -86,7 +86,7 @@ public class SoileUserManager implements MongoUserUtil{
 		return client.createIndexWithOptions(authnOptions.getCollectionName(), 
 				new JsonObject().put(authnOptions.getUsernameField(), "text"), options).compose((Void) -> {
 					return client.listIndexes(authnOptions.getCollectionName()).onSuccess(indexArray -> {
-						LOGGER.info(indexArray.encodePrettily());
+						LOGGER.debug(indexArray.encodePrettily());
 					}).mapEmpty();
 				});
 	}
@@ -173,10 +173,10 @@ public class SoileUserManager implements MongoUserUtil{
 		options.setFields(fields);
 		
 		Promise<JsonArray> resultsPromise = Promise.promise();
-		LOGGER.info(Query.encodePrettily());
+		LOGGER.debug(Query.encodePrettily());
 		client.findWithOptions(authnOptions.getCollectionName(), Query, options)
 		.onSuccess(result -> {
-			LOGGER.info(result);
+			LOGGER.debug(result);
 			if(!namesOnly)
 			{
 				for(JsonObject current : result)
@@ -217,13 +217,13 @@ public class SoileUserManager implements MongoUserUtil{
 	public SoileUserManager changePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, PermissionChange alterationFlag, Handler<AsyncResult<JsonObject>> resultHandler)
 	{
 
-		LOGGER.info("Trying to update");
+		LOGGER.debug("Trying to update");
 		JsonObject queryObject = new JsonObject().put(options.getUsernameField(), username);		
 		JsonObject updateObject = new JsonObject().put(permissionMap.get(alterationFlag), 
 													new JsonObject().put(options.getPermissionField(), getPermissionChange(alterationFlag,permissions)));		
 		client.findOneAndUpdateWithOptions(options.getCollectionName(), queryObject, updateObject, new FindOptions(), new UpdateOptions().setUpsert(false))
 		.onComplete(res -> {
-			LOGGER.info(res);
+			LOGGER.debug(res);
 			resultHandler.handle(res);
 
 		});		
@@ -284,7 +284,7 @@ public class SoileUserManager implements MongoUserUtil{
 		UpdateOptions opts = new UpdateOptions().setUpsert(false);
 		client.findOneAndUpdateWithOptions(options.getCollectionName(), queryObject, updateObject,new FindOptions(),opts)
 		.onSuccess(res -> {
-			LOGGER.info("Found " + res + " for user " + username);
+			LOGGER.debug("Found " + res + " for user " + username);
 			if(res == null)
 			{
 				resultHandler.handle(Future.failedFuture(new UserDoesNotExistException(username)));
@@ -412,18 +412,18 @@ public class SoileUserManager implements MongoUserUtil{
 		client.findOne(authnOptions.getCollectionName(),new JsonObject().put(authnOptions.getUsernameField(), username), new JsonObject().put(SoileConfigLoader.getUserdbField("participantField"),1 ))
 		.onSuccess(participantJson -> {
 			JsonArray participantInfo = participantJson.getJsonArray(SoileConfigLoader.getUserdbField("participantField"), new JsonArray());
-			String particpantID = null;
+			String participantID = null;
 			for(int i = 0; i < participantInfo.size(); i++)
 			{
 				// TODO: Use an aggregation to retrieve this (that's probably faster).
 				if(participantInfo.getJsonObject(i).getString("uuid").equals(project))
 				{
-					particpantID = participantInfo.getJsonObject(i).getString("participantID");
+					participantID = participantInfo.getJsonObject(i).getString("participantID");
 					break;
 				}
 
 			}
-			participantPromise.complete(particpantID);
+			participantPromise.complete(participantID);
 		})
 		.onFailure(err -> participantPromise.fail(err));
 
@@ -500,7 +500,7 @@ public class SoileUserManager implements MongoUserUtil{
 							return;
 						}
 						else {
-							LOGGER.info("Created user with username: " + username);
+							LOGGER.debug("Created user with username: " + username);
 							client.save(
 									authnOptions.getCollectionName(),
 									getDefaultFields()

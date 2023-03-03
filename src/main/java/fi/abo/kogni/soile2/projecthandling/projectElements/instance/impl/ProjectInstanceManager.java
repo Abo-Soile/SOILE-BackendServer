@@ -137,7 +137,7 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 		JsonObject Query = new JsonObject().put("$or", new JsonArray().add(new JsonObject().put("private",false))
 																	  .add(new JsonObject().put("_id", new JsonObject().put("$in", projectInstanceIDs)))
 																	  );
-		LOGGER.info("Looking for Project matching:\n" + Query.encodePrettily());
+		LOGGER.debug("Looking for Project matching:\n" + Query.encodePrettily());
 		client.findWithOptions(instanceCollection,Query,new FindOptions().setFields(new JsonObject().put("_id",1).put("name", 1)))
 		.onSuccess(items -> 
 				{
@@ -171,7 +171,7 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 		JsonObject Query = new JsonObject().put("$or", new JsonArray().add(new JsonObject().put("shortcut",pathID))
 																	  .add(new JsonObject().put("_id", pathID))
 																	  );
-		LOGGER.info("Looking for Project matching:\n" + Query.encodePrettily());
+		LOGGER.debug("Looking for Project matching:\n" + Query.encodePrettily());
 		client.findOne(instanceCollection,Query,new JsonObject().put("_id",1))
 		.onSuccess(project -> 
 		{

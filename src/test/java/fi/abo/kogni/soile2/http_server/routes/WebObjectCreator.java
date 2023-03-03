@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.projecthandling.utils;
+package fi.abo.kogni.soile2.http_server.routes;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,7 +80,8 @@ public class WebObjectCreator {
 					// create all in a compose chain...
 					String resourceName = resources.getString(i);
 					chain.add(chain.getLast().compose(newVersion -> {						
-						return SoileWebTest.postTaskRessource(webClient, taskID, newVersion, resourceName,new File(Path.of(TestDataFolder, resourceName).toString()) , MimeMapping.getMimeTypeForFilename(resourceName) );										
+						return SoileWebTest.postTaskRessource(webClient, taskID, newVersion, resourceName,
+																new File(Path.of(TestDataFolder, resourceName).toString()) , MimeMapping.getMimeTypeForFilename(resourceName) );										
 					}));
 					composite.add(chain.getLast());
 				}

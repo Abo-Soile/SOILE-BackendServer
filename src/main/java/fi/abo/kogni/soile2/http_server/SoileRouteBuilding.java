@@ -344,6 +344,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("submitResults").handler(context -> {partRouter.handleRequest(context,partRouter::submitResults);});
 		builder.operation("getTaskType").handler(context -> {partRouter.handleRequest(context,partRouter::getTaskType);});
 		builder.operation("runTask").handler(context -> {partRouter.handleRequest(context,partRouter::runTask);});
+		builder.operation("getID").handler(context -> {partRouter.handleRequest(context,partRouter::getID);});
 		builder.operation("signUpForProject").handler(context -> {partRouter.handleRequest(context,partRouter::signUpForProject);});
 		builder.operation("uploadData").handler(context -> {partRouter.handleRequest(context,partRouter::uploadData);});		
 		return Future.<RouterBuilder>succeededFuture(builder);

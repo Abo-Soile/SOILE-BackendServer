@@ -101,8 +101,10 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	 */
 	public void createDownload(Message<JsonObject> message)
 	{
+		
 		try {
 			JsonObject request = message.body();
+			LOGGER.info(request);
 			switch(request.getString("requestType"))
 			{
 			case "participants" : buildParticipantsBundle(request.getJsonArray("participants"), request.getString("projectID"))
@@ -122,6 +124,10 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 			.onSuccess(id -> message.reply(id))
 			.onFailure(err -> message.fail(0, err.getMessage())); 
 			break;
+			case "all" : buildTasksBundle(null, request.getString("projectID"))
+			.onSuccess(id -> message.reply(id))
+			.onFailure(err -> message.fail(0, err.getMessage())); 
+			break;
 			default:
 				message.fail(400,"Invalid request");
 			}
@@ -132,6 +138,8 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		}
 	}
 
+	
+	
 	/**
 	 * Get the status of a download specified in the messages "downloadID" field
 	 * @param message the message with the download ID.
@@ -157,7 +165,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		getDownloadStatus(dlID).onSuccess(status-> {
 			getDownloadFilesFromDB(dlID)
 			.onSuccess(files -> {
-				message.reply(new JsonObject().put("status", status).put("files", files));
+				message.reply(new JsonObject().put("files", files).mergeIn(status));
 			})
 			.onFailure(err -> replyForError(err, message));
 
@@ -231,14 +239,26 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	 * @param singleTask Whether the request is for a single task output.
 	 * @return A {@link Future} of the download ID that is being generated for this request.
 	 */
-	Future<String> collectTaskFiles( JsonArray tasks, String projectID, boolean singleTask)
+	Future<String> collectTaskFiles( JsonArray tasksToExtract, String projectID, boolean singleTask)
 	{
 		Promise<String> collectionStartedPromise = Promise.promise();
+		if( tasksToExtract == null)
+		{
+			tasksToExtract = new JsonArray();
+		}
+		JsonArray tasks = tasksToExtract;
 		// Initialize the download
 		startDownload(projectID)
 		.onSuccess(startedDownload -> {
 			String dlID = startedDownload.dlID;
 			ProjectInstance projectInstance = startedDownload.projInst;
+			if( tasks.isEmpty())
+			{				
+				for(Object o : projectInstance.getTasksInstancesWithNames())
+				{
+					tasks.add(((JsonObject)o).getString("taskID"));
+				}
+			}
 			projectInstance.getParticipants()
 			.onSuccess(participants -> {
 				// Collect the data  
@@ -563,7 +583,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		String taskID = resultData.getString("task");
 		int step =  resultData.getInteger("step");
 		JsonArray fileData = resultData.getJsonArray("fileData");
-		JsonArray fileNames = new JsonArray();
+		JsonArray filesData = new JsonArray();
 		for(int fileEntry = 0; fileEntry < fileData.size(); fileEntry++)
 		{
 			JsonObject fileResult = fileData.getJsonObject(fileEntry);
@@ -573,17 +593,20 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 					step,
 					taskID,
 					participantID);				
+			String pathInZip = taskID + "/" + participantID + "/" + step + "/" + res.getFile(dataLakeFolder).getOriginalFileName();
 			JsonObject fileInfo = new JsonObject().put("originalFileName", res.getFile(dataLakeFolder).getOriginalFileName())
-					.put("absolutePath", res.getFile(dataLakeFolder).getAbsolutePath())
+					.put("path", pathInZip)
 					.put("mimeType", fileResult.getString("fileformat"));
-			fileNames.add(fileInfo);
-			files.add(res.getFile(dataLakeFolder).toJson());
+			filesData.add(fileInfo);
+			DataLakeFile currentFile = res.getFile(dataLakeFolder);
+			currentFile.setOriginalFileName(pathInZip);
+			files.add(currentFile.toJson());
 			if(removeTask)
 			{
 				resultData.remove("task");
 			}
 		}
-		resultData.put("files", fileNames);		
+		resultData.put("files", filesData);		
 		resultData.remove("fileData");
 		return files;
 	}

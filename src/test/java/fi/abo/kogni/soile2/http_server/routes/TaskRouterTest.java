@@ -10,7 +10,6 @@ import fi.abo.kogni.soile2.datamanagement.DataLakeManagerTest;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ProjectTest;
-import fi.abo.kogni.soile2.projecthandling.utils.WebObjectCreator;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.handler.HttpException;

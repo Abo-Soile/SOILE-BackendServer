@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.projecthandling.utils;
+package fi.abo.kogni.soile2.http_server.routes;
 
 import org.junit.Test;
 
@@ -11,7 +11,7 @@ import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClientSession;
 import io.vertx.ext.web.handler.HttpException;
 
-public class WebObjectGeneratorTest extends SoileWebTest {
+public class ElementRouterTest extends SoileWebTest {
 
 
 	@Test

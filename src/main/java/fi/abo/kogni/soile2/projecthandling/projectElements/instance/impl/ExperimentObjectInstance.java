@@ -33,7 +33,7 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	 */
 	@JsonProperty("start")
 	public String getStart() {
-		return data.getString("start");
+		return data.getString("start", elementIDs.get(0));
 	}
 	
 	/**
@@ -46,12 +46,12 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	
 
 	/**
-	 * Is this experiment randomized
+	 * Is this experiment randomized, default is false. 
 	 * @return whether this experiments elements are randomized or not
 	 */
 	@JsonProperty("random")
 	public Boolean getRandom() {
-		return data.getBoolean("random");
+		return data.getBoolean("random",false);
 	}
 	/**
 	 * Set the randomization state of this element
@@ -85,6 +85,7 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	private void defineElements()
 	{
 		elementIDs = new LinkedList<String>();
+		
 		for(Object cElementData : data.getJsonArray("elements", new JsonArray()))
 		{			
 			JsonObject element = (JsonObject)cElementData;

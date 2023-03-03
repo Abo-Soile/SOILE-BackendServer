@@ -221,7 +221,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 				LOGGER.debug("Requesting permission change");
 				eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChangeRequest)
 				.onSuccess( reply -> {
-					LOGGER.info("Permissions added to user for "+ nameParam + "/" + element.getUUID());
+					LOGGER.debug("Permissions added to user for "+ nameParam + "/" + element.getUUID());
 					elementManager.getAPIElementFromDB(element.getUUID(), element.getCurrentVersion())
 					.onSuccess(apiElement -> {
 						LOGGER.debug("Api element created");

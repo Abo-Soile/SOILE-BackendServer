@@ -218,26 +218,45 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	 */
 	public static Future<String> postTaskRessource(WebClient webClient, String TaskID, String TaskVersion, String Filename, File target, String mimeType)
 	{
-		Promise<String> versionPromise = Promise.promise();
-		HttpRequest<Buffer> request = webClient.post("/task/" + TaskID + "/" + TaskVersion  + "/resource/" + Filename);				
+		String URL = "/task/" + TaskID + "/" + TaskVersion  + "/resource/" + Filename;
+		return upload(webClient, URL, Filename, target, mimeType, "version");		
+	}		
+
+	/** Upload a file for a executing project and receive the File ID for results. 
+	 * 
+	 * @param webClient
+	 * @param instanceID
+	 * @param target
+	 * @param Filename
+	 * @param mimeType
+	 * @return
+	 */
+	public static Future<String> uploadResult(WebClient webClient, String instanceID, File target, String Filename, String mimeType)
+	{
+		String URL = "/projectexec/" + instanceID + "/uploaddata";
+		return upload(webClient, URL, Filename, target, mimeType, "id");		
+	}	
+	
+	public static Future<String> upload(WebClient client, String URL, String fileName, File uploadFile, String mimeType, String idField)
+	{
+		Promise<String> idPromise = Promise.promise();
+		HttpRequest<Buffer> request = client.post(URL);				
 		MultipartForm submissionForm = MultipartForm.create()
-				.binaryFileUpload(Filename, Filename, target.getAbsolutePath(), mimeType);		
+				.binaryFileUpload(fileName, fileName, uploadFile.getAbsolutePath(), mimeType);		
 		request.sendMultipartForm(submissionForm)
 		.onSuccess(response -> {
 			try {
 				System.out.println(response.bodyAsString());
-				versionPromise.complete(response.bodyAsJsonObject().getString("version"));
+				idPromise.complete(response.bodyAsJsonObject().getString(idField));
 			}
 			catch(Exception e)
 			{
-				versionPromise.fail(e);
+				idPromise.fail(e);
 			}
 		})
-		.onFailure(err -> versionPromise.fail(err));		
-		return versionPromise.future();				
+		.onFailure(err -> idPromise.fail(err));		
+		return idPromise.future();
 	}
-
-
 
 	public Future<Void> authenticateSession(WebClientSession session, String username, String password)
 	{

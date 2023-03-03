@@ -222,12 +222,12 @@ public class UserRouter extends SoileRouter {
 		userData.put("username", username);
 		userData.put("command", body.getString("command"));
 		userData.put("permissionsProperties", permissionProps);
-		LOGGER.info(context.user().principal().encodePrettily());
+		LOGGER.debug(context.user().principal().encodePrettily());
 		eb.request("soile.permissions.checkTargets", permissionProps)
 		.onSuccess(permissionsExist -> { 
 			checkUserHasAllPermissions(context.user(),permissionProps.getJsonArray("permissionSettings"), getAuthForType(permissionProps.getString("elementType")),getHandlerForType(permissionProps.getString("elementType")))
 			.onSuccess(allowed -> {			
-				LOGGER.info("User has all required permissions");
+				LOGGER.debug("User has all required permissions");
 				handleUserManagerCommand(context, "permissionOrRoleChange", userData, MessageResponseHandler.createDefaultHandler(200));			
 			})
 			.onFailure(err -> handleError(err, context));
@@ -286,11 +286,11 @@ public class UserRouter extends SoileRouter {
 	
 	void handleUserManagerCommand(RoutingContext routingContext, String command, JsonObject commandContent, MessageResponseHandler messageHandler)
 	{		
-		LOGGER.info("Command: " + command + " Request: \n " + commandContent.encodePrettily());		
+		LOGGER.debug("Command: " + command + " Request: \n " + commandContent.encodePrettily());		
 		eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, command),commandContent)
 		.onSuccess( response ->
 		{
-			LOGGER.info("Got a reply");
+			LOGGER.debug("Got a reply");
 			if(response.body() instanceof JsonObject)
 			{
 				messageHandler.handle(((JsonObject)response.body()), routingContext);
@@ -357,7 +357,7 @@ public class UserRouter extends SoileRouter {
 	protected Future<Void> checkSameUserOrAdmin(User user, String modifiedUser, MongoAuthorization authProvider)
 	{		
 		Promise<Void> accessPromise = Promise.promise();
-		LOGGER.info(user.principal().getString("username") + " // " + modifiedUser);
+		LOGGER.debug(user.principal().getString("username") + " // " + modifiedUser);
 		if(user.principal().getString("username").equals(modifiedUser))
 		{
 			accessPromise.complete();

@@ -96,12 +96,18 @@ public class ParticipationRouter extends SoileRouter{
 		.onFailure(err -> handleError(err, context));			
 	}
 
+	/**
+	 * End point for data upload
+	 * TODO: Create cleanup method for orphaned files
+	 * TODO: Try to develop method to avoid upload spamming.
+	 * @param context
+	 */
 	public void uploadData(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 
-		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.EXECUTE,true)
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,true)
 		.onSuccess(Void -> 
 		{
 			if(context.fileUploads().size() != 1)
@@ -198,8 +204,8 @@ public class ParticipationRouter extends SoileRouter{
 						{
 							// so the user is nt empty, i.e. we build a new participant for this user (if it doesn't exist)
 							// we will add execute access to the current user.					
-							LOGGER.info("Found user: \n" + context.user().principal().encodePrettily());
-							LOGGER.info("Found user: \n" + context.user().attributes().encodePrettily());
+							LOGGER.debug("Found user: \n" + context.user().principal().encodePrettily());
+							LOGGER.debug("Found user: \n" + context.user().attributes().encodePrettily());
 							JsonObject userData = new JsonObject();
 							userData.put("username", context.user().principal().getString("username"));
 							userData.put("command", "add");
@@ -336,6 +342,43 @@ public class ParticipationRouter extends SoileRouter{
 		.onFailure(err -> handleError(err, context));		
 	}			
 
+	
+	public void getID(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
+		.onSuccess(Void -> {
+			instanceHandler.loadProject(requestedInstanceID)
+			.onSuccess(project -> {					
+				//JsonArray taskData = project.getTasksWithNames();
+				// this list needs to be filtered by access
+				getParticpantForUser(context.user(), project)				
+				.onSuccess(participant-> {		
+					if(participant.isFinished())
+					{
+						context.response()
+						.setStatusCode(406)							
+						.end("User is finished");
+					}					
+					else
+					{
+						// Try catch block.
+						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
+						context.response()
+						.setStatusCode(200)
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/javascript")
+						.end(currentTask.getInstanceID());
+					}
+				})
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));		
+	}
+	
 	public void getLib(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);

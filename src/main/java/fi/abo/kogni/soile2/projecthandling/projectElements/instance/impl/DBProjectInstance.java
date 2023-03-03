@@ -210,7 +210,7 @@ public class DBProjectInstance extends ProjectInstance{
 				currentTokens.add(o);
 			}
 			int previoussize = currentTokens.size();
-			LOGGER.info("Previously there were: " + currentTokens.size() + " tokens. " + count + " tokens will be created");
+			LOGGER.debug("Previously there were: " + currentTokens.size() + " tokens. " + count + " tokens will be created");
 			while(currentTokens.size() < previoussize + count)
 			{
 				VertxContextPRNG rng = VertxContextPRNG.current();

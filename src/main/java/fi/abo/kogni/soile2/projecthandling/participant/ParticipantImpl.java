@@ -279,17 +279,25 @@ public abstract class ParticipantImpl implements Participant{
 	{		
 		if(taskID == null)
 		{
-			this.finished = true;				
+			this.finished = true;
+			if(this.position != null && !this.position.equals(""))
+			{
+				// this is finished.
+				steps.add(position);
+				this.position = null;
+			}
 			return save().map(taskID).onFailure(err ->
 			{
 				// reset the change.
 				this.finished = false;
 			});
 		}
+		LOGGER.info("Adding step " + taskID);
 		String currentPosition = position;		
 		position = taskID;
 		currentStep += 1;
-		steps.add(taskID);
+		// the last step is finished, so we add it to the steps.
+		steps.add(currentPosition);
 		return save().map(taskID).onFailure(err ->
 		{
 			// reset the change.

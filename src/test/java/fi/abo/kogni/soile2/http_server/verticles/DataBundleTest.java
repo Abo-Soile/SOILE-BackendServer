@@ -207,7 +207,6 @@ public class DataBundleTest extends ElementTester {
 																			{		
 																				found++;
 																				try {																					
-																					System.out.println(files.getJsonObject(i).encodePrettily());
 																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(new DataLakeFile(files.getJsonObject(i)).getAbsolutePath())));
 																					context.assertTrue(dataJson.containsKey("taskResults"));
 																					context.assertEquals(1,dataJson.getJsonArray("taskResults").size());
@@ -444,7 +443,6 @@ public class DataBundleTest extends ElementTester {
 
 	private void checkFileSame(String File1, String File2, TestContext context)
 	{
-		System.out.println(File1 + "//" +  File2);
 		try
 		{
 			File f = new File(File1);

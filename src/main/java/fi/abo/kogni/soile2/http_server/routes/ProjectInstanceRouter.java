@@ -242,8 +242,28 @@ public class ProjectInstanceRouter extends SoileRouter {
 		.onSuccess(Void -> 
 		{			
 			// this list needs to be filtered by access
-			JsonObject requestBody = context.body().asJsonObject();
+			JsonObject requestBody = null;
+			try
+			{
+				requestBody = context.body().asJsonObject();
+				if(requestBody.fieldNames().size() != 1)
+				{
+					handleError(new HttpException(400, "Invalid request"), context);
+					return;
+				}
+				else
+				{
+					// just add whichever name is there as the request type.
+					requestBody.put("requestType", requestBody.fieldNames().iterator().next());					
+				}
+			}
+			catch(Exception e)
+			{
+				// this is a request All request.
+				requestBody = new JsonObject().put("requestType", "all"); 
+			}
 			requestBody.put("projectID", requestedInstanceID);
+			
 			eb.request("fi.abo.soile.DLCreate", requestBody)
 			.onSuccess(response -> {
 				String dlID = response.body().toString();
@@ -266,7 +286,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		.onSuccess(Void -> 
 		{
 			// this list needs to be filtered by access
-			eb.request("fi.abo.soile.DLCreate", new JsonObject().put("downloadID",dlID))
+			eb.request("fi.abo.soile.DLStatus", new JsonObject().put("downloadID",dlID))
 			.onSuccess(response -> {
 				JsonObject responseBody = (JsonObject) response.body();					
 				context.response()
@@ -289,6 +309,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		.onSuccess(Void -> 
 		{
 			// this list needs to be filtered by access
+			LOGGER.info("Requesting finished download file from Eventbus for id " + dlID);
 			eb.request("fi.abo.soile.DLFiles", new JsonObject().put("downloadID",dlID))
 			.onSuccess(response -> {				
 				JsonObject responseBody = (JsonObject) response.body();
@@ -325,68 +346,17 @@ public class ProjectInstanceRouter extends SoileRouter {
 				}
 				else
 				{
+					LOGGER.info("Status was: " + responseBody.getString("status") + " // While ready status should be: " + DownloadStatus.downloadReady.toString());
+					
 					context.response()
-					.setStatusCode(406)					
-					.end("Download not ready");
+					.setStatusCode(503)					
+					.end("Download not yet ready");
 
 				}
 			})
 			.onFailure(err -> handleError(err, context));										
 		})
 		.onFailure(err -> handleError(err, context));			
-	}
-	
-	
-	
-	/**
-	 * Get the participant for the current user. 
-	 * @param user the authenticated {@link User} from a routing context
-	 * @param project the {@link ProjectInstance} for which the participant is requested. If there is none yet, one will be created.
-	 * @return
-	 */
-	Future<Participant> getParticpantForUser(User user, ProjectInstance project)
-	{
-		
-		if(user.principal().getString("username") == null)
-		{
-			// This is a Token User! So we quickly get the participant from the Token. 
-			return partHandler.getParticipantForToken(user.principal().getString("access_token"), project.getID());			
-		}
-		else
-		{
-			Promise<Participant> partPromise = Promise.promise();
-			JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("projectInstanceID", project.getID());
-			eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantForUserInProject"), request)
-			.onSuccess(response -> {
-				JsonObject responseObject = (JsonObject) response;
-				if(responseObject.getString("participantID") != null)
-				{
-					partHandler.getParticipant(responseObject.getString("participantID"))
-					.onSuccess(particpant -> {
-						partPromise.complete(particpant);
-					})
-					.onFailure(err -> partPromise.fail(err));
-				}
-				// doesn't have one in this project yet, so we create one.
-				else
-				{
-					partHandler.create(project)
-					.onSuccess(particpant -> {
-						// update the user.
-						request.put("participantID", particpant.getID());
-						eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInProject"), request)
-						.onSuccess( success -> {
-							partPromise.complete(particpant);
-						})
-						.onFailure(err -> partPromise.fail(err));
-					})
-					.onFailure(err -> partPromise.fail(err));
-				}
-			})
-			.onFailure(err -> partPromise.fail(err));
-			return partPromise.future();
-		}
-		
 	}
 	
 	

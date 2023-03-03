@@ -1256,14 +1256,16 @@ paths:
         '400':
           description: 'invalid input, object invalid'
         '403':
-          description: User has no authorization to make this call            
+          description: User has no authorization to make this call    
+          
   /projectexec/{id}/submit:  
     post:
       security:
         - cookieAuth: []
         - JWTAuth: []
+        - tokenAuth: []
       tags:
-        - projectexecution
+        - participation
       summary: submit data for the current task of the authorized user in the project
       operationId: submitResults
       description: "Submit results for a job using a json, containing both output data and result data. Result data needs to point to file ids generated from the uploaddata endpoint or be contained in a flat json object depth 1). Output data needs to be provided in a flat json object as well. Calling this will finish this task and proceed the user to the next task. The reply contains the new task for this user. "
@@ -1290,14 +1292,14 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskData'
-  /projectexec/{id}/getTaskType:  
+              
+  /projectexec/{id}/getcurrenttasktype:  
     get:
       security:
         - cookieAuth: []
         - JWTAuth: []
         - tokenAuth: []
       tags:
-        - projectexecution
         - participation
       summary: Get the next unfinished task for the authorized user. 
       operationId: getTaskType
@@ -1338,6 +1340,42 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call
+          
+  /projectexec/{id}/getcurrenttaskid:  
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+        - tokenAuth: []
+      tags:
+        - participation
+      summary: Get the ID of the current task of the participant
+      operationId: getID
+      description: >-
+                   This endpoint provides the relevant code for the current task for the participant.  
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project instance or the shortcut for the project instance
+          schema:
+            type : string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/javascript:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call
+        '406':
+          description: User is finished.          
+          
   /run/{id}:  
     get:
       security:
@@ -1345,7 +1383,6 @@ paths:
         - JWTAuth: []
         - tokenAuth: []
       tags:
-        - projectexecution
         - participation
       summary: Get the next unfinished task for the authorized user. 
       operationId: runTask
@@ -1381,7 +1418,6 @@ paths:
         - JWTAuth: []
         - tokenAuth: []
       tags:
-        - projectexecution
         - participation
       summary: Get a library for a project
       operationId: getLib
@@ -1411,15 +1447,49 @@ paths:
         '406':
           description: User is finished.
 
-          
-  /projectexec/{id}/signUp:  
-    post:
+  /run/{id}/*:
+    get:
       security:
-        - {} # Security on this endpoint is optional. Calling this in an authenticated manner will add a user to the participant. Calling it in a non authenticated manner will create a token that can be used for future authentication.
         - cookieAuth: []
         - JWTAuth: []
+        - tokenAuth: []
       tags:
-        - projectexecution
+        - participation
+      summary: Get Other data for the currentTask of the participant
+      operationId: getResourceForExecution
+      description: >- 
+                   This end point provides "static" data for the current task of the participant. This allows a proxy to simply 
+                   Access /run/{id}/some/File to access resources. 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project instance
+          schema:
+            type : string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/javascript:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call
+        '406':
+          description: User is finished.
+          
+  /projectexec/{id}/signup:  
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+        - {} # Security on this endpoint is optional. Calling this in an authenticated manner will add a user to the participant. Calling it in a non authenticated manner will create a token that can be used for future authentication.
+      tags:
         - participation
       summary: signUp for a project with a one-time signUp Code. 
       operationId: signUpForProject
@@ -1512,7 +1582,7 @@ paths:
         - JWTAuth: []
         - tokenAuth: []
       tags:
-        - projectexecution
+        - participation
       summary: Upload large result data for a project
       operationId: uploadData
       description: "Upload large content for a participant. The data must be for the current task of the authenticated user in the project indicated."
@@ -1549,41 +1619,7 @@ paths:
               format: binary
               description: the file to upload
               
-  /run/{id}/*:
-    get:
-      security:
-        - cookieAuth: []
-        - JWTAuth: []
-        - tokenAuth: []
-      tags:
-        - projectexecution
-      summary: Get Other data for the currentTask of the participant
-      operationId: getResourceForExecution
-      description: >- 
-                   This end point provides "static" data for the current task of the participant. This allows a proxy to simply 
-                   Access /run/{id}/some/File to access resources. 
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: UUID of the Project instance
-          schema:
-            type : string
-      responses:
-        '200':
-          description: Success
-          content:
-            application/javascript:
-              schema:
-                type: string
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '400':
-          description: 'invalid input, object invalid'
-        '403':
-          description: User has no authorization to make this call
-        '406':
-          description: User is finished.
+
             
   /experiment/list:
     get:
@@ -1850,7 +1886,7 @@ components:
     dbData:
       type: array
       items:
-        oneOf:
+        anyOf:
           - $ref: '#/components/schemas/stringDBData'
           - $ref: '#/components/schemas/outputData'
     fileData:
@@ -1885,8 +1921,7 @@ components:
           type: string
           description: The value of an output (within outputData this can only be a number)
         timestamp:
-          type: string
-          format: date
+          type: number
     outputData:
       type: object
       required: 
@@ -1901,8 +1936,7 @@ components:
           type: number 
           description: The value of an output (within outputData this can only be a number)
         timestamp:
-          type: string
-          format: date
+          type: number
     resultData:
       oneOf:
         - $ref: '#/components/schemas/TaskResults'
@@ -2087,16 +2121,18 @@ components:
       type: object
       required:
         - taskID
-        - resultdata
-        - outputdata
+        - resultData
+        - outputData
       description: Data sumitted for a specific task. 
       properties:
         taskID: 
           type: string
           description: The ID of the task this data belongs to.
-        outputdata:
-          $ref: '#/components/schemas/dbData'
-        resultdata:
+        outputData:
+          type: array
+          items: 
+              $ref: '#/components/schemas/outputData'
+        resultData:
           type: object
           properties:
             jsonData:
@@ -2478,6 +2514,8 @@ components:
     ObtainDataScheme:
       oneOf:
         - type: object
+          required:
+            - participants        
           properties:
             participants:
               type: array
@@ -2486,12 +2524,16 @@ components:
                 description: the IDs of the participant for which to download data
           description: download all available data for these participants
         - type: object
+          required:
+            - participant        
           properties:
             participant:
               type: string
               description: the IDs of the participant for which to download data
           description: download all available data for this participant
         - type: object
+          required:
+            - tasks
           properties:
             tasks:
               type: array
@@ -2500,11 +2542,16 @@ components:
                 description: The instance UUID of the task 
           description: Download data for all participants for the given task.
         - type: object
+          required:
+            - task
           properties:
             task:
               type: string
               description: The instance UUID of the task 
           description: Download data for all participants for the given task.
+        - type: string
+          description: This is essentially an empty request, requesting everything.
+          
       description: TODO, Allow individual file download for users and tasks.
     FileDirectory:
       type: array

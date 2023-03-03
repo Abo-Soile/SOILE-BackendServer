@@ -238,6 +238,7 @@ public abstract class ProjectInstance implements AccessElement{
 	 */
 	public Future<String> finishStep(Participant participant, JsonObject taskData)
 	{
+		LOGGER.info("Handling participant: " + participant.toString() + " with data " + taskData.encodePrettily());
 		if(!isActive)
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
@@ -365,26 +366,27 @@ public abstract class ProjectInstance implements AccessElement{
 	/**
 	 * Proceed the user to the next step within this project (depending on Filters etc pp).
 	 * This will return the position the user was set to if everything succeeds.
-	 * @param user The user that proceeds to the next step.
+	 * @param participant The user that proceeds to the next step.
 	 * @return A future of the next step instance ID, or null if this is participant is finished.
 	 */
-	public Future<String> setNextStep(Participant user)
+	public Future<String> setNextStep(Participant participant)
 	{		
 		if(!isActive)
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
 		}		
-		LOGGER.debug("Trying to set next step for user currently at position: " + user.getProjectPosition());		
-		ElementInstance current = getElement(user.getProjectPosition());
-		LOGGER.debug("Element is : " + current);
-		String nextElement = current.nextTask(user);
+		LOGGER.info("Trying to set next step for user currently at position: " + participant.getProjectPosition());		
+		ElementInstance current = getElement(participant.getProjectPosition());
+		LOGGER.info("Element is : " + current);
+		String nextElement = current.nextTask(participant);
+		LOGGER.info("Next element is : " + nextElement);
 		if("".equals(nextElement) || nextElement == null)
 		{
 			// This indicates we are done. 
-			return user.setProjectPosition(null);	
+			return participant.setProjectPosition(null);	
 		}
 		LOGGER.debug("Updating user position:" + current.getInstanceID() + " -> " + nextElement);		
-		return user.setProjectPosition(nextElement);
+		return participant.setProjectPosition(nextElement);
 	}				
 		
 	/**
@@ -421,7 +423,7 @@ public abstract class ProjectInstance implements AccessElement{
 			}
 		}
 		return result;
-	}
+	}	
 	
 	/**
 	 * This operation saves the Project. It should ensure that the data can be reconstructed by supplying what is returned 

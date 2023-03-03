@@ -62,6 +62,7 @@ public abstract class GitTest extends MongoTest {
 			FileUtils.deleteDirectory(new File(gitDataLakeDir));
 			//FileUtils.deleteDirectory(new File(resultDataLakeDir));
 			FileUtils.deleteDirectory(new File(gitDir));
+			FileUtils.deleteDirectory(new File(resultDataLakeDir));
 		}
 		catch(Exception e)
 		{
