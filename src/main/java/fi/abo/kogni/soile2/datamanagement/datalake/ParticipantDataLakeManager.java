@@ -66,7 +66,7 @@ public class ParticipantDataLakeManager{
 				LOGGER.info("temp File created: " + targetFileLocation);
 				String fileName = targetFileLocation.replace(targetFile.getFolderPath(datalakedirectory),"");
 				targetFile.setLocalFileName(fileName);
-				LOGGER.info("Trying to move file : " + upload.uploadedFileName() + " to " + targetFile.getFilePath(datalakedirectory));
+				LOGGER.debug("Trying to move file : " + upload.uploadedFileName() + " to " + targetFile.getFilePath(datalakedirectory));
 				vertx.fileSystem().move(upload.uploadedFileName(), targetFile.getFilePath(datalakedirectory), new CopyOptions().setReplaceExisting(true))
 				.onSuccess(res -> {
 					LOGGER.info("File Moved ");
