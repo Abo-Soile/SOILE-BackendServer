@@ -47,8 +47,9 @@ public class DBProjectInstance extends ProjectInstance{
 		//TODO: If we at some point allow later modification of Name and shortcut, we need to add checks here that they do not conflict
 		// For an implementation have a look at @ElementToDBProjectInstance
 		JsonObject query = new JsonObject().put("_id", instanceID);		
-		// remove id and participants, these are handled directly.		
-		JsonObject update = toDBJson();
+		// remove id and participants, these are handled directly.
+		
+		JsonObject update = new JsonObject().put("$set", toDBJson());
 		update.remove("_id");		
 
 		client.updateCollection(getTargetCollection(), query, update).onSuccess(result ->

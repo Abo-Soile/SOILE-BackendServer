@@ -14,8 +14,6 @@ import fi.abo.kogni.soile2.projecthandling.exceptions.ProjectIsInactiveException
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecification;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FilterObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -168,7 +166,7 @@ public abstract class ProjectInstance implements AccessElement{
 
 	public String getShortCut()
 	{
-		return shortcut;
+		return shortcut.equals("") ? null : shortcut;
 	}
 	/**
 	 * Parse an experiment from the given experiment Json. 
@@ -238,7 +236,7 @@ public abstract class ProjectInstance implements AccessElement{
 	 */
 	public Future<String> finishStep(Participant participant, JsonObject taskData)
 	{
-		LOGGER.info("Handling participant: " + participant.toString() + " with data " + taskData.encodePrettily());
+		LOGGER.debug("Handling participant: " + participant.toString() + " with data " + taskData.encodePrettily());
 		if(!isActive)
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
@@ -275,6 +273,10 @@ public abstract class ProjectInstance implements AccessElement{
 		return finishedPromise.future();
 	}	
 	
+	public boolean isActive() {
+		return isActive;
+	}
+
 	/**
 	 * Retrieve the results part of the data provided when a Task is submitted. 
 	 * @param taskData the data submitted when a taskk is finished.
@@ -375,11 +377,11 @@ public abstract class ProjectInstance implements AccessElement{
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
 		}		
-		LOGGER.info("Trying to set next step for user currently at position: " + participant.getProjectPosition());		
+		LOGGER.debug("Trying to set next step for user currently at position: " + participant.getProjectPosition());		
 		ElementInstance current = getElement(participant.getProjectPosition());
-		LOGGER.info("Element is : " + current);
+		LOGGER.debug("Element is : " + current);
 		String nextElement = current.nextTask(participant);
-		LOGGER.info("Next element is : " + nextElement);
+		LOGGER.debug("Next element is : " + nextElement);
 		if("".equals(nextElement) || nextElement == null)
 		{
 			// This indicates we are done. 

@@ -55,6 +55,7 @@ public class WebObjectCreator {
 	}
 	
 	// The session needs to already be authenticated have all headers set.
+	@SuppressWarnings("rawtypes")
 	static Future<JsonObject> createTask(WebClientSession webClient, String elementID)
 	{
 		Promise<JsonObject> taskPromise = Promise.promise();
@@ -155,7 +156,7 @@ public class WebObjectCreator {
 	}
 		 
 	
-	
+	@SuppressWarnings("rawtypes")
 	public static Future<JsonObject> createExperiment(WebClientSession webClient, String experimentName)
 	{
 		Promise<JsonObject> experimentPromise = Promise.promise();
@@ -168,7 +169,7 @@ public class WebObjectCreator {
 				LOGGER.debug("Experiment " + experimentName + " Initialized: " + experimentJson.getString("UUID") + "@" + experimentJson.getString("version"));
 				String id = experimentJson.getString("UUID");
 				String version = experimentJson.getString("version");								
-				ConcurrentHashMap<String, JsonObject> elements = new ConcurrentHashMap();
+				ConcurrentHashMap<String, JsonObject> elements = new ConcurrentHashMap<String, JsonObject>();
 				List<Future> partFutures = new LinkedList<Future>();
 				for(Object item : ExperimentDef.getJsonArray("items"))
 				{
@@ -254,7 +255,8 @@ public class WebObjectCreator {
 		}
 		return experimentPromise.future();
 	}
-
+	
+	@SuppressWarnings("rawtypes")
 	public static Future<JsonObject> createProject(WebClientSession webClient, String projectName)
 	{
 		Promise<JsonObject> projectPromise = Promise.promise();
@@ -271,7 +273,7 @@ public class WebObjectCreator {
 				JsonArray projectTasks = projectJson.getJsonArray("tasks");
 				JsonArray projectFilters = projectJson.getJsonArray("filters");
 				JsonArray projectExperiments = projectJson.getJsonArray("experiments");
-				ConcurrentHashMap<String, JsonObject> tasks = new ConcurrentHashMap();
+				ConcurrentHashMap<String, JsonObject> tasks = new ConcurrentHashMap<String, JsonObject>();
 				List<Future> taskFutures = new LinkedList<Future>();
 				for(Object item : projectDef.getJsonArray("tasks"))
 				{
@@ -298,7 +300,7 @@ public class WebObjectCreator {
 					JsonArray taskArray = new JsonArray(taskList);
 					projectTasks.addAll(taskArray);
 					// and now we do the experiments. Since they could in theory refer back to the same unique tasks, we need to have created the tasks first.
-					ConcurrentHashMap<String, JsonObject> experiments = new ConcurrentHashMap();
+					ConcurrentHashMap<String, JsonObject> experiments = new ConcurrentHashMap<String, JsonObject>();
 					List<Future> experimentFutures = new LinkedList<Future>();
 					// and for filters. This should work even without					
 					for(Object item : projectDef.getJsonArray("filters", new JsonArray()))
@@ -329,7 +331,6 @@ public class WebObjectCreator {
 						expList.addAll(experiments.values());
 						JsonArray expArray = new JsonArray(expList);
 						projectExperiments.addAll(expArray);
-						System.out.println("Supplied json for update: \n" + projectJson.encodePrettily());
 						SoileWebTest.POST(webClient, "/project/" + id + "/" + version , null, projectJson)					
 						.onSuccess(response -> {						
 							SoileWebTest.GET(webClient, "/project/" + id + "/" + response.bodyAsJsonObject().getString("version") , null, null)

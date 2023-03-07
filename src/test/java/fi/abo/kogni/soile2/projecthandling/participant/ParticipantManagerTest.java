@@ -115,7 +115,6 @@ public class ParticipantManagerTest extends GitTest{
 		try
 		{
 			Async testAsync = context.async();
-			JsonArray ResultTestData = new JsonArray(Files.readString(Paths.get(ParticipantManagerTest.class.getClassLoader().getResource("InstanceData/ResultTestData.json").getPath())));
 			CheckDirtyMap<String, Participant> partMap = new CheckDirtyMap<>(mgr, 3600*1000);
 			ProjectFactoryImplForTesting.loadProject(ProjectBaseTest.getPos(0))
 			.onSuccess(project -> {

@@ -155,8 +155,7 @@ public class APITask extends APIElementBase<Task> {
 			}
 			else
 			{
-				LOGGER.debug("Failed to load Code File");
-				err.printStackTrace(System.out);
+				LOGGER.error("Failed to load Code File", err);				
 				codePromise.fail(err);
 			}
 		});			

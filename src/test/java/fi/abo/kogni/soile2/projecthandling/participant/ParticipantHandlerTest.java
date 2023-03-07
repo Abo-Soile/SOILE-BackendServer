@@ -23,6 +23,7 @@ import io.vertx.ext.unit.TestContext;
 
 public class ParticipantHandlerTest extends GitTest{
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testGetParticipantStatus(TestContext context) {
 		System.out.println("--------------------  Testing Participant Status retrieval ----------------------");
@@ -70,12 +71,8 @@ public class ParticipantHandlerTest extends GitTest{
 				.put("name", "smoker")
 				.put("value", 1);
 
-		JsonObject nonSmokerOutput = new JsonObject()
-				.put("name", "smoker")
-				.put("value", 0);
 
 		JsonObject wrongquestionaireOutput = new JsonObject().put("outputData", new JsonArray().add(smokerOutput)).put("taskID", "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2"); 
-		JsonObject nonSmokerQuestionaireOutput = new JsonObject().put("outputData", new JsonArray().add(nonSmokerOutput)).put("taskID", "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1");
 		JsonObject smokerQuestionaireOutput = new JsonObject().put("outputData", new JsonArray().add(smokerOutput)).put("taskID", "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1");
 		Async participantAsync = context.async();
 		try

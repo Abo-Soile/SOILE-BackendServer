@@ -40,7 +40,7 @@ public class ObjectGenerator {
 
 	private static final Logger LOGGER = LogManager.getLogger(ObjectGenerator.class);
 
-
+	@SuppressWarnings("rawtypes")
 	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID, MongoClient client)
 	{
 		Promise<APITask> taskPromise = Promise.promise();
@@ -118,7 +118,7 @@ public class ObjectGenerator {
 		}
 		return taskPromise.future();
 	}
-
+	@SuppressWarnings("rawtypes")
 	public static Future<APIExperiment> buildAPIExperiment(ElementManager<Experiment> experimentManager,ElementManager<Task> taskManager,MongoClient client, String experimentName)
 	{
 		Promise<APIExperiment> experimentPromise = Promise.promise();
@@ -134,7 +134,7 @@ public class ObjectGenerator {
 				apiExperiment.setVersion(experiment.getCurrentVersion());
 				apiExperiment.setUUID(experiment.getUUID());				
 
-				ConcurrentHashMap<String, JsonObject> elements = new ConcurrentHashMap();
+				ConcurrentHashMap<String, JsonObject> elements = new ConcurrentHashMap<String, JsonObject>();
 				List<Future> partFutures = new LinkedList<Future>();
 				for(Object item : ExperimentDef.getJsonArray("items"))
 				{
@@ -214,7 +214,7 @@ public class ObjectGenerator {
 		return experimentPromise.future();
 	}
 
-
+	@SuppressWarnings("rawtypes")
 	public static Future<APIProject> buildAPIProject(ElementManager<Project> projectManager, 
 													 ElementManager<Experiment> expManager,
 													 ElementManager<Task> taskManager, 
@@ -231,7 +231,7 @@ public class ObjectGenerator {
 				apiProject.setName(project.getName());
 				apiProject.setVersion(project.getCurrentVersion());
 				apiProject.setUUID(project.getUUID());							
-				ConcurrentHashMap<String, JsonObject> tasks = new ConcurrentHashMap();
+				ConcurrentHashMap<String, JsonObject> tasks = new ConcurrentHashMap<String, JsonObject>();
 				List<Future> taskFutures = new LinkedList<Future>();
 				for(Object item : projectDef.getJsonArray("tasks"))
 				{
@@ -258,7 +258,7 @@ public class ObjectGenerator {
 					JsonArray taskArray = new JsonArray(taskList);
 					apiProject.setTasks(taskArray);
 					// and now we do the experiments. Since they could in theory refer back to the same unique tasks, we need to have created the tasks first.
-					ConcurrentHashMap<String, JsonObject> experiments = new ConcurrentHashMap();
+					ConcurrentHashMap<String, JsonObject> experiments = new ConcurrentHashMap<String, JsonObject>();
 					List<Future> experimentFutures = new LinkedList<Future>();
 					// and for filters. This should work even without
 					JsonArray filters = apiProject.getFilters();
@@ -332,7 +332,7 @@ public class ObjectGenerator {
 		{
 			JsonObject celement = elements.getJsonObject(i).getJsonObject("data");
 			String etype = elements.getJsonObject(i).getString("elementType");
-			LOGGER.info(celement.encodePrettily());
+			LOGGER.debug(celement.encodePrettily());
 			switch(etype)
 			{
 			case "task": if(celement.getString("next").equals("end"))

@@ -18,6 +18,8 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 	@Test
 	public void permissionOrRoleRequestTest(TestContext context)
 	{
+		System.out.println("--------------------  Testing Web Role and Permission retrieval ----------------------");
+
 		Async testAsync = context.async();
 		createUserAndAuthedSession("Admin", "testpw", Roles.Admin)
 		.onSuccess(adminsession -> {
@@ -49,7 +51,6 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 					Async userCheck = context.async();
 					GET(usersession, "/user/getaccess",new JsonObject().put("username", "TestUser"),null)
 					.onSuccess(response -> {
-						System.out.println(response.bodyAsJsonObject().encodePrettily());
 						JsonObject data =  response.bodyAsJsonObject();
 						context.assertEquals(Roles.Researcher.toString(), data.getString("role"));
 						JsonObject permissions = data.getJsonObject("permissions");
@@ -75,6 +76,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 @Test
 public void permissionChangeTest(TestContext context)
 {
+	System.out.println("--------------------  Testing Web Role and Permission Changes  ----------------------");
 	JsonArray permissionSettings = new JsonArray();
 	JsonObject permissionChange = new JsonObject().put("username","NonAdmin")
 			.put("command", "add")
@@ -94,13 +96,11 @@ public void permissionChangeTest(TestContext context)
 			.onSuccess(experimentInfo -> {
 				createUserAndAuthedSession("NonAdmin", "testpw", Roles.Researcher)
 				.onSuccess(userSession -> {
-					System.out.println("User session created");
 					Async failedAccessAsync = context.async();
 					GET(userSession,"/experiment/" + experimentInfo.getString("UUID") + "/" + experimentInfo.getString("version"), null, null )
 					.onSuccess(err -> context.fail("Is private not accessible"))
 					.onFailure(rejected -> {						
 						context.assertEquals(403, ((HttpException)rejected).getStatusCode());
-						System.out.println("No Access for user");
 						failedAccessAsync.complete();
 						permissionSettings.add(new JsonObject().put("type", PermissionType.FULL.toString())
 								.put("target", experimentInfo.getString("UUID")));
@@ -108,18 +108,15 @@ public void permissionChangeTest(TestContext context)
 						POST(userSession, "/user/setpermissions",null,permissionChangeOther)
 						.onSuccess(fail -> context.fail("Should not be possible"))
 						.onFailure(cont -> {
-							System.out.println("This User not allowed to change permissions");
 							context.assertEquals(403, ((HttpException)cont).getStatusCode());
 							POST(adminsession, "/user/setpermissions",null,permissionChange)
 							.onSuccess(permissionsSet -> {
 								// now we should have access
-								System.out.println("User now has access");
 								GET(userSession,"/experiment/" + experimentInfo.getString("UUID") + "/" + experimentInfo.getString("version"), null, null )
 								.onSuccess(objInfo -> {
 									context.assertEquals(experimentInfo, objInfo.bodyAsJsonObject());
 									POST(userSession, "/user/setpermissions",null,permissionChangeOther)
 									.onSuccess(res -> {
-										System.out.println("User could alter permissions for another user");
 										context.assertEquals(200, res.statusCode());
 										testAsync.complete();
 									})
@@ -145,6 +142,7 @@ public void permissionChangeTest(TestContext context)
 @Test
 public void listUsersTest(TestContext context)
 {		
+	System.out.println("--------------------  Testing Web List Users  ----------------------");
 	Async sessionAsync = context.async();
 	createUserAndAuthedSession("Admin", "testPassword", Roles.Admin)
 	.onSuccess(authedSession -> {
@@ -160,7 +158,6 @@ public void listUsersTest(TestContext context)
 				{
 					JsonObject currentUser = users.getJsonObject(i);
 					String username = currentUser.getString("username");
-					System.out.println(currentUser.encodePrettily());
 					switch(username)
 					{
 					case "Admin" : 
@@ -274,6 +271,7 @@ public void listUsersTest(TestContext context)
 @Test
 public void registerUserTest(TestContext context)
 {
+	System.out.println("--------------------  Testing Web Register User  ----------------------");
 	JsonObject userData = new JsonObject().put("username", "TestUser")
 			.put("fullname", "Some Name")
 			.put("email", "me@you.fi")
@@ -320,8 +318,10 @@ public void registerUserTest(TestContext context)
 }
 
 @Test
+// TODO: Test that files also get deleted for a user.
 public void removeUserTest(TestContext context)
 {
+	System.out.println("--------------------  Testing Web Remove User  ----------------------");
 	JsonObject userData = new JsonObject().put("username", "TestUser")
 			.put("fullname", "Some Name")
 			.put("email", "me@you.fi")
@@ -377,6 +377,7 @@ public void removeUserTest(TestContext context)
 @Test
 public void setUserInfoTest(TestContext context)
 {
+	System.out.println("--------------------  Testing Web Setting User Info  ----------------------");
 	JsonObject invaliduserData = new JsonObject().put("username", "TestUser")
 			.put("fullname", "Some Name")
 			.put("email", "me@you.fi")
@@ -399,29 +400,23 @@ public void setUserInfoTest(TestContext context)
 	Async testAsync = context.async();
 	createUserAndAuthedSession("Admin", "password", Roles.Admin)
 	.onSuccess(adminsession -> {
-		System.out.println("Admin session created");
 		createUserAndAuthedSession("NonAdmin", "password", Roles.Researcher)
 		.onSuccess(nonAdminsession -> {
-			System.out.println("Non-Admin session created");
 			POST(nonAdminsession,"/user/info",null,invaliduserData)
 			.onSuccess(err -> {
 				context.fail("This should not be possible");
 			})
 			.onFailure(err -> {
-				System.out.println("invalid Data tested for non admin");
 				// non admin will just be denied this request.
 				context.assertEquals(403, ((HttpException)err).getStatusCode());
 				Async testNonExistentUser = context.async();
 
 				POST(adminsession,"/user/info",null,invaliduserData)
 				.onSuccess(invalid -> {
-					System.out.println(invalid.bodyAsString());
 					context.fail("This should not be possible");
 
 				})
 				.onFailure(res -> {
-					System.out.println("invalid Data tested for admin");
-					res.printStackTrace(System.out);
 					context.assertEquals(410, ((HttpException)res).getStatusCode());
 					testNonExistentUser.complete();
 				});
@@ -467,6 +462,7 @@ public void setUserInfoTest(TestContext context)
 @Test
 public void setUserInfoWithRoleTest(TestContext context)
 {
+	System.out.println("--------------------  Testing Web Seting User Info and Role  ----------------------");
 	JsonObject validUserData = new JsonObject().put("username", "NonAdmin")
 			.put("fullname", "Some Other Name")
 			.put("email", "me@you2.fi")
@@ -482,7 +478,6 @@ public void setUserInfoWithRoleTest(TestContext context)
 	Async testAsync = context.async();
 	createUserAndAuthedSession("Admin", "password", Roles.Admin)
 	.onSuccess(adminsession -> {
-		System.out.println("Admin session created");
 		createUserAndAuthedSession("NonAdmin", "password", Roles.Researcher)
 		.onSuccess(nonAdminsession -> {
 			Async nonAdminTest = context.async();
@@ -491,7 +486,6 @@ public void setUserInfoWithRoleTest(TestContext context)
 				context.fail("This should not be possible");
 			})
 			.onFailure(err -> {
-				System.out.println("invalid Data tested for non admin");
 				// non admin will just be denied this request.
 				context.assertEquals(403, ((HttpException)err).getStatusCode());
 				nonAdminTest.complete();
@@ -502,7 +496,6 @@ public void setUserInfoWithRoleTest(TestContext context)
 				context.fail("This should not be possible");
 			})
 			.onFailure(failed -> {
-				System.out.println("invalid Data tested for non admin");
 				// non admin will just be denied this request.
 				context.assertEquals(400, ((HttpException)failed).getStatusCode());
 				POST(adminsession,"/user/info",null,validUserData)
@@ -528,6 +521,7 @@ public void setUserInfoWithRoleTest(TestContext context)
 @Test
 public void getUserInfoTest(TestContext context)
 {
+	System.out.println("--------------------  Testing Web Get User Info  ----------------------");
 	JsonObject validuserData = new JsonObject().put("username", "NonAdmin")
 			.put("fullname", "Some Other Name")
 			.put("email", "me@you2.fi")
@@ -539,12 +533,10 @@ public void getUserInfoTest(TestContext context)
 	Async testAsync = context.async();
 	createUserAndAuthedSession("Admin", "password", Roles.Admin)
 	.onSuccess(adminsession -> {
-		System.out.println("Admin session created");
 		createUserAndAuthedSession("NonAdmin", "password", Roles.Researcher)
 		.onSuccess(nonAdminsession -> {
 			Async testOriginalData = context.async();
 			Async testnewData = context.async();
-			System.out.println("Non-Admin session created");
 			GET(adminsession,"/user/info",userrequest,null)
 			.onSuccess(response -> {
 				JsonObject res = response.bodyAsJsonObject();
@@ -596,6 +588,7 @@ public void getUserInfoTest(TestContext context)
 @Test
 public void setPasswordTest(TestContext context)
 {		
+	System.out.println("--------------------  Testing Web Set Password  ----------------------");
 	Async user1Async = context.async();
 	createUserAndAuthedSession("Admin", "password", Roles.Admin)
 	.onSuccess(adminsession -> {
@@ -674,6 +667,7 @@ public void setPasswordTest(TestContext context)
 @Test
 public void setRoleTest(TestContext context)
 {		
+	System.out.println("--------------------  Testing Web Set Role   ----------------------");
 	JsonObject userrequest = new JsonObject().put("role", Roles.Participant.toString()).put("username", "TestUser");
 	JsonObject invalidrolerequest = new JsonObject().put("username", "TestUser").put("role", "Joker");
 	JsonObject invaliduserrequest = new JsonObject().put("username", "NonAdmin").put("role", "Researcher");
@@ -705,7 +699,6 @@ public void setRoleTest(TestContext context)
 				GET(adminsession,"/user/info", new JsonObject().put("username", "TestUser"), null)
 				.onSuccess(res -> {
 					JsonObject result = res.bodyAsJsonObject();
-					System.out.println(result.encodePrettily());
 					context.assertEquals(Roles.Participant.toString(),result.getValue("role"));
 					validAsync.complete();
 				})

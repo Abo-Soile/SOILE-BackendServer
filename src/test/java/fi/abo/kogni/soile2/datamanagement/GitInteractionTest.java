@@ -1,8 +1,5 @@
 package fi.abo.kogni.soile2.datamanagement;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -10,13 +7,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.GitTest;
-import fi.abo.kogni.soile2.SoileBaseTest;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.ObjectManager;
@@ -28,7 +23,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import io.vertx.ext.web.FileUpload;
 
 @RunWith(VertxUnitRunner.class)
 public class GitInteractionTest extends GitTest{
@@ -79,7 +73,6 @@ public class GitInteractionTest extends GitTest{
 				// To properly test this, we need to manually create the git DataLake Folder for this element.
 				FileUtils.forceMkdir(Paths.get(SoileConfigLoader.getServerProperty("soileGitDataLakeFolder"), targetElement).toFile());
 				Files.copy(dataPath,dataLakePath);
-				FileReader br = new FileReader(dataPath.toFile());
 				origData = new String(Files.readAllBytes(dataPath), StandardCharsets.UTF_8);
 			}
 			catch(Exception e)

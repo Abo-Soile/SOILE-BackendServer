@@ -6,9 +6,7 @@ import java.nio.file.Paths;
 
 import org.junit.Test;
 
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
-import fi.abo.kogni.soile2.http_server.codeProvider.CompiledCodeProvider;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -21,7 +19,6 @@ public class CompiledCodeProviderTest extends SoileVerticleTest {
 	{
 		System.out.println("--------------------  Testing Experiment Language ----------------------");		 
 
-		GitManager gm = new GitManager(vertx.eventBus()); 
 		CompiledCodeProvider elangProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("elangAddress"), vertx.eventBus());
 		try
 		{			
@@ -58,7 +55,6 @@ public class CompiledCodeProviderTest extends SoileVerticleTest {
 	{
 		System.out.println("--------------------  Testing Questionaire Markup ----------------------");		 
 
-		GitManager gm = new GitManager(vertx.eventBus()); 
 		CompiledCodeProvider qmarkupProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("questionnaireAddress"), vertx.eventBus());
 		try
 		{			

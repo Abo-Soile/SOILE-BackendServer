@@ -38,6 +38,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 	@Test
 	public void runTaskTest(TestContext context)
 	{
+		System.out.println("--------------------  Running Task Tests  ----------------------");    
 		Async creationAsync = context.async();
 		createAndStartProject(true)
 		.onSuccess(instanceID -> {
@@ -78,6 +79,8 @@ public class ParticipationRouterTest extends SoileWebTest{
 	@Test
 	public void submitTest(TestContext context)
 	{
+		System.out.println("--------------------  Running Data Submission Tests  ----------------------");    
+
 		Async creationAsync = context.async();
 		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
 																   .put("value", 0)
@@ -107,7 +110,6 @@ public class ParticipationRouterTest extends SoileWebTest{
 					.onSuccess(partInfo -> {
 						context.assertNotNull(partInfo);
 						// there is only one output
-						System.out.println(partInfo.encodePrettily());
 						context.assertEquals(OutputData,partInfo.getJsonArray("outputData").getJsonObject(0).getJsonArray("outputs"));
 						submitAsync.complete();
 					});
@@ -123,6 +125,8 @@ public class ParticipationRouterTest extends SoileWebTest{
 	@Test
 	public void dataUploadAndRetrievalTest(TestContext context)
 	{
+		System.out.println("--------------------  Running Data Upload and retrieval tests  ----------------------");    
+
 		Async creationAsync = context.async();
 		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
 																   .put("value", 0)
@@ -239,6 +243,8 @@ public class ParticipationRouterTest extends SoileWebTest{
 	@Test
 	public void projectTest(TestContext context)
 	{
+		System.out.println("--------------------  Running Web Project Prohgression Test  ----------------------");    
+
 		Async creationAsync = context.async();
 		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
 																   .put("value", 1)
@@ -269,18 +275,14 @@ public class ParticipationRouterTest extends SoileWebTest{
 				tempSession.addHeader("Authorization", authToken);				
 				submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 				.onSuccess(submitted -> {
-					System.out.println("First submission");
 					submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 					.onSuccess(submitted2 -> {
-						System.out.println("Second submission");
 						submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 						.onSuccess(submitted3 -> {
-							System.out.println("Third submission");
 							submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 							.onSuccess(submitted4 -> {
 								submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 								.onSuccess(submitted5 -> {
-									System.out.println("Fifth submission");
 									GET(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
 									.onSuccess(response -> {									
 										JsonObject finalresult = response.bodyAsJsonObject();
@@ -309,6 +311,8 @@ public class ParticipationRouterTest extends SoileWebTest{
 	@Test
 	public void testRunResources(TestContext context)
 	{
+		System.out.println("--------------------  Running Test for /run/{id}/*  ----------------------");    
+
 		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
 																   .put("value", 1)
 																   .put("timestamp", System.currentTimeMillis()));
@@ -331,7 +335,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 		fileUploads.add(upload);
 		
 		Async testRunResource = context.async();
-		createAndStartProject(true)
+		createAndStartProject(true, "testProject")
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)
 			.onSuccess(authToken -> {
@@ -345,7 +349,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 					context.assertEquals(404, ((HttpException)response).getStatusCode());
 					submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 					.onSuccess(submitted -> {
-						GET(tempSession, "/run/" + instanceID + "/ImageData.jpg", null, null)
+						GET(tempSession, "/run/testProject/ImageData.jpg", null, null)
 						.onSuccess(dataResponse ->  {
 							String targetFileName = tmpDir + File.separator + "taskRouter.out"; 
 							vertx.fileSystem().writeFile(targetFileName , dataResponse.bodyAsBuffer())
@@ -383,27 +387,8 @@ public class ParticipationRouterTest extends SoileWebTest{
 	@Test
 	public void testRunLibs(TestContext context)
 	{
-		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
-																   .put("value", 1)
-																   .put("timestamp", System.currentTimeMillis()));
-		JsonArray fileData = new JsonArray();
-		JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
-																								    .put("value", 1)
-																								    .put("timestamp", System.currentTimeMillis())
-																					)
-																				.add(new JsonObject().put("name", "smoker2")
-																					    .put("value", "something")
-																					    .put("timestamp", System.currentTimeMillis())
-																		)
-													)
-												.put("fileData", fileData);
-		
-		JsonObject result = new JsonObject().put("outputData", OutputData).put("resultData", resultData);
-		String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
-		File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
-		List<File> fileUploads = new LinkedList<>();
-		fileUploads.add(upload);
-		
+		System.out.println("--------------------  Running Tests for /run/{id}/lib/*  ----------------------");    
+			
 		Async testRunResource = context.async();
 		createAndStartProject(true)
 		.onSuccess(instanceID -> {
@@ -501,13 +486,22 @@ public class ParticipationRouterTest extends SoileWebTest{
 	}
 	
 	
+	/**
+	 * Submit files and results with the given webclient(session). 
+	 * @param client
+	 * @param uploads
+	 * @param resultData
+	 * @param instanceID
+	 * @return
+	 */
+	@SuppressWarnings("rawtypes")
 	protected Future<Void> submitFilesAndResults(WebClient client, List<File> uploads, JsonObject resultData, String instanceID)
 	{
 		Promise<Void> submittedPromise = Promise.promise();
 		List<Future> submissionFutures = new LinkedList<Future>();
 		ConcurrentLinkedDeque<JsonObject> uploadObjects = new ConcurrentLinkedDeque<>();
 		for(File f : uploads)
-		{
+		{		
 			Promise done = Promise.promise();
 			submissionFutures.add(done.future());
 			uploadResult(client, instanceID, f, f.getName(), MimeMapping.getMimeTypeForFilename(f.getName()))
@@ -523,7 +517,6 @@ public class ParticipationRouterTest extends SoileWebTest{
 		CompositeFuture.all(submissionFutures).onSuccess(allSubmitted -> {
 			GET(client, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
 			.onSuccess(response -> {
-				System.out.println("---------------------------------This user current is at: ---------------------------------\n" + response.bodyAsJsonObject().encodePrettily());
 				JsonArray fileResults = resultData.getJsonObject("resultData").getJsonArray("fileData");
 				for(JsonObject o : uploadObjects)
 				{
@@ -561,7 +554,12 @@ public class ParticipationRouterTest extends SoileWebTest{
 	
 	protected Future<String> createAndStartProject(boolean priv)
 	{
-		JsonObject projectExec = new JsonObject().put("private", priv).put("name", "New Project").put("shortcut","newShortcut"); 
+		return createAndStartProject(priv, "newShortCut");
+	}
+	
+	protected Future<String> createAndStartProject(boolean priv, String shortcut)
+	{
+		JsonObject projectExec = new JsonObject().put("private", priv).put("name", "New Project").put("shortcut",shortcut); 
 
 		Promise<String> projectInstancePromise = Promise.promise();
 		createUserAndAuthedSession("Researcher", "test", Roles.Researcher)
@@ -655,7 +653,6 @@ public class ParticipationRouterTest extends SoileWebTest{
 			JsonObject status = response.bodyAsJsonObject();
 			if(status.getString("status").equals(DownloadStatus.downloadReady.toString()))
 			{
-				System.out.println("Download is ready!");
 				readyPromise.complete();
 				return;
 			}
@@ -696,7 +693,6 @@ public class ParticipationRouterTest extends SoileWebTest{
         while(ze != null){
         	String fileName = ze.getName();
         	File newFile = new File(destDir + File.separator + fileName);
-        	System.out.println("Unzipping to "+newFile.getAbsolutePath());
         	//create directories for sub directories in zip
         	new File(newFile.getParent()).mkdirs();
         	FileOutputStream fos = new FileOutputStream(newFile);

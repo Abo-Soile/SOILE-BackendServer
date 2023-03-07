@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.http_server.routes;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,27 +16,16 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
-import fi.abo.kogni.soile2.http_server.auth.SoileIDBasedAuthorizationHandler;
-import fi.abo.kogni.soile2.http_server.auth.SoileRoleBasedAuthorizationHandler;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
-import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.User;
-import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
@@ -309,7 +297,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		.onSuccess(Void -> 
 		{
 			// this list needs to be filtered by access
-			LOGGER.info("Requesting finished download file from Eventbus for id " + dlID);
+			LOGGER.debug("Requesting finished download file from Eventbus for id " + dlID);
 			eb.request("fi.abo.soile.DLFiles", new JsonObject().put("downloadID",dlID))
 			.onSuccess(response -> {				
 				JsonObject responseBody = (JsonObject) response.body();
@@ -346,7 +334,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 				}
 				else
 				{
-					LOGGER.info("Status was: " + responseBody.getString("status") + " // While ready status should be: " + DownloadStatus.downloadReady.toString());
+					LOGGER.debug("Status was: " + responseBody.getString("status") + " // While ready status should be: " + DownloadStatus.downloadReady.toString());
 					
 					context.response()
 					.setStatusCode(503)					
@@ -403,14 +391,4 @@ public class ProjectInstanceRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}	
-		
-	public void handleRequest(RoutingContext context, Handler<RoutingContext> method)
-	{
-		instanceHandler.getProjectIDForPath(context.pathParam("id"))
-		.onSuccess(newID -> {
-			context.pathParams().put("id", newID);
-			method.handle(context);
-		})
-		.onFailure(err -> handleError(err, context));
-	}
 }

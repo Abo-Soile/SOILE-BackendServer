@@ -181,39 +181,32 @@ public class DBProjectTest extends GitTest{
 
 						mongo_client.findOne(projInstance.getTargetCollection(), new JsonObject().put("_id", projInstance.getID()), null)
 						.onSuccess(element -> {
-							System.out.println(element.encodePrettily());
 
 							Async invalidAsync = context.async();
 							Async tempAsync = context.async(); 
 							projInstance.useToken(permToken)
 							.onSuccess(res -> {
-								System.out.println("Trying to use invalid permanent token");
 								projInstance.useToken(permToken.replace(permToken.charAt(0),(char)(permToken.charAt(0)+1)))
 								.onSuccess(invalid -> {
 									context.fail("This is not a valid token");								
 								})
 								.onFailure(err -> {
 									invalidAsync.complete();
-									System.out.println("Ivalid token failed successfully");
 								});
 								permAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));
-							System.out.println("Trying to use non permanent token");
 							projInstance.useToken(tokens.getString(0))
 							.onSuccess(res -> {
-								System.out.println("Successfully used " + tokens.getString(0) + " trying again");
 								projInstance.useToken(tokens.getString(0))
 								.onSuccess(invalid -> {
 									context.fail("This token has already been used");
 								})
 								.onFailure(err -> {
-									System.out.println("Token could not be used again");
 									tempAsync.complete();
 								});
 							})
 							.onFailure(err -> {
-								System.out.println("Token could not be used a first time ");
 								context.fail(err);
 							});
 						})

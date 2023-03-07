@@ -158,6 +158,7 @@ public class SoileIDBasedAuthorizationHandler{
 		}
 	}
 	
+	@SuppressWarnings("rawtypes")
 	private void failPromise(Throwable err, Promise p, int StatusCode)
 	{
 		if(StatusCode >= 500 || StatusCode == 400)

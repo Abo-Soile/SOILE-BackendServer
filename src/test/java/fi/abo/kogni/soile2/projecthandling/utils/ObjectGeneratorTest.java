@@ -144,25 +144,21 @@ public class ObjectGeneratorTest extends GitTest {
 		ElementFactory<Task> TaskFactory = new ElementFactory<Task>(Task::new);
 		ObjectGenerator.buildAPITask(taskManager, "Test2", mongo_client)
 		.onSuccess(apiTask -> {
-			System.out.println("Task created");
 			Async tlistAsync = context.async();			
 			// check, that the created Elements actually exist.
 			taskManager.getElementList(new JsonArray())
 			.onSuccess(list -> {
-				System.out.println("Element List obtained");
 				context.assertEquals(1,list.size()); // one task
 				Async gitAsync = context.async();
 				taskManager.getAPIElementFromDB(apiTask.getUUID(), apiTask.getVersion())
 				.onSuccess(element -> {
 					APITask task = (APITask) element;
-					System.out.println("Task: " + task.getAPIJson().encodePrettily());
 					context.assertEquals("elang",task.getCodeLanguage());					
 					gitAsync.complete();
 				}).onFailure(err -> context.fail(err));
 				Async dbAsync = context.async();
 				TaskFactory.loadElement(mongo_client, apiTask.getUUID())
 				.onSuccess(Task -> {
-					System.out.println("DBTask: " + Task.toJson().encodePrettily());
 					context.assertFalse(Task.getPrivate());
 					dbAsync.complete();							
 				})

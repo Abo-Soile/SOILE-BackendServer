@@ -4,7 +4,6 @@ import org.junit.runner.RunWith;
 
 import fi.abo.kogni.soile2.projecthandling.ProjectBaseTest;
 import fi.abo.kogni.soile2.projecthandling.utils.ParticipantImplForTesting;
-import fi.abo.kogni.soile2.projecthandling.utils.ProjectFactoryImplForTesting;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -29,7 +28,6 @@ public class ParticipantTest extends ProjectBaseTest{
 				context.assertTrue(participant1.equals(participantSame));
 				p3Async.complete();
 			});					// 
-			ProjectFactoryImplForTesting fac = new ProjectFactoryImplForTesting();			
 			Async compAsync = context.async();
 			participant1.toJson()
 			.onSuccess(jsonObject -> 
@@ -51,7 +49,6 @@ public class ParticipantTest extends ProjectBaseTest{
 		System.out.println("--------------------  Testing Participant Json IO ----------------------");
 		Async p1Async = context.async();
 		ParticipantImplForTesting.getTestParticipant(context,0,getPos(0)).onSuccess(participant1 -> {
-			ProjectFactoryImplForTesting fac = new ProjectFactoryImplForTesting();
 			Async compAsync = context.async();
 			participant1.toJson()
 			.onSuccess(jsonObject -> 

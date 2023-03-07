@@ -2,14 +2,12 @@ package fi.abo.kogni.soile2.http_server.routes;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.datamanagement.DataLakeManagerTest;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ProjectTest;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.handler.HttpException;
@@ -19,6 +17,8 @@ public class TaskRouterTest extends SoileWebTest{
 	 @Test
 	 public void testGetResource(TestContext context)
 	 {		 
+		System.out.println("--------------------  Testing Web get Task Resources  ----------------------");
+
 		 Async testAsync = context.async();
 		 createUserAndAuthedSession("TestUser", "testpw", Roles.Researcher)
 		 .onSuccess(authedSession -> {

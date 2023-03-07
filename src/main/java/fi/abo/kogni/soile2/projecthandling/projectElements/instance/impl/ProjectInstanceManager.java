@@ -24,6 +24,7 @@ import io.vertx.ext.mongo.MongoClient;
  * This class is responsible for project information in the db.
  * This includes the project reference (to the respective git repo), the participants in this 
  * project etc. 
+ * TODO: Handle shortcut updates (i.e. on a sc update the old shortcut must be reomved from the projectPathes!)
  * @author Thomas Pfau
  *
  */

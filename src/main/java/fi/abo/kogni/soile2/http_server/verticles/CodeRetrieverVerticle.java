@@ -58,7 +58,7 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 		qmarkupProvider.cleanUp();
 	}
 	
-	
+	@SuppressWarnings("rawtypes")
 	@Override
 	public void stop(Promise<Void> stopPromise)
 	{

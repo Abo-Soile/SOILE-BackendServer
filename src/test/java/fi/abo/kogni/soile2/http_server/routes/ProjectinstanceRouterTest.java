@@ -7,7 +7,9 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.web.handler.HttpException;
 
+//TODO: Test Project deletion and Project Stop.
 public class ProjectinstanceRouterTest extends SoileWebTest {
 
 	/**
@@ -17,6 +19,8 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 	@Test
 	public void testStartProject(TestContext context)
 	{
+		System.out.println("--------------------  Running Start Project test  ----------------------");    
+
 		JsonObject projectExec = new JsonObject().put("private", true).put("name", "New Project").put("shortcut","newShortcut"); 
 		Async setupAsync = context.async();
 		createUserAndAuthedSession("Researcher", "pw", Roles.Researcher)
@@ -25,7 +29,6 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 			.onSuccess(wrongSession -> {
 				WebObjectCreator.createProject(authedSession, "Testproject")
 				.onSuccess(projectData -> {
-					System.out.println("Retrieved json after creation: \n" + projectData.encodePrettily());
 					String projectID = projectData.getString("UUID");
 					String projectVersion = projectData.getString("version");
 					Async startAsync = context.async();
@@ -71,6 +74,8 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 	@Test
 	public void testStopRestart(TestContext context)
 	{
+		System.out.println("--------------------  Testing Start/Stop project  ----------------------");    
+
 		JsonObject projectExec = new JsonObject().put("private", true).put("name", "New Project").put("shortcut","newShortcut"); 
 		Async setupAsync = context.async();
 		createUserAndAuthedSession("Researcher", "pw", Roles.Researcher)
@@ -79,7 +84,6 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 			.onSuccess(wrongSession -> {
 				WebObjectCreator.createProject(authedSession, "Testproject")
 				.onSuccess(projectData -> {
-					System.out.println("Retrieved json after creation: \n" + projectData.encodePrettily());
 					String projectID = projectData.getString("UUID");
 					String projectVersion = projectData.getString("version");
 					Async startAsync = context.async();
@@ -87,15 +91,35 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
 					.onSuccess(response -> {
 						Async listAsync = context.async();
+						Async emptyListAsync = context.async();
 						String id = response.bodyAsJsonObject().getString("projectID");
 						GET(authedSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 							context.assertEquals(id, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
-							listAsync.complete();
+							POST(authedSession, "/projectexec/" + id + "/stop", null,null )
+							.onSuccess( stopped -> {
+								POST(authedSession, "/projectexec/" + id + "/signup", null,null)
+								.onSuccess(res -> context.fail("This should fail because the project is inactive"))
+								.onFailure(rejected -> {
+									context.assertEquals(410, ((HttpException)rejected).getStatusCode());
+									POST(authedSession, "/projectexec/" + id + "/restart", null,null )
+									.onSuccess( restarted -> {
+										POST(authedSession, "/projectexec/" + id + "/signup", null,null)
+										.onSuccess(res -> {											
+											listAsync.complete();																		
+										})
+										.onFailure(err -> context.fail(err));
+									})
+									.onFailure(err -> context.fail(err));
+
+
+								});
+							})
+							.onFailure(err -> context.fail(err));
+
 						})
 						.onFailure(err -> context.fail(err));
-						Async emptyListAsync = context.async();
 						
 						GET(wrongSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {

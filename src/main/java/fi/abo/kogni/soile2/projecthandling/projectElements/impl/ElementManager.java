@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.function.Supplier;
@@ -246,7 +244,6 @@ public class ElementManager<T extends ElementBase> {
 		{
 			if(!element.getName().equals(newData.getName()))
 			{
-				System.out.println("Failing updateElement");
 				elementPromise.fail(new NoNameChangeException());
 				return;
 			}

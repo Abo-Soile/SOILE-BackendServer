@@ -1,9 +1,5 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import fi.abo.kogni.soile2.http_server.routes.ElementRouter;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
@@ -50,7 +46,6 @@ public class SoileAuthorization{
 	MongoAuthorizationOptions experimentOptions;
 	MongoAuthorizationOptions instanceOptions;
 	MongoClient client;
-	private static final Logger LOGGER = LogManager.getLogger(SoileAuthorization.class);
 
 	public SoileAuthorization(MongoClient client)
 	{

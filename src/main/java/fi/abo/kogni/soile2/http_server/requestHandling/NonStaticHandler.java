@@ -160,7 +160,6 @@ public class NonStaticHandler implements StaticHandler {
   
   @Override
   public void handle(RoutingContext context) {
-	  System.out.println("Non Static handler received a request");
     HttpServerRequest request = context.request();
 
     if (request.method() != HttpMethod.GET && request.method() != HttpMethod.HEAD) {

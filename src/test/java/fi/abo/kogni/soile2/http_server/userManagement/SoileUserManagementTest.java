@@ -47,7 +47,6 @@ public class SoileUserManagementTest extends SoileVerticleTest{
 										ReplyException ex = (ReplyException)invRes.cause();
 										context.assertEquals(HttpURLConnection.HTTP_CONFLICT,ex.failureCode());
 										context.assertEquals("User already exists", invRes.cause().getMessage());
-										//System.out.println("Checked that no additional user could be added");
 										async.complete();																			
 									}
 								});													

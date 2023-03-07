@@ -61,6 +61,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public void stop(Promise<Void> stopPromise)
 	{
 		List<Future> consumerdeactivateFutures = new LinkedList<>();
@@ -104,7 +105,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		
 		try {
 			JsonObject request = message.body();
-			LOGGER.info(request);
+			LOGGER.debug(request);
 			switch(request.getString("requestType"))
 			{
 			case "participants" : buildParticipantsBundle(request.getJsonArray("participants"), request.getString("projectID"))
@@ -262,6 +263,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 			projectInstance.getParticipants()
 			.onSuccess(participants -> {
 				// Collect the data  
+				@SuppressWarnings("rawtypes")
 				List<Future> partDataFutures = new LinkedList<>();				
 				ConcurrentHashMap<String,List<JsonObject>> taskResults = new ConcurrentHashMap<>();
 				for(int i = 0; i < tasks.size(); ++i)
@@ -747,6 +749,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	public Future<List<Boolean>> checkForFileProblems(List<JsonObject> filesIndicators)
 	{
 		Promise<List<Boolean>> errorPromise = Promise.promise();
+		@SuppressWarnings("rawtypes")
 		List<Future> filesExistFutures = new LinkedList<Future>();
 
 		for(JsonObject file : filesIndicators)
@@ -828,7 +831,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	{
 		return new JsonObject().put("$set", new JsonObject().put("status", newStatus.toString()));
 	}
-
+	@SuppressWarnings("rawtypes")
 	private void replyForError(Throwable err, Message request)
 	{
 		if(err instanceof ObjectDoesNotExist)
