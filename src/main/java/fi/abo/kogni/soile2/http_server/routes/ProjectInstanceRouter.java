@@ -3,6 +3,7 @@ package fi.abo.kogni.soile2.http_server.routes;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,8 +26,10 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
@@ -37,6 +40,7 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 
@@ -52,67 +56,57 @@ public class ProjectInstanceRouter extends SoileRouter {
 	ProjectInstanceHandler instanceHandler;
 	AccessHandler instanceAccessHandler;
 	AccessHandler projectAccessHandler;
-	SoileAuthorization authorizationRertiever;
-	SoileIDBasedAuthorizationHandler projectIDAccessHandler;
 	ParticipantHandler partHandler;
-	TargetElementType instanceType = TargetElementType.INSTANCE;
-	MongoAuthorization mongoAuth;
 	ParticipantDataLakeManager dataLakeManager;
 	EventBus eb;
 	Vertx vertx;
 	
-	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);
-
+	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);	
 
 	public ProjectInstanceRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, ProjectInstanceHandler projHandler) {
+		super(auth,client);
 		eb = vertx.eventBus();
-		this.vertx = vertx;
-		
-		authorizationRertiever = auth;
+		this.vertx = vertx;		
 		instanceHandler = projHandler;
-		this.partHandler = partHandler;
-		MongoAuthorization mongoAuth = auth.getAuthorizationForOption(instanceType);
-		SoileRoleBasedAuthorizationHandler roleHandler = new SoileRoleBasedAuthorizationHandler();
-		
-		SoileIDBasedAuthorizationHandler instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client);
-		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Project().getTargetCollection(), client);
+		this.partHandler = partHandler;						
 		dataLakeManager = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
-		instanceAccessHandler = new AccessHandler(mongoAuth, instanceIDAccessHandler, roleHandler);
+		instanceAccessHandler = new AccessHandler(instanceAuth, instanceIDAccessHandler, roleHandler);
+		projectAccessHandler = new AccessHandler(projectAuth, projectIDAccessHandler, roleHandler);
 	}
-
+	
 	public void startProject(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String id = params.pathParameter("id").getString();
 		String version = params.pathParameter("version").getString();		
-		JsonObject projectData = params.body().getJsonObject().put("uuid", id).put("version", version).mergeIn(context.body().asJsonObject());
+		JsonObject projectData = params.body().getJsonObject().put("sourceUUID", id).put("version", version).mergeIn(context.body().asJsonObject());
 		// we need to check, whether the user has access to the actual project indicated.
-		mongoAuth.getAuthorizations(context.user())
+		projectAuth.getAuthorizations(context.user())
 		.onSuccess(Void -> {
 			projectIDAccessHandler.authorize(context.user(), id, false, PermissionType.READ)			
 			.onSuccess(canCreate -> {
 				instanceHandler.createProjectInstance(projectData)
 				.onSuccess(instance -> {
-					JsonObject permissionChange = new JsonObject().put("command", "addCommand")
-							.put("username", context.user().principal().getString("username"))
-							.put("permissions", new JsonObject().put("elementType", SoileConfigLoader.INSTANCE)
-									.put("permissions", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
-											.put("target", instance.getID()))));
-					eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG,"permissionOrRoleChange"), permissionChange)
+					JsonObject permissionChange = new JsonObject().put("command", "add")
+																  .put("username", context.user().principal().getString("username"))
+																  .put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.INSTANCE.toString())
+																		  .put("permissionSettings", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
+																				  												  		 .put("target", instance.getID()))));
+					eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChange)
 					.onSuccess(success -> {
 						// instance was created, access was updated, everything worked fine. Now
 						context.response().setStatusCode(200)
 						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
 						.end(new JsonObject().put("projectID",instance.getID()).encode());												
 					})
-					.onFailure(err -> context.fail(500, err));
+					.onFailure(err -> handleError(err, context));
 				})
-				.onFailure(err -> context.fail(500, err));
+				.onFailure(err -> handleError(err, context));
 			})
-			.onFailure(err -> context.fail(403, err));
+			.onFailure(err -> handleError(new HttpException(403, err.getMessage()), context));
 		})
 		.onFailure(err -> {
-			context.fail(500,err);
+			handleError(err, context);
 		});		
 	}
 
@@ -121,7 +115,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
 		.onSuccess(Void -> 
 		{
-			authorizationRertiever.getGeneralPermissions(context.user(),instanceType)
+			authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.INSTANCE)
 			.onSuccess( permissions -> {
 				instanceHandler.getProjectList(permissions)
 				.onSuccess(elementList -> {	
@@ -248,8 +242,28 @@ public class ProjectInstanceRouter extends SoileRouter {
 		.onSuccess(Void -> 
 		{			
 			// this list needs to be filtered by access
-			JsonObject requestBody = context.body().asJsonObject();
+			JsonObject requestBody = null;
+			try
+			{
+				requestBody = context.body().asJsonObject();
+				if(requestBody.fieldNames().size() != 1)
+				{
+					handleError(new HttpException(400, "Invalid request"), context);
+					return;
+				}
+				else
+				{
+					// just add whichever name is there as the request type.
+					requestBody.put("requestType", requestBody.fieldNames().iterator().next());					
+				}
+			}
+			catch(Exception e)
+			{
+				// this is a request All request.
+				requestBody = new JsonObject().put("requestType", "all"); 
+			}
 			requestBody.put("projectID", requestedInstanceID);
+			
 			eb.request("fi.abo.soile.DLCreate", requestBody)
 			.onSuccess(response -> {
 				String dlID = response.body().toString();
@@ -272,7 +286,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		.onSuccess(Void -> 
 		{
 			// this list needs to be filtered by access
-			eb.request("fi.abo.soile.DLCreate", new JsonObject().put("downloadID",dlID))
+			eb.request("fi.abo.soile.DLStatus", new JsonObject().put("downloadID",dlID))
 			.onSuccess(response -> {
 				JsonObject responseBody = (JsonObject) response.body();					
 				context.response()
@@ -295,6 +309,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		.onSuccess(Void -> 
 		{
 			// this list needs to be filtered by access
+			LOGGER.info("Requesting finished download file from Eventbus for id " + dlID);
 			eb.request("fi.abo.soile.DLFiles", new JsonObject().put("downloadID",dlID))
 			.onSuccess(response -> {				
 				JsonObject responseBody = (JsonObject) response.body();
@@ -314,7 +329,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 				        .setStatusCode(200)
 				        .setChunked(true);
 						pump.pipeTo(context.response()).onSuccess(success -> {
-							LOGGER.info("Download " + dlID + " successfullytransmitted");
+							LOGGER.debug("Download " + dlID + " successfullytransmitted");
 						}).onFailure(err -> {
 							LOGGER.error("Download " + dlID + " failed");
 							LOGGER.error(err);
@@ -331,9 +346,11 @@ public class ProjectInstanceRouter extends SoileRouter {
 				}
 				else
 				{
+					LOGGER.info("Status was: " + responseBody.getString("status") + " // While ready status should be: " + DownloadStatus.downloadReady.toString());
+					
 					context.response()
-					.setStatusCode(406)					
-					.end("Download not ready");
+					.setStatusCode(503)					
+					.end("Download not yet ready");
 
 				}
 			})
@@ -343,56 +360,57 @@ public class ProjectInstanceRouter extends SoileRouter {
 	}
 	
 	
-	
-	/**
-	 * Get the participant for the current user. 
-	 * @param user the authenticated {@link User} from a routing context
-	 * @param project the {@link ProjectInstance} for which the participant is requested. If there is none yet, one will be created.
-	 * @return
-	 */
-	Future<Participant> getParticpantForUser(User user, ProjectInstance project)
-	{
+	public void createTokens(RoutingContext context)
+	{				
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
 		
-		if(user.principal().getString("username") == null)
+		boolean unique = params.queryParameter("unique") == null ? false : params.queryParameter("unique").getBoolean();
+		int count = params.queryParameter("count") == null ? 0 : params.queryParameter("count").getInteger();
+		
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,false)
+		.onSuccess(Void -> 
 		{
-			// This is a Token User! So we quickly get the participant from the Token. 
-			return partHandler.getParticipantForToken(user.principal().getString("access_token"), project.getID());			
-		}
-		else
-		{
-			Promise<Participant> partPromise = Promise.promise();
-			JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("projectInstanceID", project.getID());
-			eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantForUserInProject"), request)
-			.onSuccess(response -> {
-				JsonObject responseObject = (JsonObject) response;
-				if(responseObject.getString("participantID") != null)
+			instanceHandler.loadProject(requestedInstanceID)
+			.onSuccess(instance -> {
+				if(unique)
 				{
-					partHandler.getParticipant(responseObject.getString("participantID"))
-					.onSuccess(particpant -> {
-						partPromise.complete(particpant);
+					instance.createPermanentAccessToken()
+					.onSuccess(token -> {
+						context.response()
+						.setStatusCode(200)
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+						.end(token);
 					})
-					.onFailure(err -> partPromise.fail(err));
+					.onFailure(err -> handleError(err, context));
 				}
-				// doesn't have one in this project yet, so we create one.
 				else
 				{
-					partHandler.create(project)
-					.onSuccess(particpant -> {
-						// update the user.
-						request.put("participantID", particpant.getID());
-						eb.request(SoileConfigLoader.getCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInProject"), request)
-						.onSuccess( success -> {
-							partPromise.complete(particpant);
-						})
-						.onFailure(err -> partPromise.fail(err));
+					
+					instance.createAccessTokens(count).
+					onSuccess(tokenArray -> {
+						LOGGER.debug("Replying with: \n " + tokenArray.encodePrettily());
+						context.response()
+						.setStatusCode(200)
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+						.end(tokenArray.encode());
 					})
-					.onFailure(err -> partPromise.fail(err));
+					.onFailure(err -> handleError(err, context));
 				}
+				
 			})
-			.onFailure(err -> partPromise.fail(err));
-			return partPromise.future();
-		}
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));			
+	}	
 		
+	public void handleRequest(RoutingContext context, Handler<RoutingContext> method)
+	{
+		instanceHandler.getProjectIDForPath(context.pathParam("id"))
+		.onSuccess(newID -> {
+			context.pathParams().put("id", newID);
+			method.handle(context);
+		})
+		.onFailure(err -> handleError(err, context));
 	}
-
 }

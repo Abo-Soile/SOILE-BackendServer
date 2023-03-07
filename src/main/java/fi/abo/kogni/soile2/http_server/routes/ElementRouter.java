@@ -2,6 +2,10 @@ package fi.abo.kogni.soile2.http_server.routes;
 
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import fi.abo.kogni.soile2.http_server.SoileRouteBuilding;
 import fi.abo.kogni.soile2.http_server.auth.AccessHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
@@ -35,25 +39,25 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	ElementManager<T> elementManager;
 	EventBus eb;
 	AccessHandler accessHandler;
-	SoileAuthorization authorizationRertiever;
+	private static final Logger LOGGER = LogManager.getLogger(ElementRouter.class);
 
 	public ElementRouter(ElementManager<T> manager, SoileAuthorization auth, EventBus eb, MongoClient client)
 	{		
-		
-		authorizationRertiever = auth;
+		super(auth,client);
 		T tempElement = manager.getElementSupplier().get();		
 		elementManager = manager;
-		accessHandler = new AccessHandler(auth.getAuthorizationForOption(tempElement.getElementType()),
-										  new SoileIDBasedAuthorizationHandler(tempElement.getTargetCollection(), client),
-										  new SoileRoleBasedAuthorizationHandler());
+		accessHandler = new AccessHandler(getAuthForType(tempElement.getElementType()),
+										  getHandlerForType(tempElement.getElementType()),
+										  roleHandler);
 		this.eb = eb;
 	}
 
 	public void getElement(RoutingContext context)
-	{
+	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String elementID = params.pathParameter("id").getString();
 		String elementVersion = params.pathParameter("version").getString();
+		LOGGER.debug("Got request for Element: " + elementID + "@" + elementVersion );
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{
@@ -62,7 +66,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 				context.response()
 				.setStatusCode(200)
 				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-				.end(apielement.getJson().encode());
+				.end(apielement.getAPIJson().encode());
 			})
 			.onFailure(err -> handleError(err, context));
 		})
@@ -72,14 +76,18 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	public void writeElement(RoutingContext context)
 	{
+		LOGGER.debug("Trying to update an element");
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String elementID = params.pathParameter("id").getString();		
+		String elementID = params.pathParameter("id").getString();
+		String elementVersion = params.pathParameter("version").getString();
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{
 			
-			elementManager.getAPIElementFromJson(params.body().getJsonObject())
+			elementManager.getAPIElementFromDB(elementID,elementVersion)
 			.onSuccess(apiElement -> {
+				apiElement.updateFromJson(params.body().getJsonObject());
+				LOGGER.debug(apiElement.getGitJson().encodePrettily());
 				elementManager.updateElement(apiElement)
 				.onSuccess(version -> {
 					context.response()
@@ -103,6 +111,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		{
 			authorizationRertiever.getGeneralPermissions(context.user(),elementManager.getElementSupplier().get().getElementType())
 			.onSuccess( permissions -> {
+				LOGGER.debug(permissions.encodePrettily());
 				elementManager.getElementList(permissions)
 				.onSuccess(elementList -> {	
 					// this list needs to be filtered by access
@@ -161,47 +170,65 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	public void create(RoutingContext context)
 	{		
+		LOGGER.debug("Received a request for creation");
 		accessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
 		.onSuccess(Void -> 
 		{
+			LOGGER.debug("Request Access granted");
 			List<String> nameParam = context.queryParam("name");
 			List<String> typeParam = context.queryParam("codeType");
 			List<String> versionParam = context.queryParam("codeVersion");
 			String type = null;
 			String version = null;
 			if(nameParam.size() != 1) {
-				context.fail(400, new HttpException(400, "Must have exactly one codetype, codeVersion and name parameter"));
+				LOGGER.debug("Invalid name parameter");
+				handleError(new HttpException(400, "Must have exactly one codetype, codeVersion and name parameter"), context);
 				return;
 				}
 			if( elementManager.getElementSupplier().get().getElementType() == TargetElementType.TASK  && (typeParam.size() != 1 || versionParam.size() != 1))
 			{
-				context.fail(400, new HttpException(400, "Must have exactly one codetype and codeVersion parameter"));
+				LOGGER.debug("Invalid CodeType/Version");
+				handleError(new HttpException(400, "Must have exactly one codetype and codeVersion parameter"), context);
 			}						
 			else{
-				type = typeParam.get(0);
-				version = versionParam.get(0);
-				if(!SoileConfigLoader.isValidTaskType(type, version))
+				
+				if(elementManager.getElementSupplier().get().getElementType() == TargetElementType.TASK )
 				{
-					// this could be a bit more explicit
-					context.fail(400, new HttpException(400, "Invalid codeType/version Parameter"));
-					return;
+					LOGGER.debug("Setting up Task data");
+					type = typeParam.get(0);
+					version = versionParam.get(0);
+					if(!SoileConfigLoader.isValidTaskType(type, version))
+					{
+						LOGGER.debug("Innvalid Task Version/Code Type");
+						// this could be a bit more explicit
+						handleError(new HttpException(400, "Invalid codeType/version Parameter"), context);
+						return;
+					}
 				}
 			}
+			LOGGER.debug("Trying to generate Element");
 			elementManager.createElement(nameParam.get(0), type, version)
-			.onSuccess(element -> {			
+			.onSuccess(element -> {	
+				LOGGER.debug("Element Created");
 				JsonObject permissionChangeRequest = new JsonObject()
 						.put("username", context.user().principal().getString("username"))
-						.put("command", SoileConfigLoader.getStringProperty(SoileConfigLoader.COMMUNICATION_CFG, "addCommand"))
-						.put("permissions", new JsonObject().put("type", getTypeID(element.getTypeID())))
-						.put("target", new JsonArray().add(element.getUUID()));
+						.put("command", "add")
+						.put("permissionsProperties", new JsonObject().put("elementType", element.getElementType().toString())
+																	  .put("permissionSettings",new JsonArray().add(new JsonObject().put("target", element.getUUID())
+																			  														.put("type", PermissionType.FULL.toString()))
+																		  )
+							);	
+				LOGGER.debug("Requesting permission change");
 				eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChangeRequest)
 				.onSuccess( reply -> {
+					LOGGER.debug("Permissions added to user for "+ nameParam + "/" + element.getUUID());
 					elementManager.getAPIElementFromDB(element.getUUID(), element.getCurrentVersion())
 					.onSuccess(apiElement -> {
+						LOGGER.debug("Api element created");
 						context.response()
 						.setStatusCode(200)
 						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-						.end(apiElement.getJson().encode());			
+						.end(apiElement.getAPIJson().encode());			
 					}).onFailure(err -> handleError(err, context));	
 				})
 				.onFailure(err -> handleError(err, context));						
@@ -211,7 +238,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	}
 
-	private String getTypeID(String typeID)
+	/*private String getTypeID(String typeID)
 	{
 		switch(typeID)
 		{
@@ -220,5 +247,5 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		case "T": return SoileConfigLoader.TASK;
 		default: return SoileConfigLoader.INSTANCE;			
 		}
-	}
+	}*/
 }

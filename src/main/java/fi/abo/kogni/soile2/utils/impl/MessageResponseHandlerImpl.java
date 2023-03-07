@@ -33,19 +33,28 @@ public class MessageResponseHandlerImpl implements MessageResponseHandler{
 				if(data instanceof JsonObject)
 				{
 					context.response().putHeader("content-type","application/json");
-					context.response().write(responseData.getJsonObject(SoileCommUtils.DATAFIELD).encode());
+					context.response().end(responseData.getJsonObject(SoileCommUtils.DATAFIELD).encode());
 				}
 				else if ( data instanceof String)
 				{
 					context.response().putHeader("content-type","text/plain");
-					context.response().write(responseData.getString(SoileCommUtils.DATAFIELD));				
+					context.response().end(responseData.getString(SoileCommUtils.DATAFIELD));				
 				}
 				else if ( data instanceof JsonArray)
 				{
 					context.response().putHeader("content-type","application/json");
-					context.response().write(responseData.getJsonArray(SoileCommUtils.DATAFIELD).encode());				
+					context.response().end(responseData.getJsonArray(SoileCommUtils.DATAFIELD).encode());				
+				}				
+				else
+				{					// no data to send
+					context.response().end();
 				}
 			}
+			else
+			{					// no data to send
+				context.response().end();
+			}
+			
 
 		}
 		

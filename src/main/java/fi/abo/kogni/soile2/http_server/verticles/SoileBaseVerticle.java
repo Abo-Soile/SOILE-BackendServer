@@ -35,15 +35,6 @@ public class SoileBaseVerticle extends AbstractVerticle {
 		return SoileCommUtils.getEventBusCommand(mainField, command);
 	}
 	
-	/**
-	 * Get the command string for the given command.
-	 * @param command The command entry in the config for which to extract the command.
-	 * @return The command string 
-	 */
-	public String getCommandString(String command)
-	{
-		return SoileConfigLoader.getCommand(mainField, command);
-	}
 	
 	/**
 	 * Get the DB Field for this string
@@ -55,33 +46,5 @@ public class SoileBaseVerticle extends AbstractVerticle {
 		return SoileConfigLoader.getUserdbField(entry);
 	}
 	
-	
-	/**
-	 * Get the configuration element for this configuration entry.
-	 * @param entry The element to extract
-	 * @return The extracted element
-	 */
-	public String getConfig(String target, String entry)
-	{
-		return SoileConfigLoader.getStringProperty(target,entry);
-	}
-	
-	/**
-	 * Get the configuration element for this configuration entry.
-	 * @param entry The element to extract
-	 * @return The extracted element
-	 */
-	public String getConfig(String entry)
-	{
-		return getConfig(mainField,entry);
-	}
-	
-	/**
-	 * Convenience function to obtain the communications config.
-	 * @return
-	 */
-	public JsonObject getCommunicationConfig()
-	{
-		return SoileConfigLoader.getConfig(SoileConfigLoader.COMMUNICATION_CFG);
-	}
+
 }

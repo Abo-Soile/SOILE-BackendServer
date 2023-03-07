@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.datamanagement.git.GitElement;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
@@ -18,6 +19,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -135,7 +137,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 		.onSuccess(contents -> {
 			request.reply(contents);
 		})
-		.onFailure(err -> request.fail(500, err.getMessage()));
+		.onFailure(err -> handleFail(request,err));
 	}
 
 
@@ -150,7 +152,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 		.onSuccess(contents -> {
 			request.reply(contents);
 		})
-		.onFailure(err -> request.fail(500, err.getMessage()));
+		.onFailure(err -> handleFail(request,err));
 	}
 	/**
 	 * Get the file contents of a git resource file as a Json Object. the reply will be the json object of the contents. 
@@ -162,7 +164,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 		.onSuccess(contents -> {
 			request.reply(contents);
 		})
-		.onFailure(err -> request.fail(500, err.getMessage()));
+		.onFailure(err -> handleFail(request,err));
 	}
 
 	/**
@@ -175,7 +177,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 		.onSuccess(contents -> {
 			request.reply(contents);
 		})
-		.onFailure(err -> request.fail(500, err.getMessage()));
+		.onFailure(err -> handleFail(request,err));
 	}
 	/**
 	 * Get the resource files available for a specific git Version of an Object as a JsonArray  
@@ -188,7 +190,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 		.onSuccess(fileList -> {
 			request.reply(fileList);
 		})
-		.onFailure(err -> request.fail(500, err.getMessage()));
+		.onFailure(err -> handleFail(request,err));
 	}
 
 	/**
@@ -204,7 +206,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 			.onSuccess(version -> {
 				request.reply(version);
 			})
-			.onFailure(err -> request.fail(500, err.getMessage()));
+			.onFailure(err -> handleFail(request,err));
 		}
 		catch(ClassCastException e)
 		{
@@ -212,7 +214,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 			.onSuccess(version -> {
 				request.reply(version);
 			})
-			.onFailure(err -> request.fail(500, err.getMessage()));
+			.onFailure(err -> handleFail(request,err));
 		}
 	}
 
@@ -229,7 +231,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 			.onSuccess(version -> {
 				request.reply(version);
 			})
-			.onFailure(err -> request.fail(500, err.getMessage()));
+			.onFailure(err -> handleFail(request,err));
 		}
 		catch(ClassCastException e)
 		{
@@ -237,10 +239,35 @@ public class GitManagerVerticle extends AbstractVerticle{
 			.onSuccess(version -> {
 				request.reply(version);
 			})
-			.onFailure(err -> request.fail(500, err.getMessage()));
+			.onFailure(err -> handleFail(request,err));
 		}
 	}
 
+	private void handleFail(Message request, Throwable err)
+	{
+		if( err instanceof ReplyException)
+		{
+			int statusCode = ((ReplyException) err).failureCode();
+			int returnCode = 400; 
+			switch(statusCode)
+			{
+				case gitProviderVerticle.NO_VERSION: returnCode = 400; break;
+				case gitProviderVerticle.INVALID_REQUEST: returnCode = 400; break;
+				case gitProviderVerticle.BRANCH_DOES_NOT_EXIST: returnCode = 404; break;
+				case gitProviderVerticle.REPO_DOES_NOT_EXIST: returnCode = 404; break;
+				case gitProviderVerticle.FILE_DOES_NOT_EXIST_FOR_VERSION: returnCode = 404; break;
+				case gitProviderVerticle.REPO_ALREADY_EXISTS: returnCode = 409; break;
+				case gitProviderVerticle.GIT_ERROR: returnCode = 500; break;
+				case gitProviderVerticle.FOLDER_NOT_DIRECTORY: returnCode = 400; break;
+				case gitProviderVerticle.REPO_NOT_DELETED: returnCode = 500; break;						
+			}
+			request.fail(returnCode, err.getMessage());
+		}
+		else
+		{
+			request.fail(500, err.getMessage());
+		}
+	}
 }
 
 

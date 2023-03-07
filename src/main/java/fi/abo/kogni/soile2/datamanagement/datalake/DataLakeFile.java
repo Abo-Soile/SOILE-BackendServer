@@ -52,6 +52,15 @@ public class DataLakeFile extends File implements FileDescriptor {
 	{
 		return originalFileName;
 	}
+
+	/**
+	 * Set the original File name, i.e. the place this file is expected to be at.
+	 * @return the name for the file
+	 */
+	public void setOriginalFileName(String filename)
+	{
+		originalFileName = filename;
+	}
 	
 	/**
 	 * Get the file name within the datalake

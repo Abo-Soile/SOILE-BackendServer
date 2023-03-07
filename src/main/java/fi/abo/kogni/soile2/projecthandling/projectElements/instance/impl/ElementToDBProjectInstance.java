@@ -47,16 +47,18 @@ public class ElementToDBProjectInstance extends DBProjectInstance{
 		JsonObject query = new JsonObject();
 		if(inputJson.containsKey("shortcut") && !"".equals(inputJson.getString("shortcut")))
 		{
+			// the shortcut is not allowed to clash with either the IDs OR other shortcuts 
 			query.put("$or", new JsonArray().add(new JsonObject()
 													 .put("name",inputJson.getString("name")))
 											.add(new JsonObject()
-													.put("shortcut",inputJson.getString("shortcut"))));
+													.put("shortcut",inputJson.getString("shortcut")))
+											.add(new JsonObject()
+													.put("_id",inputJson.getString("shortcut"))));
 		}
 		else
 		{
 			query.put("name",inputJson.getString("name"));
-		}
-		log.debug("Trying to load element from DB: \n" + query.encodePrettily());
+		}		
 		client.findOne(getTargetCollection(), query, null)
 		.onSuccess(res -> {
 			log.debug("Got reply:" + res);
@@ -79,8 +81,11 @@ public class ElementToDBProjectInstance extends DBProjectInstance{
 				}
 				dbJson.put("version", inputJson.getValue("version"));
 				dbJson.put("private", inputJson.getBoolean("private",false));
-				dbJson.put("shortcut", inputJson.getString("shortcut",null));
-				
+				String shortcut = inputJson.getString("shortcut",null);
+				if(shortcut != null)
+				{
+					dbJson.put("shortcut", inputJson.getString("shortcut"));
+				}				
 				log.debug("Trying to save Instance:\n" + dbJson.encodePrettily());
 
 				client.save(getTargetCollection(), dbJson)
@@ -105,6 +110,11 @@ public class ElementToDBProjectInstance extends DBProjectInstance{
 					return;
 				}
 				if(res.getString("shortcut").equals(inputJson.getString("shortcut")))
+				{
+					savePromise.fail(new ShortCutExistsException(inputJson.getString("shortcut")));
+					return;
+				}
+				if(res.getString("_id").equals(inputJson.getString("shortcut")))
 				{
 					savePromise.fail(new ShortCutExistsException(inputJson.getString("shortcut")));
 					return;

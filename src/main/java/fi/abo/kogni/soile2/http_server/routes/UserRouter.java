@@ -43,52 +43,36 @@ import io.vertx.ext.web.validation.ValidationHandler;
 public class UserRouter extends SoileRouter {
 
 	EventBus eb;
-	SoileAuthorization authorizationRertiever;
-	SoileRoleBasedAuthorizationHandler roleHandler;
-	MongoAuthorization projectAuth;
-	MongoAuthorization experimentAuth;
-	MongoAuthorization taskAuth;
-	MongoAuthorization instanceAuth;
-	SoileIDBasedAuthorizationHandler taskIDAccessHandler;
-	SoileIDBasedAuthorizationHandler projectIDAccessHandler;
-	SoileIDBasedAuthorizationHandler experimentIDAccessHandler;
-	SoileIDBasedAuthorizationHandler instanceIDAccessHandler;
+
 
 	private static Logger LOGGER = LogManager.getLogger(UserRouter.class.getName()); 
 
 
 	public UserRouter(SoileAuthorization auth, Vertx vertx, MongoClient client)
 	{
-		authorizationRertiever = auth;
-		projectAuth = auth.getAuthorizationForOption(TargetElementType.PROJECT);
-		experimentAuth = auth.getAuthorizationForOption(TargetElementType.EXPERIMENT);
-		taskAuth = auth.getAuthorizationForOption(TargetElementType.TASK);
-		instanceAuth = auth.getAuthorizationForOption(TargetElementType.INSTANCE);		
-		taskIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Task().getTargetCollection(), client);
-		experimentIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Experiment().getTargetCollection(), client);
-		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Project().getTargetCollection(), client);
-		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client);
-
-		roleHandler = new SoileRoleBasedAuthorizationHandler();
+		super(auth,client);
 		this.eb = vertx.eventBus();
 	}
 
 	public void listUsers(RoutingContext context)
 	{
 		// Admins get almost full info. 
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		Integer skip = params.queryParameter("skip") == null ? null : params.queryParameter("skip").getInteger();
+		Integer limit = params.queryParameter("limit") == null ? null : params.queryParameter("limit").getInteger();
+		String query = params.queryParameter("searchString") == null ? null : params.queryParameter("searchString").getString();
+		JsonObject body = new JsonObject();
+		body.put("skip", skip).put("limit", limit).put("query", query);
 		checkAccess(context.user(),Roles.Admin, experimentAuth)
 		.onSuccess(authed -> {
-				RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
-				JsonObject body = params.body().getJsonObject();
-				body.put("skip", params.queryParameter("skip")).put("limit", params.queryParameter("limit")).put("query", params.queryParameter("query"));
+				
+				
 				handleUserManagerCommand(context, "listUsers", body, MessageResponseHandler.createDefaultHandler(200));
 		})
 		.onFailure(err -> {
 					checkAccess(context.user(), Roles.Researcher, experimentAuth)
 					.onSuccess(authorized -> {
-						RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
-						JsonObject body = params.body().getJsonObject();
-						body.put("namesOnly", true).put("skip", params.queryParameter("skip")).put("limit", params.queryParameter("limit")).put("query", params.queryParameter("query"));
+						body.put("namesOnly", true);
 						handleUserManagerCommand(context, "listUsers", body, MessageResponseHandler.createDefaultHandler(200));
 					})
 					.onFailure(err2 -> handleError(err2, context));
@@ -106,7 +90,7 @@ public class UserRouter extends SoileRouter {
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
 		JsonObject body = params.body().getJsonObject();
-		handleUserManagerCommand(context, "addUser", body, MessageResponseHandler.createDefaultHandler(201));
+		handleUserManagerCommand(context, "addUserWithEmail", body, MessageResponseHandler.createDefaultHandler(201));
 	}
 
 	/**
@@ -118,7 +102,7 @@ public class UserRouter extends SoileRouter {
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
 		JsonObject body = params.body().getJsonObject();		
-		Boolean deleteFiles = body.getBoolean("deleteFiles");
+		Boolean deleteFiles = body.getBoolean("deleteFiles") == null ? false : body.getBoolean("deleteFiles");
 		String username = body.getString("username");
 		// for roles, the Authorization provider doesn't make a difference.
 		checkSameUserOrAdmin(context.user(), username, experimentAuth)
@@ -160,19 +144,20 @@ public class UserRouter extends SoileRouter {
 		userData.put("username", username);
 		userData.put("fullname", body.getString("fullname"));
 		userData.put("email", body.getString("email"));
-		if(body.containsKey("userRole") )
+		if(body.containsKey("role") )
 		{
-			userData.put("userRole", body.getString("userRole"));
+			userData.put("role", body.getString("role"));
 		}				
 		checkSameUserOrAdmin(context.user(), username, experimentAuth)
 		.onSuccess(allowed -> {
 			// we are setting a role.
-			if(body.containsKey("userRole"))
+			if(body.containsKey("role"))
 			{
 				checkAccess(context.user(), Roles.Admin, experimentAuth)
 				.onSuccess(isAdmin -> {
 					handleUserManagerCommand(context, "setUserInfo", userData, MessageResponseHandler.createDefaultHandler(200));
-				});			
+				})
+				.onFailure(err -> handleError(err, context));			
 			}
 			else
 			{
@@ -236,10 +221,20 @@ public class UserRouter extends SoileRouter {
 		JsonObject userData = new JsonObject();
 		userData.put("username", username);
 		userData.put("command", body.getString("command"));
-		userData.put("permissions", permissionProps);		
-		checkUserHasAllPermissions(context.user(),permissionProps.getJsonArray("permissionsSettings"), getAuthForType(body.getString("ElementType")),getHandlerForType(body.getString("ElementType")))
-		.onSuccess(allowed -> {			
-			handleUserManagerCommand(context, "permissionOrRoleChange", userData, MessageResponseHandler.createDefaultHandler(200));			
+		userData.put("permissionsProperties", permissionProps);
+		LOGGER.debug(context.user().principal().encodePrettily());
+		eb.request("soile.permissions.checkTargets", permissionProps)
+		.onSuccess(permissionsExist -> { 
+			checkUserHasAllPermissions(context.user(),permissionProps.getJsonArray("permissionSettings"), getAuthForType(permissionProps.getString("elementType")),getHandlerForType(permissionProps.getString("elementType")))
+			.onSuccess(allowed -> {			
+				LOGGER.debug("User has all required permissions");
+				handleUserManagerCommand(context, "permissionOrRoleChange", userData, MessageResponseHandler.createDefaultHandler(200));			
+			})
+			.onFailure(err -> handleError(err, context));
+			/*.recover(err -> {
+				LOGGER.error("Request errored, trying to recover with failed future");
+				return Future.failedFuture(err);
+			});*/
 		})
 		.onFailure(err -> handleError(err, context));
 	}
@@ -250,16 +245,16 @@ public class UserRouter extends SoileRouter {
 	 */
 	public void permissionOrRoleRequest(RoutingContext context)
 	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
-		JsonObject body = params.body().getJsonObject();				
-		String username = body.getString("username");		
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);						
+		String username = params.queryParameter("username").getString();		
 		JsonObject userData = new JsonObject();
-		userData.put("username", username);			
+		userData.put("username", username);
 		checkSameUserOrAdmin(context.user(), username, experimentAuth)
 		.onSuccess(allowed -> {			
 			handleUserManagerCommand(context, "getAccessRequest", userData, MessageResponseHandler.createDefaultHandler(200));			
 		})
-		.onFailure(err -> handleError(err, context));
+		.onFailure(err -> handleError(err,context));
+	
 	}
 	
 	/**
@@ -269,8 +264,8 @@ public class UserRouter extends SoileRouter {
 	public void getUserInfo(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);		
-		JsonObject body = params.body().getJsonObject();				
-		String username = body.getString("username");
+					
+		String username = params.queryParameter("username").getString();
 		JsonObject userData = new JsonObject();
 		userData.put("username", username);
 		checkSameUserOrAdmin(context.user(), username, experimentAuth)
@@ -291,12 +286,14 @@ public class UserRouter extends SoileRouter {
 	
 	void handleUserManagerCommand(RoutingContext routingContext, String command, JsonObject commandContent, MessageResponseHandler messageHandler)
 	{		
-		eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, command),commandContent).onSuccess( response ->
+		LOGGER.debug("Command: " + command + " Request: \n " + commandContent.encodePrettily());		
+		eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, command),commandContent)
+		.onSuccess( response ->
 		{
+			LOGGER.debug("Got a reply");
 			if(response.body() instanceof JsonObject)
 			{
 				messageHandler.handle(((JsonObject)response.body()), routingContext);
-				routingContext.response().end();
 			}
 		}).onFailure( failure -> {
 			if(failure instanceof ReplyException)
@@ -360,7 +357,7 @@ public class UserRouter extends SoileRouter {
 	protected Future<Void> checkSameUserOrAdmin(User user, String modifiedUser, MongoAuthorization authProvider)
 	{		
 		Promise<Void> accessPromise = Promise.promise();
-		
+		LOGGER.debug(user.principal().getString("username") + " // " + modifiedUser);
 		if(user.principal().getString("username").equals(modifiedUser))
 		{
 			accessPromise.complete();
@@ -372,7 +369,8 @@ public class UserRouter extends SoileRouter {
 			.onSuccess(success ->
 			{
 				accessPromise.complete();
-			});
+			})
+			.onFailure(err -> accessPromise.fail(err));
 		}
 		return accessPromise.future();
 	}
@@ -412,26 +410,5 @@ public class UserRouter extends SoileRouter {
 		return accessPromise.future();
 	}
 	
-	SoileIDBasedAuthorizationHandler getHandlerForType(String type)
-	{		
-		switch(type)
-		{
-			case SoileConfigLoader.PROJECT: return projectIDAccessHandler;
-			case SoileConfigLoader.EXPERIMENT: return experimentIDAccessHandler;
-			case SoileConfigLoader.TASK: return taskIDAccessHandler;
-			case SoileConfigLoader.INSTANCE: return instanceIDAccessHandler;
-			default: return taskIDAccessHandler;
-		}
-	}
-	MongoAuthorization getAuthForType(String type)
-	{		
-		switch(type)
-		{
-			case SoileConfigLoader.PROJECT: return projectAuth;
-			case SoileConfigLoader.EXPERIMENT: return experimentAuth;
-			case SoileConfigLoader.TASK: return taskAuth;
-			case SoileConfigLoader.INSTANCE: return instanceAuth;
-			default: return taskAuth;
-		}
-	}
+
 }

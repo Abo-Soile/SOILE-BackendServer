@@ -58,7 +58,6 @@ public abstract class MongoTest extends SoileBaseTest {
 	public void runBeforeTests(TestContext context)
 	{	
 		mongo_client = MongoClient.createShared(vertx, SoileConfigLoader.getDbCfg());
-		System.out.println("initialized mongo Client as : " + mongo_client);
 	}
 	
 	@After
@@ -66,7 +65,6 @@ public abstract class MongoTest extends SoileBaseTest {
 	public void finishUp(TestContext context)
 	{		
 		final Async oasync = context.async();
-		System.out.println("Cleaning up Collections");
 		mongo_client.getCollections(cols ->{
 			if(cols.succeeded())
 			{
@@ -75,7 +73,6 @@ public abstract class MongoTest extends SoileBaseTest {
 				List<Future> collectionsDropped = new LinkedList<Future>();
 				for(String col : cols.result())
 				{
-					System.out.println("Creating Async for col: " + col);
 					final Async async = context.async();
 					
 					asyncMap.put(col, async);					
@@ -84,7 +81,6 @@ public abstract class MongoTest extends SoileBaseTest {
 				{
 					collectionsDropped.add(mongo_client.dropCollection(col).onComplete(res ->				
 					{
-						System.out.println("Finished Async for col: " + col);
 						asyncMap.get(col).complete();						
 					}));					
 				}
@@ -108,7 +104,6 @@ public abstract class MongoTest extends SoileBaseTest {
 			}
 			else
 			{
-				System.out.println("Trouble cleaning up collections");
 				cols.cause().printStackTrace(System.out);
 			}
 			oasync.complete();

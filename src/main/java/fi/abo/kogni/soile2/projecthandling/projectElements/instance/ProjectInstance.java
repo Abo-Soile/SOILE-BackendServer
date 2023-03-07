@@ -14,6 +14,8 @@ import fi.abo.kogni.soile2.projecthandling.exceptions.ProjectIsInactiveException
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecification;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FilterObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -98,7 +100,9 @@ public abstract class ProjectInstance implements AccessElement{
 		ProjectInstance p = factory.createInstance();
 		LOGGER.debug(p);
 		LOGGER.debug(factory);
-		p.load(instantiationInfo).onSuccess(dataJson -> {
+		LOGGER.debug(instantiationInfo.encodePrettily());
+		p.load(instantiationInfo)
+		.onSuccess(dataJson -> {
 			LOGGER.debug("Trying to set up project from data: \n " + dataJson.encodePrettily());
 			p.setupProject(dataJson);
 			projPromise.complete(p);
@@ -161,7 +165,11 @@ public abstract class ProjectInstance implements AccessElement{
 	{
 		return toDBJson().encodePrettily() + elements.toString();
 	}
-	
+
+	public String getShortCut()
+	{
+		return shortcut;
+	}
 	/**
 	 * Parse an experiment from the given experiment Json. 
 	 * @param experiment
@@ -213,9 +221,12 @@ public abstract class ProjectInstance implements AccessElement{
 					.put("_id",instanceID)
 					.put("sourceUUID",sourceUUID)
 					.put("version", version)
-					.put("name", name)
-					.put("shortcut", shortcut)
-					.put("isActive", isActive);				
+					.put("name", name)					
+					.put("isActive", isActive);
+			if(shortcut != null)
+			{
+				dbData.put("shortcut", shortcut);
+			}
 		return dbData;
 	}			
 	
@@ -227,6 +238,7 @@ public abstract class ProjectInstance implements AccessElement{
 	 */
 	public Future<String> finishStep(Participant participant, JsonObject taskData)
 	{
+		LOGGER.info("Handling participant: " + participant.toString() + " with data " + taskData.encodePrettily());
 		if(!isActive)
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
@@ -292,7 +304,7 @@ public abstract class ProjectInstance implements AccessElement{
 	 * @return a list of the element IDs in this project
 	 */
 	public List<String> getElements()
-	{
+	{		
 		return List.copyOf(elements.keySet());
 	}
 	
@@ -305,7 +317,7 @@ public abstract class ProjectInstance implements AccessElement{
 	public String getNextTask(String nextElementID, Participant user)
 	{
 		// if we don't get a nextElementID, we are done with the Project.
-		if("".equals(nextElementID) || nextElementID == null)
+		if(nextElementID == null || "".equals(nextElementID) || "end".equals(nextElementID))
 		{
 			return null;
 		}
@@ -354,26 +366,27 @@ public abstract class ProjectInstance implements AccessElement{
 	/**
 	 * Proceed the user to the next step within this project (depending on Filters etc pp).
 	 * This will return the position the user was set to if everything succeeds.
-	 * @param user The user that proceeds to the next step.
+	 * @param participant The user that proceeds to the next step.
 	 * @return A future of the next step instance ID, or null if this is participant is finished.
 	 */
-	public Future<String> setNextStep(Participant user)
+	public Future<String> setNextStep(Participant participant)
 	{		
 		if(!isActive)
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
 		}		
-		LOGGER.debug("Trying to set next step for user currently at position: " + user.getProjectPosition());		
-		ElementInstance current = getElement(user.getProjectPosition());
-		LOGGER.debug("Element is : " + current);
-		String nextElement = current.nextTask(user);
+		LOGGER.info("Trying to set next step for user currently at position: " + participant.getProjectPosition());		
+		ElementInstance current = getElement(participant.getProjectPosition());
+		LOGGER.info("Element is : " + current);
+		String nextElement = current.nextTask(participant);
+		LOGGER.info("Next element is : " + nextElement);
 		if("".equals(nextElement) || nextElement == null)
 		{
 			// This indicates we are done. 
-			return user.setProjectPosition(null);	
+			return participant.setProjectPosition(null);	
 		}
 		LOGGER.debug("Updating user position:" + current.getInstanceID() + " -> " + nextElement);		
-		return user.setProjectPosition(nextElement);
+		return participant.setProjectPosition(nextElement);
 	}				
 		
 	/**
@@ -410,7 +423,7 @@ public abstract class ProjectInstance implements AccessElement{
 			}
 		}
 		return result;
-	}
+	}	
 	
 	/**
 	 * This operation saves the Project. It should ensure that the data can be reconstructed by supplying what is returned 
@@ -487,4 +500,7 @@ public abstract class ProjectInstance implements AccessElement{
 	 * @return A successfull future, if the token is available.
 	 */
 	public abstract Future<Void> useToken(String token);
+	
+	
+	
 }

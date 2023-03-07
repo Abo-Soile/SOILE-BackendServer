@@ -16,9 +16,19 @@ public class DebugRouter implements Handler<RoutingContext>{
 
 	@Override
 	public void handle(RoutingContext event) {
-		LOGGER.debug("Request URL: " + event.request().absoluteURI());
-		LOGGER.debug("Request is ssl: " + event.request().isSSL());
-		LOGGER.debug("Request Method is : " + event.request().method());
+		LOGGER.info("Request URL: " + event.request().absoluteURI());
+		LOGGER.info("Request is ssl: " + event.request().isSSL());
+		LOGGER.info("Request Method is : " + event.request().method());
+		if(event.body().available())
+		{
+			try {
+				LOGGER.info(event.body().asJsonObject(200));
+			}
+			catch(Exception e)
+			{
+				LOGGER.info(event.body().asString().substring(0, Math.min(event.body().asString().length()-1,200)));
+			}
+		}
 		event.next();
 	}
 

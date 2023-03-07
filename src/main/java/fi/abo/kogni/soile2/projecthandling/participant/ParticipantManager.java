@@ -45,7 +45,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	private HashMap<String, Long> dirtyTimeStamps; 
 	//TODO: needs constructor.
 	private String participantCollection = SoileConfigLoader.getdbProperty("participantCollection");
-	public static final Logger log = LogManager.getLogger(ParticipantManager.class);
+	public static final Logger LOGGER = LogManager.getLogger(ParticipantManager.class);
 
 	public ParticipantManager(MongoClient client)
 	{
@@ -140,22 +140,30 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 * database.
 	 * @param handler the handler to handle the created participant
 	 */
-	public Future<Participant> createTokenParticipant(ProjectInstance p)
+	public Future<Participant> createTokenParticipant(ProjectInstance p, String usedToken)
 	{	
 		Promise<Participant> participantPromise = Promise.<Participant>promise();
 		JsonObject defaultParticipant = getDefaultParticipantInfo(p.getID());
 		VertxContextPRNG rng = VertxContextPRNG.current();		
-		String Token = rng.nextString(35);
-		defaultParticipant.put("token", Token);
+		String Token = rng.nextString(35);		
+		defaultParticipant.put("accessToken", usedToken);
 		client.save(participantCollection,defaultParticipant).onSuccess(res ->
-		{		
-			defaultParticipant.put("_id", res);			
-			Participant part = tokenfactory.createParticipant(defaultParticipant);
-			p.addParticipant(part).onSuccess( Void -> 
+		{					
+			// this ensures, that the generated token is UNIQUE for the participant collection and still cannot be easily guessed. 
+			defaultParticipant.put("token", res + Token );
+			LOGGER.debug(defaultParticipant.encodePrettily());
+			client.findOneAndUpdate(participantCollection,new JsonObject().put("_id", res), new JsonObject().put("$set",defaultParticipant))
+			.onSuccess(stored ->
 			{
-					participantPromise.complete(part);
+				defaultParticipant.put("_id", res);
+				Participant part = tokenfactory.createParticipant(defaultParticipant);
+				p.addParticipant(part).onSuccess( Void -> 
+				{
+						participantPromise.complete(part);
+				})
+				.onFailure(err -> participantPromise.fail(err));	
 			})
-			.onFailure(err -> participantPromise.fail(err));
+			.onFailure(err -> participantPromise.fail(err));						
 			
 		}).onFailure(err -> {
 			participantPromise.fail(err);
@@ -298,8 +306,9 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			{
 				update.put("token", p.getToken());
 			}
+			LOGGER.debug("Updating participant with update: " + update.encodePrettily());
 			update.remove("_id");
-			JsonObject dataUpdate = new JsonObject().put("$set", update); 
+			JsonObject dataUpdate = new JsonObject().put("$set", update);			
 			client.updateCollectionWithOptions(participantCollection,new JsonObject().put("_id", p.getID()),dataUpdate, new UpdateOptions().setUpsert(true))
 			.onSuccess(res -> {
 				savePromise.complete(p.getID());
@@ -395,7 +404,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 					o.put("participantID", o.getValue("_id")).remove("_id");
 					result.add(o);
 				}
-				log.debug(result.encodePrettily());		
+				LOGGER.debug(result.encodePrettily());		
 				participantsPromise.complete(result);
 			})
 			.onFailure(err -> participantsPromise.fail(err));
@@ -430,6 +439,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	}
 	
 	/**
+	 * TODO: Check if the timestamp from the input data needs to be updated... 
 	 * Update the outputs of a participant for the given TaskID and Outputs array.
 	 * @param p The {@link Participant} to update
 	 * @param taskID the id of the Task for which to update the Outputs
@@ -456,7 +466,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		pullAndPut.add(pushOp);				
 		pullAndPut.add(setOp);
 		return client.bulkWrite(participantCollection, pullAndPut).onSuccess(res -> {
-			log.debug(res.toJson());
+			LOGGER.debug(res.toJson());
 		}).mapEmpty();
 		
 	}
@@ -473,10 +483,10 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		client.find(participantCollection,new JsonObject()).
 		onSuccess(list -> {
 			
-			log.debug("There are " + list.size() + " participants");
+			LOGGER.debug("There are " + list.size() + " participants");
 			for(JsonObject o : list)
 			{
-				log.debug(o.encodePrettily());	
+				LOGGER.debug(o.encodePrettily());	
 			}
 		});
 		JsonObject query = new JsonObject().put("_id", new JsonObject().put("$in", participantIDs));

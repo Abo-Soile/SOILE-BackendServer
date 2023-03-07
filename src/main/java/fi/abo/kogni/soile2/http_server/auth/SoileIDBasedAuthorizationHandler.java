@@ -87,7 +87,7 @@ public class SoileIDBasedAuthorizationHandler{
 		// Fetch the project with the id, but only return the private field (everything else is not relevant)
 		client.findOne(targetCollection,new JsonObject().put("_id", id),new JsonObject().put("private", 1))
 		.onSuccess( res -> {
-			if( res == null)
+			if(res == null)
 			{
 				authorizationPromise.fail(new ObjectDoesNotExist(id));
 				return;
@@ -130,25 +130,31 @@ public class SoileIDBasedAuthorizationHandler{
 		return authorizationPromise.future();
 	}
 		
+	/**
+	 * Create a Permission based authorization to be checked against.
+	 * TODO: This function needs to be adapted if additional Authorization levels are introduced at any point!
+	 * @param id the id for which auth is required
+	 * @param requiredAccess the access level required. 
+	 * @return
+	 */
 	private Authorization getPermissionBasedAuth(String id, PermissionType requiredAccess)
-	{		
-		
-		if(requiredAccess == PermissionType.FULL)
+	{				
+		switch(requiredAccess)
 		{
-			return SoilePermissionProvider.buildPermission(id,requiredAccess);
-		}
-		else
-		{
-			if(requiredAccess == PermissionType.READ_WRITE)
-			{
+			case FULL:
+				return SoilePermissionProvider.buildPermission(id,requiredAccess);
+			case READ_WRITE:
 				return OrAuthorization.create().addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.FULL))
-											   .addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.READ_WRITE));	
-			}
-			else
-			{
-				return SoilePermissionProvider.getWildCardPermission(id);
-			}
-			
+						   .addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.READ_WRITE));
+			case READ:
+				return OrAuthorization.create().addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.FULL))
+						   .addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.READ_WRITE))
+						   .addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.READ));
+			default:
+				return OrAuthorization.create().addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.FULL))
+						   .addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.READ_WRITE))
+						   .addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.READ))
+						   .addAuthorization(SoilePermissionProvider.buildPermission(id, PermissionType.EXECUTE));
 		}
 	}
 	

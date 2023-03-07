@@ -31,7 +31,7 @@ public class TaskTest extends MongoTest {
 				.onSuccess(Task -> {
 					context.assertEquals(p.getPrivate(),Task.getPrivate());
 					context.assertEquals(p.getName(),Task.getName());
-					context.assertEquals(p.getVersionForTag("NewVersion"), Task.getVersionForTag("NewVersion"));
+					context.assertEquals(p.getVersionForTag("NewVersion"), Task.getVersionForTag("NewVersion"));					
 					testAsync.complete();
 				})
 				.onFailure(err -> {

@@ -2,7 +2,7 @@
 	"api" : "api.yml",
 	"http_server": {
 		"port": 8081,
-		"host": "127.0.0.1",
+		"host": "localhost",
 		"directory": "./static_files",
 		"template_folder":"templates/",
 		"debug":true,
@@ -17,7 +17,8 @@
 		"gitVerticleAddress" : "githandler",
 		"soileGitFolder" : "/tmp/soile/git",
 		"soileGitDataLakeFolder" : "/tmp/soile/gitLake",
-		"soileResultDirectory" : "/tmp/soile/resultLake"
+		"soileResultDirectory" : "/tmp/soile/resultLake",
+		"taskLibraryFolder" : "/tmp/soile/libFolder"
 		
 	},
 
@@ -58,7 +59,7 @@
 		"ownerField" : "ownedExperiments",
 		"collaboratorField" : "collaboratedExperiments",
 		"participantField" : "participantIn",
-		"userRolesField" : "userRoles",	
+		"userRolesField" : "role",	
 		"usernameCredentialField" : "username",
 		"passwordField" : "password",
 		"passwordCredentialField" : "password",
@@ -82,7 +83,7 @@
 		"userOwnes" : "ownerOf",
 		"userCollaborates" : "collaboratorOf",
 		"userParticipates" : "participantOf",
-		"userRoles" : "roles" 
+		"userRoles" : "role" 
 	},
 
 	"communication" : {		
@@ -154,9 +155,9 @@
 	},
 		
 	"tasks":{
-		"availableTypes" : [ "qlang", "elang", "psychopy" ],
+		"availableTypes" : [ "qmarkup", "elang", "psychopy" ],
 		"availableVersions" : {
-								 "qlang" : [ "1.0" ],
+								 "qmarkup" : [ "1.0" ],
 								 "elang" : [ "1.0" ],
 								 "psychopy" : [ "2022.2.5"]
 								 }

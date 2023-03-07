@@ -34,7 +34,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 			.onSuccess(userData -> {
 				context.assertEquals(username, userData.getValue(SoileConfigLoader.getUserdbField("usernameField")));
 				context.assertEquals("email@there.fi", userData.getValue(SoileConfigLoader.getUserdbField("userEmailField")));
-				context.assertEquals(Roles.Admin.toString(), userData.getValue(SoileConfigLoader.getUserdbField("userRolesField")));
+				context.assertEquals(new JsonArray().add(Roles.Admin.toString()), userData.getValue(SoileConfigLoader.getUserdbField("userRolesField")));
 				context.assertEquals("User Name", userData.getValue(SoileConfigLoader.getUserdbField("userFullNameField")));
 				HashingStrategy strategy = new SoileHashing(SoileConfigLoader.getUserProperty("serverSalt"));
 				
@@ -95,7 +95,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 			getUserDetailsFromDB(mongo_client, "SecondUser")
 			.onSuccess(userData -> {
 				context.assertEquals("SecondUser", userData.getValue(SoileConfigLoader.getUserdbField("usernameField")));				
-				context.assertEquals(Roles.Participant.toString(), userData.getValue(SoileConfigLoader.getUserdbField("userRolesField")));				
+				context.assertEquals(new JsonArray().add(Roles.Participant.toString()), userData.getValue(SoileConfigLoader.getUserdbField("userRolesField")));				
 				HashingStrategy strategy = new SoileHashing(SoileConfigLoader.getUserProperty("serverSalt"));				
 				context.assertTrue(strategy.verify(userData.getString(SoileConfigLoader.getUserdbField("passwordField")),"testPassword"));				
 				defaultRoleAsync.complete();
@@ -190,7 +190,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				.onSuccess(userData -> {
 					context.assertNotNull(userData);
 					context.assertEquals("TestUser", userData.getValue(SoileConfigLoader.getUserdbField("usernameField")));				
-					context.assertEquals(Roles.Participant.toString(), userData.getValue(SoileConfigLoader.getUserdbField("userRolesField")));
+					context.assertEquals(new JsonArray().add(Roles.Participant.toString()), userData.getValue(SoileConfigLoader.getUserdbField("userRolesField")));
 					context.assertEquals("some@other.rp", userData.getValue(SoileConfigLoader.getUserdbField("userEmailField")));
 					HashingStrategy strategy = new SoileHashing(SoileConfigLoader.getUserProperty("serverSalt"));				
 					context.assertTrue(strategy.verify(userData.getString(SoileConfigLoader.getUserdbField("passwordField")),"newPass"));	
@@ -231,7 +231,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				context.assertEquals(res.body().getClass(), JsonObject.class);
 				getUserDetailsFromDB(mongo_client, "NewUser")
 				.onSuccess(userData -> {
-					context.assertEquals(Roles.Researcher.toString(), userData.getString(SoileConfigLoader.getUserdbField("userRolesField")));
+					context.assertEquals(new JsonArray().add(Roles.Researcher.toString()), userData.getValue(SoileConfigLoader.getUserdbField("userRolesField")));
 					roleChangeAsync.complete();
 				})
 				.onFailure(err -> context.fail(err));
@@ -241,8 +241,8 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 			Async PermissionTest = context.async();
 			JsonObject addPermissionChange = new JsonObject().put("username", "NewUser")
 					  										 .put("command", "add")
-														     .put("permissionsProperties", new JsonObject().put("elementType", "task")
-																  										.put("permissionsSettings", new JsonArray().add(aPermission).add(bPermission).add(a2Permission)));					
+														     .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
+																  										.put("permissionSettings", new JsonArray().add(aPermission).add(bPermission).add(a2Permission)));					
 			eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), addPermissionChange)
 			.onSuccess(add -> {
 				 context.assertEquals(SoileCommUtils.SUCCESS, ((JsonObject)add.body()).getValue(SoileCommUtils.RESULTFIELD));
@@ -254,8 +254,8 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 					context.assertTrue(taskPermissions.contains(bPermissionTest));
 					JsonObject removePermissionChange = new JsonObject().put("username", "NewUser")
 																		.put("command", "remove")
-																	    .put("permissionsProperties", new JsonObject().put("elementType", "task")
-																			  										.put("permissionsSettings", new JsonArray().add(aPermission)));					
+																	    .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
+																			  										.put("permissionSettings", new JsonArray().add(aPermission)));					
 					eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), removePermissionChange)
 					.onSuccess(removed -> {
 						context.assertEquals(SoileCommUtils.SUCCESS, ((JsonObject)removed.body()).getValue(SoileCommUtils.RESULTFIELD));
@@ -266,8 +266,8 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 							context.assertTrue(taskPermissions2.contains(a2PermissionTest));
 							JsonObject setPermissionChange = new JsonObject().put("username", "NewUser")
 									.put("command", "set")
-								    .put("permissionsProperties", new JsonObject().put("elementType", "task")
-										  										.put("permissionsSettings", new JsonArray().add(aPermission)));
+								    .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
+										  										.put("permissionSettings", new JsonArray().add(aPermission)));
 							eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), setPermissionChange)
 							.onSuccess(set -> {
 								context.assertEquals(SoileCommUtils.SUCCESS, ((JsonObject)set.body()).getValue(SoileCommUtils.RESULTFIELD));
@@ -291,10 +291,11 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				})
 				.onFailure(err ->context.fail(err));
 			})
-			.onFailure(success -> {				
+			.onFailure(err -> {	
+				context.fail(err);
 			});
-			JsonObject failObject = new JsonObject().put("username", "NewUser2").put("role", Roles.Researcher).put("permissionsProperties", new JsonObject().put("elementType", "task")
-						.put("permissionsSettings", new JsonArray().add(aPermission)));
+			JsonObject failObject = new JsonObject().put("username", "NewUser2").put("role", Roles.Researcher).put("permissionsProperties", new JsonObject().put("elementType", "TASK")
+						.put("permissionSettings", new JsonArray().add(aPermission)));
 			Async failRequestForDuplicate = context.async();  
 			// Fail dual request
 			eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), failObject)
@@ -307,7 +308,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				context.assertEquals("Cannot change permission and role settings at the same time", e.getMessage());
 				getUserDetailsFromDB(mongo_client, "NewUser2")
 				.onSuccess(res -> {
-					context.assertEquals(Roles.Participant.toString(), res.getString(SoileConfigLoader.getUserdbField("userRolesField")));
+					context.assertEquals(new JsonArray().add(Roles.Participant.toString()), res.getJsonArray(SoileConfigLoader.getUserdbField("userRolesField")));
 					failRequestForDuplicate.complete();
 				})
 				.onFailure(err2 -> context.fail(err2));				
@@ -420,8 +421,8 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		JsonObject invalidProject = new JsonObject().put("projectInstanceID", "invalidProject").put("participantID", "NewID3").put("username", "NewUser");
 		createUser(vertx, "NewUser", "testPassword", "Fullname", "New@mail.fi", Roles.Participant )
 		.onSuccess(created -> {			
-			eb.request(getUsermanagerEventBusAddress("makeUserParticpantInProject"), addToProject)
-			.compose(Void -> eb.request(getUsermanagerEventBusAddress("makeUserParticpantInProject"), addTo2ndProject))
+			eb.request(getUsermanagerEventBusAddress("makeUserParticipantInProject"), addToProject)
+			.compose(Void -> eb.request(getUsermanagerEventBusAddress("makeUserParticipantInProject"), addTo2ndProject))
 			.onSuccess(added -> {
 				Async validAsync = context.async();
 				eb.request(getUsermanagerEventBusAddress("getParticipantForUserInProject"), addToProject)
@@ -588,22 +589,22 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				.put("target", "inst2");
 		JsonObject taskPermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "task")
-				  										.put("permissionsSettings", new JsonArray().add(taskPermission)));					
+		     .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
+				  										.put("permissionSettings", new JsonArray().add(taskPermission)));					
 
 		JsonObject projectPermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "project")
-				  										.put("permissionsSettings", new JsonArray().add(projPermission)));
+		     .put("permissionsProperties", new JsonObject().put("elementType", "PROJECT")
+				  										.put("permissionSettings", new JsonArray().add(projPermission)));
 		
 		JsonObject experimentPermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "experiment")
-				  										.put("permissionsSettings", new JsonArray().add(expPermission)));
+		     .put("permissionsProperties", new JsonObject().put("elementType", "EXPERIMENT")
+				  										.put("permissionSettings", new JsonArray().add(expPermission)));
 		JsonObject instancePermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "instance")
-				  										.put("permissionsSettings", new JsonArray().add(instPermission).add(inst2Permission)));
+		     .put("permissionsProperties", new JsonObject().put("elementType", "INSTANCE")
+				  										.put("permissionSettings", new JsonArray().add(instPermission).add(inst2Permission)));
 		
 		//create a few users
 		createUser(vertx, "NewUser", "testPassword", "Fullname", "New@mail.fi", Roles.Researcher )

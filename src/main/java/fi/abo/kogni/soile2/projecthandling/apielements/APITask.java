@@ -2,13 +2,14 @@ package fi.abo.kogni.soile2.projecthandling.apielements;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import fi.abo.kogni.soile2.datamanagement.git.GitElement;
+import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.projecthandling.exceptions.NoCodeTypeChangeException;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
@@ -16,7 +17,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.json.JsonArray;
+import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -28,7 +29,7 @@ public class APITask extends APIElementBase<Task> {
 	private static final Logger LOGGER = LogManager.getLogger(APITask.class);
 
 	private String[] gitFields = new String[] {"name", "codeType"};
-	private Object[] gitDefaults = new Object[] {"", ""};
+	private Object[] gitDefaults = new Object[] {"", new JsonObject()};
 	
 	public APITask() {
 		super(new JsonObject());
@@ -40,36 +41,44 @@ public class APITask extends APIElementBase<Task> {
 	}
 
 	@JsonProperty("codeType")
-	public String getCodetype() {
-		return data.getString("codeType", "");
+	public JsonObject getCodeType() {
+		return data.getJsonObject("codeType", new JsonObject());
 	}
 	@JsonProperty("codeType")
-	public void setCodetype(String codeType) {
+	public void setCodetype(JsonObject codeType) {
 		data.put("codeType", codeType);
 	}
 
-	@JsonProperty("codeVersion")
 	public String getCodeVersion() {
-		return data.getString("codeVersion", "");
+		return getCodeType().getString("version","");
 	}
-	@JsonProperty("codeVersion")
-	public void setCodeVersion(String codeVersion) {
-		data.put("codeVersion", codeVersion);
+	public void setCodeVersion(String codeVersion) {		
+		JsonObject codeType = data.getJsonObject("codeType");
+		if(codeType != null)
+		{
+			codeType.put("version", codeVersion);
+		}
+		else
+		{
+			data.put("codeType", new JsonObject().put("version", codeVersion));
+		}
 	}
 	
-	/**
-	 * This represents ALL resources used in any version of the task. 
-	 * @return
-	 */
-	@JsonProperty("resources")
-	public JsonArray getResources() {
-		return data.getJsonArray("resources", new JsonArray());
+	public String getCodeLanguage() {
+		return getCodeType().getString("language", "");
 	}
-	@JsonProperty("resources")
-	public void setResources(JsonArray resources) {
-		data.put("resources", resources);
+	public void setCodeLanguage(String language) {
+		JsonObject codeType = data.getJsonObject("codeType");
+		if(codeType != null)
+		{
+			codeType.put("language", language);
+		}
+		else
+		{
+			data.put("codeType", new JsonObject().put("language", language));
+		}
 	}
-
+	
 	@JsonProperty("code")
 	public String getCode() {
 		return data.getString("code","");
@@ -81,17 +90,11 @@ public class APITask extends APIElementBase<Task> {
 	@Override
 	public void setElementProperties(Task task) throws NoCodeTypeChangeException
 	{
-		if(!task.getCodetype().equals(getCodetype()) && !task.getCodetype().equals(""))
-		{
-			// the code type is set, and differs from what is supposed to be set now. 
-			throw new NoCodeTypeChangeException();
-		}
-		task.setCodetype(getCodetype());
-		// TODO: maybe this should be converted so that it in the end puts in IDs.
-		task.setResources(getResources());
+		LOGGER.debug("Current Code Type: \n" + getCodeType().encodePrettily());
 	}
 	@Override
 	public JsonObject getGitJson() {
+		
 		JsonObject gitData = new JsonObject();
 		for(int i = 0; i < gitFields.length ; ++i)
 		{
@@ -101,10 +104,12 @@ public class APITask extends APIElementBase<Task> {
 	}
 	@Override
 	public void loadGitJson(JsonObject json) {
+		LOGGER.debug("Data before addition: " + data.encodePrettily() );
 		for(int i = 0; i < gitFields.length ; ++i)
 		{
 			this.data.put(gitFields[i], json.getValue(gitFields[i], gitDefaults[i]));	
 		}
+		LOGGER.debug("Data after addition: " + data.encodePrettily() );
 	}
 	
 	@Override
@@ -134,21 +139,32 @@ public class APITask extends APIElementBase<Task> {
 			codePromise.complete(true);
 		})
 		.onFailure(err -> {
-			codePromise.fail(err);
-		});
-		Promise<Boolean> resourcesPromise = Promise.promise();
-		loadedList.add(resourcesPromise.future());
-		GitElement targetRepo = new GitElement(targetRepository, this.getVersion());
-		eb.request("soile.git.getResourceList", targetRepo.toJson()).onSuccess(resources -> {
-			LOGGER.debug("Resources are: " + ((JsonArray) resources.body()).encodePrettily());
-			setResources((JsonArray) resources.body());
-			resourcesPromise.complete(true);
-		})
-		.onFailure(err -> {
-			resourcesPromise.fail(err);
-		});
-		
-		
+			if(err instanceof ReplyException)
+			{
+				int errorCode = ((ReplyException)err).failureCode();
+				if(errorCode == 404) // not found
+				{
+					// this is fine, could be that it wasn't generated yet, we will return an empty string then.
+					setCode("");
+					codePromise.complete(true);
+				}
+				else
+				{
+					codePromise.fail(err);		
+				}
+			}
+			else
+			{
+				LOGGER.debug("Failed to load Code File");
+				err.printStackTrace(System.out);
+				codePromise.fail(err);
+			}
+		});			
 		return CompositeFuture.all(loadedList).map(true);
 	}	
+	@Override
+	public Function<Object,Object> getFieldFilter(String fieldName)
+	{
+		return (x) -> { return x;};
+	}
 }

@@ -24,15 +24,26 @@ public class TaskInformationVerticleTest extends SoileVerticleTest {
 		ObjectGenerator.buildAPITask(taskManager, "FirstTask", mongo_client)
 		.onSuccess(currentTask -> {
 			String taskID = currentTask.getUUID();
-			eb.request(SoileConfigLoader.getVerticleProperty("getTaskInformationAddress"), new JsonObject().put("taskID",taskID))
+			Async versionAsync = context.async();
+			eb.request("soile.task.getVersionInfo", new JsonObject().put("taskID",taskID).put("version", currentTask.getVersion()))
 			.onSuccess(response -> {
 				JsonObject taskData = ((JsonObject)response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
+				System.out.println("Returned TaskData is : " + taskData.encodePrettily());
+				context.assertEquals("elang", taskData.getJsonObject("codeType").getString("language"));
+				versionAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));				
+			Async infoAsync = context.async();
+			eb.request("soile.task.getDBInfo", new JsonObject().put("taskID",taskID))
+			.onSuccess(response -> {
+				JsonObject taskData = ((JsonObject)response.body()).getJsonObject(SoileCommUtils.DATAFIELD);				
 				context.assertEquals(taskID, taskData.getString("_id"));
 				context.assertTrue(taskData.getBoolean("private"));
-				context.assertEquals("elang", taskData.getString("codeType"));
-				testAsync.complete();
+				infoAsync.complete();
 			})
-			.onFailure(err -> context.fail(err));						
+			.onFailure(err -> context.fail(err));
+			
+			testAsync.complete();
 		})
 		.onFailure(err -> context.fail(err));	
 	}

@@ -34,7 +34,7 @@ public interface UserVerticleTest {
 			if(role != null)
 			{
 				updateDetails = true;
-				userData.put("userRole", role.toString());
+				userData.put("role", role.toString());
 			}
 			if(updateDetails)
 			{				
@@ -78,6 +78,16 @@ public interface UserVerticleTest {
 	public default Future<JsonObject> getUserDetailsFromDB(MongoClient client, String username)
 	{
 		return client.findOne(SoileConfigLoader.getdbProperty("userCollection"), new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"),username), null);
+	}
+	
+	public default Future<Void> createAdmin(Vertx vertx, String username, String password)
+	{
+		return createUser(vertx, username, password, Roles.Admin);
+	}
+	
+	public default Future<Void> createResearcher(Vertx vertx, String username, String password)
+	{
+		return createUser(vertx, username, password, Roles.Researcher);
 	}
 }
 

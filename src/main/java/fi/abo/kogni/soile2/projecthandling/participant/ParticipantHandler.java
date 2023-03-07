@@ -56,7 +56,7 @@ public class ParticipantHandler {
 	
 	/**
 	 * Create a participant in the database
-	 * @param handler
+	 * @param p the ProjectInstance for which to create a participant
 	 */
 	public Future<Participant> create(ProjectInstance p)
 	{
@@ -65,11 +65,12 @@ public class ParticipantHandler {
 
 	/**
 	 * Create a participant in the database
-	 * @param handler
+	 * @param p the {@link ProjectInstance} for which to create a participant
+	 * 
 	 */
-	public Future<Participant> createTokenUser(ProjectInstance p)
+	public Future<Participant> createTokenParticipant(ProjectInstance p, String usedToken)
 	{
-		return manager.createTokenParticipant(p);
+		return manager.createTokenParticipant(p, usedToken);
 	}
 	
 	/**

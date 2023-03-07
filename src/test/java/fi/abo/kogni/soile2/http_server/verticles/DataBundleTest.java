@@ -207,7 +207,6 @@ public class DataBundleTest extends ElementTester {
 																			{		
 																				found++;
 																				try {																					
-																					System.out.println(files.getJsonObject(i).encodePrettily());
 																					JsonObject dataJson = new JsonObject(Files.readString(Path.of(new DataLakeFile(files.getJsonObject(i)).getAbsolutePath())));
 																					context.assertTrue(dataJson.containsKey("taskResults"));
 																					context.assertEquals(1,dataJson.getJsonArray("taskResults").size());

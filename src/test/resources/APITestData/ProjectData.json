@@ -15,8 +15,7 @@
 				"instanceID": "tabcdefg1",
 				"outputs": ["clicktimes"],
 				"name": "FirstTask",
-				"next": "eabcdefg1",
-				"resources": "apple.jpeg"								
+				"next": "eabcdefg1"
 			}  				
 		],
 	"filters":
@@ -40,7 +39,7 @@
 			{
 				"instanceID" : "eabcdefg1",
 				"name" : "TestExperiment1",
-				"random" : true,
+				"random" : false,
 				"next": "eabcdefg2"										
 			},
 			{
@@ -52,7 +51,7 @@
 	},					
 
 "Testproject2": {
-	"name" : "Testproject",
+	"name" : "Testproject2",
 	"start" : "tabcdefg0",
 	"private": false,
 	"tasks": 
@@ -67,15 +66,14 @@
 				"instanceID": "tabcdefg1",
 				"outputs": ["clicktimes"],
 				"name": "FirstTask",
-				"next": "eabcdefg1",
-				"resources": "apple.jpeg"								
+				"next": "eabcdefg1"
 			}  				
 		],	
 	"experiments": 
 		[
 			{
 				"instanceID" : "eabcdefg1",
-				"name" : "TestExperiment1",
+				"name" : "TestExperiment4",
 				"random" : true,
 				"next": "eabcdefg2"										
 			},

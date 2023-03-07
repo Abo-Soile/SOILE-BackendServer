@@ -231,13 +231,29 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	}
 	
 	@Override
-	public JsonObject getJson() {
+	public JsonObject getAPIJson() {
 		return this.data;
 	}
 	
 	@Override
-	public void loadFromJson(JsonObject currentJson) {
+	public void loadFromAPIJson(JsonObject currentJson) {
 		this.data = currentJson;
+	}
+	
+	@Override
+	public void updateFromJson(JsonObject update)
+	{
+		for(String field : data.fieldNames())
+		{
+			Object newObj = update.getValue(field, null);			
+			Object oldObj = data.getValue(field);
+			// if the types match or the current Obj is null, replace it.
+			if((oldObj == null) || (newObj != null && newObj.getClass().equals(oldObj.getClass())))
+			{
+				data.put(field, getFieldFilter(field).apply(newObj));
+			}
+
+		}
 	}
 	
 }

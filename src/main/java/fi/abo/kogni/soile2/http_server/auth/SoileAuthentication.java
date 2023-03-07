@@ -16,6 +16,7 @@ import io.vertx.ext.auth.HashingStrategy;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.web.handler.HttpException;
 
 /**
  * SoileAuthentication will handle the authentication of clients. 
@@ -63,11 +64,11 @@ public class SoileAuthentication implements AuthenticationProvider{
 				{
 					try
 					{
-						LOGGER.error("Found user " + username + " , requesting handling");			    			
+						LOGGER.debug("Found user " + username + " , requesting handling");			    			
 						User user = getUser(res.result(),credentials);
 						resultHandler.handle(Future.succeededFuture(user));
 					}
-					catch(InvalidLoginException e)
+					catch(HttpException e)
 					{
 						LOGGER.error("Got an error while handling: " +e.getMessage());
 						LOGGER.debug(resultHandler);			    			
@@ -95,7 +96,7 @@ public class SoileAuthentication implements AuthenticationProvider{
 	}
 
 	private User getUser(JsonObject dbEntry, JsonObject credentials)
-			throws InvalidLoginException {
+			throws HttpException {
 		String username = credentials.getString(SoileConfigLoader.getUserdbField("usernameField"));
 		User user = UserUtils.buildUserForDBEntry(dbEntry,username);		
 		if(strategy.verify(dbEntry.getString(SoileConfigLoader.getUserdbField("passwordField")),
@@ -108,7 +109,7 @@ public class SoileAuthentication implements AuthenticationProvider{
 		else
 		{
 			LOGGER.debug("Could not validate user with the following Credentials:\n " + credentials.encodePrettily());
-			throw new InvalidLoginException(username);
+			throw new HttpException(401, "Invalid username or invalid password for " + username);
 		}
 	}		
 

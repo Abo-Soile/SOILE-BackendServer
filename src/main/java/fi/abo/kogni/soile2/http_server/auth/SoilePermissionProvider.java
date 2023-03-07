@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
+import java.util.regex.Pattern;
+
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -118,14 +120,4 @@ public class SoilePermissionProvider {
 		return PermissionBasedAuthorization.create(buildPermissionString(targetID, type));
 	}	
 
-	/**
-	 * Build an Authorization based on targetID. I.e. any access to TargetID is acceptable.
-	 * @param targetID
-	 * @param type
-	 * @return
-	 */
-	public static Authorization getWildCardPermission(String targetID)
-	{
-		return WildcardPermissionBasedAuthorization.create(buildPermissionString(targetID, "*"));
-	}	
 }

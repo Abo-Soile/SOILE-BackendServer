@@ -51,6 +51,7 @@ public class SoileCookieCreationHandler {
 						
 						storeSessionCookie(ctx, user).onComplete(res ->
 						{
+							// TODO: handle if this fails
 							finishedCookie.complete();
 						});
 						user.principal().remove("refreshCookie");

@@ -20,11 +20,12 @@ public class FilterObjectInstance extends ElementInstanceBase {
 
 	List<String> options = new LinkedList<>();
 	HashMap<String,String> optionsNext = new HashMap<String,String>();
-	String defaultNext; 
+	String defaultOption; 
 	public FilterObjectInstance(JsonObject data, ProjectInstance source) {
 		super(data, source);
+		System.out.println(data.encodePrettily());
 		parseOptions(data.getJsonArray("options"));
-		defaultNext = data.getString("defaultNext");
+		defaultOption = data.getString("defaultOption");
 	}
 	
 	private void parseOptions(JsonArray options)
@@ -49,7 +50,7 @@ public class FilterObjectInstance extends ElementInstanceBase {
 				return getNextIfThereIsOne(user, optionsNext.get(exp));
 			}
 		}
-		return getNextIfThereIsOne(user, defaultNext);		
+		return getNextIfThereIsOne(user, defaultOption);		
 	}
 
 }
