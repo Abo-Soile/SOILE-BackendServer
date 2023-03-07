@@ -277,6 +277,7 @@ public class ObjectGenerator {
 									expinstance.put("instanceID",current.getString("instanceID"))
 									.put("next", current.getString("next", "end"))
 									.put("random", current.getBoolean("random", true));
+									updateExperimentElementTargets(expinstance);
 									experiments.put(current.getString("name"), expinstance);								
 								})
 								);						
@@ -321,4 +322,49 @@ public class ObjectGenerator {
 		 ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, client, vertx);
 		 return buildAPIProject(projectManager, expManager, taskManager, client, projectName).map(res -> { return new JsonObject().put("UUID", res.getUUID()).put("version", res.getVersion());});
 	}
+	
+	
+	private static void updateExperimentElementTargets(JsonObject experiment)
+	{
+		String experimentInstanceID = experiment.getString("instanceID");
+		JsonArray elements = experiment.getJsonArray("elements", new JsonArray()); 
+		for(int i = 0; i < elements.size(); i++)
+		{
+			JsonObject celement = elements.getJsonObject(i).getJsonObject("data");
+			String etype = elements.getJsonObject(i).getString("elementType");
+			LOGGER.info(celement.encodePrettily());
+			switch(etype)
+			{
+			case "task": if(celement.getString("next").equals("end"))
+							{
+							celement.put("next", experimentInstanceID);
+							}
+						 break;
+			case "experiment":
+						updateExperimentElementTargets(celement);
+						break;
+			case "filter": updateFilterTargets(celement, experimentInstanceID);
+						   break;
+				
+			}
+		}
+	}
+	
+	private static void updateFilterTargets(JsonObject filter, String sourceID)
+	{
+		if(filter.getString("defaultOption").equals("end"))
+		{
+			filter.put("defaultOption", sourceID);
+		}
+		JsonArray options = filter.getJsonArray("options");
+		for(int i = 0 ; i < options.size(); i++)
+		{
+			JsonObject option = options.getJsonObject(i);
+			if(option.getString("next").equals("end"))
+			{
+				option.put("next", sourceID);
+			}
+		}
+	}
+	
 }

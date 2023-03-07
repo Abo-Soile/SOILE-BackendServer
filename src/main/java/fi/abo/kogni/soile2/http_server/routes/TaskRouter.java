@@ -38,7 +38,12 @@ public class TaskRouter extends ElementRouter<Task> {
 		LOGGER.debug(context.pathParam("id") + "/" + context.pathParam("version") + "/" + context.pathParam("*") );				
 		String elementID = context.pathParam("id");
 		String version = context.pathParam("version");
-		String filename = context.pathParam("*"); 		
+		String filename = context.pathParam("*");
+		if(filename.startsWith("lib/"))
+		{
+			handleError(new HttpException(400, "lib/ is a restricted path!"), context);
+			return;
+		}
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{

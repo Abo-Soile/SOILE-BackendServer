@@ -95,7 +95,8 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("makeUserParticpantInProject"), this::makeUserParticpantInProject));
+		LOGGER.warn("Registering: " + getEventbusCommandString("makeUserParticipantInProject") );
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("makeUserParticipantInProject"), this::makeUserParticipantInProject));		
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getParticipantForUserInProject"), this::getParticipantForUser));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getParticipantsForUser"), this::getParticipantsForUser));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("listUsers"), this::listUsers));
@@ -576,12 +577,12 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 * Make a User participant in a project. The message must contain the username along with the projectInstanceID and the participantID. 
 	 * @param msg
 	 */
-	void makeUserParticpantInProject(Message<JsonObject> msg)
+	void makeUserParticipantInProject(Message<JsonObject> msg)
 	{
 		//make sure we actually get the right thing
 		JsonObject command = msg.body();			
 
-		userManager.makeUserParticpantInProject(command.getString(getDBField("usernameField")), command.getString("projectInstanceID"), command.getString("participantID"))
+		userManager.makeUserParticipantInProject(command.getString(getDBField("usernameField")), command.getString("projectInstanceID"), command.getString("participantID"))
 		.onSuccess(res -> {
 			msg.reply(SoileCommUtils.successObject());
 		})

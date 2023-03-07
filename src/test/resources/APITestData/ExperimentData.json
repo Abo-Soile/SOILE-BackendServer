@@ -8,7 +8,7 @@
 				"type": "task", 
 				"name": "Test1", 
 				"instanceID": "tabcdefg2",
-				"outputs": ["smoker"], 
+				"outputs": ["smoker"],
 				"next": "tabcdefg3"
 			},
 			{
@@ -48,8 +48,7 @@
 	{
 		"name" : "TestExperiment3",
 		"private" : true,
-		"randomize" : true,
-		"items": [{"type": "task", "name": "Test3","instanceID": "test1inExp", "next": "filterInExp", "outputs": ["smoker"]},				  
+		"items": [{"type": "task", "name": "Test3","instanceID": "test1inExp", "outputs": ["smoker"], "next" : "filterInExp"},				  
 				  {"type": "task", "name": "Test4","instanceID": "test2inExp"},
 				  {
 				   "type": "filter",
@@ -71,6 +70,26 @@
 						"instanceID" : "firstExp"						
 					}
 				]
+	},	
+	
+	"TestExperiment4":	
+	{
+		"name" : "TestExperiment4",
+		"private" : false,
+		"items": [
+			{
+				"type": "task", 
+				"name": "Test1", 
+				"instanceID": "tabcdefg20",
+				"outputs": ["smoker"],
+				"next": "tabcdefg21"
+			},
+			{
+				"type": "task", 
+				"name": "Test2", 
+				"instanceID": "tabcdefg21"
+			}
+		  ]						
 	}
 }
 				

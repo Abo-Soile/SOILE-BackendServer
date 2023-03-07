@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 
+import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.MongoTest;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -57,7 +58,8 @@ public abstract class SoileVerticleTest extends MongoTest {
 			SoileConfigLoader.getConfig(SoileConfigLoader.HTTP_SERVER_CFG)
 			.put("soileGitFolder", gitDir)
 			.put("soileGitDataLakeFolder", gitDataLakeDir)
-			.put("soileResultDirectory", resultDataLakeDir);
+			.put("soileResultDirectory", resultDataLakeDir)
+			.put("taskLibraryFolder", new File(GitTest.class.getClassLoader().getResource("libdir/testlib.js").getPath()).getParent());
 		}
 		catch(IOException e)
 		{

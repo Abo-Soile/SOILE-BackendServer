@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Level;
 import org.junit.After;
 
+import fi.abo.kogni.soile2.datamanagement.DataLakeManagerTest;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.VerticleInitialiser;
@@ -46,7 +47,8 @@ public abstract class GitTest extends MongoTest {
 			SoileConfigLoader.getConfig(SoileConfigLoader.HTTP_SERVER_CFG)
 			.put("soileGitFolder", gitDir)
 			.put("soileGitDataLakeFolder", gitDataLakeDir)
-			.put("soileResultDirectory", resultDataLakeDir);
+			.put("soileResultDirectory", resultDataLakeDir)
+			.put("taskLibraryFolder", new File(GitTest.class.getClassLoader().getResource("libdir/testlib.js").getPath()).getParent());		
 		}
 		catch(IOException e)
 		{

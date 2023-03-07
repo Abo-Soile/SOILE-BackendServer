@@ -5,6 +5,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
@@ -21,7 +24,8 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 
 	Random rand = new Random();
 	List<String> elementIDs;
-	
+	static final Logger LOGGER = LogManager.getLogger(ExperimentObjectInstance.class);
+
 	public ExperimentObjectInstance(JsonObject data, ProjectInstance source) {
 		super(data, source);
 		defineElements();		
@@ -107,6 +111,7 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 		{
 			// we got a callback while we were in the experiment.
 			// Return the next element
+			LOGGER.info("Callback while in experiment, getting next element from project");
 			return getNext(user);
 		}
 		else
@@ -119,6 +124,7 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 			if(!getRandom())
 			{
 				// we are non random, so give the first task.
+				LOGGER.info("Not random, and just started, getting next element");
 				return getNextIfThereIsOne(user, getStart());	
 			}
 			else
@@ -134,11 +140,13 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 				// we still have elements, so we return the next element as specified in one random element of this task.
 				if(elements.size() > 0)
 				{
+					LOGGER.info("Random Experiment and still options left.");
 					return sourceProject.getNextTask(elements.get(rand.nextInt(elements.size())),user);
 				}
 				else
 				{
 					// get the the next element in the project.
+					LOGGER.info("Experiment finished, getting next element");
 					return getNext(user);
 				}			
 			}				

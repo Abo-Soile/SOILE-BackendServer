@@ -455,7 +455,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param participantID the participantID.
 	 * @return A successfull future if this call worked.
 	 */
-	public Future<Void> makeUserParticpantInProject(String username, String projectInstanceID, String participantID)
+	public Future<Void> makeUserParticipantInProject(String username, String projectInstanceID, String participantID)
 	{
 		JsonObject query = new JsonObject().put(authnOptions.getUsernameField(), username);
 		JsonObject pullUpdate = new JsonObject().put("$pull", new JsonObject()

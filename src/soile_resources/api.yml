@@ -1293,7 +1293,7 @@ paths:
             schema:
               $ref: '#/components/schemas/TaskData'
               
-  /projectexec/{id}/getcurrenttasktype:  
+  /projectexec/{id}/getcurrenttaskinfo:  
     get:
       security:
         - cookieAuth: []
@@ -1302,8 +1302,8 @@ paths:
       tags:
         - participation
       summary: Get the next unfinished task for the authorized user. 
-      operationId: getTaskType
-      description: "Get the ID of the current task for the authorized user."
+      operationId: getTaskInfo
+      description: "Get the ID and type of the current task for the authorized user, or get informed, that this this user has nothing more to do in this project."
       parameters:
         - name: id
           in: path
@@ -1320,6 +1320,9 @@ paths:
               schema:
                 type: object
                 properties: 
+                  id:
+                    type: string
+                    description: the instanceID of the task of the current user
                   codeType:
                     type: object
                     properties:
@@ -1411,7 +1414,7 @@ paths:
         '406':
           description: User is finished.
 
-  /run/{id}/lib:  
+  /run/{id}/lib/*:  
     get:
       security:
         - cookieAuth: []

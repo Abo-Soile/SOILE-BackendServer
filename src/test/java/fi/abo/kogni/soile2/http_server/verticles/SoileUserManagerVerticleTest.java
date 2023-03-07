@@ -421,8 +421,8 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		JsonObject invalidProject = new JsonObject().put("projectInstanceID", "invalidProject").put("participantID", "NewID3").put("username", "NewUser");
 		createUser(vertx, "NewUser", "testPassword", "Fullname", "New@mail.fi", Roles.Participant )
 		.onSuccess(created -> {			
-			eb.request(getUsermanagerEventBusAddress("makeUserParticpantInProject"), addToProject)
-			.compose(Void -> eb.request(getUsermanagerEventBusAddress("makeUserParticpantInProject"), addTo2ndProject))
+			eb.request(getUsermanagerEventBusAddress("makeUserParticipantInProject"), addToProject)
+			.compose(Void -> eb.request(getUsermanagerEventBusAddress("makeUserParticipantInProject"), addTo2ndProject))
 			.onSuccess(added -> {
 				Async validAsync = context.async();
 				eb.request(getUsermanagerEventBusAddress("getParticipantForUserInProject"), addToProject)

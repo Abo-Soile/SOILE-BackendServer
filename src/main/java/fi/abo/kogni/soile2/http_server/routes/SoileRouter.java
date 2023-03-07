@@ -71,7 +71,7 @@ public class SoileRouter {
 		}
 		if(err instanceof ObjectDoesNotExist)
 		{
-			sendError(context, 410, err.getMessage());			
+			sendError(context, 404, err.getMessage());			
 			return;
 		}
 		if(err instanceof HttpException)

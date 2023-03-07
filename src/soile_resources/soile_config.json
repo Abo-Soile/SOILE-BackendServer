@@ -17,7 +17,8 @@
 		"gitVerticleAddress" : "githandler",
 		"soileGitFolder" : "/tmp/soile/git",
 		"soileGitDataLakeFolder" : "/tmp/soile/gitLake",
-		"soileResultDirectory" : "/tmp/soile/resultLake"
+		"soileResultDirectory" : "/tmp/soile/resultLake",
+		"taskLibraryFolder" : "/tmp/soile/libFolder"
 		
 	},
 

@@ -55,20 +55,21 @@ public class ParticipantDataLakeManager{
 	public Future<String> storeParticipantData(String participantID, int step, String taskID, FileUpload upload)
 	{
 		Promise<String> idPromise = Promise.promise();
+		LOGGER.info("Trying to store data for: " + participantID + " / " + step + " / " + taskID );
 		TaskFileResult targetFile = new TaskFileResult("", "", "", step, taskID, participantID);
-		LOGGER.debug("Creating directories");
+		LOGGER.info("Creating directories for file: " + targetFile.toString());		
 		vertx.fileSystem().mkdirs(targetFile.getFolderPath(datalakedirectory))		
 		.onSuccess( folderCreated -> {
-			LOGGER.debug("Directories created, creating Temp File");
+			LOGGER.info("Directories created, creating Temp File");
 			vertx.fileSystem().createTempFile(targetFile.getFolderPath(datalakedirectory), "result", ".out","rw-rw----")
 			.onSuccess(targetFileLocation -> {
-				LOGGER.debug("temp File created: " + targetFileLocation);
+				LOGGER.info("temp File created: " + targetFileLocation);
 				String fileName = targetFileLocation.replace(targetFile.getFolderPath(datalakedirectory),"");
 				targetFile.setLocalFileName(fileName);
-				LOGGER.debug("Trying to move file : " + upload.uploadedFileName() + " to " + targetFile.getFilePath(datalakedirectory));
+				LOGGER.info("Trying to move file : " + upload.uploadedFileName() + " to " + targetFile.getFilePath(datalakedirectory));
 				vertx.fileSystem().move(upload.uploadedFileName(), targetFile.getFilePath(datalakedirectory), new CopyOptions().setReplaceExisting(true))
 				.onSuccess(res -> {
-					LOGGER.debug("File Moved ");
+					LOGGER.info("File Moved ");
 					idPromise.complete(fileName);
 				})
 				.onFailure(err -> idPromise.fail(err));

@@ -47,9 +47,12 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.ChainAuthHandler;
 import io.vertx.ext.web.handler.JWTAuthHandler;
 import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.handler.SessionHandler;
@@ -76,8 +79,9 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private ParticipationRouter partRouter;
 	private IDSpecificFileProvider fileProvider;
 	ConcurrentLinkedQueue<String> deployedVerticles;
-	DeploymentOptions soileOpts;
-	
+	DeploymentOptions soileOpts;	
+	AuthenticationHandler anyAuth;
+	AuthenticationHandler userAuth;
 	private List<MessageConsumer> consumers;
 
 	
@@ -107,9 +111,9 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		.onSuccess( routerBuilder ->
 		{
 			// add Debug, Logger and Session Handlers.						
-			soileRouter = routerBuilder.createRouter();
+			soileRouter = routerBuilder.createRouter();						
 			//as unfortunate as this is, we need to build a few routes manually, as they cannot be matched properly at the moment
-			setUpSpecialRoutes(soileRouter);
+			setUpSpecialRoutes(soileRouter);			
 			// now, add the cleanup callBack for the different Routers, which will cache data.
 			consumers.add(vertx.eventBus().consumer("soile.tempData.Cleanup", this::cleanUP));
 			startPromise.complete();
@@ -118,6 +122,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		{
 			LOGGER.error("Failed Starting router with error:");
 			LOGGER.error(fail);
+			fail.printStackTrace(System.out);
 			startPromise.fail(fail);
 		});
 
@@ -217,9 +222,17 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	Future<RouterBuilder> setupAuth(RouterBuilder builder)
 	{	
 		handler = new SoileAuthenticationBuilder();
-		builder.securityHandler("cookieAuth",handler.getCookieAuthProvider(vertx, client, cookieHandler))
-			   .securityHandler("JWTAuth", JWTAuthHandler.create(handler.getJWTAuthProvider(vertx)))
-			   .securityHandler("tokenAuth", handler.getTokenAuthProvider(partHandler, client));
+		
+		AuthenticationHandler JWTAuth =  JWTAuthHandler.create(handler.getJWTAuthProvider(vertx));
+		AuthenticationHandler tokenAuth =  handler.getTokenAuthProvider(partHandler, client);
+		AuthenticationHandler cookieAuth =  handler.getCookieAuthProvider(vertx, client, cookieHandler);
+		
+		builder.securityHandler("cookieAuth",cookieAuth)
+			   .securityHandler("JWTAuth", JWTAuth)
+			   .securityHandler("tokenAuth", tokenAuth);
+		
+		anyAuth = ChainAuthHandler.any().add(JWTAuth).add(cookieAuth).add(tokenAuth);
+		userAuth = ChainAuthHandler.any().add(JWTAuth).add(cookieAuth);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
@@ -342,7 +355,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	{	
 		partRouter = new ParticipationRouter(soileAuthorization, vertx, client, partHandler, projHandler, fileProvider);
 		builder.operation("submitResults").handler(context -> {partRouter.handleRequest(context,partRouter::submitResults);});
-		builder.operation("getTaskType").handler(context -> {partRouter.handleRequest(context,partRouter::getTaskType);});
+		builder.operation("getTaskInfo").handler(context -> {partRouter.handleRequest(context,partRouter::getTaskInfo);});
 		builder.operation("runTask").handler(context -> {partRouter.handleRequest(context,partRouter::runTask);});
 		builder.operation("getID").handler(context -> {partRouter.handleRequest(context,partRouter::getID);});
 		builder.operation("signUpForProject").handler(context -> {partRouter.handleRequest(context,partRouter::signUpForProject);});
@@ -369,12 +382,23 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("permissionOrRoleRequest").handler(router::permissionOrRoleRequest);				
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
-	
+	/**
+	 * These are a few special routes which unfortunately cannot be 
+	 * mapped directly from OPenAPI, as they require that all sub-pathes be properly matched. 
+	 * @param router
+	 */
 	private void setUpSpecialRoutes(Router router)
 	{
-		router.route(HttpMethod.GET, "/run/:id/lib/*").handler(partRouter::getLib);
-		router.route(HttpMethod.GET, "/run/:id/*").handler(partRouter::getResourceForExecution);
-		router.route(HttpMethod.GET, "/task/:id/:version/resource/*").handler(taskRouter::getResource);		
-		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(taskRouter::postResource);
+		// Order is important here! the /lib/* needs 
+		// to match before /* because /* matches any /*/lib route as well and libs need to be loaded from the lib dir.
+		// This actually means we need to reject any resource upload that starts with /lib!
+		router.route(HttpMethod.GET, "/run/:id/lib/*").handler(anyAuth).handler(partRouter::getLib);
+		router.route(HttpMethod.GET, "/run/:id/*").handler(anyAuth).handler(partRouter::getResourceForExecution);
+		router.route(HttpMethod.GET, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::getResource);		
+		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::postResource);
 	}
+	
+	
+	
+	
 }

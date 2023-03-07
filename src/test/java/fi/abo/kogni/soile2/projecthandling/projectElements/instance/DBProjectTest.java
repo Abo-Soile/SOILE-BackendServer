@@ -14,6 +14,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -65,6 +66,22 @@ public class DBProjectTest extends GitTest{
 	@Test
 	public void testProgression(TestContext context)
 	{
+		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
+				   .put("value", 1)
+				   .put("timestamp", System.currentTimeMillis()));
+		JsonArray fileData = new JsonArray();
+		JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
+				.put("value", 1)
+				.put("timestamp", System.currentTimeMillis())
+				)
+				.add(new JsonObject().put("name", "smoker2")
+						.put("value", "something")
+						.put("timestamp", System.currentTimeMillis())
+						)
+				)
+				.put("fileData", fileData);
+		JsonObject result = new JsonObject().put("outputData", OutputData).put("resultData", resultData);
+
 		System.out.println("--------------------  Testing DB Project progression ----------------------");
 		ElementManager<Project> projManager = new ElementManager<>(Project::new, APIProject::new, mongo_client, vertx);
 		ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, mongo_client, vertx);		 
@@ -87,9 +104,37 @@ public class DBProjectTest extends GitTest{
 						.put("private", true)
 						.put("shortcut", "thisIsSomeShortcut");							
 				projInstHandler.createProjectInstance(creationJson)
-				.onSuccess(projectInstance -> {	
+				.onSuccess(projectInstance -> {
+					Async progressionAsync = context.async(); 
 					partHandler.create(projectInstance).onSuccess(participant -> {
-
+						//TODO: Run the project						
+						projectInstance.startProject(participant)
+						.onSuccess(position -> {							
+							projectInstance.finishStep(participant, result.copy().put("taskID", position))
+							.onSuccess(pos1 -> {								
+								projectInstance.finishStep(participant, result.copy().put("taskID", pos1))
+								.onSuccess(pos2 -> {									
+									projectInstance.finishStep(participant, result.copy().put("taskID", pos2))
+									.onSuccess(pos3 -> {										
+										projectInstance.finishStep(participant, result.copy().put("taskID", pos3))
+										.onSuccess(pos4 -> {											
+											projectInstance.finishStep(participant, result.copy().put("taskID", pos4))
+											.onSuccess(pos5 -> {
+												// this is done. So now we get null.
+												context.assertNull(pos5);
+												progressionAsync.complete();
+											})
+											.onFailure(err -> context.fail(err));
+										})
+										.onFailure(err -> context.fail(err));
+									})
+									.onFailure(err -> context.fail(err));
+								})
+								.onFailure(err -> context.fail(err));
+							})
+							.onFailure(err -> context.fail(err));
+						})
+						.onFailure(err -> context.fail(err));
 					});
 					Async partListAsync = context.async();
 					projectInstance.getParticipants()

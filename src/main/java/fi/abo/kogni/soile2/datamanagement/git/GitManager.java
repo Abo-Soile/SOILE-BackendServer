@@ -30,7 +30,7 @@ public class GitManager{
 	{
 		this.eb = eb;
 	}
-	private static final Logger log = LogManager.getLogger(GitManager.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(GitManager.class.getName());
 	public static String resourceFolder = "resources";
 
 	
@@ -106,19 +106,19 @@ public class GitManager{
 	{
 		if(!gitFileValid(file))
 		{
-			log.error(file.toJson().encodePrettily());
+			LOGGER.error(file.toJson().encodePrettily());
 			return Future.failedFuture("Supplied File was invalid");
 		}
 		Promise<String> dataPromise = Promise.<String>promise();
 		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitProviderVerticle.createGetCommand(file.getRepoID(),file.getRepoVersion(),file.getFileName()))
 		.onSuccess( reply ->
 		{
-			log.debug(reply.body());
+			LOGGER.debug(reply.body());
 			dataPromise.complete(((JsonObject)reply.body()).getString(gitProviderVerticle.DATAFIELD));							
 		})
 		.onFailure(fail ->
 		{
-			log.debug(fail);
+			LOGGER.debug(fail);
 			dataPromise.fail(fail);
 		});
 		return dataPromise.future();	
@@ -182,7 +182,7 @@ public class GitManager{
 			}
 			catch(Exception e)
 			{
-				log.error(e);
+				LOGGER.error(e);
 				dataPromise.fail(e);
 			}
 			
@@ -208,7 +208,7 @@ public class GitManager{
 									 .put(gitProviderVerticle.COMMANDFIELD, gitProviderVerticle.LIST_FILES_COMMAND);
 		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), getFilesCommand).onSuccess(fileData ->{			
 			JsonArray result = ((JsonObject)fileData.body()).getJsonArray(gitProviderVerticle.DATAFIELD);
-			log.debug(result.encodePrettily());
+			LOGGER.debug(result.encodePrettily());
 			for(int i = 0; i < result.size(); ++i)
 			{				
 				if(result.getValue(i) instanceof JsonObject)
@@ -247,6 +247,7 @@ public class GitManager{
 		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), command).onSuccess(reply -> {
 			JsonObject info = (JsonObject)reply.body();
 			// return the new version of this repository (for future changes)
+			LOGGER.info("Updated file " + file.toJson().encode() + " for version " + info.getString(gitProviderVerticle.COMMITHASHFIELD));
 			versionPromise.complete(info.getString(gitProviderVerticle.COMMITHASHFIELD));
 		}).onFailure(fail -> {
 			versionPromise.fail(fail);

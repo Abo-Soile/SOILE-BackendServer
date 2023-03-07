@@ -316,7 +316,9 @@ public class WebObjectCreator {
 									experiment.put("instanceID",current.getString("instanceID"))
 									.put("next", current.getString("next", "end"))
 									.put("random", current.getBoolean("random", true));
-									experiments.put(current.getString("instanceID"), experiment);								
+									experiments.put(current.getString("instanceID"), experiment);
+									// update the links in the task/element IDs.
+									updateExperimentElementTargets(experiment);
 								})
 								);						
 					}
@@ -360,6 +362,50 @@ public class WebObjectCreator {
 			projectPromise.fail(e);
 		}
 		return projectPromise.future();
+	}
+	
+	
+	private static void updateExperimentElementTargets(JsonObject experiment)
+	{
+		String experimentInstanceID = experiment.getString("instanceID");
+		JsonArray elements = experiment.getJsonArray("elements", new JsonArray()); 
+		for(int i = 0; i < elements.size(); i++)
+		{
+			JsonObject celement = elements.getJsonObject(i).getJsonObject("data");
+			String etype = elements.getJsonObject(i).getString("elementType");
+			 
+			switch(etype)
+			{
+			case "task": if(celement.getString("next").equals("end"))
+							{
+							celement.put("next", experimentInstanceID);
+							}
+						 break;
+			case "experiment":
+						updateExperimentElementTargets(celement);
+						break;
+			case "filter": updateFilterTargets(celement, experimentInstanceID);
+						   break;
+				
+			}
+		}
+	}
+	
+	private static void updateFilterTargets(JsonObject filter, String sourceID)
+	{
+		if(filter.getString("defaultOption").equals("end"))
+		{
+			filter.put("defaultOption", sourceID);
+		}
+		JsonArray options = filter.getJsonArray("options");
+		for(int i = 0 ; i < options.size(); i++)
+		{
+			JsonObject option = options.getJsonObject(i);
+			if(option.getString("next").equals("end"))
+			{
+				option.put("next", sourceID);
+			}
+		}
 	}
 	
 }

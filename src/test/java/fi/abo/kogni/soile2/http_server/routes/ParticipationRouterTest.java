@@ -1,9 +1,9 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
@@ -13,12 +13,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.junit.Test;
 
+import fi.abo.kogni.soile2.datamanagement.DataLakeManagerTest;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
@@ -49,7 +46,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 				Async codeTypeAsync = context.async();
 				WebClientSession tempSession = createSession();
 				tempSession.addHeader("Authorization", authToken);
-				GET(tempSession, "/projectexec/" + instanceID + "/getcurrenttasktype", null, null)
+				GET(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
 				.onSuccess(response -> {
 					JsonObject codeTypeInfo = response.bodyAsJsonObject();
 					context.assertEquals("qmarkup", codeTypeInfo.getJsonObject("codeType", new JsonObject()).getString("language"));
@@ -248,7 +245,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 																   .put("timestamp", System.currentTimeMillis()));
 		JsonArray fileData = new JsonArray();
 		JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
-																								    .put("value", 0)
+																								    .put("value", 1)
 																								    .put("timestamp", System.currentTimeMillis())
 																					)
 																				.add(new JsonObject().put("name", "smoker2")
@@ -260,7 +257,6 @@ public class ParticipationRouterTest extends SoileWebTest{
 		
 		JsonObject result = new JsonObject().put("outputData", OutputData).put("resultData", resultData);
 		String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
-		String filename = "Image.jpg";
 		File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
 		List<File> fileUploads = new LinkedList<>();
 		fileUploads.add(upload);
@@ -270,10 +266,37 @@ public class ParticipationRouterTest extends SoileWebTest{
 			.onSuccess(authToken -> {
 				Async submitAsync = context.async();
 				WebClientSession tempSession = createSession();				
-				tempSession.addHeader("Authorization", authToken);
-				submitFilesAndResults(tempSession, fileUploads, resultData.copy(), instanceID)
+				tempSession.addHeader("Authorization", authToken);				
+				submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 				.onSuccess(submitted -> {
-					
+					System.out.println("First submission");
+					submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
+					.onSuccess(submitted2 -> {
+						System.out.println("Second submission");
+						submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
+						.onSuccess(submitted3 -> {
+							System.out.println("Third submission");
+							submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
+							.onSuccess(submitted4 -> {
+								submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
+								.onSuccess(submitted5 -> {
+									System.out.println("Fifth submission");
+									GET(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+									.onSuccess(response -> {									
+										JsonObject finalresult = response.bodyAsJsonObject();
+										// now the project is done, we have passed filters and everything. 
+										context.assertTrue(finalresult.getBoolean("finished"));
+										submitAsync.complete();
+									})
+									.onFailure(err -> context.fail(err));
+								})
+								.onFailure(err -> context.fail(err));
+							})
+							.onFailure(err -> context.fail(err));
+						})
+						.onFailure(err -> context.fail(err));
+					})
+					.onFailure(err -> context.fail(err));
 				})
 				.onFailure(err -> context.fail(err));
 				creationAsync.complete();
@@ -283,6 +306,140 @@ public class ParticipationRouterTest extends SoileWebTest{
 		.onFailure(err -> context.fail(err));
 	}
 	
+	@Test
+	public void testRunResources(TestContext context)
+	{
+		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
+																   .put("value", 1)
+																   .put("timestamp", System.currentTimeMillis()));
+		JsonArray fileData = new JsonArray();
+		JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
+																								    .put("value", 1)
+																								    .put("timestamp", System.currentTimeMillis())
+																					)
+																				.add(new JsonObject().put("name", "smoker2")
+																					    .put("value", "something")
+																					    .put("timestamp", System.currentTimeMillis())
+																		)
+													)
+												.put("fileData", fileData);
+		
+		JsonObject result = new JsonObject().put("outputData", OutputData).put("resultData", resultData);
+		String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
+		File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
+		List<File> fileUploads = new LinkedList<>();
+		fileUploads.add(upload);
+		
+		Async testRunResource = context.async();
+		createAndStartProject(true)
+		.onSuccess(instanceID -> {
+			createTokenAndSignupUser(generatorSession, instanceID)
+			.onSuccess(authToken -> {
+				WebClientSession tempSession = createSession();				
+				tempSession.addHeader("Authorization", authToken);
+				GET(tempSession, "/run/" + instanceID + "/ImageData.jpg", null, null)
+				.onSuccess(failed -> {
+					context.fail("The first Task does NOT have any resources!");
+				})
+				.onFailure(response -> {
+					context.assertEquals(404, ((HttpException)response).getStatusCode());
+					submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
+					.onSuccess(submitted -> {
+						GET(tempSession, "/run/" + instanceID + "/ImageData.jpg", null, null)
+						.onSuccess(dataResponse ->  {
+							String targetFileName = tmpDir + File.separator + "taskRouter.out"; 
+							vertx.fileSystem().writeFile(targetFileName , dataResponse.bodyAsBuffer())
+							.onSuccess(res -> {
+								// compare that the file is the same as the original one.
+								try {
+									context.assertTrue( 
+											areFilesEqual(
+													new File(targetFileName),
+													new File(DataLakeManagerTest.class.getClassLoader().getResource("FileTestData/ImageData.jpg").getPath())
+													)
+											);
+									testRunResource.complete();
+
+								}
+								catch(IOException e)
+								{
+									context.fail(e);
+								}
+							})					 
+							.onFailure(err -> context.fail(err));
+						})
+						.onFailure(err -> context.fail(err));
+						
+					})
+					.onFailure(err -> context.fail(err));
+					
+				});
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+	
+	@Test
+	public void testRunLibs(TestContext context)
+	{
+		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
+																   .put("value", 1)
+																   .put("timestamp", System.currentTimeMillis()));
+		JsonArray fileData = new JsonArray();
+		JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
+																								    .put("value", 1)
+																								    .put("timestamp", System.currentTimeMillis())
+																					)
+																				.add(new JsonObject().put("name", "smoker2")
+																					    .put("value", "something")
+																					    .put("timestamp", System.currentTimeMillis())
+																		)
+													)
+												.put("fileData", fileData);
+		
+		JsonObject result = new JsonObject().put("outputData", OutputData).put("resultData", resultData);
+		String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
+		File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
+		List<File> fileUploads = new LinkedList<>();
+		fileUploads.add(upload);
+		
+		Async testRunResource = context.async();
+		createAndStartProject(true)
+		.onSuccess(instanceID -> {
+			createTokenAndSignupUser(generatorSession, instanceID)
+			.onSuccess(authToken -> {
+				WebClientSession tempSession = createSession();				
+				tempSession.addHeader("Authorization", authToken);
+				GET(tempSession, "/run/" + instanceID + "/lib/testlib.js", null, null)
+				.onSuccess(response -> {
+					context.assertTrue(response.bodyAsString().contains("console.log"));
+					testRunResource.complete();
+				})
+				.onFailure(err -> context.fail(err));
+				Async failedLibAsync = context.async();
+				GET(tempSession, "/run/" + instanceID + "/lib/testlib2.js", null, null)
+				.onSuccess(response -> {
+					context.fail("Should not be possible");
+				})
+				.onFailure(err ->
+				{
+					if( err instanceof HttpException)
+					{
+					context.assertEquals(404, ((HttpException)err).getStatusCode());
+					failedLibAsync.complete();
+					}
+					else
+					{
+						context.fail(err);
+					}
+					
+				});
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
 	
 	protected Future<String> signUpToProjectWithToken(WebClient client,String Token, String projectID)
 	{
@@ -328,9 +485,9 @@ public class ParticipationRouterTest extends SoileWebTest{
 	protected Future<Void> submitResult(WebClient client, JsonObject resultData, String instanceID)
 	{
 		Promise<Void> submittedPromise = Promise.promise();
-		GET(client, "/projectexec/" + instanceID + "/getcurrenttaskid", null, null)
+		GET(client, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
 		.onSuccess(response -> {
-			String taskInstanceID = response.bodyAsString();			
+			String taskInstanceID = response.bodyAsJsonObject().getString("id");			
 			resultData.put("taskID",taskInstanceID);
 			POST(client, "/projectexec/" + instanceID + "/submit", null, resultData)
 			.onSuccess(submitted -> {
@@ -364,14 +521,16 @@ public class ParticipationRouterTest extends SoileWebTest{
 			.onFailure(err -> done.fail(err));
 		}
 		CompositeFuture.all(submissionFutures).onSuccess(allSubmitted -> {
-			GET(client, "/projectexec/" + instanceID + "/getcurrenttaskid", null, null)
+			GET(client, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
 			.onSuccess(response -> {
-				JsonArray fileResults = resultData.getJsonArray("fileData");
+				System.out.println("---------------------------------This user current is at: ---------------------------------\n" + response.bodyAsJsonObject().encodePrettily());
+				JsonArray fileResults = resultData.getJsonObject("resultData").getJsonArray("fileData");
 				for(JsonObject o : uploadObjects)
 				{
 					fileResults.add(o);
 				}
-				String taskInstanceID = response.bodyAsString();				
+				
+				String taskInstanceID = response.bodyAsJsonObject().getString("id");				
 				resultData.put("taskID",taskInstanceID);
 				POST(client, "/projectexec/" + instanceID + "/submit", null, resultData)
 				.onSuccess(submitted -> {
@@ -433,9 +592,9 @@ public class ParticipationRouterTest extends SoileWebTest{
 	protected Future<Void> checkTaskIsCorrect(WebClient client, String instanceID, String taskID)
 	{
 		Promise<Void> correctTask = Promise.promise();
-		GET(client, "/projectexec/" + instanceID + "/getcurrenttaskid", null, null)
+		GET(client, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
 		.onSuccess(nexttaskID -> {
-			if(nexttaskID.bodyAsString().equals(taskID))
+			if(nexttaskID.bodyAsJsonObject().getString("id").equals(taskID))
 			{
 				correctTask.complete();				
 			}

@@ -45,6 +45,7 @@ public class AccessHandler{
 	{
 		if(user == null)
 		{
+			LOGGER.error("No user found for request");
 			return Future.failedFuture(new HttpException(403,"Not authenticated"));
 		}
 		Promise<Void> accessPromise = Promise.<Void>promise();
