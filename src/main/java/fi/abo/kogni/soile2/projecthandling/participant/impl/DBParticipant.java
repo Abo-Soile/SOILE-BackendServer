@@ -97,8 +97,12 @@ public class DBParticipant extends ParticipantImpl{
 		getCurrentStep()
 		.onSuccess(cstep ->
 		{
-			manager.updateResults(this, cstep, taskID, result);
-			resultPromise.complete();
+			manager.updateResults(this, cstep, taskID, result)
+			.onSuccess(res -> {
+				resultPromise.complete();	
+			})
+			.onFailure(err -> resultPromise.fail(err));
+			
 		})
 		.onFailure(err -> resultPromise.fail(err));
 				
