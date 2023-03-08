@@ -26,6 +26,7 @@ public class SoileAuthenticationTest extends MongoTest implements UserManagement
 	}
 	
 	
+	@SuppressWarnings("deprecation")
 	@Test	
 	public void testValidAuthentication(TestContext context) {
 		System.out.println("--------------------  Testing Valid Auth ----------------------");		 
@@ -34,8 +35,6 @@ public class SoileAuthenticationTest extends MongoTest implements UserManagement
 		JsonObject participant1 = new JsonObject().put("username", "participant")
 				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password");
 
-		JsonObject invalidUser = new JsonObject().put("username", "user1")
-				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password2");
 
 		JsonObject DB_User = new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), "participant")
 				.put(SoileConfigLoader.getUserdbField("passwordField"), "password"); 
@@ -47,6 +46,7 @@ public class SoileAuthenticationTest extends MongoTest implements UserManagement
 			SoileAuthentication auth = new SoileAuthentication(mongo_client);		
 			final Async async = context.async();
 			// test auth
+			
 			auth.authenticate(participant1).onComplete( user -> {
 				if(user.succeeded())
 				{
@@ -64,13 +64,12 @@ public class SoileAuthenticationTest extends MongoTest implements UserManagement
 		});		
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test	
 	public void testInValidAuthentication(TestContext context) {
 		System.out.println("--------------------  Testing Invalid Auth ----------------------");		 
 
 		// create a user, that we want to authenticate later on.
-		JsonObject participant1 = new JsonObject().put("username", "participant")
-				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password");
 
 		JsonObject invalidUser = new JsonObject().put("username", "user1")
 				.put(SoileConfigLoader.getSessionProperty("passwordField"), "password2");

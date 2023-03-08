@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
+import java.util.regex.Pattern;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,8 +27,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.ReplyException;
-import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonArray;
@@ -72,12 +72,11 @@ public class ParticipationRouter extends SoileRouter{
 
 	public void submitResults(RoutingContext context)
 	{				
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = params.pathParameter("id").getString();
+		String requestedInstanceID = context.pathParam("id");;
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadProject(requestedInstanceID)
+			loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
 				// this list needs to be filtered by access
 				getParticpantForUser(context.user(), project)				
@@ -105,8 +104,8 @@ public class ParticipationRouter extends SoileRouter{
 	 */
 	public void uploadData(RoutingContext context)
 	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = params.pathParameter("id").getString();
+		
+		String requestedInstanceID = context.pathParam("id");;
 
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,true)
 		.onSuccess(Void -> 
@@ -117,18 +116,18 @@ public class ParticipationRouter extends SoileRouter{
 				return;
 			}
 			FileUpload currentUpload = context.fileUploads().get(0);
-			LOGGER.info("Loading project");
-			instanceHandler.loadProject(requestedInstanceID)
+			LOGGER.debug("Loading project " + requestedInstanceID);
+			loadProject(requestedInstanceID)
 			.onSuccess(project -> {				
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
-				LOGGER.info("Retrieving Participant");
+				LOGGER.debug("Retrieving Participant for project " + project.getID());
 				getParticpantForUser(context.user(), project)				
 				.onSuccess(participant-> {
-					LOGGER.info("Obtaining current step for participant");
+					LOGGER.debug("Obtaining current step for participant " + participant.getID());
 					participant.getCurrentStep()
 					.onSuccess(step -> {
-						LOGGER.info("Saving participant data");
+						LOGGER.debug("Saving participant data");
 						dataLakeManager.storeParticipantData(participant.getID(), step, participant.getProjectPosition(), currentUpload)
 						.onSuccess(id -> {
 							context.response()
@@ -152,7 +151,7 @@ public class ParticipationRouter extends SoileRouter{
 	public void signUpForProject(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = params.pathParameter("id").getString();
+		String requestedInstanceID = context.pathParam("id");;
 		String token = params.queryParameter("token") != null ? params.queryParameter("token").getString() : null;
 		// no token, so this is either an invalid call or a user signup.
 		if(token == null)
@@ -160,7 +159,7 @@ public class ParticipationRouter extends SoileRouter{
 			// if we don't have a token, an authed user can also sign up to a project (even though it's not needed)
 			accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 			.onSuccess(authed -> {
-				instanceHandler.loadProject(requestedInstanceID)
+				loadProject(requestedInstanceID)
 				.onSuccess(project -> {
 					// this will connect the user with a new participant if they haven't already got one.
 					getParticpantForUser(context.user(), project)
@@ -197,7 +196,7 @@ public class ParticipationRouter extends SoileRouter{
 		else
 		{
 			// we got a token. This can be either associated with a user or not.
-			instanceHandler.loadProject(requestedInstanceID)
+			loadProject(requestedInstanceID)
 			.onSuccess(project -> {				
 				project.useToken(token)
 				.onSuccess( tokenUsed -> {
@@ -280,11 +279,10 @@ public class ParticipationRouter extends SoileRouter{
 
 	public void getTaskInfo(RoutingContext context)
 	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = params.pathParameter("id").getString();
+		String requestedInstanceID = context.pathParam("id");;
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
-			instanceHandler.loadProject(requestedInstanceID)
+			loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -332,12 +330,11 @@ public class ParticipationRouter extends SoileRouter{
 
 	public void runTask(RoutingContext context)
 	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = params.pathParameter("id").getString();
+		String requestedInstanceID = context.pathParam("id");
 
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
-			instanceHandler.loadProject(requestedInstanceID)
+			loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -377,12 +374,11 @@ public class ParticipationRouter extends SoileRouter{
 	
 	public void getID(RoutingContext context)
 	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = params.pathParameter("id").getString();
+		String requestedInstanceID = context.pathParam("id");
 
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
-			instanceHandler.loadProject(requestedInstanceID)
+			loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -417,7 +413,7 @@ public class ParticipationRouter extends SoileRouter{
 
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
-			instanceHandler.loadProject(requestedInstanceID)
+			loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -446,10 +442,10 @@ public class ParticipationRouter extends SoileRouter{
 	public void getResourceForExecution(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");
-
+		LOGGER.info("Requesting data for project " + requestedInstanceID);
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
-			instanceHandler.loadProject(requestedInstanceID)
+			loadProject(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -501,7 +497,6 @@ public class ParticipationRouter extends SoileRouter{
 		{
 			// This is a Token User!
 			return partHandler.getParticipantForToken(user.principal().getString("access_token"), project.getID());
-
 		}
 		else
 		{
@@ -553,11 +548,45 @@ public class ParticipationRouter extends SoileRouter{
 	
 	public void handleRequest(RoutingContext context, Handler<RoutingContext> method)
 	{
-		instanceHandler.getProjectIDForPath(context.pathParam("id"))
-		.onSuccess(newID -> {
-			context.pathParams().put("id", newID);
+		String projectID = context.pathParam("id");
+		instanceHandler.loadProject(projectID)
+		.onSuccess(exists -> {		
 			method.handle(context);
 		})
-		.onFailure(err -> handleError(err, context));
+		.onFailure( lookupError -> {
+			if(lookupError instanceof ObjectDoesNotExist)
+			{
+				instanceHandler.getProjectIDForPath(projectID)
+				.onSuccess(newID -> {
+					LOGGER.info("Rerouting from " +  context.normalizedPath() + " to : " + context.normalizedPath().replaceFirst("/"+Pattern.quote(projectID) + "(?=[/$])", "/" + newID ));
+					context.reroute(context.normalizedPath().replaceFirst("/"+Pattern.quote(projectID) + "(?=[/$])", "/" + newID ));
+				})
+				.onFailure(err -> handleError(err, context));
+			}
+			else
+			{
+				handleError(lookupError, context);
+			}
+		});
+	}
+	
+	
+	private Future<ProjectInstance> loadProject(String id)
+	{
+		Promise<ProjectInstance> projPromise = Promise.promise();
+		instanceHandler.loadProject(id).
+		onSuccess(project -> {
+			if(project.isActive())
+			{				
+				projPromise.complete(project);
+			}
+			else
+			{
+				projPromise.fail(new HttpException(410,"Project is currently inactive"));
+			}
+		})
+		.onFailure(err -> projPromise.fail(err));
+		return projPromise.future();
+		
 	}
 }

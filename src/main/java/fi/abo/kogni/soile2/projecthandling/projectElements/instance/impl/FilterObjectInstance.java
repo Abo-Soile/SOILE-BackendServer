@@ -23,7 +23,6 @@ public class FilterObjectInstance extends ElementInstanceBase {
 	String defaultOption; 
 	public FilterObjectInstance(JsonObject data, ProjectInstance source) {
 		super(data, source);
-		System.out.println(data.encodePrettily());
 		parseOptions(data.getJsonArray("options"));
 		defaultOption = data.getString("defaultOption");
 	}

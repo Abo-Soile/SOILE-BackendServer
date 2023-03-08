@@ -47,7 +47,6 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
-import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthenticationHandler;
@@ -82,6 +81,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	DeploymentOptions soileOpts;	
 	AuthenticationHandler anyAuth;
 	AuthenticationHandler userAuth;
+	@SuppressWarnings("rawtypes")
 	private List<MessageConsumer> consumers;
 
 	
@@ -120,9 +120,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		})
 		.onFailure(fail ->
 		{
-			LOGGER.error("Failed Starting router with error:");
-			LOGGER.error(fail);
-			fail.printStackTrace(System.out);
+			LOGGER.error("Failed Starting router with error:", fail);			
 			startPromise.fail(fail);
 		});
 
@@ -130,6 +128,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	}
 	
 	@Override
+	@SuppressWarnings("rawtypes")
 	public void stop(Promise<Void> stopPromise)
 	{
 		soileRouter.clear();
@@ -157,6 +156,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	 * Deploy the required verticles.
 	 * @return
 	 */
+	@SuppressWarnings("rawtypes")
 	private Future<Void> deployVerticles()
 	{
 		List<Future> deploymentFutures = new LinkedList<Future>();
@@ -328,21 +328,23 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		
 	/**
 	 * Everything that needs to be done for the project execution API
+	 * The Project execution API will NOT use shortcuts!
 	 * @param builder
 	 * @return
 	 */
 	private Future<RouterBuilder> setupProjectexecutionAPI(RouterBuilder builder)
 	{
 		ProjectInstanceRouter router = new ProjectInstanceRouter(soileAuthorization, vertx, client, partHandler, projHandler);
-		builder.operation("listDownloadData").handler(context -> {router.handleRequest(context, router::listDownloadData);});
+		builder.operation("listDownloadData").handler(router::listDownloadData);
 		builder.operation("startProject").handler(router::startProject);
 		builder.operation("getRunningProjectList").handler(router::getRunningProjectList);
-		builder.operation("stopProject").handler(context -> {router.handleRequest(context,router::stopProject);});
-		builder.operation("deleteProject").handler(context -> {router.handleRequest(context,router::deleteProject);});
-		builder.operation("getProjectResults").handler(context -> {router.handleRequest(context,router::getProjectResults);});
-		builder.operation("downloadResults").handler(context -> {router.handleRequest(context,router::downloadResults);});
-		builder.operation("downloadTest").handler(context -> {router.handleRequest(context,router::downloadTest);});
-		builder.operation("createTokens").handler(context -> {router.handleRequest(context,router::createTokens);});		
+		builder.operation("stopProject").handler(router::stopProject);		
+		builder.operation("restartProject").handler(router::restartProject);
+		builder.operation("deleteProject").handler(router::deleteProject);
+		builder.operation("getProjectResults").handler(router::getProjectResults);
+		builder.operation("downloadResults").handler(router::downloadResults);
+		builder.operation("downloadTest").handler(router::downloadTest);
+		builder.operation("createTokens").handler(router::createTokens);		
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
@@ -392,8 +394,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		// Order is important here! the /lib/* needs 
 		// to match before /* because /* matches any /*/lib route as well and libs need to be loaded from the lib dir.
 		// This actually means we need to reject any resource upload that starts with /lib!
-		router.route(HttpMethod.GET, "/run/:id/lib/*").handler(anyAuth).handler(partRouter::getLib);
-		router.route(HttpMethod.GET, "/run/:id/*").handler(anyAuth).handler(partRouter::getResourceForExecution);
+		router.route(HttpMethod.GET, "/run/:id/lib/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getLib);});
+		router.route(HttpMethod.GET, "/run/:id/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getResourceForExecution);});
 		router.route(HttpMethod.GET, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::getResource);		
 		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::postResource);
 	}

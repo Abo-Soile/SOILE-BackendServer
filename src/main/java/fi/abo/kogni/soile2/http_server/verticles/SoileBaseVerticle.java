@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.http_server.verticles;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.json.JsonObject;
 
 /**
  * This class is a base verticle class for all verticles that have to handle database IO and need to access 

@@ -235,6 +235,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 		}
 		catch(ClassCastException e)
 		{
+			// This happens, if "data is nto a JsonObject but a string."
 			gitManager.writeGitResourceFile(new GitFile(request.body()), request.body().getString("data"))
 			.onSuccess(version -> {
 				request.reply(version);

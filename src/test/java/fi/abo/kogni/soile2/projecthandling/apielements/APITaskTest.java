@@ -2,7 +2,6 @@ package fi.abo.kogni.soile2.projecthandling.apielements;
 
 import org.junit.Test;
 
-import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
@@ -62,10 +61,8 @@ public class APITaskTest extends SoileVerticleTest {
 		System.out.println("--------------------  Testing Task Save/Load ----------------------");
 		Async testAsync = context.async();
 		ElementManager<Task> TaskManager = new ElementManager<Task>(Task::new, APITask::new, mongo_client, vertx);
-		DataLakeResourceManager grm = new DataLakeResourceManager(vertx);
 		ObjectGenerator.buildAPITask(TaskManager, "FirstTask", mongo_client)
 		.onSuccess(apiTask -> {
-			System.out.println(apiTask.getGitJson().encodePrettily());
 			// create a new upload.
 			TaskManager.getAPIElementFromDB(apiTask.getUUID(), apiTask.getVersion())
 			.onSuccess(retrievedAPITask -> {

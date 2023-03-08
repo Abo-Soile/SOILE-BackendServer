@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
-import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
@@ -65,7 +64,6 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 									.onSuccess(res -> {
 										System.out.println("------------------------------------------------Step finished");
 										JsonObject fileResult = fileData.getJsonObject(0);
-										System.out.println(fileResult.encodePrettily());
 										TaskFileResult fileRes = new TaskFileResult(fileResult.getString("targetid"),
 												fileResult.getString("filename"),												
 												fileResult.getString("fileformat"),

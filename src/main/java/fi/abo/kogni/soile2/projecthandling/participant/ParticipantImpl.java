@@ -292,7 +292,7 @@ public abstract class ParticipantImpl implements Participant{
 				this.finished = false;
 			});
 		}
-		LOGGER.info("Adding step " + taskID);
+		LOGGER.debug("Adding step " + taskID);
 		String currentPosition = position;		
 		position = taskID;
 		currentStep += 1;

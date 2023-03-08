@@ -267,7 +267,6 @@ public class ElementManagerTest extends GitTest{
 				context.fail("Should not be possible. The name should not be changeable");
 			})
 			.onFailure(err -> {
-				System.out.println("Getting error");
 				context.assertEquals(err.getClass(), NoNameChangeException.class);
 				taskManager.getElement(apiTask.getUUID())
 				.onSuccess(Task -> 

@@ -10,7 +10,6 @@ import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.FileUpload;

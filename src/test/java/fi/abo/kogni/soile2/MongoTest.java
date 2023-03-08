@@ -62,6 +62,7 @@ public abstract class MongoTest extends SoileBaseTest {
 	
 	@After
 	@Override
+	@SuppressWarnings("rawtypes")
 	public void finishUp(TestContext context)
 	{		
 		final Async oasync = context.async();

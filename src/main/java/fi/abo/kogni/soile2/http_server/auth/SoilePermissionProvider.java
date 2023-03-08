@@ -1,13 +1,10 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
-import java.util.regex.Pattern;
-
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.auth.authorization.PermissionBasedAuthorization;
-import io.vertx.ext.auth.authorization.WildcardPermissionBasedAuthorization;
 
 /**
  * This class provides static functionality for Permission splitting and combining. 

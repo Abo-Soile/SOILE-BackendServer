@@ -62,8 +62,7 @@ public class SoileRouter {
 	 */
 	void handleError(Throwable err, RoutingContext context)
 	{
-		LOGGER.info(err);
-		err.printStackTrace(System.out);;
+		LOGGER.error("Reporting error" , err);		
 		if(err instanceof ElementNameExistException)
 		{	
 			sendError(context, 409, err.getMessage());			

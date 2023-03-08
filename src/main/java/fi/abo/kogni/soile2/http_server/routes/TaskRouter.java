@@ -25,11 +25,9 @@ public class TaskRouter extends ElementRouter<Task> {
 
 	private static final Logger LOGGER = LogManager.getLogger(ElementRouter.class);
 
-	private IDSpecificFileProvider fileProvider;
 	public TaskRouter(MongoClient client, IDSpecificFileProvider resManager, Vertx vertx, SoileAuthorization auth )
 	{
 		super(ElementManager.getTaskManager(client,vertx),auth, vertx.eventBus(), client);
-		fileProvider = resManager;
 	}		
 	
 	public void postResource(RoutingContext context)

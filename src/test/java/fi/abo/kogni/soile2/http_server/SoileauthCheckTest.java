@@ -7,6 +7,7 @@ import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.vertx.core.MultiMap;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -67,7 +68,7 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 								{
 									if(authTest.succeeded())
 									{
-										HttpResponse authWorked = authTest.result();
+										HttpResponse<Buffer> authWorked = authTest.result();
 										try
 										{												
 											context.assertTrue(new JsonObject(authWorked.body().toString()).getBoolean("authenticated"));
@@ -90,7 +91,7 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 								{
 									if(authTest.succeeded())
 									{
-										HttpResponse authWorked = authTest.result();
+										HttpResponse<Buffer> authWorked = authTest.result();
 										try
 										{
 											context.assertTrue(new JsonObject(authWorked.body().toString()).getBoolean("authenticated"));
@@ -112,7 +113,7 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 								{
 									if(authTest.succeeded())
 									{
-										HttpResponse authWorked = authTest.result();
+										HttpResponse<Buffer> authWorked = authTest.result();
 										try
 										{
 											context.assertEquals(401,authWorked.statusCode());												

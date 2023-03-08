@@ -8,7 +8,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Level;
 import org.junit.After;
 
-import fi.abo.kogni.soile2.datamanagement.DataLakeManagerTest;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.VerticleInitialiser;

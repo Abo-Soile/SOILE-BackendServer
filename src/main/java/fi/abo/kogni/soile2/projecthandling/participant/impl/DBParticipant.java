@@ -6,7 +6,6 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.datamanagement.utils.DatedDataMap;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantImpl;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantManager;
-import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
@@ -79,7 +78,6 @@ import io.vertx.core.json.JsonObject;
 public class DBParticipant extends ParticipantImpl{
 	
 	private ParticipantManager manager;
-	private String participantCollection = SoileConfigLoader.getdbProperty("participantCollection");
 	static final Logger LOGGER = LogManager.getLogger(DBParticipant.class);
 	public DBParticipant(JsonObject data, ParticipantManager manager)
 	{

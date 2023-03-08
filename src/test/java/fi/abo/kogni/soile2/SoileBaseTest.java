@@ -15,7 +15,6 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
-import fi.abo.kogni.soile2.projecthandling.projectElements.ProjectTest;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;

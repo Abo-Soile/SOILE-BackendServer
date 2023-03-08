@@ -214,7 +214,6 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 			}
 			catch(Exception e)
 			{
-				e.printStackTrace(System.out);
 				elementPromise.fail(e);
 				return;
 			}						

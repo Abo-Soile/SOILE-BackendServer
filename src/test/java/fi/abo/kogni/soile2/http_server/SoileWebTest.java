@@ -8,7 +8,6 @@ import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpRequest;
@@ -45,19 +44,14 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		}
 		if(queryBody == null)
 		{
-			return request.send().compose(SoileWebTest::handleError).onFailure(err -> {
-				System.out.println(err);
-				System.out.println("Request object was: " + queryParameters + "/" + queryBody);
-			});
+			return request.send().compose(SoileWebTest::handleError);
 		}
 		else
 		{
 
 			if(queryBody instanceof JsonObject)
 			{
-				return request.sendJson((JsonObject)queryBody).compose(SoileWebTest::handleError).onFailure(err -> {
-					System.out.println("Request object was: " + ((JsonObject)queryBody).encodePrettily());
-				});
+				return request.sendJson((JsonObject)queryBody).compose(SoileWebTest::handleError);
 					
 			}
 			else if(queryBody instanceof MultiMap)
@@ -141,17 +135,13 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		}
 		if(queryBody == null)
 		{
-			return request.send().compose(SoileWebTest::handleError).onFailure(err -> {
-				System.out.println("Request object was: " + queryParameters);
-			});
+			return request.send().compose(SoileWebTest::handleError);
 		}
 		else
 		{
 			if(queryBody instanceof JsonObject)
 			{
-				return request.sendJsonObject((JsonObject)queryBody).compose(SoileWebTest::handleError).onFailure(err -> {
-					System.out.println("Request object was: " + ((JsonObject)queryBody).encodePrettily());
-				});
+				return request.sendJsonObject((JsonObject)queryBody).compose(SoileWebTest::handleError);
 			}
 			else if(queryBody instanceof MultiMap)
 			{
@@ -172,12 +162,8 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	 */
 	public static Future<HttpResponse<Buffer>> handleError(HttpResponse<Buffer> response)
 	{
-		System.out.println("Checking whether response errored");
-		System.out.println(response.statusCode());
-		//System.out.println(response.bodyAsString());
 		if(response.statusCode() >= 400)
 		{
-			System.out.println("Response errored" + response.statusMessage());
 			return Future.failedFuture(new HttpException(response.statusCode(),response.statusMessage()));
 		}
 		else
@@ -246,7 +232,6 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		request.sendMultipartForm(submissionForm)
 		.onSuccess(response -> {
 			try {
-				System.out.println(response.bodyAsString());
 				idPromise.complete(response.bodyAsJsonObject().getString(idField));
 			}
 			catch(Exception e)
@@ -266,12 +251,12 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	/**
 	 * Will authenticate the user with a token.
 	 */
-	public Future<Void> authenticateRequest(HttpRequest request, String username, String password)
+	public Future<Void> authenticateRequest(HttpRequest<Buffer> request, String username, String password)
 	{
 		return authenticateRequest(request, username, password, false, null);
 	}
 
-	public Future<Void> authenticateRequest(HttpRequest request, String username, String password, boolean createUser, Roles role )
+	public Future<Void> authenticateRequest(HttpRequest<Buffer> request, String username, String password, boolean createUser, Roles role )
 	{
 		Promise<Void> authPromise = Promise.promise();	
 		// create 

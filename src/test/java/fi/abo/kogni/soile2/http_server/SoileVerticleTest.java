@@ -11,16 +11,12 @@ import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.MongoTest;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.core.Promise;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.net.JksOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientSession;
 
@@ -108,31 +104,6 @@ public abstract class SoileVerticleTest extends MongoTest {
 	protected String getUsermanagerEventBusAddress(String command)
 	{
 		return SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, command);
-	}
-	
-	
-	private Future<String> getAuthToken(String ProjectID, String projectToken)
-	{
-		Promise<String> tokenPromise = Promise.<String>promise();
-		HttpRequest<Buffer> request = webclient.get("/projectexec/" + ProjectID + "/signup");
-		request.addQueryParam("token", projectToken);
-		request.send()
-		.onSuccess(response -> {
-			tokenPromise.complete(response.bodyAsString());
-		})
-		.onFailure(err -> tokenPromise.fail(err));
-		
-		return tokenPromise.future();
-	}
-	
-	private void setTokenAuth(String token, HttpRequest request)
-	{
-		request.basicAuthentication("INSTANCE-KEY", token);
-	}
-	
-	private void setJWTAuth(String jwtToken, HttpRequest request)
-	{
-		request.bearerTokenAuthentication(jwtToken);
 	}
 	
 	protected String getEventBusAddress(String address)

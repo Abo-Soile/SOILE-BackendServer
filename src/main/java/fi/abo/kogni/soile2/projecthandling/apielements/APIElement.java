@@ -1,7 +1,6 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
 
-import java.util.Set;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.annotation.JsonProperty;

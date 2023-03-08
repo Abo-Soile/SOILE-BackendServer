@@ -64,6 +64,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 	@Override
 	public void stop(Promise<Void> stopPromise) throws Exception {
 		LOGGER.debug("Trying to stop Server Verticle");
+		@SuppressWarnings("rawtypes")
 		List<Future> unDeploymentFutures = new LinkedList<Future>();		
 		for(String deploymentID : deployedVerticles)
 		{
@@ -99,6 +100,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 	{
 		DeploymentOptions opts = new DeploymentOptions().setConfig(soileConfig);
 		soileRouter.setDeploymentOptions(opts);
+		@SuppressWarnings("rawtypes")
 		List<Future> deploymentFutures = new LinkedList<Future>();
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new SoileUserManagementVerticle(), opts)));
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(soileRouter, opts)));

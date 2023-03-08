@@ -27,7 +27,6 @@ public class ElementRouterTest extends SoileWebTest {
 			.onSuccess(authed -> {
 				WebObjectCreator.createTask(currentSession, "Test2")
 				.onSuccess(taskData -> {
-					System.out.println("TaskData: " + taskData.encodePrettily());
 					Async taskInfoAsync = context.async();
 					String taskID = taskData.getString("UUID");
 					String taskVersion = taskData.getString("version");
@@ -64,7 +63,7 @@ public class ElementRouterTest extends SoileWebTest {
 	@Test
 	public void testTaskExists(TestContext context)
 	{	
-		System.out.println("--------------------  Testing Task generation ----------------------");
+		System.out.println("--------------------  Testing Task exists  ----------------------");
 
 		Async setupAsync = context.async();
 		WebClientSession currentSession = createSession();
@@ -105,14 +104,13 @@ public class ElementRouterTest extends SoileWebTest {
 	@Test
 	public void testExperimentCreation(TestContext context)
 	{	
-		System.out.println("--------------------  Testing Task generation ----------------------");
+		System.out.println("--------------------  Testing Experiment generation ----------------------");
 
 		Async setupAsync = context.async();
 		createUserAndAuthedSession("TestAdmin", "testPassword", Roles.Researcher)
 		.onSuccess(currentSession -> {
 			WebObjectCreator.createExperiment(currentSession, "TestExperiment1")
 			.onSuccess(experimentObject -> {
-				System.out.println(experimentObject.encodePrettily());
 				context.assertEquals(2, experimentObject.getJsonArray("elements",new JsonArray()).size());
 				JsonArray items = experimentObject.getJsonArray("elements");
 				for(int i = 0; i < items.size(); ++i)
@@ -155,7 +153,6 @@ public class ElementRouterTest extends SoileWebTest {
 			Async tlistAsync2 = context.async();
 			WebObjectCreator.createProject(session, "Testproject")
 			.onSuccess( projectData -> {
-				System.out.println("Project created");
 				createUserAndAuthedSession("AnotherUser", "testPassword", Roles.Researcher)
 				.onSuccess(otherUserSession -> {
 					getElementList(otherUserSession, "experiment")
@@ -200,7 +197,6 @@ public class ElementRouterTest extends SoileWebTest {
 
 				getElementList(session, "task")
 				.onSuccess(list -> {
-					System.out.println(list.encodePrettily());
 					context.assertEquals(6,list.size()); // one private task
 					tlistAsync.complete();
 				})
