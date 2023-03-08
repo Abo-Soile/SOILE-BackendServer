@@ -43,20 +43,16 @@ public abstract class MongoTest extends SoileBaseTest {
 				.net(Start.to(Net.class).initializedWith(net))
 				.processOutput(Start.to(ProcessOutput.class).initializedWith(ProcessOutput.silent()).withTransitionLabel("no output"))
 				.build();		
-		/*MongodStarter starter = MongodStarter.getDefaultInstance();	
-		
-		ImmutableMongodConfig mongodConfig = ImmutableMongodConfig.builder()
-				.version(Version.Main.PRODUCTION)
-				.net(new Net(MONGO_PORT, Network.localhostIsIPv6()))				
-				.build();
-		MongodExecutable mongodExecutable = starter.prepare(mongodConfig);
-		MONGO = mongodExecutable.start();*/
+
 		state = MONGO.start(Version.Main.V5_0);		
 	}	
 
 	@Override
 	public void runBeforeTests(TestContext context)
 	{	
+		// for testng we don't use authentication.
+		SoileConfigLoader.getMongoCfg().remove("password");
+		SoileConfigLoader.getMongoCfg().remove("username");
 		mongo_client = MongoClient.createShared(vertx, SoileConfigLoader.getDbCfg());
 	}
 	
