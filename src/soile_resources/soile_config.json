@@ -23,9 +23,6 @@
 	},
 
 	"db": {
-		"host": "127.0.0.1",
-		"port": 27022,
-		"db_name": "soile",
 		"userCollection" : "users",		
 		"participantCollection" : "participants",
 		"projectInstanceCollection" : "projectInstances",
@@ -34,7 +31,13 @@
 		"experimentCollection" : "experiments",
 		"downloadCollection" : "downloads"
 	},
-	
+	"mongo": {
+		"host": "127.0.0.1",
+		"port": 27022,
+		"db_name": "soile",
+		"username" : "MongoAdmin",
+		"password" : "mongopassword" 
+	},
 	"verticles": {
 		"elangAddress" : "soile.experimentlang.compile",
 		"code-gen-template": "templates/elang.stg",
@@ -221,13 +224,6 @@
 	"dustjs":{
 		"engine":"dustjs-linkedin",
 		"version": "2.0.3"
-	},
-	
-		"mongo": {
-		"address": "vertx.mongo-persistor",
-		"host": "127.0.0.1",
-		"port": 27017,
-		"db_name": "soiletest"
 	},
 	"mailer": {
 		"address": "soile.my_mailer",

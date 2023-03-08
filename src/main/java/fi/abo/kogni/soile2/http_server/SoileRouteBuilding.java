@@ -89,7 +89,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	public void start(Promise<Void> startPromise) throws Exception {
 		consumers = new LinkedList<>();
 		cookieHandler = new SoileCookieCreationHandler(vertx.eventBus());	
-		this.client = MongoClient.createShared(vertx, config().getJsonObject("db"));
+		this.client = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg());
 		resourceManager = new DataLakeResourceManager(vertx);
 		soileAuthorization = new SoileAuthorization(client);
 		projHandler = new ProjectInstanceHandler(client, vertx);

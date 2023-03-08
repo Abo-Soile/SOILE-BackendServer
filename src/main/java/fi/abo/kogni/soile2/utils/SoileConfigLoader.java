@@ -33,6 +33,7 @@ public class SoileConfigLoader {
 	public static final String HTTP_SERVER_CFG = "http_server";
 	public static final String TASK_CFG = "tasks";
 	public static final String VERTICLE_CFG = "verticles";
+	public static final String MONGO_CFG = "mongo";
 
 	public static final String Owner = "Owner";
 	public static final String Participant = "Participant";
@@ -52,6 +53,7 @@ public class SoileConfigLoader {
 	private static JsonObject serverCfg;
 	private static JsonObject taskCfg;
 	private static JsonObject verticleCfg;
+	private static JsonObject mongoCfg;
 	
 	private static JsonObject fullConfig;
 	
@@ -106,6 +108,7 @@ public class SoileConfigLoader {
 		serverCfg = config.getJsonObject(HTTP_SERVER_CFG);
 		taskCfg = config.getJsonObject(TASK_CFG);
 		verticleCfg = config.getJsonObject(VERTICLE_CFG);
+		mongoCfg = config.getJsonObject(MONGO_CFG);
 		fullConfig = config;
 	}
 	
@@ -166,6 +169,14 @@ public class SoileConfigLoader {
 	}
 
 	/**
+	 * Get the Mongo config (port etc)
+	 * @return the database config {@link JsonObject}
+	 */
+	public static JsonObject getMongoCfg() {
+		return mongoCfg;
+	}
+	
+	/**
 	 * Get the configuration object for a specific target.
 	 * @param target  The name of the target configuration
 	 * @return the JsonObject for the target configuration
@@ -219,6 +230,16 @@ public class SoileConfigLoader {
 	public static String getdbProperty(String property)
 	{
 		return dbCfg.getString(property);
+	}
+
+	/**
+	 * Get a property from the mongo config.
+	 * @param property - the property to obtain.
+	 * @return the property
+	 */
+	public static String getMongoProperty(String property)
+	{
+		return mongoCfg.getString(property);
 	}
 	
 	/**
