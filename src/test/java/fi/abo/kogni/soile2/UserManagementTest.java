@@ -21,6 +21,6 @@ public interface UserManagementTest {
 	
 	public default SoileUserManager createManager(Vertx vertx)
 	{
-		return new SoileUserManager(MongoClient.createShared(vertx, SoileConfigLoader.getDbCfg()));
+		return new SoileUserManager(MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg()));
 	}
 }
