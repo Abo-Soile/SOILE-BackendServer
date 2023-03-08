@@ -36,7 +36,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 	@Override
 	public void start()
 	{
-		taskManager = new ElementManager<Task>(Task::new, APITask::new, MongoClient.createShared(vertx, config().getJsonObject("db")), vertx);
+		taskManager = new ElementManager<Task>(Task::new, APITask::new, MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg()),vertx);
 		LOGGER.debug("Deploying TaskInformation with id : " + deploymentID());
 		vertx.eventBus().consumer("soile.task.getDBInfo", this::getTaskInfo);
 		vertx.eventBus().consumer("soile.task.getVersionInfo", this::getTaskVersionInfo);

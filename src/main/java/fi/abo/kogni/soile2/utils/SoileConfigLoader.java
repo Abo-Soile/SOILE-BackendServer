@@ -26,6 +26,7 @@ public class SoileConfigLoader {
 	public static final String COMMUNICATION_CFG = "communication";
 	public static final String USER_DB_FIELDS = "db_user_fields";	
 	public static final String DB_CFG = "db";
+	public static final String MONGO_CFG = "mongo";
 	public static final String USERMGR_CFG = "UManagement";
 	public static final String EXPERIMENT_CFG = "experiments";
 	public static final String COMMAND_PREFIX_FIELD = "commandPrefix";
@@ -44,6 +45,7 @@ public class SoileConfigLoader {
 	public static final String INSTANCE = "instance";*/	
 	
 	private static JsonObject dbCfg;
+	private static JsonObject mongoCfg;	
 	private static JsonObject userdbFields;
 	private static JsonObject sessionCfg;
 	private static JsonObject commCfg;
@@ -106,6 +108,7 @@ public class SoileConfigLoader {
 		serverCfg = config.getJsonObject(HTTP_SERVER_CFG);
 		taskCfg = config.getJsonObject(TASK_CFG);
 		verticleCfg = config.getJsonObject(VERTICLE_CFG);
+		mongoCfg = config.getJsonObject(MONGO_CFG);
 		fullConfig = config;
 	}
 	
@@ -158,13 +161,20 @@ public class SoileConfigLoader {
 	}
 	
 	/**
-	 * Get the database config
+	 * Get the database config containing the collection names etc
 	 * @return the database config {@link JsonObject}
 	 */
 	public static JsonObject getDbCfg() {
 		return dbCfg;
 	}
 
+	/**
+	 * Get the mongo config, i.e. database id, credentials etc 
+	 * @return the database config {@link JsonObject}
+	 */
+	public static JsonObject getMongoCfg() {
+		return mongoCfg;
+	}
 	/**
 	 * Get the configuration object for a specific target.
 	 * @param target  The name of the target configuration
@@ -190,6 +200,8 @@ public class SoileConfigLoader {
 				return serverCfg;
 		case VERTICLE_CFG :
 			return verticleCfg;
+		case MONGO_CFG :
+			return mongoCfg;
 		default:
 				return null;
 		}
@@ -219,6 +231,16 @@ public class SoileConfigLoader {
 	public static String getdbProperty(String property)
 	{
 		return dbCfg.getString(property);
+	}
+
+	/**
+	 * Get a property from the mongo config.
+	 * @param property - the property to obtain.
+	 * @return the property
+	 */
+	public static String getMongoProperty(String property)
+	{
+		return mongoCfg.getString(property);
 	}
 	
 	/**
