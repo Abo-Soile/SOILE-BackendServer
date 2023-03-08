@@ -105,7 +105,6 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		
 		try {
 			JsonObject request = message.body();
-			LOGGER.debug(request);
 			switch(request.getString("requestType"))
 			{
 			case "participants" : buildParticipantsBundle(request.getJsonArray("participants"), request.getString("projectID"))
