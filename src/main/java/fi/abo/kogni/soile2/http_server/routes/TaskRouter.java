@@ -7,13 +7,17 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
+import fi.abo.kogni.soile2.http_server.requestHandling.NonStaticHandler;
+import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.FileSystemAccess;
 import io.vertx.ext.web.handler.HttpException;
 
 /**
@@ -24,10 +28,14 @@ import io.vertx.ext.web.handler.HttpException;
 public class TaskRouter extends ElementRouter<Task> {
 
 	private static final Logger LOGGER = LogManager.getLogger(ElementRouter.class);
-
-	public TaskRouter(MongoClient client, IDSpecificFileProvider resManager, Vertx vertx, SoileAuthorization auth )
+	NonStaticHandler libraryHandler;
+	IDSpecificFileProvider resourceHandler;
+	
+	public TaskRouter(MongoClient client, IDSpecificFileProvider resManager, Vertx vertx, SoileAuthorization auth)
 	{
 		super(ElementManager.getTaskManager(client,vertx),auth, vertx.eventBus(), client);
+		libraryHandler = new NonStaticHandler(FileSystemAccess.ROOT, SoileConfigLoader.getServerProperty("taskLibraryFolder"), "/lib/");
+		resourceHandler = resManager;
 	}		
 	
 	public void postResource(RoutingContext context)
@@ -86,7 +94,58 @@ public class TaskRouter extends ElementRouter<Task> {
 	//TODO: Implement Run methods.
 	
 	
+	public void getCompiledTask(RoutingContext context)
+	{
+		String elementID = context.pathParam("id");
+		String version = context.pathParam("version");		 
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		.onSuccess(Void -> 
+		{
+			elementManager.getAPIElementFromDB(elementID, version).onSuccess(
+			element -> {		
+				APITask currentTask = (APITask) element;				
+				eb.request(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"),
+						new JsonObject().put("taskID", element.getUUID())
+						.put("type", currentTask.getCodeType())
+						.put("version", element.getVersion()))
+				.onSuccess(response -> {
+					JsonObject responseBody = (JsonObject) response.body();
+					context.response()
+					.setStatusCode(200)
+					.putHeader(HttpHeaders.CONTENT_TYPE, SoileConfigLoader.getMimeTypeForTaskLanugage(currentTask.getCodeLanguage()))
+					.end(responseBody.getString("code"));
+				})
+			.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+
+		})
+		.onFailure(err -> handleError(err, context));
+	}
 	
+	public void getLib(RoutingContext context)
+	{
+		String requestedInstanceID = context.pathParam("id");
+
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		.onSuccess(Void -> {
+				//JsonArray taskData = project.getTasksWithNames();
+				// this list needs to be filtered by access				
+				libraryHandler.handle(context);							
+		})
+		.onFailure(err -> handleError(err, context));		
+	}
+
+	public void getResourceForExecution(RoutingContext context)
+	{
+		String elementID = context.pathParam("id");
+		String version = context.pathParam("version");			
+		accessHandler.checkAccess(context.user(),elementID, Roles.Participant,PermissionType.EXECUTE,false)
+		.onSuccess(Void -> {			
+			resourceHandler.handleContext(context, elementManager.getElementSupplier().get());			
+		})
+		.onFailure(err -> handleError(err, context));		
+	}
 	
 	public void cleanup()
 	{

@@ -291,6 +291,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("createTask").handler(taskRouter::create);
 		builder.operation("getTask").handler(taskRouter::getElement);
 		builder.operation("updateTask").handler(taskRouter::writeElement);
+		builder.operation("getExecution").handler(taskRouter::getCompiledTask);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
@@ -397,6 +398,10 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		router.route(HttpMethod.GET, "/run/:id/lib/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getLib);});
 		router.route(HttpMethod.GET, "/run/:id/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getResourceForExecution);});
 		router.route(HttpMethod.GET, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::getResource);		
+		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::postResource);
+		router.route(HttpMethod.GET, "/task/:id/:version/execute").handler(userAuth).handler(taskRouter::getCompiledTask);
+		router.route(HttpMethod.GET, "/task/:id/:version/execute/lib/*").handler(userAuth).handler(taskRouter::getLib);
+		router.route(HttpMethod.GET, "/task/:id/:version/execute/*").handler(userAuth).handler(taskRouter::getResourceForExecution);
 		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::postResource);
 	}
 	

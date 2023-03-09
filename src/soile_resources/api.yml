@@ -663,6 +663,135 @@ paths:
              $ref: '#/components/schemas/Task'
         description: In addition to the required fields, this submission also needs a tag. Otherwise the only way to obtain this version again is by providing the returned version id.
         
+  /task/{id}/{version}/execute:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Get the executable code for the task at this version.
+      operationId: getExecution
+      description: Get the executable code for the task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: version of the requested task, can be either a tag or a commit id
+          schema:
+            type : string
+      responses:
+        '200':
+          description: The executable code for the task.
+          content: 
+            application/json:
+              schema: 
+                description: the json for qmarkup generation; TODO better spec
+                type: object
+                properties:
+                  title: 
+                    type: string
+            application/javascript:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'  
+  
+  /task/{id}/{version}/execute/lib/*:  
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - participation
+      summary: Get a library for a task
+      operationId: getLibForTask
+      description: >-
+                   Get libraries required for the specified task. This routes to 
+                   all possible libs that might be required (i.e. they only need to be installed once to make them available.)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project instance
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: version of the requested task, can be either a tag or a commit id
+          schema:
+            type : string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/javascript:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call
+        '406':
+          description: User is finished.
+
+  /task/{id}/{version}/execute/*:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - participation
+      summary: Get Other data for the currentTask of the participant
+      operationId: getResourceForTaskExecution
+      description: >- 
+                   This end point provides "static" data for the current task of the participant. This allows a proxy to simply 
+                   Access /run/{id}/some/File to access resources. 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project instance
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: version of the requested task, can be either a tag or a commit id
+          schema:
+            type : string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/javascript:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call
+        '406':
+          description: User is finished.  
+  
+  
   /task/{id}/{version}/resource/*:
     get:
       security:
@@ -1378,7 +1507,7 @@ paths:
           description: User has no authorization to make this call
         '406':
           description: User is finished.          
-          
+  
   /run/{id}:  
     get:
       security:
@@ -1491,7 +1620,7 @@ paths:
       security:
         - cookieAuth: []
         - JWTAuth: []
-        - {} # Security on this endpoint is optional. Calling this in an authenticated manner will add a user to the participant. Calling it in a non authenticated manner will create a token that can be used for future authentication.
+        - {} # Security on this endpoint is optional. Calling this in an authenticated manner will add a participant to the user. Calling it in a non authenticated manner will create a token that can be used for future authentication.
       tags:
         - participation
       summary: signUp for a project with a one-time signUp Code. 
@@ -2614,10 +2743,6 @@ components:
       type: apiKey
       in: header
       name: INSTANCE-KEY
-    anonymousAuth:
-      type: apiKey
-      in: header
-      name: INSTANCE-KEY  
   responses:
     UnauthorizedError:
       description: User is not authenticated.      

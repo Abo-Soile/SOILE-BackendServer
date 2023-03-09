@@ -60,6 +60,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 				Async codeAsync = context.async();
 				GET(tempSession, "/run/" + instanceID , null, null)
 				.onSuccess(response -> {
+					context.assertEquals("application/json", response.headers().get("content-type"));					
 					JsonObject compiledCode = response.bodyAsJsonObject();
 					context.assertTrue(compiledCode.containsKey("elements"));
 					context.assertEquals("html", compiledCode.getJsonArray("elements").getJsonArray(0).getJsonObject(0).getString("type"));
@@ -277,18 +278,23 @@ public class ParticipationRouterTest extends SoileWebTest{
 				.onSuccess(submitted -> {
 					submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 					.onSuccess(submitted2 -> {
-						submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
-						.onSuccess(submitted3 -> {
+						GET(tempSession, "/run/" + instanceID , null, null)
+						.onSuccess(code -> {
+							context.assertEquals("application/javascript", code.headers().get("content-type"));					
 							submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
-							.onSuccess(submitted4 -> {
+							.onSuccess(submitted3 -> {
 								submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
-								.onSuccess(submitted5 -> {
-									GET(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
-									.onSuccess(response -> {									
-										JsonObject finalresult = response.bodyAsJsonObject();
-										// now the project is done, we have passed filters and everything. 
-										context.assertTrue(finalresult.getBoolean("finished"));
-										submitAsync.complete();
+								.onSuccess(submitted4 -> {
+									submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
+									.onSuccess(submitted5 -> {
+										GET(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+										.onSuccess(response -> {									
+											JsonObject finalresult = response.bodyAsJsonObject();
+											// now the project is done, we have passed filters and everything. 
+											context.assertTrue(finalresult.getBoolean("finished"));
+											submitAsync.complete();
+										})
+										.onFailure(err -> context.fail(err));
 									})
 									.onFailure(err -> context.fail(err));
 								})

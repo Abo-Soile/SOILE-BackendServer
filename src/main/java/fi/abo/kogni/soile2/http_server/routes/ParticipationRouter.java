@@ -358,7 +358,7 @@ public class ParticipationRouter extends SoileRouter{
 							JsonObject responseBody = (JsonObject) response.body();
 							context.response()
 							.setStatusCode(200)
-							.putHeader(HttpHeaders.CONTENT_TYPE, "application/javascript")
+							.putHeader(HttpHeaders.CONTENT_TYPE,SoileConfigLoader.getMimeTypeForTaskLanugage(currentTask.getCodeType().getString("language")))
 							.end(responseBody.getString("code"));
 						})
 						.onFailure(err -> handleError(err, context));

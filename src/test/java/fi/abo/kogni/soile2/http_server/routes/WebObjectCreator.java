@@ -80,9 +80,13 @@ public class WebObjectCreator {
 				{					
 					// create all in a compose chain...
 					String resourceName = resources.getString(i);
-					chain.add(chain.getLast().compose(newVersion -> {						
+					chain.add(chain.getLast().compose(newVersion -> {	
+						
 						return SoileWebTest.postTaskRessource(webClient, taskID, newVersion, resourceName,
-																new File(Path.of(TestDataFolder, resourceName).toString()) , MimeMapping.getMimeTypeForFilename(resourceName) );										
+																new File(Path.of(TestDataFolder, resourceName).toString()) , MimeMapping.getMimeTypeForFilename(resourceName) )
+								.onSuccess(res -> {
+									System.out.println("Uploaded File " + resourceName + " for task " + elementID + " @ version: " + res);
+								});										
 					}));
 					composite.add(chain.getLast());
 				}
@@ -97,13 +101,13 @@ public class WebObjectCreator {
 						update.put("private", TaskDef.getBoolean("private", false));						
 						SoileWebTest.POST(webClient, "/task/" + taskID + "/" + latestVersion , null, update)
 						.onSuccess(response -> {
-							LOGGER.debug("Task " + elementID + " created");
+							LOGGER.info("Task " + elementID + " created as: " + response.bodyAsJsonObject().encodePrettily());
 							taskPromise.complete(response.bodyAsJsonObject().put("name", TaskDef.getString("name"))
 																			.put("UUID", taskID)
 																			.put("private", TaskDef.getBoolean("private", false))
 																			.put("codeType", codeType)
 																			.put("code", TaskCode)
-																			.put("resources", resources));
+																			.put("resources", resources));							
 						}).onFailure(err -> taskPromise.fail(err));
 					})
 					.onFailure(err -> taskPromise.fail(err));

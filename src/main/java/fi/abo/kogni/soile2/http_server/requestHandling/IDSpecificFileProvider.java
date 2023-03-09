@@ -22,7 +22,7 @@ import io.vertx.ext.web.impl.Utils;
 
 public class IDSpecificFileProvider {
 
-	private static final Logger LOG = LogManager.getLogger(IDSpecificFileProvider.class);
+	private static final Logger LOGGER = LogManager.getLogger(IDSpecificFileProvider.class);
 	DataLakeResourceManager mgr;
 	SizedCache<GitFile, FileWithProps> cache = new SizedCache<GitFile, FileWithProps>(1000);
 
@@ -60,13 +60,14 @@ public class IDSpecificFileProvider {
 	 */
 	public void returnResource(RoutingContext context, GitFile requestTarget)
 	{
+		LOGGER.info(requestTarget.toJson());
 		FileWithProps localFile = cache.get(requestTarget);
 		if(localFile != null)
 		{
 			sendFile(context,localFile);
 		}
 		else
-		{
+		{			
 			mgr.getElement(requestTarget)
 			.onSuccess(file -> {
 				context.vertx().fileSystem().props(file.getAbsolutePath())
@@ -83,8 +84,8 @@ public class IDSpecificFileProvider {
 
 	private void handleNonFatalError(RoutingContext context, Throwable err, GitFile requestTarget)
 	{
-		LOG.error("Problem finding file: " + requestTarget.toString());
-		LOG.error(err);
+		LOGGER.error("Problem finding file: " + requestTarget.toString());
+		LOGGER.error(err);
 		context.next();
 	}
 
