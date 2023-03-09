@@ -157,12 +157,12 @@
 		}
 	},
 		
-	"tasks":{
-		"availableTypes" : [ "qmarkup", "elang", "psychopy" ],
+	"tasks":{		
 		"availableVersions" : {
-								 "qmarkup" : [ "1.0" ],
-								 "elang" : [ "1.0" ],
-								 "psychopy" : [ "2022.2.5"]
+								 "qmarkup" : { "versions" : ["1.0"], "mimeType" : "application/json" },
+								 "elang" : { "versions" : ["1.0"], "mimeType" : "application/javascript" },
+								 "psychopy" : { "versions" : ["2022.2.5"], "mimeType" : "application/javascript"},
+								 "javascript": {"versions" : ["ES6", "ECMAScript 2020"], "mimeType" : "application/javascript"}
 								 }
 	},
 	

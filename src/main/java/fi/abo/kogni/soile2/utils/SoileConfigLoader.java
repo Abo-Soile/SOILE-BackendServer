@@ -261,7 +261,19 @@ public class SoileConfigLoader {
 
 	public static boolean isValidTaskType(String language, String version)
 	{
-		return taskCfg.getJsonObject("availableVersions").getJsonArray(language,new JsonArray()).contains(version);
+		return taskCfg.getJsonObject("availableVersions").getJsonObject(language).getJsonArray("versions",new JsonArray()).contains(version);
+	}
+	
+	/**
+	 * Get the mime type for a specific task language
+	 * @param language the language (e.g. qmarkup, elang or psychopy or javascript)
+	 * @param version the version (1.0 for elang or qmarkup, and e.g. 2022.2.5 for psychopy)
+	 * @return
+	 */
+
+	public static String getMimeTypeForTaskLanugage(String language)
+	{
+		return taskCfg.getJsonObject("availableVersions").getJsonObject(language).getString("mimeType");
 	}
 	
 	/**

@@ -31,16 +31,17 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 	public final static String PSYCHOPY = "psychopy";
 	public final static String ELANG = "elang";
 	public final static String QMARKUP = "qmarkup";
+	public final static String JAVASCRIPT = "javascript";
 	private CodeProvider elangProvider;
 	private CodeProvider qmarkupProvider;
-	private CodeProvider psychoJsProvider;
+	private CodeProvider jsProvider;
 	
 	@Override
 	public void start()
 	{
 		elangProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("elangAddress"),vertx.eventBus());
 		qmarkupProvider = new CompiledCodeProvider(SoileConfigLoader.getVerticleProperty("questionnaireAddress"),vertx.eventBus());
-		psychoJsProvider = new JSCodeProvider(vertx.eventBus());		
+		jsProvider = new JSCodeProvider(vertx.eventBus());
 		LOGGER.debug("Deploying CodeRetriever with id : " + deploymentID());
 		vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("compilationAddress"), this::compileCode);
 		vertx.eventBus().consumer(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"), this::compileGitCode);				
@@ -54,7 +55,7 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 	public void cleanUp(Message<Object> cleanUpRequest)
 	{
 		elangProvider.cleanUp();
-		psychoJsProvider.cleanUp();
+		jsProvider.cleanUp();
 		qmarkupProvider.cleanUp();
 	}
 	
@@ -107,9 +108,10 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 	{
 		switch(type)
 		{
-			case PSYCHOPY: return psychoJsProvider;
+			case PSYCHOPY: return jsProvider;
 			case ELANG: return elangProvider;
 			case QMARKUP: return qmarkupProvider;
+			case JAVASCRIPT: return jsProvider;
 			default: return null;
 		}
 	}
