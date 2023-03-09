@@ -32,10 +32,10 @@ public class JSCodeProvider implements CodeProvider {
 	{
 		Promise<String> codePromise = Promise.promise();
 
-		eb.request("soile.git.getGitFileContentsAsJson", file.toJson())
+		eb.request("soile.git.getGitFileContents", file.toJson())
 		.onSuccess(reply -> {
-			JsonObject objectJson = (JsonObject) reply.body();
-			codePromise.complete(objectJson.getString("code"));
+			String code = (String) reply.body();
+			codePromise.complete(code);
 		})
 		.onFailure(err -> codePromise.fail(err));
 		return codePromise.future();

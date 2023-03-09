@@ -17,8 +17,8 @@
 	},  			
 	"Test1": {
 		"name": "Test1",
-		"codeType" : { "language" : "psychopy",
-					 "version" : "2022.2.5"},
+		"codeType" : { "language" : "javascript",
+					 "version" : "ES6"},
 		"private": false,
 		"codeFile": "Test.js"		
 	},
