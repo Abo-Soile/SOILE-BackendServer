@@ -715,7 +715,7 @@ paths:
         - cookieAuth: []
         - JWTAuth: []
       tags:
-        - participation
+        - task
       summary: Get a library for a task
       operationId: getLibForTask
       description: >-
@@ -756,7 +756,7 @@ paths:
         - cookieAuth: []
         - JWTAuth: []
       tags:
-        - participation
+        - task
       summary: Get Other data for the currentTask of the participant
       operationId: getResourceForTaskExecution
       description: >- 
@@ -1150,6 +1150,7 @@ paths:
       security:
         - cookieAuth: []
         - JWTAuth: []
+        - {} # Security on this endpoint is optional. Allows listing of active, public projects by anyone (and thus signing up to those projects).
       tags:
         - projectexecution
       summary: Get a list of all projects.

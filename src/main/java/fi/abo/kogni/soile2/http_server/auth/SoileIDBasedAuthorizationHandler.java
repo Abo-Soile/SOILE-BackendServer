@@ -69,6 +69,28 @@ public class SoileIDBasedAuthorizationHandler{
 			return false;
 		}
 	}
+	
+	/**
+	 * Check whether the object with the given ID is private.
+	 */
+	public Future<Boolean> checkIsPrivate(String id)
+	{
+		Promise<Boolean> privatePromise = Promise.<Boolean>promise();
+		client.findOne(targetCollection, new JsonObject().put("_id", id), new JsonObject().put("private",1))
+		.onSuccess(res -> {
+			if(res == null)
+			{
+				privatePromise.fail(new ObjectDoesNotExist(id));
+			}
+			else
+			{
+				privatePromise.complete(res.getBoolean("private"));
+			}
+		})
+		.onFailure(err -> privatePromise.fail(err));
+		
+		return privatePromise.future();
+	}
 	/**
 	 * Check, whether the given user has authorization to access the given resource based on the required {@link PermissionType}
 	 * @param user The user to check the authorization for

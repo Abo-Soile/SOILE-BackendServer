@@ -16,6 +16,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
@@ -48,7 +49,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 	ParticipantDataLakeManager dataLakeManager;
 	EventBus eb;
 	Vertx vertx;
-	
+
 	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);	
 
 	public ProjectInstanceRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, ProjectInstanceHandler projHandler) {
@@ -61,7 +62,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		instanceAccessHandler = new AccessHandler(instanceAuth, instanceIDAccessHandler, roleHandler);
 		projectAccessHandler = new AccessHandler(projectAuth, projectIDAccessHandler, roleHandler);
 	}
-	
+
 	public void startProject(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -76,10 +77,10 @@ public class ProjectInstanceRouter extends SoileRouter {
 				instanceHandler.createProjectInstance(projectData)
 				.onSuccess(instance -> {
 					JsonObject permissionChange = new JsonObject().put("command", "add")
-																  .put("username", context.user().principal().getString("username"))
-																  .put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.INSTANCE.toString())
-																		  .put("permissionSettings", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
-																				  												  		 .put("target", instance.getID()))));
+							.put("username", context.user().principal().getString("username"))
+							.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.INSTANCE.toString())
+									.put("permissionSettings", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
+											.put("target", instance.getID()))));
 					eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChange)
 					.onSuccess(success -> {
 						// instance was created, access was updated, everything worked fine. Now
@@ -100,12 +101,25 @@ public class ProjectInstanceRouter extends SoileRouter {
 
 	public void getRunningProjectList(RoutingContext context)
 	{				
-		instanceAccessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
-		.onSuccess(Void -> 
-		{
-			authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.INSTANCE)
-			.onSuccess( permissions -> {
-				instanceHandler.getProjectList(permissions)
+		authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.INSTANCE)
+		.onSuccess( permissions -> {
+
+			instanceHandler.getProjectList(permissions)
+			.onSuccess(elementList -> {	
+				// this list needs to be filtered by access
+
+				context.response()
+				.setStatusCode(200)
+				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+				.end(elementList.encode());
+			})
+			// this is a re
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> {
+			if(err instanceof UserDoesNotExistException)
+			{
+				instanceHandler.getProjectList(new JsonArray())
 				.onSuccess(elementList -> {	
 					// this list needs to be filtered by access
 
@@ -114,11 +128,13 @@ public class ProjectInstanceRouter extends SoileRouter {
 					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
 					.end(elementList.encode());
 				})
-				.onFailure(err -> handleError(err, context));
-			})
-			.onFailure(err -> handleError(err, context));	
-		})
-		.onFailure(err -> handleError(err, context));
+				.onFailure(newerr -> handleError(newerr, context));
+			}
+			else
+			{
+				handleError(err, context);
+			}
+		});	
 	}
 
 
@@ -126,7 +142,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-				
+
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
@@ -150,7 +166,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		
+
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
@@ -197,7 +213,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		
+
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> {
 			instanceHandler.loadProject(requestedInstanceID)
@@ -208,7 +224,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 				.onSuccess(participantStatus -> {									
 					JsonObject response = new JsonObject();
 					response.put("participants", participantStatus)
-							.put("tasks", project.getTasksInstancesWithNames());
+					.put("tasks", project.getTasksInstancesWithNames());
 					context.response()
 					.setStatusCode(200)
 					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -251,7 +267,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 				requestBody = new JsonObject().put("requestType", "all"); 
 			}
 			requestBody.put("projectID", requestedInstanceID);
-			
+
 			eb.request("fi.abo.soile.DLCreate", requestBody)
 			.onSuccess(response -> {
 				String dlID = response.body().toString();
@@ -286,13 +302,13 @@ public class ProjectInstanceRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}	
-	
+
 	public void downloadResults(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		String dlID = params.pathParameter("downloadid").getString();
-		
+
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{
@@ -313,16 +329,16 @@ public class ProjectInstanceRouter extends SoileRouter {
 						Zipper pump = new Zipper(vertx, dLFiles.iterator());
 						// the response is a chunked zip file.
 						context.response().putHeader("content-type", "application/zip")
-				        .putHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dlID + ".zip\"")
-				        .setStatusCode(200)
-				        .setChunked(true);
+						.putHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dlID + ".zip\"")
+						.setStatusCode(200)
+						.setChunked(true);
 						pump.pipeTo(context.response()).onSuccess(success -> {
 							LOGGER.debug("Download " + dlID + " successfullytransmitted");
 						}).onFailure(err -> {
 							LOGGER.error("Download " + dlID + " failed");
 							LOGGER.error(err);
 							context.response()
-					        .putHeader("content-type", "text/plain")
+							.putHeader("content-type", "text/plain")
 							.setStatusCode(500)
 							.end("Failed because of: " + err.getMessage());
 						});											
@@ -335,7 +351,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 				else
 				{
 					LOGGER.debug("Status was: " + responseBody.getString("status") + " // While ready status should be: " + DownloadStatus.downloadReady.toString());
-					
+
 					context.response()
 					.setStatusCode(503)					
 					.end("Download not yet ready");
@@ -346,16 +362,16 @@ public class ProjectInstanceRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
-	
-	
+
+
 	public void createTokens(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		
+
 		boolean unique = params.queryParameter("unique") == null ? false : params.queryParameter("unique").getBoolean();
 		int count = params.queryParameter("count") == null ? 0 : params.queryParameter("count").getInteger();
-		
+
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,false)
 		.onSuccess(Void -> 
 		{
@@ -374,7 +390,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 				}
 				else
 				{
-					
+
 					instance.createAccessTokens(count).
 					onSuccess(tokenArray -> {
 						LOGGER.debug("Replying with: \n " + tokenArray.encodePrettily());
@@ -385,7 +401,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 					})
 					.onFailure(err -> handleError(err, context));
 				}
-				
+
 			})
 			.onFailure(err -> handleError(err, context));
 		})

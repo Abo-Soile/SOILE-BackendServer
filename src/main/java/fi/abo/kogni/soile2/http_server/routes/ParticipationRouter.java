@@ -151,46 +151,54 @@ public class ParticipationRouter extends SoileRouter{
 	public void signUpForProject(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = context.pathParam("id");;
+		String requestedInstanceID = context.pathParam("id");
 		String token = params.queryParameter("token") != null ? params.queryParameter("token").getString() : null;
 		// no token, so this is either an invalid call or a user signup.
 		if(token == null)
 		{ 
-			// if we don't have a token, an authed user can also sign up to a project (even though it's not needed)
-			accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
-			.onSuccess(authed -> {
-				loadProject(requestedInstanceID)
-				.onSuccess(project -> {
-					// this will connect the user with a new participant if they haven't already got one.
-					getParticpantForUser(context.user(), project)
-					.onSuccess( participant ->
-					{
-						handleError(new HttpException(400, "Participant already exists for user"), context);
+			accessHandler.checkRestricted(requestedInstanceID)
+			.onSuccess(priv -> {
+				if(priv)	
+				{
+
+					// if we don't have a token, an authed user can also sign up to a project (even though it's not needed)
+					accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
+					.onSuccess(authed -> {				
+						loadProject(requestedInstanceID)
+						.onSuccess(project -> {
+							// this will connect the user with a new participant if they haven't already got one.
+							createTokenParticipant(project, "", context)
+							.onSuccess(tokenForUser -> {
+								context.response()
+								.setStatusCode(200)						
+								.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+								.end(new JsonObject().put("token", tokenForUser).encode());
+							})
+							.onFailure(err -> handleError(err, context));
 						})
-						.onFailure(doesntExists -> {
-							if( doesntExists instanceof ObjectDoesNotExist)
-							{
-								createParticipantForUser(context.user(), project)
-								.onSuccess( res -> 
-								{
-									context.response()
-									.setStatusCode(200)						
-									.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-									.end();
-								})
-								.onFailure(err -> handleError(err, context));
-							}
-							else 
-							{
-								handleError(doesntExists, context);
-							}
-							
-						});
+						.onFailure(err -> handleError(err, context));
 
 					})
 					.onFailure(err -> handleError(err, context));
-				})
-				.onFailure(err -> handleError(err, context));
+				}
+				else
+				{
+					loadProject(requestedInstanceID)
+					.onSuccess(project -> {
+						// this will connect the user with a new participant if they haven't already got one.
+						createTokenParticipant(project, "", context)
+						.onSuccess(tokenForUser -> {
+							context.response()
+							.setStatusCode(200)						
+							.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+							.end(new JsonObject().put("token", tokenForUser).encode());
+						})
+						.onFailure(err -> handleError(err, context));
+					})
+					.onFailure(err -> handleError(err, context));
+				}
+			})
+			.onFailure(err -> handleError(err, context));
 
 		}
 		else
@@ -200,71 +208,13 @@ public class ParticipationRouter extends SoileRouter{
 			.onSuccess(project -> {				
 				project.useToken(token)
 				.onSuccess( tokenUsed -> {
-					partHandler.createTokenParticipant(project, token)
-					.onSuccess(participant -> {
-						// if the principal is empty, that means we have not used authentication, but passed through 
-						// the auth-less route
-						if(context.user().principal().isEmpty())
-						{
-							// we don't have a user, so we just respond with the token after we started the project for this user. 
-							project.startProject(participant)
-							.onSuccess(position -> {
-								context.response()
-								.setStatusCode(200)						
-								.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-								.end(new JsonObject().put("token", participant.getToken()).encode());
-							})
-							.onFailure(err -> handleError(err, context));	
-						}
-						else
-						{
-							// so the user is nt empty, i.e. we build a new participant for this user (if it doesn't exist)
-							// we will add execute access to the current user.					
-							LOGGER.debug("Found user: \n" + context.user().principal().encodePrettily());
-							LOGGER.debug("Found user: \n" + context.user().attributes().encodePrettily());
-							JsonObject userData = new JsonObject();
-							userData.put("username", context.user().principal().getString("username"));
-							userData.put("command", "add");
-							userData.put("permissions", new JsonArray().add(new JsonObject().put("target", requestedInstanceID).put("type", PermissionType.EXECUTE.toString())));							
-							eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"),userData)
-							.onSuccess( permissionAdded ->
-							{	
-								getParticpantForUser(context.user(), project)
-								.onSuccess(oops -> 
-								{
-									handleError(new HttpException(400, "Participant already exists for user"), context);
-								})
-								.onFailure(doesntExists -> {
-									if( doesntExists instanceof ObjectDoesNotExist)
-									{
-										JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
-										.put("projectID", requestedInstanceID)
-										.put("participantID", participant.getID());
-									eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInProject"),partData)
-									.onSuccess( participantAdded ->
-									{
-										project.startProject(participant)
-										.onSuccess(position -> {
-											context.response()
-											.setStatusCode(200)						
-											.end(new JsonObject().put("token", participant.getToken()).encode());
-										})
-										.onFailure(err -> handleError(err, context));
-									})
-									.onFailure(err -> handleError(err, context));
-									}
-									else
-									{
-										handleError(doesntExists, context);
-									}
-
-								});
-								// all done;
-
-							})
-							.onFailure(err -> handleError(err, context));
-							
-						}
+					createTokenParticipant(project, token, context)
+					.onSuccess(tokenUserToken ->
+					{
+						context.response()
+						.setStatusCode(200)						
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+						.end(new JsonObject().put("token", tokenUserToken).encode());
 					})
 					.onFailure(err -> handleError(err, context));
 
@@ -277,6 +227,81 @@ public class ParticipationRouter extends SoileRouter{
 		}
 	}
 
+	
+	private Future<String> createTokenParticipant(ProjectInstance project, String token, RoutingContext context)
+	{
+
+		Promise<String> tokenPromise = Promise.<String>promise();
+		// if there is no user in the request, create a new token (and participant)
+		if(context.user().principal().isEmpty())
+		{		
+			partHandler.createTokenParticipant(project, token)
+			.onSuccess(participant -> {
+				// if the principal is empty, that means we have not used authentication, but passed through 
+				// the auth-less route
+				// we don't have a user, so we just respond with the token after we started the project for this participant. 
+				project.startProject(participant)
+				.onSuccess(position -> {
+					tokenPromise.complete(participant.getToken());					
+				})
+				.onFailure(err -> tokenPromise.fail(err));	
+			})
+			.onFailure(err -> tokenPromise.fail(err));
+		}
+		else
+		{
+			getParticpantForUser(context.user(), project)
+			.onSuccess(oops -> 
+			{
+				tokenPromise.fail(new HttpException(400, "Participant already exists for user"));
+			})
+			.onFailure(noParticipant -> {	
+				if( noParticipant instanceof ObjectDoesNotExist)
+				{
+					// so the user is not empty AND there is no Participant for the current user. We have to create one.
+					partHandler.createTokenParticipant(project, token)
+					.onSuccess(participant -> {
+						// we will add execute access to the current user.
+						// This has to be a DB user, as token users are not authenticated at this end-point
+						JsonArray permissionSettings = new JsonArray().add(new JsonObject().put("target", project.getID())
+																							.put("type", PermissionType.EXECUTE.toString()));
+						JsonObject permissionsProperties = new JsonObject().put("elementType", TargetElementType.INSTANCE.toString())
+																		   .put("permissionSettings", permissionSettings);
+						JsonObject userData = new JsonObject();
+						userData.put("username", context.user().principal().getString("username"));
+						userData.put("command", "add");
+						userData.put("permissionsProperties", permissionsProperties);
+						eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"),userData)
+						.onSuccess( permissionAdded ->
+						{	
+							JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
+									.put("projectID", project.getID())
+									.put("participantID", participant.getID());
+							eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInProject"),partData)
+							.onSuccess( participantAdded ->
+							{
+								project.startProject(participant)
+								.onSuccess(position -> {
+									tokenPromise.complete(participant.getToken());								
+								})
+								.onFailure(err -> tokenPromise.fail(err));
+							})
+							.onFailure(err -> tokenPromise.fail(err));						
+
+						})
+						.onFailure(err -> handleError(err, context));
+					})
+					.onFailure(err -> tokenPromise.fail(err));				
+				}			
+				else
+				{
+					tokenPromise.fail(noParticipant);
+				}
+			});
+		}
+		return tokenPromise.future();
+	}
+	
 	public void getTaskInfo(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");;
@@ -442,7 +467,6 @@ public class ParticipationRouter extends SoileRouter{
 	public void getResourceForExecution(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");
-		LOGGER.info("Requesting data for project " + requestedInstanceID);
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
 			loadProject(requestedInstanceID)
@@ -558,7 +582,7 @@ public class ParticipationRouter extends SoileRouter{
 			{
 				instanceHandler.getProjectIDForPath(projectID)
 				.onSuccess(newID -> {
-					LOGGER.info("Rerouting from " +  context.normalizedPath() + " to : " + context.normalizedPath().replaceFirst("/"+Pattern.quote(projectID) + "(?=[/$])", "/" + newID ));
+					LOGGER.debug("Rerouting from " +  context.normalizedPath() + " to : " + context.normalizedPath().replaceFirst("/"+Pattern.quote(projectID) + "(?=[/$])", "/" + newID ));
 					context.reroute(context.normalizedPath().replaceFirst("/"+Pattern.quote(projectID) + "(?=[/$])", "/" + newID ));
 				})
 				.onFailure(err -> handleError(err, context));
