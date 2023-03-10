@@ -39,6 +39,10 @@ public class AccessHandler{
 		return checkAccess(user, id, requiredRole, requiredPermission, adminAllowed, mongoAuth, idAccessHandler);
 	}
 
+	public Future<Boolean> checkRestricted(String id)
+	{
+		return idAccessHandler.checkIsPrivate(id);
+	}
 	
 	protected Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission,
 			boolean adminAllowed, MongoAuthorization authProvider, SoileIDBasedAuthorizationHandler IDAccessHandler)
