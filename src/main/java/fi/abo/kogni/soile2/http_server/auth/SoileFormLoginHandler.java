@@ -46,10 +46,29 @@ public class SoileFormLoginHandler extends AuthenticationHandlerImpl<Authenticat
 	    } else {
 	      if (!context.body().available()) {
 	        handler.handle(Future.failedFuture("BodyHandler is required to process POST requests"));
-	      } else {
+	      } else {	    	
+	    	// this could be a json	    	 
 	        MultiMap params = req.formAttributes();
-	        String username = params.get(usernameParam);
-	        String password = params.get(passwordParam);
+	        String username;
+	        String password;
+	        if(params.isEmpty())
+	        {
+	        	// could be a json request
+	        	try {
+	        		JsonObject credentials = context.body().asJsonObject();
+	        		username = credentials.getString("username");
+	        		password = credentials.getString("password");
+	        	}
+	        	catch (Exception e) {
+					handler.handle(Future.failedFuture(new HttpException(401, e.getCause())));
+					return;
+				}
+	        }
+	        else
+	        {
+	        	username = params.get(usernameParam);
+		        password = params.get(passwordParam);	
+	        }	        
 	        if (username == null || password == null) {
 	          handler.handle(Future.failedFuture(BAD_REQUEST));
 	        } else {
@@ -71,7 +90,9 @@ public class SoileFormLoginHandler extends AuthenticationHandlerImpl<Authenticat
 		User user = ctx.user(); 		
 		HttpServerRequest req = ctx.request();
 		MultiMap params = req.formAttributes();
-		Boolean remember = params.get("remember").equals("1");		
+		Boolean remember = params.get("remember") != null ? params.get("remember").equals("1") : false;
+		
+		
 		user.principal().put("storeCookie", remember);
 		cookieHandler.updateCookie(ctx, user).onComplete(cookieDone ->
 		{
