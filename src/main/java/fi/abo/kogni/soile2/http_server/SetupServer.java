@@ -18,6 +18,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.json.JsonObject;
 
@@ -38,10 +39,13 @@ public class SetupServer extends AbstractVerticle {
 		{
 			if(res.succeeded())
 			{
-				LOGGER.debug("Server successfully set up, you can now start it.");				
-				startPromise.complete();
-				vertx.close();
-				// we are done.
+				LOGGER.debug("Server successfully set up, you can now start it.");
+				/*vertx.setTimer(200, shutdown -> {
+					LOGGER.debug("Shutting down vertx.");
+					vertx.close();	
+				});*/
+				//we are done
+				startPromise.complete();				
 			}
 			else
 			{
@@ -171,6 +175,25 @@ public class SetupServer extends AbstractVerticle {
 	}
 
 	
+	public static void main(String[] args)
+	{
+		Vertx instance = Vertx.vertx();
+		
+		instance.deployVerticle(new SetupServer())
+		.onSuccess(res -> {			
+			instance.close()
+			.onSuccess(closed -> {				
+			})
+			.onFailure(err -> {
+				LOGGER.debug("Error while shutting down vertx: ");
+				LOGGER.debug(err, err);
+			});
+		})
+		.onFailure(err -> {
+			LOGGER.debug("Error while setting up server: ");
+			LOGGER.debug(err, err);
+		});
+	}
 	
 
 	

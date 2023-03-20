@@ -302,11 +302,8 @@
 							<goal>java</goal>
 						</goals>
 						<configuration>
-							<mainClass>io.vertx.core.Launcher</mainClass>
-							<arguments>
-								<argument>run</argument>
-								<argument>${setup.verticle}</argument>
-							</arguments>
+							<mainClass>${setup.verticle}</mainClass>
+							<cleanupDaemonThreads>false</cleanupDaemonThreads>
 						</configuration>
 					</execution>
 					
