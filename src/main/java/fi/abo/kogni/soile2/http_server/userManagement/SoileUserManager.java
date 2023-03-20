@@ -490,12 +490,7 @@ public class SoileUserManager implements MongoUserUtil{
 					if(res.succeeded())
 					{
 						if(res.result().size() > 0)
-						{
-							LOGGER.error("Tried to create user " + username + " but existed: " );
-							for(JsonObject o : res.result())
-							{
-								LOGGER.error(o.encodePrettily() );	
-							}
+						{							
 							resultHandler.handle(Future.failedFuture(new UserAlreadyExistingException(username)));
 							return;
 						}

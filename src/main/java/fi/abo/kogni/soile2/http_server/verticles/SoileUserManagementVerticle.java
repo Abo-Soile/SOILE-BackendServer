@@ -53,7 +53,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	SoileUserManager userManager;	
 	MongoClient mongo;
 	private static final Logger LOGGER = LogManager.getLogger(SoileUserManagementVerticle.class);
-	private JsonObject sessionFields;
 	private List<MessageConsumer> consumers;
 
 	@Override
@@ -61,7 +60,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		LOGGER.debug("Starting UserManagementVerticle with ID: " + deploymentID()  );
 		mongo = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg());
 		setupConfig(SoileConfigLoader.USERMGR_CFG);		
-		sessionFields = config().getJsonObject(SoileConfigLoader.SESSION_CFG);
 		userManager = new SoileUserManager(mongo);		
 		consumers = new LinkedList<>();
 		setupChannels();
@@ -114,9 +112,10 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		{
 			undeploymentFutures.add(consumer.unregister());
 		}				
+		
 		CompositeFuture.all(undeploymentFutures).mapEmpty().
 		onSuccess(v -> {
-			LOGGER.debug("Successfully undeployed SoileUserManager with id : " + deploymentID());
+			LOGGER.debug("Successfully undeployed SoileUserManager with id : " + deploymentID());			
 			stopPromise.complete();
 		})
 		.onFailure(err -> stopPromise.fail(err));			
@@ -655,7 +654,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 */
 	private void handleError(Throwable error, Message request)
 	{
-		LOGGER.error(error,error);
+		
 		handleError(error, request, null);
 	}
 
@@ -667,6 +666,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 */
 	private void handleError(Throwable error, Message request, String message)
 	{
+		// these are all expected errors, so no printing.
 		if(message == null)
 		{
 			message = error.getMessage();
@@ -693,7 +693,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			return;
 		}
 		if(error instanceof HttpException)
-		{
+		{			
 			HttpException err = (HttpException)error;
 			request.fail(err.getStatusCode(), err.getPayload());
 			return;

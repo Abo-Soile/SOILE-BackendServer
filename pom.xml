@@ -16,6 +16,9 @@
 		<exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
 		<vertx.version>4.3.6</vertx.version>
 		<main.verticle>fi.abo.kogni.soile2.http_server.SoileServerVerticle</main.verticle>
+		<vertx.verticle>fi.abo.kogni.soile2.http_server.SoileServerVerticle</vertx.verticle>
+		<vertx.launcher>io.vertx.core.Launcher</vertx.launcher>
+		<setup.verticle>fi.abo.kogni.soile2.http_server.SetupServer</setup.verticle>
 		<launcher.class>io.vertx.core.Launcher</launcher.class>
 		<vertx-maven-plugin.version>1.0.28</vertx-maven-plugin.version>
 		<jackson-datatype-jsr310.version>2.7.4</jackson-datatype-jsr310.version>
@@ -254,7 +257,23 @@
 					</execution>
 				</executions>
 			</plugin>
-
+			<plugin>
+	            <groupId>io.reactiverse</groupId>
+	            <artifactId>vertx-maven-plugin</artifactId>
+	            <version>1.0.28</version>
+	            <executions>
+	                <execution>
+	                    <id>vmp</id>
+	                    <goals>
+	                        <goal>initialize</goal>
+	                        <goal>package</goal>
+	                    </goals>
+	                </execution>
+	            </executions>
+	            <configuration>
+	                <redeploy>true</redeploy>
+	            </configuration>
+	        </plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin.version}</version>
@@ -263,13 +282,35 @@
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
 				<version>${exec-maven-plugin.version}</version>
-				<configuration>
-					<mainClass>io.vertx.core.Launcher</mainClass>
-					<arguments>
-						<argument>run</argument>
-						<argument>${main.verticle}</argument>
-					</arguments>
-				</configuration>
+				<executions>
+					<execution>
+						<id>server</id>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<configuration>
+							<mainClass>io.vertx.core.Launcher</mainClass>
+							<arguments>
+								<argument>run</argument>
+								<argument>${main.verticle}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>setup</id>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<configuration>
+							<mainClass>io.vertx.core.Launcher</mainClass>
+							<arguments>
+								<argument>run</argument>
+								<argument>${setup.verticle}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>

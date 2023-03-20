@@ -32,7 +32,7 @@ public abstract class SoileVerticleTest extends MongoTest {
 		super.runBeforeTests(context);
 		port = SoileConfigLoader.getServerIntProperty("port");
 		setupWebClient();
-		Async serverSetupAsync = context.async();
+		Async serverSetupAsync = context.async();		
 		vertx.deployVerticle(SoileServerVerticle.class.getName(), new DeploymentOptions())
 		.onSuccess(Void -> 
 		{
