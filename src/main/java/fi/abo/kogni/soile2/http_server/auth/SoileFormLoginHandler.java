@@ -40,6 +40,8 @@ public class SoileFormLoginHandler extends AuthenticationHandlerImpl<Authenticat
 
 	  @Override
 	  public void authenticate(RoutingContext context, Handler<AsyncResult<User>> handler) {
+		LOGGER.info("Trying to authenticate a request");
+		LOGGER.info("Request is: " + context.body().asString());
 	    HttpServerRequest req = context.request();
 	    if (req.method() != HttpMethod.POST) {
 	      handler.handle(Future.failedFuture(BAD_METHOD)); // Must be a POST

@@ -1,0 +1,149 @@
+# This test tests the reaction time of a user. The user is asked to press
+# the key "h" as fast as possible when a yellow box appears on the screen.
+
+# The users reactiontime is logged and stored and an average is also calculated.
+
+# Loading a image from the internet.
+val imgurl <- "Circle.png"
+
+# And creating a displayable image.
+gvar reactimg <- imagefile(imgurl)
+
+# Number of games played thus far, starting from 0
+gvar games <- 0
+
+# Users is done after 15 games.
+gvar maxgames <- 15
+
+# Did the user react or not 0 - No,   1 - Yes
+gvar reacted <- 0
+
+
+# Function that sets reacted ti 1 and resumes execution
+function userReacted()
+  reacted <- 1
+  resume()
+end
+
+# Funtion that checks if the user is done
+function gamedone()
+  # Showing number of games played
+  helptext("games played")
+  helptext(games)
+
+  # Adding 1 to games played
+  games <- plus(games 1)
+
+  # Check if games played is greater than maxgames(15), return true or false
+  return gt(games maxgames)
+end
+
+# First phase, writes stuff to the log and wait 2000ms
+intermezzo-phase Alpha
+  helptext("Starting Test")
+  wait(2000)
+end
+
+# Second phase, shows some text for the user
+intermezzo-phase Info
+  # Show some instructions to the user
+  showmsg("Press h when the circle appears")
+  helptext("Displaying instructions")
+
+  wait(seconds(7))
+  # Hide the text after waiting
+  hidemsg()
+
+  helptext("Hiding instructions")
+end
+
+# This is the last phase, calculating and storing results
+intermezzo-phase FinalPhase
+  helptext("Final phase, storing results")
+
+  count("reacted" 1)
+  count("reacted" 0)
+  average("rt")
+
+end
+
+
+# Gamephase, is run
+interaction-phase MainPhase
+
+  enterphase
+    helptext("Starting Mainphase")
+    # Setting reacted to "no",
+    reacted <- 0
+
+    # Computing a random number between 2 and 3 and setting it as stimuli
+    setstimuli([randomnumber(2 3)])
+  end
+
+  # Is run at the end of the phase
+  leavephase
+    helptext("")
+  end
+
+  # Is run for each stimuli, only once in this case since there's only one stimuli
+  beforeiteration
+    helptext("")
+  end
+
+  # Is run after each stimuli,
+  afteriteration
+    helptext("")
+    # Starting a new datarow
+    newrow()
+  end
+
+  # Is run once for each stimuli,
+  iteration
+    #Declaring variables
+    var i <- 0
+    var s <- 0
+
+    # Storing the current stimuli in s
+    s <- stimulus()
+
+    # Wait s seconds, is the random number that was stored in row 81
+    wait(seconds(s))
+
+    # Run the function userReacted when "h" is pressed
+    onkeypress("h" userReacted)
+
+    # Starting timer
+    starttimer()
+
+    # Showing the red box to the user
+    show(reactimg {top:100 left:300})
+
+    # Wait and allow the user to reactr
+    wait(seconds(3))
+
+    helptext("Hiding image")
+    hide(reactimg)
+
+    # Store time since starttimer in i
+    i <- elapsedtime()
+
+    # Stop listening for keypresses
+    onkeypress("h")
+
+    # Store reaction as rt, stimuli as waittime and if the user reacted in the results
+    storerow("rt" i)
+    storerow("waittime" s)
+    storerow("reacted" reacted)
+
+    helptext("Enditeration")
+  end
+end
+
+# Tranition table
+transition
+  start(Alpha),
+  Alpha -> Info,
+  Info -> MainPhase if (not(gamedone())),
+  MainPhase -> FinalPhase if (gamedone()),
+  final(FinalPhase)
+end

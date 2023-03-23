@@ -1,0 +1,96 @@
+/title
+Example Questionaire
+
+Which continent do you live on
+
+/dropdownmenu {
+    dbcolumn: "continent",
+    label: "Select Continent",
+    options: [{dbvalue: "EU", text: "Europe"},
+             {dbvalue: "AM", text: "America"},
+             {dbvalue: "AS", text: "Asia"},
+             {dbvalue: "AU", text: "Australia"},
+             {dbvalue: "AF", text: "Africa"}
+             ]
+}
+/p 
+What kind of vehicle do you own ?
+/multiselect {
+    default_value: "no",
+    dbcolumn: "vehicle",
+    options: [ [
+        {
+          dbcolumn: "Bike",
+          dbvalue: "yes",
+          text: "Bike",
+          checked: true
+        },
+          {
+          dbcolumn: "Car",
+          dbvalue: "yes",
+          text: "Car",
+          checked: false
+        },
+        {
+          dbcolumn: "Motorbike",
+          dbvalue: "yes",
+          text: "Motorbike",
+          checked: false
+        }] ]
+}
+
+/p
+How Old are you ?
+/numberfield {
+    dbcolumn: "age",
+    label: "Enter your age",
+    value: 0,
+    minimum: 0,
+    maximum: 100,
+    increment: 1
+}
+
+/p
+Are you a smoker?
+/singleselect {
+     default_value: "-1",
+     dbcolumn: "smoker",
+     options: [[{dbvalue: 1, text: "Yes", checked: true},
+               {dbvalue: 0, text: "No"}]]
+  }
+
+/p
+Scale your interest in this questionnaire (0 being no interest, 6 being very interested)
+/slider {
+     dbcolumn: "Slider 0-6",
+     numeric: true,
+     dbtype: "int",
+     labels: [0,1,2,3,4,5,6],
+     minimum: 0,
+     maximum: 6,
+     increment: 1,
+     select: 0
+}
+
+/p 
+Tell us something about your live
+
+/textarea {
+     dbcolumn: "story",
+     rows: 3,
+     length: 150,
+     label: "Tell us a story",
+     text: "Enter your story here."
+}
+
+/textbox {
+     dbcolumn: "name",
+     label: "Enter you name",
+     linebreak: true,
+     length: 40,
+     text: "Enter your name here"
+}
+
+/link https://abo-soile.github.io/SOILE-QuestionaireMarkup/
+Specifications for the quetionaire markup.
+

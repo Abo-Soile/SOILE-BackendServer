@@ -39,9 +39,11 @@ public abstract class GitTest extends MongoTest {
 	@Override
 	public void setupTestConfig(TestContext context)
 	{
+		super.setupTestConfig(context);
 		try {
 			gitDataLakeDir = Files.createTempDirectory("gitdataLakeDir").toFile().getAbsolutePath();
 			resultDataLakeDir = Files.createTempDirectory("resultdataLakeDir").toFile().getAbsolutePath();
+			gitDir = Files.createTempDirectory("gitDir").toFile().getAbsolutePath();
 			// we need to Update the config for some verticles, which derive their pathes from the config.
 			SoileConfigLoader.getConfig(SoileConfigLoader.HTTP_SERVER_CFG)
 			.put("soileGitFolder", gitDir)

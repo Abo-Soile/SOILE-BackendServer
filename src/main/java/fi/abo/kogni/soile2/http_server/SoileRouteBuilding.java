@@ -52,10 +52,12 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.ChainAuthHandler;
+import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.JWTAuthHandler;
 import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import io.vertx.ext.web.openapi.RouterBuilderOptions;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 /**
  * Verticle that handles Route Building for the Soile Backend Platform 
@@ -186,6 +188,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	 */
 	private Future<RouterBuilder> createRouter(Void unused)
 	{
+		LOGGER.debug(config().getString("api"));
 		return RouterBuilder.create(vertx, config().getString("api"));
 	}
 
@@ -238,10 +241,22 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	
 	Future<RouterBuilder> addHandlers(RouterBuilder builder)
 	{
-		builder.rootHandler(LoggerHandler.create());
+		builder.rootHandler(LoggerHandler.create());		
 		builder.rootHandler(SessionHandler.create(LocalSessionStore.create(vertx)));
+		builder.rootHandler(CorsHandler.create().addOrigin("http://localhost:5173")											
+												.allowedMethod(HttpMethod.POST)
+												.allowedMethod(HttpMethod.GET)
+												.allowedMethod(HttpMethod.OPTIONS)
+												.allowCredentials(true)
+											    .allowedHeader("Access-Control-Allow-Headers")
+											    .allowedHeader("Authorization")
+											    .allowedHeader("Access-Control-Allow-Method")
+											    .allowedHeader("Access-Control-Allow-Origin")
+											    .allowedHeader("Access-Control-Allow-Credentials")
+											    .allowedHeader("Content-Type"));
+												
 		builder.rootHandler(BodyHandler.create());
-		builder.rootHandler(new DebugRouter());
+		builder.rootHandler(new DebugRouter());		
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	

@@ -41,6 +41,35 @@
 		"codeFile": "Test.js",
 		"codeType" : { "language" : "psychopy",
 					   "version" : "2022.2.5"}
+	},
+	"PsychoPyExample": {							
+		"name": "PsychoPyEx",
+		"resources": ["images/apple.jpg","images/teddy.jpg","images/pear.jpg", "conditions.xlsx"],
+		"codeFile": "psychopyexample.js",
+		"codeType" : { "language" : "psychopy",
+					   "version" : "2022.2.5"}
+	},
+	"ElangExample": {							
+		"name": "ElangExp",
+		"resources": ["Circle.png"],
+		"codeFile": "ElangTask.elang",
+		"codeType" : { "language" : "elang",
+					   "version" : "1.0"}
+	},
+	"QuestionnaireExample": {							
+		"name": "ElangExp",
+		"resources": ["Circle.png"],
+		"codeFile": "QuestionnaireExample.qmarkup",
+		"codeType" : { "language" : "qmarkup",
+					   "version" : "1.0"}
+	},
+	"JavascriptExample": {							
+		"name": "JSExp",		
+		"codeFile": "JSExample.js",
+		"codeType" : { "language" : "javascript",
+					   "version" : "ES6"}
 	}
+	
+	
 }
 	

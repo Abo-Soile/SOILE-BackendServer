@@ -40,15 +40,36 @@ public class ObjectGenerator {
 
 	private static final Logger LOGGER = LogManager.getLogger(ObjectGenerator.class);
 
-	@SuppressWarnings("rawtypes")
+
 	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID, MongoClient client)
+	{
+		return buildAPITask(manager, elementID, client, null);
+	}
+
+	@SuppressWarnings("rawtypes")
+	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID, MongoClient client, String datapath)
 	{
 		Promise<APITask> taskPromise = Promise.promise();
 		try
 		{
-			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
-			String TaskCode = Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));
-			String TestDataFolder = ObjectGenerator.class.getClassLoader().getResource("FileTestData").getPath();
+			JsonObject TaskDef;			
+			String TaskCode;
+			String TestDataFolder;
+
+			if(datapath == null)
+			{
+				TaskDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
+				LOGGER.info(elementID + ":");
+				LOGGER.info(TaskDef.encodePrettily());
+				TaskCode = Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));
+				TestDataFolder = ObjectGenerator.class.getClassLoader().getResource("FileTestData").getPath();
+			}
+			else
+			{
+				TaskDef = new JsonObject(Files.readString(Paths.get(datapath, "APITestData/TaskData.json"))).getJsonObject(elementID);			
+				TaskCode = Files.readString(Paths.get(datapath, "CodeTestData", TaskDef.getString("codeFile")));
+				TestDataFolder = Paths.get(datapath, "FileTestData").toString();				
+			}
 			String dataDir = Files.createTempDirectory("TaskDataFolder").toAbsolutePath().toString();
 			FileUtils.copyDirectory(new File(TestDataFolder), new File(dataDir));
 			manager.createOrLoadElement(TaskDef.getString("name"),TaskDef.getString("codeType"),TaskDef.getString("codeVersion"))
@@ -118,13 +139,29 @@ public class ObjectGenerator {
 		}
 		return taskPromise.future();
 	}
-	@SuppressWarnings("rawtypes")
+	
 	public static Future<APIExperiment> buildAPIExperiment(ElementManager<Experiment> experimentManager,ElementManager<Task> taskManager,MongoClient client, String experimentName)
+	{
+		return buildAPIExperiment(experimentManager, taskManager, client, experimentName, null);
+	}
+
+	
+	@SuppressWarnings("rawtypes")
+	public static Future<APIExperiment> buildAPIExperiment(ElementManager<Experiment> experimentManager,ElementManager<Task> taskManager,MongoClient client, String experimentName, String datapath)
 	{
 		Promise<APIExperiment> experimentPromise = Promise.promise();
 		try
 		{
-			JsonObject ExperimentDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/ExperimentData.json").getPath()))).getJsonObject(experimentName);
+			JsonObject ExperimentDef;			
+			if(datapath == null)
+			{
+				ExperimentDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/ExperimentData.json").getPath()))).getJsonObject(experimentName);			
+			}
+			else
+			{
+				ExperimentDef = new JsonObject(Files.readString(Paths.get(datapath, "APITestData/ExperimentData.json"))).getJsonObject(experimentName);			
+			}
+			
 			APIExperiment apiExperiment = new APIExperiment();
 			apiExperiment.setPrivate(ExperimentDef.getBoolean("private"));
 			experimentManager.createOrLoadElement(ExperimentDef.getString("name"))
@@ -142,7 +179,7 @@ public class ObjectGenerator {
 					if(current.getString("type").equals("task"))
 					{
 						partFutures.add(
-								buildAPITask(taskManager, current.getString("name"), client).onSuccess(task -> {
+								buildAPITask(taskManager, current.getString("name"), client, datapath).onSuccess(task -> {
 									experiment.addElement(task.getUUID());
 									JsonObject taskInstance = new JsonObject();
 									taskInstance.put("instanceID", current.getString("instanceID"))
@@ -165,7 +202,7 @@ public class ObjectGenerator {
 					if(current.getString("type").equals("experiment"))
 					{
 						partFutures.add(
-								buildAPIExperiment(experimentManager, taskManager, client, current.getString("name")).onSuccess(subexperiment -> {
+								buildAPIExperiment(experimentManager, taskManager, client, current.getString("name"), datapath).onSuccess(subexperiment -> {
 									experiment.addElement(subexperiment.getUUID());
 									JsonObject experimentInstance = new JsonObject();
 									experimentInstance.put("instanceID", current.getString("instanceID"))
@@ -214,16 +251,36 @@ public class ObjectGenerator {
 		return experimentPromise.future();
 	}
 
+	public static Future<APIProject> buildAPIProject(ElementManager<Project> projectManager, 
+			 ElementManager<Experiment> expManager,
+			 ElementManager<Task> taskManager, 
+			 MongoClient client, String projectName
+			 )
+	{
+		return buildAPIProject(projectManager, expManager, taskManager, client, projectName, null);
+	}
+
+	
 	@SuppressWarnings("rawtypes")
 	public static Future<APIProject> buildAPIProject(ElementManager<Project> projectManager, 
 													 ElementManager<Experiment> expManager,
 													 ElementManager<Task> taskManager, 
-													 MongoClient client, String projectName)
+													 MongoClient client, String projectName,
+													 String datapath)
 	{
 		Promise<APIProject> projectPromise = Promise.promise();
 		try
 		{
-			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/ProjectData.json").getPath()))).getJsonObject(projectName);
+			
+			JsonObject projectDef;			
+			if(datapath == null)
+			{
+				projectDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/ProjectData.json").getPath()))).getJsonObject(projectName);			
+			}
+			else
+			{
+				projectDef = new JsonObject(Files.readString(Paths.get(datapath, "APITestData/ProjectData.json"))).getJsonObject(projectName);			
+			}		
 			APIProject apiProject = new APIProject();		
 			apiProject.setStart(projectDef.getString("start"));
 			projectManager.createOrLoadElement(projectDef.getString("name"))
@@ -237,7 +294,7 @@ public class ObjectGenerator {
 				{
 					JsonObject current = (JsonObject) item;
 					taskFutures.add(
-							buildAPITask(taskManager, current.getString("name"), client)
+							buildAPITask(taskManager, current.getString("name"), client, datapath)
 							.onSuccess(task -> {
 								project.addElement(task.getUUID());
 								JsonObject taskInstance = new JsonObject();
@@ -270,7 +327,7 @@ public class ObjectGenerator {
 					{
 						JsonObject current = (JsonObject) item;
 						experimentFutures.add(
-								buildAPIExperiment(expManager, taskManager, client, current.getString("name"))
+								buildAPIExperiment(expManager, taskManager, client, current.getString("name"), datapath)
 								.onSuccess(experiment -> {
 									project.addElement(experiment.getUUID());						
 									JsonObject expinstance = experiment.getAPIJson();
@@ -317,10 +374,15 @@ public class ObjectGenerator {
 	
 	public static Future<JsonObject> createProject(MongoClient client, Vertx vertx, String projectName)
 	{
+		return createProject(client, vertx, projectName, null);
+	}
+	
+	public static Future<JsonObject> createProject(MongoClient client, Vertx vertx, String projectName, String datapath)
+	{
 		ElementManager<Project> projectManager = new ElementManager<>(Project::new, APIProject::new, client, vertx); 
 		 ElementManager<Experiment> expManager = new ElementManager<>(Experiment::new, APIExperiment::new, client, vertx);
 		 ElementManager<Task> taskManager = new ElementManager<>(Task::new, APITask::new, client, vertx);
-		 return buildAPIProject(projectManager, expManager, taskManager, client, projectName).map(res -> { return new JsonObject().put("UUID", res.getUUID()).put("version", res.getVersion());});
+		 return buildAPIProject(projectManager, expManager, taskManager, client, projectName, datapath).map(res -> { return new JsonObject().put("UUID", res.getUUID()).put("version", res.getVersion());});
 	}
 	
 	

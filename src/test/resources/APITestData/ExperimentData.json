@@ -90,6 +90,25 @@
 				"instanceID": "tabcdefg21"
 			}
 		  ]						
+	},
+	"ExampleExperiment1":	
+	{
+		"name" : "ExampleExperiment",
+		"private" : false,
+		"items": [
+			{
+				"type": "task", 
+				"name": "ElangExample", 
+				"instanceID": "tabcdefg1",				
+				"next": "tabcdefg2"
+			},
+			{
+				"type": "task", 
+				"name": "PsychoPyExample", 
+				"instanceID": "tabcdefg2"
+			}
+		  ]						
 	}
+	
 }
 				

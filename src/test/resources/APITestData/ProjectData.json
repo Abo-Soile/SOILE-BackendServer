@@ -83,5 +83,50 @@
 				"random" : false
 			}						
 		]
-	}	
+	},
+"ExampleProject": {
+	"name" : "ExampleProject",
+	"start" : "tabcdefg0",
+	"private": false,
+	"tasks": 
+		[
+			{
+				"instanceID": "tabcdefg0",				
+				"outputs": ["smoker"],
+				"name": "QuestionnaireExample",
+				"next": "fabcdefg1"				
+			},			
+			{
+				"instanceID": "tabcdefg3",								
+				"name": "JavascriptExample",
+				"next": "end"						
+			}	
+		],	
+	"experiments": 
+		[
+			{
+				"instanceID" : "eabcdefg1",
+				"name" : "ExampleExperiment1",
+				"random" : true,
+				"next": "tabcdefg3"										
+			}					
+		],
+		"filters":
+		[
+			{
+				"instanceID": "fabcdefg1",
+				"options": [
+							
+							{
+								"filter": "tabcdefg0.smoker = 1",
+								"next": "eabcdefg1"
+							}
+							
+					],
+				"defaultOption": "tabcdefg3"							
+								
+			}		
+		]		
+	}		
+
 }

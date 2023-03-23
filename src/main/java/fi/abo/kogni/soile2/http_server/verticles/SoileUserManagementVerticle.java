@@ -112,14 +112,6 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		{
 			undeploymentFutures.add(consumer.unregister());
 		}				
-		try {
-			mongo.close();
-		}
-		catch(Exception e)
-		{
-			// it doesn't really matter whether this closes successfully here... 
-			LOGGER.debug(e,e);
-		}
 		CompositeFuture.all(undeploymentFutures).mapEmpty().
 		onSuccess(v -> {
 			LOGGER.debug("Successfully undeployed SoileUserManager with id : " + deploymentID());			
