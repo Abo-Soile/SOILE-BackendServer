@@ -57,6 +57,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 			else
 			{
 				LOGGER.debug("Error starting server " + res.cause().getMessage());
+				//LOGGER.error(res.cause(), res.cause());
 				startPromise.fail(res.cause().getMessage());
 			}
 		});
@@ -87,14 +88,15 @@ public class SoileServerVerticle extends AbstractVerticle {
 		
 	}
 	
-	Future<String> addDeployedVerticle(Future<String> result)
+	Future<String> addDeployedVerticle(Future<String> result, String target)
 	{
 		result.onSuccess(deploymentID -> {
 			LOGGER.debug("Deploying verticle with id:  " + deploymentID );
 			deployedVerticles.add(deploymentID);
 		})
-		.onFailure(err -> {
-			LOGGER.error("Failed to start Verticle");
+		.onFailure(err -> {			
+			LOGGER.error("Failed to start Verticle: " + target);
+			LOGGER.error(err,err);
 		});
 		return result;
 	}
@@ -105,11 +107,11 @@ public class SoileServerVerticle extends AbstractVerticle {
 		soileRouter.setDeploymentOptions(opts);
 		@SuppressWarnings("rawtypes")
 		List<Future> deploymentFutures = new LinkedList<Future>();
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new SoileUserManagementVerticle(), opts)));
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(soileRouter, opts)));
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), SoileConfigLoader.getServerProperty("soileGitFolder")), opts )));
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new GitManagerVerticle(), opts )));
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new PermissionVerticle(), opts )));
+		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new SoileUserManagementVerticle(), opts), "UserManagement"));
+		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(soileRouter, opts), "Router"));
+		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), SoileConfigLoader.getServerProperty("soileGitFolder")), opts ), "Git"));
+		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new GitManagerVerticle(), opts ), "GitManager"));
+		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new PermissionVerticle(), opts ), "Permissions"));
 		return CompositeFuture.all(deploymentFutures).mapEmpty();
 	}
 	
