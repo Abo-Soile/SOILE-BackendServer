@@ -92,6 +92,9 @@ public class SoileServerVerticle extends AbstractVerticle {
 		result.onSuccess(deploymentID -> {
 			LOGGER.debug("Deploying verticle with id:  " + deploymentID );
 			deployedVerticles.add(deploymentID);
+		})
+		.onFailure(err -> {
+			LOGGER.error("Failed to start Verticle");
 		});
 		return result;
 	}
