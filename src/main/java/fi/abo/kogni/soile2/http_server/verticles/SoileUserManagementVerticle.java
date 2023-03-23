@@ -58,7 +58,8 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
 		LOGGER.debug("Starting UserManagementVerticle with ID: " + deploymentID()  );
-		mongo = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg());
+		mongo = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg(), "USER_MANAGER_MONGO");
+
 		setupConfig(SoileConfigLoader.USERMGR_CFG);		
 		userManager = new SoileUserManager(mongo);		
 		consumers = new LinkedList<>();

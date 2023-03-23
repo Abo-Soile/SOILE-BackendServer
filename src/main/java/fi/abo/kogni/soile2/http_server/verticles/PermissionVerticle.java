@@ -28,8 +28,8 @@ public class PermissionVerticle extends AbstractVerticle {
 	}
 	
 	@Override
-	public void start(Promise<Void> startPromise) throws Exception {			
-			client = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg());
+	public void start(Promise<Void> startPromise) throws Exception {
+			client = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg(), "PERMISSION_VERTICLE_MONGO");
 			consumers = new LinkedList<>();
 			consumers.add(vertx.eventBus().consumer("soile.permissions.checkTargets", this::checkPermissions));
 			startPromise.complete();

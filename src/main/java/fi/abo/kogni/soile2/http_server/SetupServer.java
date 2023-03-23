@@ -145,14 +145,17 @@ public class SetupServer extends SoileServerVerticle {
 			instance.close()
 			.onSuccess(closed -> {				
 			})
-			.onFailure(err -> {
-				LOGGER.debug("Error while shutting down vertx: ");
-				LOGGER.debug(err, err);
+			.onFailure(err -> {							
+				LOGGER.error("Error while shutting down vertx: ");
+				LOGGER.error(err, err);
+				System.exit(1);
 			});
 		})
 		.onFailure(err -> {
-			LOGGER.debug("Error while setting up server: ");
-			LOGGER.debug(err, err);
+			instance.close();
+			LOGGER.error("Error while setting up server: ");
+			LOGGER.error(err, err);
+			System.exit(1);
 		});
 	}
 	
