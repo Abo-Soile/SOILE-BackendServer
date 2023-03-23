@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -28,7 +30,7 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 
 @RunWith(VertxUnitRunner.class)
 public abstract class MongoTest extends SoileBaseTest {
-
+	
 	
 	static Mongod MONGO;
 	static ReachedState<RunningMongodProcess> state;
@@ -37,6 +39,8 @@ public abstract class MongoTest extends SoileBaseTest {
 	
 	@BeforeClass
 	public static void initialize() throws IOException {
+		Logger mongologger = Logger.getLogger("org.mongodb.driver");
+		mongologger.setLevel(Level.SEVERE);
 		//MONGO = Mongod.builder();
 		Net net = Net.of(Network.getLocalHost().getHostAddress(), MONGO_PORT, Network.localhostIsIPv6());				
 		MONGO = Mongod.builder()				
