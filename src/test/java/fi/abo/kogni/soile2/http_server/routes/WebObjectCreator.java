@@ -61,7 +61,7 @@ public class WebObjectCreator {
 		Promise<JsonObject> taskPromise = Promise.promise();
 		try
 		{					
-			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("ObjectData/TaskData.json").getPath()))).getJsonObject(elementID);			
+			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
 			String TaskCode = Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));
 			String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
 			JsonObject codeType = TaskDef.getJsonObject("codeType");
@@ -166,7 +166,7 @@ public class WebObjectCreator {
 		Promise<JsonObject> experimentPromise = Promise.promise();
 		try
 		{
-			JsonObject ExperimentDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("ObjectData/ExperimentData.json").getPath()))).getJsonObject(experimentName);
+			JsonObject ExperimentDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/ExperimentData.json").getPath()))).getJsonObject(experimentName);
 			JsonObject experimentSettings = new JsonObject().put("name", ExperimentDef.getString("name")).put("private", ExperimentDef.getBoolean("private", false));
 			SoileWebTest.createNewElement(webClient, "experiment", experimentSettings)
 			.onSuccess(experimentJson -> {
@@ -266,7 +266,7 @@ public class WebObjectCreator {
 		Promise<JsonObject> projectPromise = Promise.promise();
 		try
 		{
-			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("ObjectData/ProjectData.json").getPath()))).getJsonObject(projectName);
+			JsonObject projectDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/ProjectData.json").getPath()))).getJsonObject(projectName);
 			JsonObject projectSettings = new JsonObject().put("name", projectDef.getString("name"))
 														 .put("private", projectDef.getBoolean("private", false));
 			SoileWebTest.createNewElement(webClient, "project", projectSettings)			
