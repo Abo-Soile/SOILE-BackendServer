@@ -91,7 +91,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 	Future<String> addDeployedVerticle(Future<String> result, String target)
 	{
 		result.onSuccess(deploymentID -> {
-			LOGGER.debug("Deploying verticle with id:  " + deploymentID );
+			LOGGER.debug("Deploying verticle " + target  + " with id:  " + deploymentID );
 			deployedVerticles.add(deploymentID);
 		})
 		.onFailure(err -> {			
@@ -121,6 +121,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 		SoileConfigLoader.setupConfig(vertx)
 		.onSuccess(finished -> {
 			soileConfig.mergeIn(SoileConfigLoader.config());
+			LOGGER.debug("Configuration loaded");
 			finishedSetupPromise.complete();
 		})
 		.onFailure(err -> finishedSetupPromise.fail(err));
@@ -143,17 +144,23 @@ public class SoileServerVerticle extends AbstractVerticle {
 		vertx.fileSystem().exists(folderName).onSuccess(exists-> {
 			if(!exists)
 			{
+				
 				vertx.fileSystem().mkdirs(folderName)
 				.onSuccess(created -> {
+					LOGGER.debug("Folder " + folderName +  " created.");
 					folderCreatedPromise.complete();
+				})
+				.onFailure(err -> {
+					folderCreatedPromise.fail(err);
 				});				
 			}
 			else
 			{
+				LOGGER.debug("Folder " + folderName +  " existed.");
 				folderCreatedPromise.complete();	
 			}
 		}).onFailure(fail ->{
-			folderCreatedPromise.fail(fail.getMessage());
+			folderCreatedPromise.fail(fail);
 		});
 		return folderCreatedPromise.future();
 	}
@@ -175,6 +182,6 @@ public class SoileServerVerticle extends AbstractVerticle {
 									 .setKeyStoreOptions(keyOptions);
 		HttpServer server = vertx.createHttpServer(opts).requestHandler(soileRouter.getRouter());
 		int httpPort = http_config.getInteger("port", SoileConfigLoader.getServerIntProperty("port"));			
-		return Future.<HttpServer>future(promise -> server.listen(httpPort,promise)).mapEmpty();	
+		return Future.<HttpServer>future(promise -> server.listen(httpPort,promise)).onSuccess(started -> { LOGGER.debug("Http Server started listening");}).mapEmpty();	
 	}
 }
