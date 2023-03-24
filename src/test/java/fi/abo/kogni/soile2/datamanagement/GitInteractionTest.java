@@ -215,7 +215,7 @@ public class GitInteractionTest extends GitTest{
 		Async repoCreationAsync = context.async();
 		vertx.eventBus().request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitProviderVerticle.createInitCommand(gitRepoName))
 		.onSuccess( res -> {
-			versionPromise.complete(((JsonObject)res.body()).getString(gitProviderVerticle.COMMITHASHFIELD));
+			versionPromise.complete(((JsonObject)res.body()).getString(gitProviderVerticle.VERSIONFIELD));
 			repoCreationAsync.complete();
 		}		
 		).onFailure(fail ->

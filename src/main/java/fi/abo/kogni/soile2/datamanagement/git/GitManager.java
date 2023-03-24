@@ -79,7 +79,7 @@ public class GitManager{
 				.onSuccess(initReply -> {
 					JsonObject info = (JsonObject)initReply.body();
 					// return the new version of this repository (for future changes)
-					initPromise.complete(info.getString(gitProviderVerticle.COMMITHASHFIELD));
+					initPromise.complete(info.getString(gitProviderVerticle.VERSIONFIELD));
 				})
 				.onFailure(err -> 
 				{
@@ -247,8 +247,8 @@ public class GitManager{
 		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), command).onSuccess(reply -> {
 			JsonObject info = (JsonObject)reply.body();
 			// return the new version of this repository (for future changes)
-			LOGGER.debug("Updated file " + file.toJson().encode() + " for version " + info.getString(gitProviderVerticle.COMMITHASHFIELD));
-			versionPromise.complete(info.getString(gitProviderVerticle.COMMITHASHFIELD));
+			LOGGER.debug("Updated file " + file.toJson().encode() + " for version " + info.getString(gitProviderVerticle.VERSIONFIELD));
+			versionPromise.complete(info.getString(gitProviderVerticle.VERSIONFIELD));
 		}).onFailure(fail -> {
 			versionPromise.fail(fail);
 		});
