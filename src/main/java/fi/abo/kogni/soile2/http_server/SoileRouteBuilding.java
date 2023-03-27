@@ -79,7 +79,6 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private TaskRouter taskRouter;
 	private ParticipationRouter partRouter;
 	private IDSpecificFileProvider fileProvider;
-	ConcurrentLinkedQueue<String> deployedVerticles;
 	DeploymentOptions soileOpts;	
 	AuthenticationHandler anyAuth;
 	AuthenticationHandler userAuth;
@@ -96,7 +95,6 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		soileAuthorization = new SoileAuthorization(client);
 		projHandler = new ProjectInstanceHandler(client, vertx);
 		partHandler = new ParticipantHandler(client, projHandler, vertx);
-		deployedVerticles = new ConcurrentLinkedQueue<>();
 		fileProvider = new IDSpecificFileProvider(resourceManager);
 		LOGGER.debug("Starting Routerbuilder");
 		deployVerticles()
@@ -138,14 +136,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		for(MessageConsumer consumer : consumers)
 		{
 			undeploymentFutures.add(consumer.unregister());
-		}	
-		for(String deploymentID : deployedVerticles)
-		{
-			LOGGER.debug("Trying to undeploy : " + deploymentID);			
-			undeploymentFutures.add(vertx.undeploy(deploymentID).onFailure(err -> {
-				LOGGER.debug("Couldn't undeploy " + deploymentID);
-			}));
-		}
+		}			
 		CompositeFuture.all(undeploymentFutures).mapEmpty().
 		onSuccess(v -> stopPromise.complete())
 		.onFailure(err -> {
@@ -162,12 +153,12 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private Future<Void> deployVerticles()
 	{
 		List<Future> deploymentFutures = new LinkedList<Future>();
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new ExperimentLanguageVerticle(SoileConfigLoader.getVerticleProperty("elangAddress")), soileOpts)));
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new QuestionnaireRenderVerticle(SoileConfigLoader.getVerticleProperty("questionnaireAddress")), soileOpts)));
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new CodeRetrieverVerticle(), soileOpts)));
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new ParticipantVerticle(partHandler,projHandler), soileOpts)));
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new TaskInformationverticle(), soileOpts)));
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new DataBundleGeneratorVerticle(client,projHandler,partHandler), soileOpts)));
+		vertx.deployVerticle(new ExperimentLanguageVerticle(SoileConfigLoader.getVerticleProperty("elangAddress")), soileOpts);
+		vertx.deployVerticle(new QuestionnaireRenderVerticle(SoileConfigLoader.getVerticleProperty("questionnaireAddress")), soileOpts);
+		vertx.deployVerticle(new CodeRetrieverVerticle(), soileOpts);
+		vertx.deployVerticle(new ParticipantVerticle(partHandler,projHandler), soileOpts);
+		vertx.deployVerticle(new TaskInformationverticle(), soileOpts);
+		vertx.deployVerticle(new DataBundleGeneratorVerticle(client,projHandler,partHandler), soileOpts);
 		return CompositeFuture.all(deploymentFutures).mapEmpty();
 
 	}	
@@ -192,15 +183,6 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		return RouterBuilder.create(vertx, config().getString("api"));
 	}
 
-	
-	private Future<String> addDeployedVerticle(Future<String> result)
-	{
-		result.onSuccess(deploymentID -> {
-			LOGGER.debug("Deploying verticle with id:  " + deploymentID );
-			deployedVerticles.add(deploymentID);
-		});
-		return result;
-	}
 	
 	public Router getRouter()
 	{
