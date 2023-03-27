@@ -71,6 +71,8 @@ public class ElementToDBProjectInstance extends DBProjectInstance{
 				JsonObject dbJson = new JsonObject();
 				dbJson.put("participants", new JsonArray());
 				dbJson.put("name", inputJson.getString("name"));
+				dbJson.put("description", inputJson.getString("description", "This is a new project"));
+				dbJson.put("shortDescription", inputJson.getString("shortDescription", "This is a new project"));
 				if(inputJson.containsKey("sourceUUID"))
 				{
 					dbJson.put("sourceUUID", inputJson.getValue("sourceUUID"));
