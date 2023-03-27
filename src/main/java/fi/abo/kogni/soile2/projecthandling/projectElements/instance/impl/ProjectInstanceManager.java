@@ -139,7 +139,7 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 																	  .add(new JsonObject().put("_id", new JsonObject().put("$in", projectInstanceIDs)))
 																	  );
 		LOGGER.debug("Looking for Project matching:\n" + Query.encodePrettily());
-		client.findWithOptions(instanceCollection,Query,new FindOptions().setFields(new JsonObject().put("_id",1).put("name", 1).put("description", 1).put("shortDescritpion", 1)))
+		client.findWithOptions(instanceCollection,Query,new FindOptions().setFields(new JsonObject().put("_id",1).put("name", 1).put("description", 1).put("shortDescription", 1)))
 		.onSuccess(items -> 
 				{
 					JsonArray result = new JsonArray();
