@@ -243,6 +243,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	{
 		builder.rootHandler(LoggerHandler.create());		
 		builder.rootHandler(SessionHandler.create(LocalSessionStore.create(vertx)));
+		//TODO: Make flexible and set up for all front-end components
 		builder.rootHandler(CorsHandler.create().addOrigin("http://localhost:5173")											
 												.allowedMethod(HttpMethod.POST)
 												.allowedMethod(HttpMethod.GET)

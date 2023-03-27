@@ -37,10 +37,14 @@ public class SoileSetupServerTest extends GitTest{
 				}
 				else
 				{
-					System.out.println("Test Successfull");
 					context.assertEquals(setupConf.getString("adminuser"), res.get(0).getString("username"));
-					
-					serverSetupAsync.complete();					
+					mongo_client.find(SoileConfigLoader.getDbCfg().getString("projectInstanceCollection"), new JsonObject())
+					.onSuccess(projectRes -> {
+						context.assertEquals(2,projectRes.size());	
+						System.out.println(projectRes);
+						serverSetupAsync.complete();	
+					})					
+					.onFailure(err -> context.fail(err));															
 				}
 			})
 			.onFailure(err -> context.fail(err));

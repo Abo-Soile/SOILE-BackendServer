@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -21,7 +22,7 @@ public class SetupServer extends SoileServerVerticle {
 
 	static final Logger LOGGER = LogManager.getLogger(SetupServer.class);
 	private String dataFolder;			
-	
+
 	public SetupServer(String dataFolder) {
 		super();
 		this.dataFolder = dataFolder;
@@ -31,12 +32,13 @@ public class SetupServer extends SoileServerVerticle {
 	public void start(Promise<Void> startPromise) throws Exception {		
 		soileRouter = new SoileRouteBuilding();
 		deployedVerticles = new ConcurrentLinkedQueue<>();	
-		
+
 		setupConfig() // As the very first step we need to set up the config so that it is available for all later steps.			
 		.compose(this::setupFolders)
 		.compose(this::deployVerticles) // deploy all necessary verticles for setup.
 		.compose(this::createAdminUser)
 		.compose(this::makeExampleProject)
+		.compose(this::startExampleProjects)
 		.onComplete(res ->
 		{
 			if(res.succeeded())
@@ -52,7 +54,7 @@ public class SetupServer extends SoileServerVerticle {
 			}
 		});
 	}	
-	
+
 	Future<Void> createAdminUser(Void unused)
 	{
 		Promise<Void> setupPromise = Promise.promise();
@@ -67,16 +69,16 @@ public class SetupServer extends SoileServerVerticle {
 			.onFailure(err -> setupPromise.fail(err));
 		})
 		.onFailure(err -> setupPromise.fail(err));
-		
+
 		return setupPromise.future();
 	}
-		
+
 	Future<JsonObject> createAdminUser(JsonObject config)
 	{
-		
+
 		Promise<JsonObject> accountCreatedPromise = Promise.promise();
 		JsonObject AdduserCommand = new JsonObject().put("username", config.getString("adminuser"))
-													.put("password",config.getString("adminpassword"));
+				.put("password",config.getString("adminpassword"));
 		LOGGER.info("Setting up user");
 		vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"addUser"), AdduserCommand )
 		.onSuccess(done -> {
@@ -90,7 +92,7 @@ public class SetupServer extends SoileServerVerticle {
 					LOGGER.info("User existed. Resetting password to selected password.");
 					vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"setPassword"), AdduserCommand )
 					.onSuccess(done -> {
-							accountCreatedPromise.complete(config);
+						accountCreatedPromise.complete(config);
 					})		
 					.onFailure(err2 -> accountCreatedPromise.fail(err2));
 				}
@@ -103,30 +105,93 @@ public class SetupServer extends SoileServerVerticle {
 			{
 				accountCreatedPromise.fail(err);
 			}
-			
+
 		});
-		
+
 		return accountCreatedPromise.future();
 	}
-	
+
 	Future<JsonObject> makeUserAdmin(JsonObject config)
 	{
 		JsonObject makeUserAdminCommand = new JsonObject().put("username", config.getString("adminuser"))
-													.put("role",Roles.Admin.toString())
-													.put("command", "setCommand");
-		
+				.put("role",Roles.Admin.toString())
+				.put("command", "setCommand");
+
 		LOGGER.info("Making user Admin");
 		return vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"permissionOrRoleChange"), makeUserAdminCommand )
-						.map(config);
+				.map(config);
 	}
 
-	
-	Future<Void> makeExampleProject(Void unused)
-	{		
-		return ObjectGenerator.createProject(MongoClient.create(vertx, SoileConfigLoader.getMongoCfg()), vertx, "ExampleProject", dataFolder).mapEmpty();				
+
+	Future<JsonObject> makeExampleProject(Void unused)
+	{				
+		LOGGER.info("Creating Example Project");
+		Promise<JsonObject> projectInfoPromise = Promise.promise();
+		MongoClient testClient = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg());
+		testClient.findOne(SoileConfigLoader.getCollectionName("projectCollection"), new JsonObject().put("name", "ExampleProject"), null)
+		.onSuccess(result -> {
+			if(result != null)
+			{
+				long time = 0;
+				String version = "";
+				for(int i = 0; i < result.getJsonArray("versions").size(); i++)
+				{
+					JsonObject cversion = result.getJsonArray("versions").getJsonObject(i); 
+					if(cversion.getLong("timestamp") > time)
+					{
+						time = cversion.getLong("timestamp");
+						version = cversion.getString("version");
+					}
+				}
+				projectInfoPromise.complete(new JsonObject().put("UUID", result.getString("_id")).put("version", version));
+
+			}
+			else
+			{
+				ObjectGenerator.createProject(MongoClient.create(vertx, SoileConfigLoader.getMongoCfg()), vertx, "ExampleProject", dataFolder)
+				.onSuccess(res -> projectInfoPromise.complete(res))
+				.onFailure(err -> projectInfoPromise.fail(err));
+			}
+		})
+		.onFailure(err -> projectInfoPromise.fail(err));
+
+		return projectInfoPromise.future(); 				
 	}
-	
-	
+
+	Future<Void> startExampleProjects(JsonObject projectInformation)
+	{	
+		Promise<Void> projectInstanceSetupPromise = Promise.promise();
+		MongoClient testClient = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg());
+		testClient.findOne(SoileConfigLoader.getCollectionName("projectInstanceCollection"), new JsonObject().put("name", "Example Private Project"), null)
+		.onSuccess(existing -> 
+		{
+			if(existing != null)
+			{
+				projectInstanceSetupPromise.complete();
+				return;
+			}
+
+			LOGGER.info("Starting private Project");
+			ProjectInstanceHandler instanceHandler = new ProjectInstanceHandler(MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg()), vertx);		
+			JsonObject privateProject = new JsonObject().put("private", true).put("name", "Example Private Project").put("shortcut","newShortcut");
+			JsonObject projectData = new JsonObject().put("sourceUUID", projectInformation.getValue("UUID")).put("version", projectInformation.getValue("version"));
+			instanceHandler.createProjectInstance(privateProject.mergeIn(projectData))
+			.onSuccess(instance -> {
+				LOGGER.info("Starting public Project");
+				JsonObject publicProject = new JsonObject().put("private", false).put("name", "Example Public Project").put("shortcut","newPublicShortcut");			
+				instanceHandler.createProjectInstance(publicProject.mergeIn(projectData)).mapEmpty();
+				projectInstanceSetupPromise.complete();
+			})
+			.onFailure(err -> projectInstanceSetupPromise.fail(err));
+		})
+		.onFailure(err -> projectInstanceSetupPromise.fail(err));
+
+		return projectInstanceSetupPromise.future();
+
+
+	}
+
+
 	public static void main(String[] args)
 	{
 		Vertx instance = Vertx.vertx();
@@ -139,7 +204,7 @@ public class SetupServer extends SoileServerVerticle {
 		{
 			dataFolder = null;
 		}
-		
+
 		instance.deployVerticle(new SetupServer(dataFolder))
 		.onSuccess(res -> {			
 			instance.close()
@@ -158,7 +223,7 @@ public class SetupServer extends SoileServerVerticle {
 			System.exit(1);
 		});
 	}
-	
 
-	
+
+
 }
