@@ -305,6 +305,9 @@
 						<configuration>
 							<mainClass>${setup.verticle}</mainClass>
 							<cleanupDaemonThreads>false</cleanupDaemonThreads>
+							<arguments>
+								<argument>${project.basedir}/src/test/resources</argument>
+							</arguments>
 						</configuration>
 					</execution>
 					
