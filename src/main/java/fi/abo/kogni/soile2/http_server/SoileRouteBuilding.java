@@ -16,6 +16,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthenticationBuilder;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileCookieCreationHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileFormLoginHandler;
+import fi.abo.kogni.soile2.http_server.auth.SoileSessionHandler;
 import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
 import fi.abo.kogni.soile2.http_server.routes.ElementRouter;
 import fi.abo.kogni.soile2.http_server.routes.ParticipationRouter;
@@ -227,27 +228,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	Future<RouterBuilder> addHandlers(RouterBuilder builder)
 	{
 		builder.rootHandler(LoggerHandler.create());
-		builder.rootHandler(new PlatformHandler() {
-			
-			@Override
-			public void handle(RoutingContext event) {
-				// TODO Auto-generated method stub
-				LOGGER.info("After Logger: " + event.session());
-				LOGGER.info("After Logger: " + event.user());
-				event.next();
-			}		
-		});
-		builder.rootHandler(SessionHandler.create(LocalSessionStore.create(vertx)));
-		builder.rootHandler(new PlatformHandler() {
-			
-			@Override
-			public void handle(RoutingContext event) {
-				// TODO Auto-generated method stub
-				LOGGER.info("After Session: " + event.session());
-				LOGGER.info("After Session: " +event.user());
-				event.next();
-			}		
-		});
+		builder.rootHandler(new SoileSessionHandler(LocalSessionStore.create(vertx)));
 		//TODO: Make flexible and set up for all front-end components
 		builder.rootHandler(CorsHandler.create().addOrigin("http://localhost:5173")											
 												.allowedMethod(HttpMethod.POST)
