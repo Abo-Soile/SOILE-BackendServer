@@ -233,7 +233,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 			public void handle(RoutingContext event) {
 				// TODO Auto-generated method stub
 				LOGGER.info("After Logger: " + event.session());
-				LOGGER.info("After Logger: " + event.user());	
+				LOGGER.info("After Logger: " + event.user());
+				event.next();
 			}		
 		});
 		builder.rootHandler(SessionHandler.create(LocalSessionStore.create(vertx)));
@@ -243,7 +244,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 			public void handle(RoutingContext event) {
 				// TODO Auto-generated method stub
 				LOGGER.info("After Session: " + event.session());
-				LOGGER.info("After Session: " +event.user());	
+				LOGGER.info("After Session: " +event.user());
+				event.next();
 			}		
 		});
 		//TODO: Make flexible and set up for all front-end components
