@@ -19,6 +19,7 @@ public class DebugRouter implements Handler<RoutingContext>{
 		LOGGER.debug("Request URL: " + event.request().absoluteURI());
 		LOGGER.debug("Request is ssl: " + event.request().isSSL());
 		LOGGER.debug("Request Method is : " + event.request().method());
+		LOGGER.debug("Current context user is: " + event.user());
 		if(event.body().available())
 		{
 			try {
