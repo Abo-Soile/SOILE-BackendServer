@@ -57,6 +57,7 @@ import io.vertx.ext.web.handler.ChainAuthHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.JWTAuthHandler;
 import io.vertx.ext.web.handler.LoggerHandler;
+import io.vertx.ext.web.handler.PlatformHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.openapi.RouterBuilderOptions;
@@ -226,14 +227,24 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	Future<RouterBuilder> addHandlers(RouterBuilder builder)
 	{
 		builder.rootHandler(LoggerHandler.create());
-		builder.rootHandler(ctx -> {
-			LOGGER.info(ctx.session());
-			LOGGER.info(ctx.user());
+		builder.rootHandler(new PlatformHandler() {
+			
+			@Override
+			public void handle(RoutingContext event) {
+				// TODO Auto-generated method stub
+				LOGGER.info("After Logger: " + event.session());
+				LOGGER.info("After Logger: " + event.user());	
+			}		
 		});
 		builder.rootHandler(SessionHandler.create(LocalSessionStore.create(vertx)));
-		builder.rootHandler(ctx -> {
-			LOGGER.info(ctx.session());
-			LOGGER.info(ctx.user());
+		builder.rootHandler(new PlatformHandler() {
+			
+			@Override
+			public void handle(RoutingContext event) {
+				// TODO Auto-generated method stub
+				LOGGER.info("After Session: " + event.session());
+				LOGGER.info("After Session: " +event.user());	
+			}		
 		});
 		//TODO: Make flexible and set up for all front-end components
 		builder.rootHandler(CorsHandler.create().addOrigin("http://localhost:5173")											
