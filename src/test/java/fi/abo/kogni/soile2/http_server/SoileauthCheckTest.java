@@ -6,7 +6,9 @@ import org.junit.runner.RunWith;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -73,6 +75,11 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 										{												
 											context.assertTrue(new JsonObject(authWorked.body().toString()).getBoolean("authenticated"));
 											context.assertEquals("testUser", new JsonObject(authWorked.body().toString()).getString("user"));
+											Async loggedOut = context.async();
+											testLogout(context, newCookieSession,401)
+											.onComplete(logout -> {
+												loggedOut.complete();
+											});
 										}
 										catch(Exception e)
 										{
@@ -96,6 +103,12 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 										{
 											context.assertTrue(new JsonObject(authWorked.body().toString()).getBoolean("authenticated"));
 											context.assertEquals("testUser", new JsonObject(authWorked.body().toString()).getString("user"));
+											Async loggedOut = context.async();
+											// Logout will have no effect if we supply a Token in the Header (which cannot be invalidated)
+											testLogout(context, newTokenSession, 200)
+											.onComplete(logout -> {
+												loggedOut.complete();
+											});
 										}
 										catch(Exception e)
 										{
@@ -129,8 +142,34 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 									}
 									failedTest.complete();											
 								});
+								Async sessionCookieTest = context.async();
+								session.get(port,"localhost","/test/auth").send().onComplete(authTest ->									
+								{
+									if(authTest.succeeded())
+									{
+										HttpResponse<Buffer> authWorked = authTest.result();
+										try
+										{
+											context.assertTrue(new JsonObject(authWorked.body().toString()).getBoolean("authenticated"));
+											context.assertEquals("testUser", new JsonObject(authWorked.body().toString()).getString("user"));
+											Async loggedOut = context.async();
+											testLogout(context, session,401)
+											.onComplete(logout -> {
+												loggedOut.complete();
+											});
+										}
+										catch(Exception e)
+										{
+											context.fail(e.getMessage());
+										}
+									}
+									else
+									{
+										context.fail("Couldn't complete auth test request");
+									}
+									sessionCookieTest.complete();											
+								});
 								login.complete();
-
 
 							}).onFailure( fail -> {
 								login.complete();
@@ -154,4 +193,34 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 	}  
 
 
+	private Future<Void> testLogout(TestContext context, WebClientSession session, int expectedResult)
+	{
+		Promise<Void> loggedOutPromise = Promise.promise(); 
+		
+		
+		session.post(port,"localhost","/logout").send().onComplete(logOut -> {
+			session.get(port,"localhost","/test/auth").send().onComplete(authTest ->
+			{
+				if(authTest.succeeded())
+				{
+					HttpResponse<Buffer> authWorked = authTest.result();
+					try
+					{
+						context.assertEquals(expectedResult,authWorked.statusCode());												
+					}
+					catch(Exception e)
+					{
+						context.fail(e.getMessage());
+					}
+				}
+				else
+				{
+					context.fail("Couldn't complete auth test request");
+				}
+				loggedOutPromise.complete();		
+				
+			});
+		});
+		return loggedOutPromise.future();
+	}
 }
