@@ -60,7 +60,7 @@ public class SoileRouter {
 	 * @param err
 	 * @param context
 	 */
-	void handleError(Throwable err, RoutingContext context)
+	public static void handleError(Throwable err, RoutingContext context)
 	{
 		LOGGER.error("Reporting error" , err);		
 		if(err instanceof ElementNameExistException)
@@ -94,7 +94,7 @@ public class SoileRouter {
 		sendError(context, 400, err.getMessage());
 	}
 	
-	void sendError(RoutingContext context, int code, String message)
+	static void sendError(RoutingContext context, int code, String message)
 	{		
 		LOGGER.error("Request errored. Returning code" + code + " with message " + message);
 		context.response()

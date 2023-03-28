@@ -82,15 +82,22 @@ public class SoileCookieCreationHandler {
 				}
 		return finishedCookie.future();
 	}
-	public void invalidateSessionCookie(RoutingContext ctx)
+	public Future<Void> invalidateSessionCookie(RoutingContext ctx)
 	{
 		Cookie sessionCookie = ctx.request().getCookie(SoileConfigLoader.getSessionProperty("sessionCookieID"));
-		String token = SoileCookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
-		String username = SoileCookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());		
-		eb.send(SoileCommUtils.getUserEventBusCommand("invalidateUserSession")
-			   ,new JsonObject().put("sessionID",token)
-				 				.put("username",username));		
-		
+		// if we have a Session cookie from Soile, delete it.
+		if(sessionCookie != null)
+		{
+			String token = SoileCookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
+			String username = SoileCookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());		
+			return eb.request(SoileCommUtils.getUserEventBusCommand("removeSession")
+				   ,new JsonObject().put("sessionID",token)
+					 				.put("username",username)).mapEmpty();
+		}
+		else
+		{
+			return Future.succeededFuture();
+		}
 	}
 	
 	private Future<Void> storeSessionCookie(RoutingContext ctx, User user)

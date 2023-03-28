@@ -20,6 +20,7 @@ import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
 import fi.abo.kogni.soile2.http_server.routes.ElementRouter;
 import fi.abo.kogni.soile2.http_server.routes.ParticipationRouter;
 import fi.abo.kogni.soile2.http_server.routes.ProjectInstanceRouter;
+import fi.abo.kogni.soile2.http_server.routes.SoileRouter;
 import fi.abo.kogni.soile2.http_server.routes.TaskRouter;
 import fi.abo.kogni.soile2.http_server.routes.UserRouter;
 import fi.abo.kogni.soile2.http_server.verticles.CodeRetrieverVerticle;
@@ -46,6 +47,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.User;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -246,12 +248,28 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	Future<RouterBuilder> setupLogin(RouterBuilder builder)
 	{
 		
-		SoileFormLoginHandler formLoginHandler = new SoileFormLoginHandler(new SoileAuthentication(client), "username", "password",new JWTTokenCreator(handler,vertx), cookieHandler);
+		SoileFormLoginHandler formLoginHandler = new SoileFormLoginHandler(new SoileAuthentication(client), "username", "password",new JWTTokenCreator(handler,vertx), cookieHandler);		
 		builder.operation("loginUser").handler(formLoginHandler::handle);
 		builder.operation("testAuth").handler(this::testAuth);
+		builder.operation("logout").handler(this::logout);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
+	
+	private void logout(RoutingContext ctx)
+	{
+		User currentUser = ctx.user();
+		if(currentUser != null)
+		{
+			ctx.session().destroy();
+			cookieHandler.invalidateSessionCookie(ctx)
+			.onSuccess(loggedOut -> {
+				ctx.response().setStatusCode(200)
+				.end();				
+			})
+			.onFailure(err -> SoileRouter.handleError(err, ctx));
+		}						
+	}
 	
 
 	

@@ -118,7 +118,24 @@ paths:
                   description: whether to create a cookie to remember the login for more than a session.. has to be "1" or "0"
                   example: "1"
         description: Login Data, containing username and password in the same schema as the User. 
-        
+  /logout:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+        - tokenAuth: []
+        - {} # Security on this endpoint is optional. Calling this in an authenticated manner will add a participant to the user. Calling it in a non authenticated manner will create a token that can be used for future authentication.
+      tags: 
+        - login 
+      summary: Logout, invalidating all cookies currently in use.
+      operationId: logout
+      description: Log out invalidating all cookies and sessions currently in use
+      responses:
+        '200':
+          description: Lgout successfull
+        '400':
+          description: bad input parameter
+                
   /user/list:
     get:
       security:
@@ -1141,6 +1158,9 @@ paths:
                 name: 
                   type: string
                   description: a name for the instance. Must be unique or it will fail.
+                description:
+                  type: string
+                  description: Some description about the project. Will be displayed at signup.
                 shortcut:
                   type: string
                   description: a shortcut that can be used to more easily access the contents.
@@ -2022,6 +2042,8 @@ components:
         anyOf:
           - $ref: '#/components/schemas/stringDBData'
           - $ref: '#/components/schemas/outputData'
+          - $ref: '#/components/schemas/arrayDBData'
+          - $ref: '#/components/schemas/objectDBData'
     fileData:
       type: array
       items:
@@ -2055,6 +2077,40 @@ components:
           description: The value of an output (within outputData this can only be a number)
         timestamp:
           type: number
+    objectDBData:
+      type: object
+      required: 
+        - value
+        - name
+      properties:
+        name:
+          type: string
+          description: the name of the output, the format is "[0-9A-Za-z]+"
+          example: "psychopyoutputs"
+        value:
+          type: object
+          description: The json object representing this result. 
+        timestamp:
+          type: number          
+    arrayDBData:
+      type: object
+      required: 
+        - value
+        - name
+      properties:
+        name:
+          type: string
+          description: the name of the output, the format is "[0-9A-Za-z]+"
+          example: "psychopyoutputs"
+        value:
+          type: array
+          items: 
+            oneOf:
+              - type: string
+              - type: object
+          description: The json array representing this data
+        timestamp:
+          type: number                    
     outputData:
       type: object
       required: 
@@ -2557,6 +2613,9 @@ components:
         version:
           type: string
           description: The version of the project project in the git
+        description: 
+          type: string
+          description: Some Description about the project (i.e. what it is about etc. Will be displayed on the Signup Page)
         participants:
           type: array
           items:
