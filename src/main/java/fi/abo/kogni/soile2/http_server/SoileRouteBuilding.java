@@ -400,7 +400,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("setPassword").handler(router::setPassword);
 		builder.operation("setRole").handler(router::setRole);
 		builder.operation("permissionChange").handler(router::permissionChange);
-		builder.operation("permissionOrRoleRequest").handler(router::permissionOrRoleRequest);				
+		builder.operation("permissionOrRoleRequest").handler(router::permissionOrRoleRequest);
+		builder.operation("getUserActiveProjects").handler(router::getUserActiveProjects);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	/**

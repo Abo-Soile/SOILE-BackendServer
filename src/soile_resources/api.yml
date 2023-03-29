@@ -306,6 +306,36 @@ paths:
         '410':
           $ref: '#/components/responses/UserDoesNotExist'
           
+  /user/activeprojects:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+        - tokenAuth: []
+      tags:
+        - user
+      summary: Get the active Projects of a authed user.
+      operationId: getUserActiveProjects
+      description: This POST will return a list of unique IDs for which the authenticated user has access.
+      responses:
+        '200':
+          description: "Request successfull, returning list of active projects"
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  type: string
+                  description: "a list of UUIDs of all projects the authenticated user is participating in."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/UserDoesNotExist'
+          
   /user/setpassword:
     post:
       security:

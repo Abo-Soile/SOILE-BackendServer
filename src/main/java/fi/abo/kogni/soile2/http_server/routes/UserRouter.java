@@ -270,6 +270,58 @@ public class UserRouter extends SoileRouter {
 		.onFailure(err -> handleError(err, context));
 	}
 	
+	public void getUserActiveProjects(RoutingContext context)
+	{
+		User currentUser = context.user();
+		if(currentUser == null)
+		{
+			handleError(new HttpException(401, "No user authenticated"), context);
+		}
+		else
+		{
+			if(currentUser.principal().containsKey("access_token"))
+			{				
+				
+				// token user, so lets look up the project
+				String participantToken = currentUser.principal().getString("access_token");
+				String projectID = participantToken.substring(participantToken.indexOf("$")+1);
+				LOGGER.debug("Found a token user returning the one project: " + projectID);
+				context.response()
+					.setStatusCode(200)
+					.putHeader("content-type","application/json")
+					.end(new JsonArray().add(projectID).encode());				
+			}
+			else
+			{
+				handleUserManagerCommand(context, "getParticipantsForUser", context.user().principal(), new MessageResponseHandler() {
+					
+					@Override
+					public void handle(JsonObject responseData, RoutingContext context) {
+						// TODO Auto-generated method stub
+						if(responseData.getString(SoileCommUtils.RESULTFIELD).equals(SoileCommUtils.SUCCESS))
+						{
+							LOGGER.debug(responseData.encodePrettily());
+							context.response().setStatusCode(200);
+							JsonArray response = new JsonArray();							
+							JsonArray data = responseData.getJsonArray("participantIDs", new JsonArray());
+							for(int i = 0; i < data.size(); ++i)
+							{
+								response.add(data.getJsonObject(i).getString("uuid"));
+							}
+								context.response()
+								.putHeader("content-type","application/json")
+								.end(response.encode());																		
+						}
+						else
+						{
+							handleError(new HttpException(500,"Something went wrong"), context);
+						}
+					}
+				});
+			}
+			
+		}
+	}
 	
 	public void createUser(RoutingContext context)
 	{

@@ -153,32 +153,6 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 	
-	/**
-	 * This test tests both starting and getting the list of running projects.
-	 * @param context
-	 */
-	@Test
-	public void testSessionUserCreation(TestContext context)
-	{
-		System.out.println("--------------------  Running Start Project test  ----------------------");    
-
-		WebClient unAuthedSession = createSession();
-
-		Async unAuthAsync = context.async();
-		System.out.println("------------------------Using an unauthed Session to retrieve information -----------------------------------");
-		GET(unAuthedSession, "/projectexec/list", null,null)
-		.onSuccess(listresponse -> {							
-			GET(unAuthedSession, "/projectexec/list", null,null)
-			.onSuccess(listresponse2 -> {
-
-				unAuthAsync.complete();
-			})
-			.onFailure(err -> context.fail(err));
-
-		})
-		.onFailure(err -> context.fail(err));
-	}
-	
 	
 	/**
 	 * This test tests both starting and getting the list of running projects.

@@ -10,6 +10,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.web.client.WebClientSession;
 import io.vertx.ext.web.handler.HttpException;
 
 public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
@@ -727,6 +728,80 @@ public void setRoleTest(TestContext context)
 	.onFailure(err -> context.fail(err));
 }
 
+/**
+ * This test tests both starting and getting the list of running projects.
+ * @param context
+ */
+@Test
+public void testGetActiveProjectList(TestContext context)
+{
+	System.out.println("--------------------  Testing active project list ----------------------");    
 
+	JsonObject projectExec = new JsonObject().put("private", false).put("name", "New Project").put("shortcut","newShortcut"); 
+	Async setupAsync = context.async();
+	WebClientSession nonAuthedSession = createSession(); 
+	createUserAndAuthedSession("Researcher", "pw", Roles.Researcher)
+	.onSuccess(authedSession -> {
+		createUserAndAuthedSession("Researcher2", "pw", Roles.Researcher)
+		.onSuccess(wrongSession -> {
+			WebObjectCreator.createProject(authedSession, "Testproject")
+			.onSuccess(projectData -> {
+				String projectID = projectData.getString("UUID");
+				String projectVersion = projectData.getString("version");
+				Async startAsync = context.async();
+				POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
+				.onSuccess(response -> {
+										
+					String id = response.bodyAsJsonObject().getString("projectID");
+					Async listAsync = context.async();
+					POST(authedSession, "/projectexec/" + id + "/signup", null,null)
+					.onSuccess(res -> {		
+						POST(authedSession, "/user/activeprojects", null, null)
+						.onSuccess(actives -> {
+							context.assertEquals(1,actives.bodyAsJsonArray().size());
+							listAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
+					})
+					.onFailure(err -> context.fail(err));
+					Async authedUserNoProjAsync = context.async();
+					POST(wrongSession, "/user/activeprojects", null, null)
+					.onSuccess(res -> {
+						context.assertTrue(res.bodyAsJsonArray().isEmpty());
+						authedUserNoProjAsync.complete();
+					});
+					Async nonAuthedAsync = context.async();
+					POST(nonAuthedSession, "/user/activeprojects", null, null)
+					.onSuccess(err -> {
+						context.fail("This should be unauthenticated, and fail.");
+					}).onFailure(unauthed -> {
+						context.assertEquals(401, ((HttpException)unauthed).getStatusCode());
+						POST(nonAuthedSession, "/projectexec/" + id + "/signup", null,null)
+						.onSuccess(res -> {						
+							System.out.println(res.bodyAsJsonObject());
+							String token = res.bodyAsJsonObject().getString("token");
+							nonAuthedSession.addHeader("Authorization", token);
+							POST(nonAuthedSession, "/user/activeprojects", null, null)
+							.onSuccess(actives -> {
+								context.assertEquals(1,actives.bodyAsJsonArray().size());
+								nonAuthedAsync.complete();
+							})
+							.onFailure(err -> context.fail(err));
+						})
+						.onFailure(err -> context.fail(err));
+					});
+					startAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));	
+				
+				setupAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));
+			
+		})
+		.onFailure(err -> context.fail(err));
+	})
+	.onFailure(err -> context.fail(err));
+}
 
 }

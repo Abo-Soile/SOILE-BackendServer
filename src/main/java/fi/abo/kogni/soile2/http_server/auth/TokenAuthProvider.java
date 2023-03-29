@@ -44,6 +44,16 @@ public class TokenAuthProvider {
 	{			
 		String pathID = context.pathParam("id");
 		String token = context.request().getHeader("Authorization");
+		LOGGER.debug(token);
+		if(token == null)
+		{
+			return Future.failedFuture("No Token");
+		}
+		String projectID = token.substring(token.indexOf("$")+1);
+		if(pathID == null)
+		{
+			pathID = projectID;
+		}
 		LOGGER.debug("Trying to retrieve TokenParticipant for Token: " + token);
 		Promise<User> userPromise = Promise.promise();
 		getID(pathID)

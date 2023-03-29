@@ -16,6 +16,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 
 /**
@@ -81,4 +82,5 @@ public class ParticipantVerticle extends AbstractVerticle {
 			message.fail(500, "Problems while deleting Participants");
 		});
 	}
+	
 }

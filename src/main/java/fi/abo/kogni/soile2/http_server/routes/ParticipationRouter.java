@@ -233,7 +233,7 @@ public class ParticipationRouter extends SoileRouter{
 
 		Promise<String> tokenPromise = Promise.<String>promise();
 		// if there is no user in the request, create a new token (and participant)
-		if(context.user().principal().isEmpty())
+		if(context.user()  == null || context.user().principal().isEmpty())
 		{		
 			partHandler.createTokenParticipant(project, token)
 			.onSuccess(participant -> {
@@ -275,7 +275,7 @@ public class ParticipationRouter extends SoileRouter{
 						.onSuccess( permissionAdded ->
 						{	
 							JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
-									.put("projectID", project.getID())
+									.put("projectInstanceID", project.getID())
 									.put("participantID", participant.getID());
 							eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInProject"),partData)
 							.onSuccess( participantAdded ->

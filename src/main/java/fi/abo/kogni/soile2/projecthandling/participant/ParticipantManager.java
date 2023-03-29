@@ -145,7 +145,8 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		Promise<Participant> participantPromise = Promise.<Participant>promise();
 		JsonObject defaultParticipant = getDefaultParticipantInfo(p.getID());
 		VertxContextPRNG rng = VertxContextPRNG.current();		
-		String Token = rng.nextString(35);		
+		// the token contains the project ID, to retrieve it from the token, if needed.
+		String Token = rng.nextString(35) + "$"+ p.getID();		
 		defaultParticipant.put("accessToken", usedToken);
 		client.save(participantCollection,defaultParticipant).onSuccess(res ->
 		{					
