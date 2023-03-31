@@ -1,4 +1,4 @@
-package fi.abo.kogni.soile2.http_server.routes;
+package fi.abo.kogni.soile2.utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,7 +56,7 @@ public class WebObjectCreator {
 	
 	// The session needs to already be authenticated have all headers set.
 	@SuppressWarnings("rawtypes")
-	static Future<JsonObject> createTask(WebClientSession webClient, String elementID)
+	public static Future<JsonObject> createTask(WebClientSession webClient, String elementID)
 	{
 		Promise<JsonObject> taskPromise = Promise.promise();
 		try
@@ -83,10 +83,7 @@ public class WebObjectCreator {
 					chain.add(chain.getLast().compose(newVersion -> {	
 						
 						return SoileWebTest.postTaskRessource(webClient, taskID, newVersion, resourceName,
-																new File(Path.of(TestDataFolder, resourceName).toString()) , MimeMapping.getMimeTypeForFilename(resourceName) )
-								.onSuccess(res -> {
-									System.out.println("Uploaded File " + resourceName + " for task " + elementID + " @ version: " + res);
-								});										
+																new File(Path.of(TestDataFolder, resourceName).toString()) , MimeMapping.getMimeTypeForFilename(resourceName) );										
 					}));
 					composite.add(chain.getLast());
 				}
@@ -182,7 +179,7 @@ public class WebObjectCreator {
 					{
 						partFutures.add(
 								createOrRetrieveTask(webClient, current.getString("name"))
-								.onSuccess(taskInstance -> {																																			
+								.onSuccess(taskInstance -> {		
 									taskInstance.put("instanceID", current.getString("instanceID"))
 									.put("next", current.getString("next", "end"))									
 									.put("filter", current.getString("filter",""))									

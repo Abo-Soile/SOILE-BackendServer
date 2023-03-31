@@ -92,8 +92,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		//LOGGER.debug("Reistering eventbus consumer for:" + getEventbusCommandString("checkUserSessionValid")); 
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession));
-		LOGGER.warn("Registering: " + getEventbusCommandString("makeUserParticipantInProject") );
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession));		
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("makeUserParticipantInProject"), this::makeUserParticipantInProject));		
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getParticipantForUserInProject"), this::getParticipantForUser));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getParticipantsForUser"), this::getParticipantsForUser));

@@ -64,9 +64,55 @@ public class SoileServerVerticle extends AbstractVerticle {
 	}
 	@Override
 	public void stop(Promise<Void> stopPromise) throws Exception {
-		LOGGER.debug("Stopping Server Verticle");		
-		stopPromise.complete();			
-
+		LOGGER.debug("Stopping Server Verticle");					
+		undeploy(stopPromise);
+	}	
+	
+	/**
+	 * Helper function to undeploy this verticle. Will undeploy all verticles created by this verticle, if they are still deployed
+	 * @param stopPromise
+	 * @throws Exception
+	 */
+	public void undeploy(Promise<Void> stopPromise) throws Exception {
+		LOGGER.debug("Stopping Server Verticle");
+		
+		List<Future> unDeploymentFutures = new LinkedList<Future>();		
+		for(String deploymentID : deployedVerticles)
+		{
+			LOGGER.debug("Trying to undeploy : " + deploymentID);
+			unDeploymentFutures.add(undeploy(deploymentID));
+		}
+		//deploymentFutures.add(Future.<String>future(promise -> vertx.deployVerticle("js:templateManager.js", opts, promise)));
+		CompositeFuture.all(unDeploymentFutures).mapEmpty()
+		.onSuccess(v -> {			
+			stopPromise.complete();			
+		})
+		.onFailure(err -> {
+			LOGGER.debug("Could not stop all child verticles");
+			stopPromise.complete();
+		});						
+	}	
+	// This ALWAYS eturns a succeeded future. 
+	private Future<Void> undeploy(String deploymentID) {
+		Promise<Void> undeployedFuture = Promise.promise();
+		vertx.undeploy(deploymentID).onFailure(err -> {
+			LOGGER.debug("Couldn't undeploy " + deploymentID);
+			if(err.getMessage().equals("Unk.complete()nown deployment"))
+			{
+				LOGGER.debug("Already undeployed");
+				undeployedFuture.complete();
+			}
+			else
+			{
+				undeployedFuture.fail(err);
+			}
+						
+		}).onSuccess(res -> {
+			LOGGER.debug("Successfully undeployed " + deploymentID);
+			undeployedFuture.complete();			
+		});
+		
+		return undeployedFuture.future();
 	}
 	
 	Future<String> addDeployedVerticle(Future<String> result, String target)
@@ -90,7 +136,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 		List<Future> deploymentFutures = new LinkedList<Future>();
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new SoileUserManagementVerticle(), opts), "UserManagement"));
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(soileRouter, opts), "Router"));
-		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), SoileConfigLoader.getServerProperty("soileGitFolder")), opts ), "Git"));
+		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new gitProviderVerticle(SoileConfigLoader.getServerProperty("gitVerticleAddress"), SoileConfigLoader.getServerProperty("soileGitFolder"),LOGGER.getLevel()), opts ), "Git"));
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new GitManagerVerticle(), opts ), "GitManager"));
 		deploymentFutures.add(addDeployedVerticle(vertx.deployVerticle(new PermissionVerticle(), opts ), "Permissions"));
 		return CompositeFuture.all(deploymentFutures).mapEmpty();

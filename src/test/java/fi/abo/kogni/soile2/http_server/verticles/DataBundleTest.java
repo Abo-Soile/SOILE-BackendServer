@@ -443,7 +443,6 @@ public class DataBundleTest extends ElementTester {
 
 	private void checkFileSame(String File1, String File2, TestContext context)
 	{
-		System.out.println(File1 + "//" +  File2);
 		try
 		{
 			File f = new File(File1);

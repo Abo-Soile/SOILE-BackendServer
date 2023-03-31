@@ -11,6 +11,7 @@ import org.junit.Test;
 import fi.abo.kogni.soile2.datamanagement.DataLakeManagerTest;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -113,7 +114,6 @@ public class TaskRouterTest extends SoileWebTest{
 						context.assertEquals(404, ((HttpException)response).getStatusCode());
 						WebObjectCreator.createOrRetrieveTask(authedSession, "FirstTask")
 						.onSuccess(taskWithImage -> {
-							System.out.println(taskWithImage.encodePrettily());
 							Async invalidAccess = context.async();						 
 							GET(wrongSession, "/task/" + taskWithImage.getString("UUID") + "/" + taskWithImage.getString("version") + "/execute/ImageData.jpg", null, null)
 							.onSuccess(failed -> {

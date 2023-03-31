@@ -27,6 +27,7 @@ public abstract class SoileVerticleTest extends MongoTest {
 	protected String gitDataLakeDir;
 	protected String resultDataLakeDir;
 	protected String gitDir;
+	protected String serverVerticleID;
 	@Override
 	public void runBeforeTests(TestContext context){
 		super.runBeforeTests(context);
@@ -34,8 +35,9 @@ public abstract class SoileVerticleTest extends MongoTest {
 		setupWebClient();
 		Async serverSetupAsync = context.async();		
 		vertx.deployVerticle(SoileServerVerticle.class.getName(), new DeploymentOptions())
-		.onSuccess(Void -> 
+		.onSuccess(serverID -> 
 		{
+			serverVerticleID = serverID; 
 			serverSetupAsync.complete();
 		})
 		.onFailure(err -> context.fail(err));
@@ -55,12 +57,24 @@ public abstract class SoileVerticleTest extends MongoTest {
 			.put("soileGitFolder", gitDir)
 			.put("soileGitDataLakeFolder", gitDataLakeDir)
 			.put("soileResultDirectory", resultDataLakeDir)
-			.put("taskLibraryFolder", new File(GitTest.class.getClassLoader().getResource("libdir/testlib.js").getPath()).getParent());
+			.put("taskLibraryFolder", new File(SoileVerticleTest.class.getClassLoader().getResource("libdir/testlib.js").getPath()).getParent());
 		}
 		catch(IOException e)
 		{
 			context.fail(e);
 		}
+	}
+	
+	@Override
+	public void finishUp(TestContext context)
+	{
+		Async undeployAsync = context.async();
+		vertx.undeploy(serverVerticleID)
+		.onSuccess(undeployed -> {
+			super.finishUp(context);
+			undeployAsync.complete();			
+		})
+		.onFailure(err -> context.fail(err));
 	}
 	
 	@After

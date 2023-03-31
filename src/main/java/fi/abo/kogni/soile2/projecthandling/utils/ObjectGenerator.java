@@ -59,8 +59,8 @@ public class ObjectGenerator {
 			if(datapath == null)
 			{
 				TaskDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
-				LOGGER.info(elementID + ":");
-				LOGGER.info(TaskDef.encodePrettily());
+				LOGGER.debug(elementID + ":");
+				LOGGER.debug(TaskDef.encodePrettily());
 				TaskCode = Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));
 				TestDataFolder = ObjectGenerator.class.getClassLoader().getResource("FileTestData").getPath();
 			}
@@ -188,6 +188,7 @@ public class ObjectGenerator {
 									.put("version", task.getVersion())
 									.put("filter", current.getString("filter",""))
 									.put("name", task.getName())
+									.put("codeType", task.getCodeType())
 									.put("outputs", current.getJsonArray("outputs",new JsonArray()));
 									elements.put(current.getString("instanceID"), new JsonObject().put("elementType", "task")
 											.put("data",taskInstance));
@@ -304,6 +305,7 @@ public class ObjectGenerator {
 								.put("version", task.getVersion())
 								.put("filter", current.getString("filter",""))
 								.put("name", task.getName())
+								.put("codeType", task.getCodeType())
 								.put("outputs", current.getJsonArray("outputs",new JsonArray()));
 								tasks.put(current.getString("name"), taskInstance);
 							})

@@ -141,6 +141,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		{
 			undeploymentFutures.add(consumer.unregister());
 		}			
+		
 		CompositeFuture.all(undeploymentFutures).mapEmpty().
 		onSuccess(v -> stopPromise.complete())
 		.onFailure(err -> {
