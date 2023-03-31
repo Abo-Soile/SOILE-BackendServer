@@ -57,7 +57,7 @@
 					   "version" : "1.0"}
 	},
 	"QuestionnaireExample": {							
-		"name": "ElangExp",
+		"name": "QuestionnaireExample",
 		"resources": ["Circle.png"],
 		"codeFile": "QuestionnaireExample.qmarkup",
 		"codeType" : { "language" : "qmarkup",
