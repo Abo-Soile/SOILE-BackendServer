@@ -52,10 +52,11 @@ paths:
               $ref: '#/components/schemas/RegistrationInformation'
         description: The data for the user to be created (at least, username, password and email are required necessary).          
   /test/auth:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
+        - tokenAuth: []
       tags: 
         - login 
       summary: Test whether the login is successfull, if successfull indicates the authenticated user.
@@ -137,7 +138,7 @@ paths:
           description: bad input parameter
                 
   /user/list:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -242,8 +243,8 @@ paths:
                 deleteFiles:
                   type: boolean
                   description: "Whether to delete all information for this user from any projects"
-  /user/info:
-    get:
+  /user/getinfo:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -275,6 +276,7 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/UserDoesNotExist'
+  /user/setinfo:          
     post:
       security:
         - cookieAuth: []
@@ -485,7 +487,7 @@ paths:
         '410':
           $ref: '#/components/responses/UserDoesNotExist'
   /task/list:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -508,7 +510,7 @@ paths:
         '403':
           description: User has no authorization to make this call 
   /task/{id}/list:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -581,7 +583,7 @@ paths:
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'           
   /task/create:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -924,7 +926,7 @@ paths:
 
 
   /project/list:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -948,7 +950,7 @@ paths:
           description: User has no authorization to make this call 
           
   /project/{id}/list:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -982,7 +984,7 @@ paths:
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'  
   /project/create:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -1096,7 +1098,7 @@ paths:
              $ref: '#/components/schemas/Project'
         description: In addition to the required fields, this submission also needs a tag. Otherwise the only way to obtain this version again is by providing the returned version id.
   /projectexec/{id}/data/list:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -1196,7 +1198,7 @@ paths:
                   description: a shortcut that can be used to more easily access the contents.
         description: This can be an empty body, then the whole data is requested.
   /projectexec/list:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -1388,7 +1390,7 @@ paths:
         '403':
           description: User has no authorization to make this call                     
   /projectexec/{id}/download/{downloadid}/check:  
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -1474,7 +1476,7 @@ paths:
               $ref: '#/components/schemas/TaskData'
               
   /projectexec/{id}/getcurrenttaskinfo:  
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -1525,7 +1527,7 @@ paths:
           description: User has no authorization to make this call
           
   /projectexec/{id}/getcurrenttaskid:  
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -1559,7 +1561,7 @@ paths:
         '406':
           description: User is finished.          
   
-  /run/{id}:  
+  /run/{taskID}/{version}/{id}:  
     get:
       security:
         - cookieAuth: []
@@ -1578,6 +1580,18 @@ paths:
           description: UUID of the Project instance or the shortcut for the project instance
           schema:
             type : string
+        - name: taskID
+          in: path
+          required: true
+          description: the UUID of the task that is being run
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: the version of the task that is being run
+          schema:
+            type : string          
       responses:
         '200':
           description: Success
@@ -1594,7 +1608,7 @@ paths:
         '406':
           description: User is finished.
 
-  /run/{id}/lib/*:  
+  /run/{id}/{taskID}/{version}/lib/*:  
     get:
       security:
         - cookieAuth: []
@@ -1611,9 +1625,21 @@ paths:
         - name: id
           in: path
           required: true
-          description: UUID of the Project instance
+          description: UUID of the Project instance or the shortcut for the project instance
           schema:
             type : string
+        - name: taskID
+          in: path
+          required: true
+          description: the UUID of the task that is being run
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: the version of the task that is being run
+          schema:
+            type : string             
       responses:
         '200':
           description: Success
@@ -1630,7 +1656,7 @@ paths:
         '406':
           description: User is finished.
 
-  /run/{id}/*:
+  /run/{id}/{taskID}/{version}/*:
     get:
       security:
         - cookieAuth: []
@@ -1647,9 +1673,21 @@ paths:
         - name: id
           in: path
           required: true
-          description: UUID of the Project instance
+          description: UUID of the Project instance or the shortcut for the project instance
           schema:
             type : string
+        - name: taskID
+          in: path
+          required: true
+          description: the UUID of the task that is being run
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: the version of the task that is being run
+          schema:
+            type : string          
       responses:
         '200':
           description: Success
@@ -1805,7 +1843,7 @@ paths:
 
             
   /experiment/list:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -1830,7 +1868,7 @@ paths:
           description: User has no authorization to make this call 
           
   /experiment/{id}/list:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -1864,7 +1902,7 @@ paths:
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'
   /experiment/create:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []

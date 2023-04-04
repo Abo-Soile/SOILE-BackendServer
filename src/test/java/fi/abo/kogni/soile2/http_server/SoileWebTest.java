@@ -174,7 +174,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 
 	public static Future<JsonObject> createNewElement(WebClient webClient, String elementAPI, JsonObject queryParameters)
 	{
-		return GET(webClient, "/" + elementAPI + "/create", queryParameters, null).map(res -> { return res.bodyAsJsonObject(); });				
+		return POST(webClient, "/" + elementAPI + "/create", queryParameters, null).map(res -> { return res.bodyAsJsonObject(); });				
 	}
 
 	public static Future<JsonObject> getElement(WebClient webClient, String elementAPI, String elementID, String Version)
@@ -184,12 +184,12 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 
 	public static Future<JsonArray> getElementList(WebClient webClient, String elementAPI)
 	{
-		return GET(webClient, "/" + elementAPI + "/list", null, null).map(res -> { return res.bodyAsJsonArray(); });				
+		return POST(webClient, "/" + elementAPI + "/list", null, null).map(res -> { return res.bodyAsJsonArray(); });				
 	}
 
 	public static Future<JsonArray> getElementVersions(WebClient webClient, String elementAPI, String elementID)
 	{
-		return GET(webClient, "/" + elementAPI + "/" + elementID + "/list", null, null).map(res -> { return res.bodyAsJsonArray(); });				
+		return POST(webClient, "/" + elementAPI + "/" + elementID + "/list", null, null).map(res -> { return res.bodyAsJsonArray(); });				
 	}
 
 

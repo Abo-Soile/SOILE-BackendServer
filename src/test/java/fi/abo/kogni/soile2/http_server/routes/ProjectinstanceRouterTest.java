@@ -43,7 +43,7 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 					.onSuccess(response -> {
 						Async listAsync = context.async();
 						String id = response.bodyAsJsonObject().getString("projectID");
-						GET(authedSession, "/projectexec/list", null,null)
+						POST(authedSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 							context.assertEquals(id, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
@@ -52,7 +52,7 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 						.onFailure(err -> context.fail(err));
 						Async emptyListAsync = context.async();
 						
-						GET(wrongSession, "/projectexec/list", null,null)
+						POST(wrongSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(0, listresponse.bodyAsJsonArray().size());
 							emptyListAsync.complete();
@@ -104,7 +104,7 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 						.onSuccess(response2 -> {
 						Async listAsync = context.async();
 						String id2 = response2.bodyAsJsonObject().getString("projectID");
-						GET(authedSession, "/projectexec/list", null,null)
+						POST(authedSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(2, listresponse.bodyAsJsonArray().size());
 							List<String> uuids = new LinkedList<>();
@@ -119,7 +119,7 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 						.onFailure(err -> context.fail(err));
 						Async emptyListAsync = context.async();
 						
-						GET(wrongSession, "/projectexec/list", null,null)
+						POST(wrongSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 							context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
@@ -130,7 +130,7 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 						
 						Async unAuthAsync = context.async();
 						
-						GET(unAuthedSession, "/projectexec/list", null,null)
+						POST(unAuthedSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 							context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
@@ -181,7 +181,7 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 						Async listAsync = context.async();
 						Async emptyListAsync = context.async();
 						String id = response.bodyAsJsonObject().getString("projectID");
-						GET(authedSession, "/projectexec/list", null,null)
+						POST(authedSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 							context.assertEquals(id, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
@@ -209,7 +209,7 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 						})
 						.onFailure(err -> context.fail(err));
 						
-						GET(wrongSession, "/projectexec/list", null,null)
+						POST(wrongSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(0, listresponse.bodyAsJsonArray().size());
 							emptyListAsync.complete();

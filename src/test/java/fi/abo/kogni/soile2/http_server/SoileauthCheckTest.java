@@ -66,7 +66,7 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 								Async tokenTest = context.async();
 								Async failedTest = context.async();
 								// test that cookie is working
-								newCookieSession.get(port,"localhost","/test/auth").send().onComplete(authTest ->									
+								newCookieSession.post(port,"localhost","/test/auth").send().onComplete(authTest ->									
 								{
 									if(authTest.succeeded())
 									{
@@ -94,7 +94,7 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 								});
 								// test that token is working
 								newTokenSession.addHeader("Authorization", "Bearer "+ token );
-								newTokenSession.get(port,"localhost","/test/auth").send().onComplete(authTest ->									
+								newTokenSession.post(port,"localhost","/test/auth").send().onComplete(authTest ->									
 								{
 									if(authTest.succeeded())
 									{
@@ -122,7 +122,7 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 									tokenTest.complete();											
 								});
 								// test that no cookie and token fails.
-								unregisteredSession.get(port,"localhost","/test/auth").send().onComplete(authTest ->									
+								unregisteredSession.post(port,"localhost","/test/auth").send().onComplete(authTest ->									
 								{
 									if(authTest.succeeded())
 									{
@@ -143,7 +143,7 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 									failedTest.complete();											
 								});
 								Async sessionCookieTest = context.async();
-								session.get(port,"localhost","/test/auth").send().onComplete(authTest ->									
+								session.post(port,"localhost","/test/auth").send().onComplete(authTest ->									
 								{
 									if(authTest.succeeded())
 									{
@@ -199,7 +199,7 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 		
 		
 		session.post(port,"localhost","/logout").send().onComplete(logOut -> {
-			session.get(port,"localhost","/test/auth").send().onComplete(authTest ->
+			session.post(port,"localhost","/test/auth").send().onComplete(authTest ->
 			{
 				if(authTest.succeeded())
 				{

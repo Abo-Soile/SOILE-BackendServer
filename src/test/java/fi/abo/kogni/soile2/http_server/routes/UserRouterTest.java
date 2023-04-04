@@ -30,14 +30,14 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 				WebObjectCreator.createExperiment(usersession, "TestExperiment2")
 				.onSuccess(experimentInfo -> {
 					Async invalidAsync = context.async();
-					GET(usersession, "/user/getaccess",new JsonObject().put("username", "Admin"),null)
+					POST(usersession, "/user/getaccess",new JsonObject().put("username", "Admin"),null)
 					.onSuccess(res -> context.fail("Should not be allowed"))
 					.onFailure(err -> {
 						context.assertEquals(403, ((HttpException)err).getStatusCode());
 						invalidAsync.complete();
 					});
 					Async adminCheck = context.async();
-					GET(adminsession, "/user/getaccess",new JsonObject().put("username", "TestUser"),null)
+					POST(adminsession, "/user/getaccess",new JsonObject().put("username", "TestUser"),null)
 					.onSuccess(response -> {
 						JsonObject data =  response.bodyAsJsonObject();
 						context.assertEquals(Roles.Researcher.toString(), data.getString("role"));
@@ -51,7 +51,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 					})
 					.onFailure(err -> context.fail(err));
 					Async userCheck = context.async();
-					GET(usersession, "/user/getaccess",new JsonObject().put("username", "TestUser"),null)
+					POST(usersession, "/user/getaccess",new JsonObject().put("username", "TestUser"),null)
 					.onSuccess(response -> {
 						JsonObject data =  response.bodyAsJsonObject();
 						context.assertEquals(Roles.Researcher.toString(), data.getString("role"));
@@ -152,7 +152,7 @@ public void listUsersTest(TestContext context)
 		.compose((Void) -> {return createUser(vertx, "User2", "pw2",Roles.Participant);})
 		.onSuccess(usersCreated -> {
 			Async defaultListAsync = context.async(); 
-			GET(authedSession,"/user/list", null, null)
+			POST(authedSession,"/user/list", null, null)
 			.onSuccess(response -> {
 				JsonArray users = response.bodyAsJsonArray();
 				context.assertEquals(3, users.size());
@@ -178,18 +178,18 @@ public void listUsersTest(TestContext context)
 				defaultListAsync.complete();
 			});
 			Async searchList = context.async();
-			GET(authedSession,"/user/list", new JsonObject().put("searchString", "User"), null)
+			POST(authedSession,"/user/list", new JsonObject().put("searchString", "User"), null)
 			.onSuccess(response -> {
 				JsonArray users = response.bodyAsJsonArray();
 				context.assertEquals(2, users.size());
 				searchList.complete();
 			});
 			Async skipAndLimit = context.async();
-			GET(authedSession,"/user/list", new JsonObject().put("limit", 2), null)
+			POST(authedSession,"/user/list", new JsonObject().put("limit", 2), null)
 			.onSuccess(response -> {
 				JsonArray users = response.bodyAsJsonArray();
 				context.assertEquals(2, users.size());
-				GET(authedSession,"/user/list", new JsonObject().put("skip",2).put("limit", 2), null)
+				POST(authedSession,"/user/list", new JsonObject().put("skip",2).put("limit", 2), null)
 				.onSuccess(response2 -> {
 					JsonArray users2 = response2.bodyAsJsonArray();
 					context.assertEquals(1, users2.size());
@@ -213,7 +213,7 @@ public void listUsersTest(TestContext context)
 			createAuthedSession("User1", "pw1")
 			.onSuccess(nonAdminSession -> {
 				Async defaultListAsync2 = context.async(); 
-				GET(nonAdminSession,"/user/list", null, null)
+				POST(nonAdminSession,"/user/list", null, null)
 				.onSuccess(response -> {
 					JsonArray users = response.bodyAsJsonArray();
 					context.assertEquals(3, users.size());						
@@ -229,18 +229,18 @@ public void listUsersTest(TestContext context)
 					defaultListAsync2.complete();
 				});
 				Async searchList2 = context.async();
-				GET(nonAdminSession,"/user/list", new JsonObject().put("searchString", "User"), null)
+				POST(nonAdminSession,"/user/list", new JsonObject().put("searchString", "User"), null)
 				.onSuccess(response -> {
 					JsonArray users = response.bodyAsJsonArray();
 					context.assertEquals(2, users.size());
 					searchList2.complete();
 				});
 				Async skipAndLimit2 = context.async();
-				GET(nonAdminSession,"/user/list", new JsonObject().put("limit", 2), null)
+				POST(nonAdminSession,"/user/list", new JsonObject().put("limit", 2), null)
 				.onSuccess(response -> {
 					JsonArray users = response.bodyAsJsonArray();
 					context.assertEquals(2, users.size());
-					GET(nonAdminSession,"/user/list", new JsonObject().put("skip",2).put("limit", 2), null)
+					POST(nonAdminSession,"/user/list", new JsonObject().put("skip",2).put("limit", 2), null)
 					.onSuccess(response2 -> {
 						JsonArray users2 = response2.bodyAsJsonArray();
 						context.assertEquals(1, users2.size());
@@ -351,7 +351,7 @@ public void removeUserTest(TestContext context)
 							POST(adminsession,"/user/delete",null,new JsonObject().put("username", "Admin"))
 							.onSuccess(adminDel -> {
 								context.assertEquals(202,adminDel.statusCode());
-								GET(nonAdminsession,"/user/list",null,null)
+								POST(nonAdminsession,"/user/list",null,null)
 								.onSuccess(response -> {
 									context.assertEquals(1,response.bodyAsJsonArray().size());
 									testAsync.complete();	
@@ -404,7 +404,7 @@ public void setUserInfoTest(TestContext context)
 	.onSuccess(adminsession -> {
 		createUserAndAuthedSession("NonAdmin", "password", Roles.Researcher)
 		.onSuccess(nonAdminsession -> {
-			POST(nonAdminsession,"/user/info",null,invaliduserData)
+			POST(nonAdminsession,"/user/setinfo",null,invaliduserData)
 			.onSuccess(err -> {
 				context.fail("This should not be possible");
 			})
@@ -413,7 +413,7 @@ public void setUserInfoTest(TestContext context)
 				context.assertEquals(403, ((HttpException)err).getStatusCode());
 				Async testNonExistentUser = context.async();
 
-				POST(adminsession,"/user/info",null,invaliduserData)
+				POST(adminsession,"/user/setinfo",null,invaliduserData)
 				.onSuccess(invalid -> {
 					context.fail("This should not be possible");
 
@@ -424,14 +424,14 @@ public void setUserInfoTest(TestContext context)
 				});
 				Async firstChecks = context.async();
 				// Self Setting test
-				POST(nonAdminsession,"/user/info",null,validuserData)
+				POST(nonAdminsession,"/user/setinfo",null,validuserData)
 				.onSuccess(succ -> {
 					context.assertEquals(200, succ.statusCode());
 					JsonObject updatedData = succ.bodyAsJsonObject();
 					context.assertEquals(validuserData.getValue("fullname"), updatedData.getValue("fullname"));
 					context.assertEquals(validuserData.getValue("email"), updatedData.getValue("email"));
 					// now we test a reject for same email
-					POST(adminsession,"/user/info",null,invalidAdminData)
+					POST(adminsession,"/user/setinfo",null,invalidAdminData)
 					.onSuccess(oops -> {
 						context.fail("This should not be possible, same email.");
 					})
@@ -443,7 +443,7 @@ public void setUserInfoTest(TestContext context)
 				.onFailure(err2 -> context.fail(err));
 				Async otherChecks = context.async();
 				// Test admin changing itself.
-				POST(adminsession,"/user/info",null,validAdminData)
+				POST(adminsession,"/user/setinfo",null,validAdminData)
 				.onSuccess(succ -> {
 					context.assertEquals(200, succ.statusCode());
 					JsonObject updatedData = succ.bodyAsJsonObject();
@@ -483,7 +483,7 @@ public void setUserInfoWithRoleTest(TestContext context)
 		createUserAndAuthedSession("NonAdmin", "password", Roles.Researcher)
 		.onSuccess(nonAdminsession -> {
 			Async nonAdminTest = context.async();
-			POST(nonAdminsession,"/user/info",null,validUserData)
+			POST(nonAdminsession,"/user/setinfo",null,validUserData)
 			.onSuccess(err -> {
 				context.fail("This should not be possible");
 			})
@@ -493,16 +493,16 @@ public void setUserInfoWithRoleTest(TestContext context)
 				nonAdminTest.complete();
 			});
 			Async AdminTest = context.async();
-			POST(adminsession,"/user/info",null,invalidUserData)
+			POST(adminsession,"/user/setinfo",null,invalidUserData)
 			.onSuccess(err -> {
 				context.fail("This should not be possible");
 			})
 			.onFailure(failed -> {
 				// non admin will just be denied this request.
 				context.assertEquals(400, ((HttpException)failed).getStatusCode());
-				POST(adminsession,"/user/info",null,validUserData)
+				POST(adminsession,"/user/setinfo",null,validUserData)
 				.onSuccess(posted -> {
-					GET(adminsession,"/user/info",new JsonObject().put("username", "NonAdmin"),null)
+					POST(adminsession,"/user/getinfo",new JsonObject().put("username", "NonAdmin"),null)
 					.onSuccess(res -> {
 						context.assertEquals(res.bodyAsJsonObject().getString("role"), Roles.Participant.toString());
 						AdminTest.complete();	
@@ -539,28 +539,28 @@ public void getUserInfoTest(TestContext context)
 		.onSuccess(nonAdminsession -> {
 			Async testOriginalData = context.async();
 			Async testnewData = context.async();
-			GET(adminsession,"/user/info",userrequest,null)
+			POST(adminsession,"/user/getinfo",userrequest,null)
 			.onSuccess(response -> {
 				JsonObject res = response.bodyAsJsonObject();
 				context.assertEquals("", res.getValue("email"));
 				context.assertEquals("", res.getValue("fullname"));
 				context.assertNull(res.getValue("password"));				
-				GET(nonAdminsession,"/user/info",userrequest,null)
+				POST(nonAdminsession,"/user/getinfo",userrequest,null)
 				.onSuccess(userRes -> {
 					JsonObject res2 = userRes.bodyAsJsonObject();
 					context.assertEquals("", res2.getValue("email"));
 					context.assertEquals("", res2.getValue("fullname"));
 					context.assertNull(res2.getValue("password"));
 					testOriginalData.complete();
-					POST(adminsession,"/user/info",null,validuserData)
+					POST(adminsession,"/user/setinfo",null,validuserData)
 					.onSuccess(success -> {
-						GET(adminsession,"/user/info",userrequest,null)
+						POST(adminsession,"/user/getinfo",userrequest,null)
 						.onSuccess(adminUserData -> {
 							JsonObject res3 = adminUserData.bodyAsJsonObject();
 							context.assertEquals(validuserData.getValue("email"), res3.getValue("email"));
 							context.assertEquals(validuserData.getValue("fullname"), res3.getValue("fullname"));
 							context.assertNull(res3.getValue("password"));
-							GET(nonAdminsession,"/user/info",userrequest,null)
+							POST(nonAdminsession,"/user/getinfo",userrequest,null)
 							.onSuccess(userRes2 -> {
 								JsonObject res4 = userRes2.bodyAsJsonObject();
 								context.assertEquals(validuserData.getValue("email"), res4.getValue("email"));
@@ -698,7 +698,7 @@ public void setRoleTest(TestContext context)
 			.onSuccess(roleSet-> 
 			{
 
-				GET(adminsession,"/user/info", new JsonObject().put("username", "TestUser"), null)
+				POST(adminsession,"/user/getinfo", new JsonObject().put("username", "TestUser"), null)
 				.onSuccess(res -> {
 					JsonObject result = res.bodyAsJsonObject();
 					context.assertEquals(Roles.Participant.toString(),result.getValue("role"));

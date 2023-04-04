@@ -24,11 +24,11 @@ public class BasicWebTests extends SoileWebTest {
 
 		Async unAuthAsync = context.async();
 		System.out.println("------------------------Using an unauthed Session to retrieve information -----------------------------------");
-		GET(unAuthedSession, "/projectexec/list", null,null)
+		POST(unAuthedSession, "/projectexec/list", null,null)
 		.onSuccess(listresponse -> {							
-			GET(unAuthedSession, "/projectexec/list", null,null)
+			POST(unAuthedSession, "/projectexec/list", null,null)
 			.onSuccess(listresponse2 -> {
-				GET(unAuthedSession, "/test/auth", null,null)
+				POST(unAuthedSession, "/test/auth", null,null)
 				.onSuccess(authResponse -> {
 					context.fail("Should be unauthorized");					
 				})
