@@ -467,6 +467,8 @@ public class ParticipationRouter extends SoileRouter{
 	public void getResourceForExecution(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");
+		String taskInstanceID = context.pathParam("taskID");
+		String pathPrefix = requestedInstanceID + "/" + taskInstanceID; 
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
 			loadProject(requestedInstanceID)
@@ -494,7 +496,8 @@ public class ParticipationRouter extends SoileRouter{
 						// will normalize and handle all paths as UNIX paths
 						String treatedPath = HttpUtils.removeDots(uriDecodedPath.replace('\\', '/'));
 						// +1 because we need to ignore the first / 
-						String path = treatedPath.substring(treatedPath.indexOf(requestedInstanceID)+requestedInstanceID.length()+1);
+						String path = treatedPath.substring(treatedPath.indexOf(pathPrefix)+pathPrefix.length()+1);
+						LOGGER.info("Requested path is: " + path);
 						// For now we just add the "T"
 						GitFile targetResource = new GitFile(path, "T" + currentTask.getUUID(),currentTask.getVersion());
 						resourceHandler.returnResource(context, targetResource);						

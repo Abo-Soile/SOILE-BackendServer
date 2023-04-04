@@ -415,8 +415,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		// Order is important here! the /lib/* needs 
 		// to match before /* because /* matches any /*/lib route as well and libs need to be loaded from the lib dir.
 		// This actually means we need to reject any resource upload that starts with /lib!
-		router.route(HttpMethod.GET, "/run/:id/lib/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getLib);});
-		router.route(HttpMethod.GET, "/run/:id/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getResourceForExecution);});
+		router.route(HttpMethod.GET, "/run/:id/:taskID/lib/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getLib);});
+		router.route(HttpMethod.GET, "/run/:id/:taskID/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getResourceForExecution);});
 		router.route(HttpMethod.GET, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::getResource);		
 		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::postResource);
 		router.route(HttpMethod.GET, "/task/:id/:version/execute").handler(userAuth).handler(taskRouter::getCompiledTask);

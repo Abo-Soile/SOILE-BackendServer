@@ -362,37 +362,41 @@ public class ParticipationRouterTest extends SoileWebTest{
 						context.assertEquals(404, ((HttpException)response).getStatusCode());
 						submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 						.onSuccess(submitted -> {
-							GET(tempSession, "/run/testProject" + "/" + inforesponse.bodyAsJsonObject().getString("id") +"/ImageData.jpg", null, null)
-							.onSuccess(dataResponse ->  {
-								String targetFileName = tmpDir + File.separator + "taskRouter.out"; 
-								vertx.fileSystem().writeFile(targetFileName , dataResponse.bodyAsBuffer())
-								.onSuccess(res -> {
-									// compare that the file is the same as the original one.
-									try {
-										context.assertTrue( 
-												areFilesEqual(
-														new File(targetFileName),
-														new File(DataLakeManagerTest.class.getClassLoader().getResource("FileTestData/ImageData.jpg").getPath())
-														)
-												);
-										testRunResource.complete();
+							POST(tempSession,"/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+							.onSuccess(inforesponse2 -> {
+								GET(tempSession, "/run/testProject" + "/" + inforesponse2.bodyAsJsonObject().getString("id") +"/ImageData.jpg", null, null)
+								.onSuccess(dataResponse ->  {
+									String targetFileName = tmpDir + File.separator + "taskRouter.out"; 
+									vertx.fileSystem().writeFile(targetFileName , dataResponse.bodyAsBuffer())
+									.onSuccess(res -> {
+										// compare that the file is the same as the original one.
+										try {
+											context.assertTrue( 
+													areFilesEqual(
+															new File(targetFileName),
+															new File(DataLakeManagerTest.class.getClassLoader().getResource("FileTestData/ImageData.jpg").getPath())
+															)
+													);
+											testRunResource.complete();
 
-									}
-									catch(IOException e)
-									{
-										context.fail(e);
-									}
-								})					 
+										}
+										catch(IOException e)
+										{
+											context.fail(e);
+										}
+									})					 
+									.onFailure(err -> context.fail(err));
+								})
 								.onFailure(err -> context.fail(err));
-							})
+							})					 
 							.onFailure(err -> context.fail(err));
 
 						})
 						.onFailure(err -> context.fail(err));
-					})
-					.onFailure(err -> context.fail(err));
+					});					
 
-				});
+				})
+				.onFailure(err -> context.fail(err));
 			})
 			.onFailure(err -> context.fail(err));
 		})

@@ -458,7 +458,7 @@ paths:
         description: With command set to setCommand, body needs both permissions and roles and will replace permissions, if the requestor has the permissions to do so.
                      With add/delete Command only the added or deleted Roles/permissions need to be supplied.
   /user/getaccess:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
@@ -1516,6 +1516,7 @@ paths:
                         type: string
                         description: the version of the code type.
                         example: "1.0"
+                  
                   finished:
                     type: boolean
                     description: Whether this project is finished. clear indicator that this is finished in addition to the next property being undefined.
@@ -1561,7 +1562,7 @@ paths:
         '406':
           description: User is finished.          
   
-  /run/{taskID}/{version}/{id}:  
+  /run/{id}/{taskID}:  
     get:
       security:
         - cookieAuth: []
@@ -1586,12 +1587,6 @@ paths:
           description: the UUID of the task that is being run
           schema:
             type : string
-        - name: version
-          in: path
-          required: true
-          description: the version of the task that is being run
-          schema:
-            type : string          
       responses:
         '200':
           description: Success
@@ -1608,7 +1603,7 @@ paths:
         '406':
           description: User is finished.
 
-  /run/{id}/{taskID}/{version}/lib/*:  
+  /run/{id}/{taskID}/lib/*:  
     get:
       security:
         - cookieAuth: []
@@ -1634,12 +1629,7 @@ paths:
           description: the UUID of the task that is being run
           schema:
             type : string
-        - name: version
-          in: path
-          required: true
-          description: the version of the task that is being run
-          schema:
-            type : string             
+        
       responses:
         '200':
           description: Success
@@ -1656,7 +1646,7 @@ paths:
         '406':
           description: User is finished.
 
-  /run/{id}/{taskID}/{version}/*:
+  /run/{id}/{taskID}/*:
     get:
       security:
         - cookieAuth: []
@@ -1682,12 +1672,6 @@ paths:
           description: the UUID of the task that is being run
           schema:
             type : string
-        - name: version
-          in: path
-          required: true
-          description: the version of the task that is being run
-          schema:
-            type : string          
       responses:
         '200':
           description: Success
