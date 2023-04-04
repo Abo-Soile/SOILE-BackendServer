@@ -318,7 +318,7 @@ public class ParticipationRouter extends SoileRouter{
 						context.response()
 						.setStatusCode(200)	
 						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-						.end(new JsonObject().put("finished", true).put("codeType", "").encode());
+						.end(new JsonObject().put("finished", true).put("codeType", "").put("taskID","").encode());
 					}					
 					else
 					{
