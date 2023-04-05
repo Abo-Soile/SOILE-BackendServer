@@ -1,6 +1,8 @@
 package fi.abo.kogni.soile2;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,8 +23,10 @@ import de.flapdoodle.embed.process.runtime.Network;
 import de.flapdoodle.reverse.TransitionWalker.ReachedState;
 import de.flapdoodle.reverse.transitions.Start;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -33,16 +37,16 @@ public abstract class MongoTest extends SoileBaseTest {
 	
 	
 	static Mongod MONGO;
-	static ReachedState<RunningMongodProcess> state;
-	static int MONGO_PORT = 27022;
+	static ReachedState<RunningMongodProcess> state;	
 	public MongoClient mongo_client;
 	
 	@BeforeClass
 	public static void initialize() throws IOException {
 		Logger mongologger = Logger.getLogger("org.mongodb.driver");
 		mongologger.setLevel(Level.SEVERE);
-		//MONGO = Mongod.builder();
-		Net net = Net.of(Network.getLocalHost().getHostAddress(), MONGO_PORT, Network.localhostIsIPv6());				
+		JsonObject config = new JsonObject(Files.readString(Paths.get(MongoTest.class.getClassLoader().getResource("soile_config.json").getPath())));
+		
+		Net net = Net.of(Network.getLocalHost().getHostAddress(), config.getJsonObject("mongo").getInteger("port"), Network.localhostIsIPv6());				
 		MONGO = Mongod.builder()				
 				.net(Start.to(Net.class).initializedWith(net))
 				.processOutput(Start.to(ProcessOutput.class).initializedWith(ProcessOutput.silent()).withTransitionLabel("no output"))
