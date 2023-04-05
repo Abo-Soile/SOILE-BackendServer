@@ -54,7 +54,7 @@ public class CodeRetrieverVerticleTest extends SoileVerticleTest {
 	@Test
 	public void qmarkupTest(TestContext context)
 	{
-		System.out.println("--------------------  Testing Questionair Verticle ----------------------");
+		System.out.println("--------------------  Testing Questionnaire Verticle ----------------------");
 		try 
 		{
 			String originalCode2 = Files.readString(Paths.get(CodeRetrieverVerticleTest.class.getClassLoader().getResource("CodeTestData/pilotform.qmarkup").getPath()));
@@ -70,6 +70,21 @@ public class CodeRetrieverVerticleTest extends SoileVerticleTest {
 				compilation2Async.complete();				
 			})
 			.onFailure(err -> context.fail(err));
+			
+			String exampleCode = Files.readString(Paths.get(CodeRetrieverVerticleTest.class.getClassLoader().getResource("CodeTestData/QuestionnaireExample.qmarkup").getPath()));
+			Async exampleAsync = context.async();
+			JsonObject exampleRequest = new JsonObject().put("code", exampleCode).put("type", CodeRetrieverVerticle.QMARKUP);			
+			vertx.eventBus().request(SoileConfigLoader.getVerticleProperty("compilationAddress"), exampleRequest)
+			.onSuccess(reply-> {
+				JsonObject response = (JsonObject) reply.body();
+				// this could be made more explicit, testing actual contents.
+				context.assertNotNull(response.getString("code"));
+				JsonObject codeObject = new JsonObject(response.getString("code"));
+				context.assertTrue(codeObject.containsKey("elements"));
+				exampleAsync.complete();				
+			})
+			.onFailure(err -> context.fail(err));
+			
 			String failingCode = Files.readString(Paths.get(CodeRetrieverVerticleTest.class.getClassLoader().getResource("CodeTestData/pilotform2_error.qmarkup").getPath()));			
 			Async compilationAsync = context.async();
 			JsonObject CompileRequest2 = new JsonObject().put("code", failingCode).put("type", CodeRetrieverVerticle.QMARKUP);			

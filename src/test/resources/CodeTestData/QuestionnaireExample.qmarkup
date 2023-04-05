@@ -41,6 +41,7 @@ What kind of vehicle do you own ?
 
 /p
 How Old are you ?
+
 /numberfield {
     dbcolumn: "age",
     label: "Enter your age",
@@ -55,9 +56,9 @@ Are you a smoker?
 /singleselect {
      default_value: "-1",
      dbcolumn: "smoker",
-     options: [[{dbvalue: 1, text: "Yes", checked: true},
-               {dbvalue: 0, text: "No"}]]
-  }
+     options: [[{dbvalue: "yes", text: "Yes", checked: true},
+               {dbvalue: "no", text: "No"}]]
+}
 
 /p
 Scale your interest in this questionnaire (0 being no interest, 6 being very interested)
@@ -92,5 +93,5 @@ Tell us something about your live
 }
 
 /link https://abo-soile.github.io/SOILE-QuestionaireMarkup/
-Specifications for the quetionaire markup.
+Specifications for the questionnaire markup.
 
