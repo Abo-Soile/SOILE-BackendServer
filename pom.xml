@@ -141,7 +141,7 @@
 		<dependency>
 			<groupId>fi.abo.kogni.soile2</groupId>
 			<artifactId>qmarkup</artifactId>
-			<version>2.1</version>
+			<version>2.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>fi.abo.kogni.soile2</groupId>
