@@ -36,6 +36,36 @@ import io.vertx.ext.web.handler.HttpException;
 public class ParticipationRouterTest extends SoileWebTest{
 
 	private WebClient generatorSession;
+	
+	@Test
+	public void getTaskInformationTest(TestContext context)
+	{
+		System.out.println("--------------------  Running get Task information test  ----------------------");    
+		Async creationAsync = context.async();
+		createAndStartProject(true)
+		.onSuccess(instanceID -> {
+			createTokenAndSignupUser(generatorSession, instanceID)
+			.onSuccess(authToken -> {
+				Async codeTypeAsync = context.async();
+				WebClientSession tempSession = createSession();
+				tempSession.addHeader("Authorization", authToken);
+				POST(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+				.onSuccess(inforesponse -> {
+					JsonObject codeTypeInfo = inforesponse.bodyAsJsonObject();					
+					context.assertEquals("qmarkup", codeTypeInfo.getJsonObject("codeType", new JsonObject()).getString("language"));
+					context.assertEquals(1, codeTypeInfo.getJsonArray("outputs").size());
+					context.assertEquals("smoker", codeTypeInfo.getJsonArray("outputs").getString(0));
+					context.assertEquals(false, codeTypeInfo.getBoolean("finished") == null ? false : codeTypeInfo.getBoolean("finished"));
+					codeTypeAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));							
+				creationAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+	
 	@Test
 	public void runTaskTest(TestContext context)
 	{

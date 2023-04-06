@@ -323,15 +323,14 @@ public class ParticipationRouter extends SoileRouter{
 					else
 					{
 						try {
-							TaskObjectInstance currentTask = (TaskObjectInstance)project.getElement(participant.getProjectPosition());
-
+							TaskObjectInstance currentTask = (TaskObjectInstance)project.getElement(participant.getProjectPosition());							
 							eb.request("soile.task.getVersionInfo", new JsonObject().put("taskID", currentTask.getUUID()).put("version", currentTask.getVersion()))
 							.onSuccess(response -> {								
 								JsonObject responseBody = ((JsonObject) response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
 								context.response()
 								.setStatusCode(200)	
 								.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-								.end(new JsonObject().put("finished", false).put("codeType", responseBody.getJsonObject("codeType")).put("id", participant.getProjectPosition()).encode());
+								.end(new JsonObject().put("finished", false).put("codeType", responseBody.getJsonObject("codeType")).put("outputs", currentTask.getOutputs()).put("id", participant.getProjectPosition()).encode());
 							})
 							.onFailure(err -> handleError(err, context));
 						}
