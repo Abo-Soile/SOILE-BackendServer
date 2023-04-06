@@ -56,8 +56,8 @@ Are you a smoker?
 /singleselect {
      default_value: "-1",
      dbcolumn: "smoker",
-     options: [[{dbvalue: "yes", text: "Yes", checked: true},
-               {dbvalue: "no", text: "No"}]]
+     options: [[{dbvalue: "1", text: "Yes", checked: true},
+               {dbvalue: "0", text: "No"}]]
 }
 
 /p
