@@ -12,10 +12,12 @@ public class SimpleFileUpload implements FileUpload
 	
 	private String uploadFileName;
 	private String originalFileName;
-	public SimpleFileUpload(String uploadedFileName, String originalFileName)
+	private String contentType;
+	public SimpleFileUpload(String uploadedFileName, String originalFileName, String contentType)
 	{	
 		this.uploadFileName = uploadedFileName;
 		this.originalFileName = originalFileName;
+		this.contentType = contentType;
 		
 	}
 	@Override
@@ -40,7 +42,7 @@ public class SimpleFileUpload implements FileUpload
 
 	@Override
 	public String contentType() {
-		return null;
+		return contentType;
 	}
 
 	@Override

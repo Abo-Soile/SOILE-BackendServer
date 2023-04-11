@@ -27,6 +27,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.impl.MimeMapping;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
@@ -83,7 +84,7 @@ public class ObjectGenerator {
 				chain.add(versionFuture);
 				for(int i = 0; i < resources.size(); ++i)
 				{
-					SimpleFileUpload upload = new SimpleFileUpload(Path.of(dataDir, resources.getString(i)).toString(), resources.getString(i));
+					SimpleFileUpload upload = new SimpleFileUpload(Path.of(dataDir, resources.getString(i)).toString(), resources.getString(i), MimeMapping.getMimeTypeForFilename(resources.getString(i)));
 					// create all in a compose chain...
 					String resourceName = resources.getString(i);
 					chain.add(chain.getLast().compose(newVersion -> {
