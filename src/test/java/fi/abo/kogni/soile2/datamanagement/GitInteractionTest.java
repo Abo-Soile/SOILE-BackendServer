@@ -19,6 +19,7 @@ import fi.abo.kogni.soile2.projecthandling.utils.SimpleFileUpload;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.http.impl.MimeMapping;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -82,7 +83,7 @@ public class GitInteractionTest extends GitTest{
 				return;
 			}
 			final String testData = origData;
-			SimpleFileUpload upload = new SimpleFileUpload(dataLakePath.getFileName().toString(), dataPath.getFileName().toString());
+			SimpleFileUpload upload = new SimpleFileUpload(dataLakePath.getFileName().toString(), dataPath.getFileName().toString(), MimeMapping.getMimeTypeForFilename(dataPath.getFileName().toString()));
 			
 			Async writeAsync = context.async();
 			rm.writeUploadToGit(new GitFile("NewFile.txt", targetElement, initialVersion), upload).onSuccess(newVersion -> 
