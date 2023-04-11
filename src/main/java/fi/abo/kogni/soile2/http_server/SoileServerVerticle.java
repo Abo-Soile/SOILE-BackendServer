@@ -205,6 +205,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 		
 		if(SoileConfigLoader.getServerBooleanProperty("useSSL", false))
 		{
+			LOGGER.info("Using HTTPS");	
 			PfxOptions keyOptions = new PfxOptions()
 			.setPath(SoileConfigLoader.getServerProperty("sslStoreFile"))
 				.setPassword(SoileConfigLoader.getServerProperty("sslSecret"))
