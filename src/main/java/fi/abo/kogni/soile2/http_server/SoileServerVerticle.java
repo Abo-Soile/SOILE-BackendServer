@@ -22,6 +22,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PfxOptions;
 
 /**
  * The Soile Server Verticle. 
@@ -50,7 +51,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 		{
 			if(res.succeeded())
 			{
-				LOGGER.debug("Server started successfully and listening on port " + SoileConfigLoader.getServerIntProperty("port"));
+				LOGGER.info("Server started successfully and listening on port " + SoileConfigLoader.getServerIntProperty("port"));
 				
 				startPromise.complete();
 			}
@@ -196,17 +197,22 @@ public class SoileServerVerticle extends AbstractVerticle {
 	
 	Future<Void> startHttpServer(Void unused)
 	{
-		LOGGER.info("Starting HTTP Server");
-		 JksOptions keyOptions = new JksOptions()
-		    .setPath("server-keystore.jks")
-		    .setPassword("secret");		    
-
-		    
+		
 		JsonObject http_config = soileConfig.getJsonObject("http_server");
 		HttpServerOptions opts = new HttpServerOptions()
-									 .setLogActivity(true) 
-									 .setSsl(true)
-									 .setKeyStoreOptions(keyOptions);
+									 .setLogActivity(true);
+		LOGGER.debug("Starting HTTP Server");
+		
+		if(SoileConfigLoader.getServerBooleanProperty("useSSL", false))
+		{
+			PfxOptions keyOptions = new PfxOptions()
+			.setPath(SoileConfigLoader.getServerProperty("sslStoreFile"))
+				.setPassword(SoileConfigLoader.getServerProperty("sslSecret"))
+				.setAlias("soile2");				
+			opts.setSsl(true)
+			.setPfxKeyCertOptions(keyOptions);
+		}
+		
 		HttpServer server = vertx.createHttpServer(opts).requestHandler(soileRouter.getRouter());
 		int httpPort = http_config.getInteger("port", SoileConfigLoader.getServerIntProperty("port"));			
 		return Future.<HttpServer>future(promise -> server.listen(httpPort,promise)).onSuccess(started -> { LOGGER.debug("Http Server started listening");}).mapEmpty();	

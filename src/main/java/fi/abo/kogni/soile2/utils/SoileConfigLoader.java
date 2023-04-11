@@ -151,6 +151,17 @@ public class SoileConfigLoader {
 	}
 
 	/**
+	 * Get a boolean property from the Server config.
+	 * @param property - the property to obtain.
+	 * @return the property
+	 */
+	public static Boolean getServerBooleanProperty(String property, Boolean defaultValue)
+	{
+		return serverCfg.getBoolean(property, defaultValue);
+	}
+	
+	
+	/**
 	 * Get a property from the Server config.
 	 * @param property - the property to obtain.
 	 * @return the property

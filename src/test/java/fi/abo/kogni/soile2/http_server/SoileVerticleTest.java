@@ -15,6 +15,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.PfxOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
@@ -97,13 +98,17 @@ public abstract class SoileVerticleTest extends MongoTest {
 	{
 		HttpClientOptions copts = new HttpClientOptions()
 				.setDefaultHost("localhost")
-				.setDefaultPort(port)
-				.setSsl(true)
-				.setTrustOptions(new JksOptions().setPath("server-keystore.jks").setPassword("secret"))
+				.setDefaultPort(port)				
 				.setIdleTimeout(0)
 				.setConnectTimeout(3600)
 				.setKeepAliveTimeout(0);
-		
+		if(SoileConfigLoader.getServerBooleanProperty("useSSL", false))
+		{
+			copts.setSsl(true)
+			.setTrustOptions(new PfxOptions().setAlias("soile2")
+					.setPath(SoileConfigLoader.getServerProperty("sslStoreFile"))
+					.setPassword(SoileConfigLoader.getServerProperty("sslSecret")));
+		}
 		httpClient = vertx.createHttpClient(copts);
 		webclient = WebClient.wrap(httpClient);		
 			

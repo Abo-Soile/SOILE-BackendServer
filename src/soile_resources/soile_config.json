@@ -1,8 +1,8 @@
 {
 	"api" : "api.yml",
 	"http_server": {
-		"port": 8081,
-		"host": "localhost",
+		"port": 8082,
+		"host": "localhost",				
 		"directory": "./static_files",
 		"template_folder":"templates/",
 		"debug":true,
@@ -16,8 +16,10 @@
 		"soileGitFolder" : "/tmp/soile/git",
 		"soileGitDataLakeFolder" : "/tmp/soile/gitLake",
 		"soileResultDirectory" : "/tmp/soile/resultLake",
-		"taskLibraryFolder" : "/tmp/soile/libFolder"
-		
+		"taskLibraryFolder" : "/tmp/soile/libFolder",
+		"sslStoreFile" : "soile-keystore.p12",		
+		"sslSecret" : "secret",
+		"useSSL" : true
 	},
 
 	"db": {
@@ -31,7 +33,7 @@
 	},
 	"mongo": {
 		"host": "127.0.0.1",
-		"port": 27022,
+		"port": 27023,
 		"db_name": "soile",
 		"username" : "admin",
 		"password" : "admin" 
