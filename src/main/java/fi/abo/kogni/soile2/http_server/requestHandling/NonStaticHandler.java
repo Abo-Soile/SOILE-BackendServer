@@ -36,6 +36,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import fi.abo.kogni.soile2.http_server.authentication.utils.UserUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -49,8 +53,6 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.MimeMapping;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.net.impl.URIDecoder;
 import io.vertx.ext.web.Http2PushMapping;
@@ -72,7 +74,8 @@ import io.vertx.ext.web.impl.Utils;
  */
 public class NonStaticHandler implements StaticHandler {
 
-  private static final Logger LOG = LoggerFactory.getLogger(NonStaticHandler.class);
+  private static final Logger LOG = LogManager.getLogger(NonStaticHandler.class);
+
 
   // TODO change to private final after setWebRoot has been removed
   private String webRoot = DEFAULT_WEB_ROOT;
@@ -161,10 +164,11 @@ public class NonStaticHandler implements StaticHandler {
   @Override
   public void handle(RoutingContext context) {
     HttpServerRequest request = context.request();
-
+    LOG.info("Trying to access library");
     if (request.method() != HttpMethod.GET && request.method() != HttpMethod.HEAD) {
       if (LOG.isTraceEnabled())
         LOG.trace("Not GET or HEAD so ignoring request");
+      LOG.info("Lib not found");
       context.next();
     } else {
       if (!request.isEnded()) {

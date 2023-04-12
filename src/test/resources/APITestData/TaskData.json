@@ -31,21 +31,22 @@
 	},  				
 	"Test3": {							
 		"name": "Test3",
+		"resources": ["minitest-legacy-browsers.js","minitest.js","images/apple.jpg","images/teddy.jpg","images/pear.jpg", "conditions.xlsx"],
 		"codeType" : { "language" : "psychopy",
 					 "version" : "2022.2.5"},		
-		"codeFile": "Test.js"
+		"codeFile": "psychopy.html"
 	},
 	"Test4": {							
 		"name": "Test4",
 		"resources": ["ImageData.jpg"],
 		"codeFile": "Test.js",
-		"codeType" : { "language" : "psychopy",
-					   "version" : "2022.2.5"}
+		"codeType" : { "language" : "javascript",
+					   "version" : "ES6"}
 	},
 	"PsychoPyExample": {							
 		"name": "PsychoPyEx",
-		"resources": ["images/apple.jpg","images/teddy.jpg","images/pear.jpg", "conditions.xlsx"],
-		"codeFile": "psychopyexample.js",
+		"resources": ["minitest-legacy-browsers.js","minitest.js","images/apple.jpg","images/teddy.jpg","images/pear.jpg", "conditions.xlsx"],
+		"codeFile": "psychopy.html",
 		"codeType" : { "language" : "psychopy",
 					   "version" : "2022.2.5"}
 	},
