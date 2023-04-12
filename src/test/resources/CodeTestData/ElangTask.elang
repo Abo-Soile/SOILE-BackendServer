@@ -12,8 +12,8 @@ gvar reactimg <- imagefile(imgurl)
 # Number of games played thus far, starting from 0
 gvar games <- 0
 
-# Users is done after 15 games.
-gvar maxgames <- 15
+# Users is done after 5 games.
+gvar maxgames <- 5
 
 # Did the user react or not 0 - No,   1 - Yes
 gvar reacted <- 0
