@@ -47,6 +47,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.mongo.MongoClient;
@@ -231,18 +232,23 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.rootHandler(LoggerHandler.create());
 		builder.rootHandler(new SoileSessionHandler(LocalSessionStore.create(vertx)));
 		//TODO: Make flexible and set up for all front-end components
-		builder.rootHandler(CorsHandler.create().addOrigin("http://localhost:5173")											
-												.allowedMethod(HttpMethod.POST)
-												.allowedMethod(HttpMethod.GET)
-												.allowedMethod(HttpMethod.OPTIONS)
-												.allowCredentials(true)
-											    .allowedHeader("Access-Control-Allow-Headers")
-											    .allowedHeader("Authorization")
-											    .allowedHeader("Access-Control-Allow-Method")
-											    .allowedHeader("Access-Control-Allow-Origin")
-											    .allowedHeader("Access-Control-Allow-Credentials")
-											    .allowedHeader("Content-Type"));
-												
+		CorsHandler cors = CorsHandler.create()											
+				.allowedMethod(HttpMethod.POST)
+				.allowedMethod(HttpMethod.GET)
+				.allowedMethod(HttpMethod.OPTIONS)
+				.allowCredentials(true)
+			    .allowedHeader("Access-Control-Allow-Headers")
+			    .allowedHeader("Authorization")
+			    .allowedHeader("Access-Control-Allow-Method")
+			    .allowedHeader("Access-Control-Allow-Origin")
+			    .allowedHeader("Access-Control-Allow-Credentials")
+			    .allowedHeader("Content-Type");
+		JsonArray corsHosts = SoileConfigLoader.getConfig(SoileConfigLoader.HTTP_SERVER_CFG).getJsonArray("corsURLS", new JsonArray());
+		for(int i = 0; i < corsHosts.size(); ++i)
+		{
+			cors.addOrigin(corsHosts.getString(i));
+		}
+		builder.rootHandler(cors);												
 		builder.rootHandler(BodyHandler.create());
 		builder.rootHandler(new DebugRouter());		
 		return Future.<RouterBuilder>succeededFuture(builder);
