@@ -74,6 +74,10 @@ paths:
                       description: true if authenticated, false if not.
                     user: 
                       type: string
+                    roles:
+                      type: array
+                      items:
+                        type: string
         '401':
           description: No user authenticated
   /login:
@@ -924,7 +928,48 @@ paths:
                   type: string
                   format: binary
 
-
+  /project/testfilter:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Test whether a given filter has valid syntax. 
+      operationId: isFilterValid
+      description: test whether a string can be used as filter
+      responses:
+        '200':
+          description: Whether the filter can be used
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid: 
+                    type: boolean
+                  value:
+                    type: number
+                  error: 
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filter: 
+                  type: string
+                  example: "element1 + element2 > 4"
+                parameters:
+                  type: object
+                  example: {element1 : 1, element2 : 1}
   /project/list:
     post:
       security:

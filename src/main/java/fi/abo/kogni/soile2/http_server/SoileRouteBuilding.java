@@ -21,6 +21,7 @@ import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
 import fi.abo.kogni.soile2.http_server.routes.ElementRouter;
 import fi.abo.kogni.soile2.http_server.routes.ParticipationRouter;
 import fi.abo.kogni.soile2.http_server.routes.ProjectInstanceRouter;
+import fi.abo.kogni.soile2.http_server.routes.ProjectRouter;
 import fi.abo.kogni.soile2.http_server.routes.SoileRouter;
 import fi.abo.kogni.soile2.http_server.routes.TaskRouter;
 import fi.abo.kogni.soile2.http_server.routes.UserRouter;
@@ -293,7 +294,10 @@ public class SoileRouteBuilding extends AbstractVerticle{
 			LOGGER.debug(ctx.user().authorizations().toString());
 			ctx.request().response()
 			.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-			.end(new JsonObject().put("authenticated", true).put("user", ctx.user().principal().getString("username")).encodePrettily());
+			.end(new JsonObject().put("authenticated", true)
+								 .put("user", ctx.user().principal().getString("username"))
+								 .put("roles", ctx.user().principal().getValue(SoileConfigLoader.getSessionProperty("userRoles")))
+								 .encodePrettily());
 		}
 		else
 		{
@@ -343,12 +347,13 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	 */
 	private Future<RouterBuilder> setupProjectAPI(RouterBuilder builder)
 	{
-		ElementRouter<Project> router = new ElementRouter<Project>(new ElementManager<Project>(Project::new, APIProject::new, client, vertx), soileAuthorization, vertx.eventBus(), client );
+		ProjectRouter router = new ProjectRouter(new ElementManager<Project>(Project::new, APIProject::new, client, vertx), soileAuthorization, vertx.eventBus(), client );
 		builder.operation("getProjectList").handler(router::getElementList);
 		builder.operation("getVersionsForProject").handler(router::getVersionList);
 		builder.operation("createProject").handler(router::create);
 		builder.operation("getProject").handler(router::getElement);
 		builder.operation("updateProject").handler(router::writeElement);
+		builder.operation("isFilterValid").handler(router::isFilterValid);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 		
