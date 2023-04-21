@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -38,7 +39,8 @@ public class JWTTokenCreator{
 		else
 		{			
 			JWTAuth jwt =  handler.getJWTAuthProvider(vertx);
-			String jwtToken = jwt.generateToken(new JsonObject().put("username", context.user().principal().getString("username")));			
+			String jwtToken = jwt.generateToken(new JsonObject().put("username", context.user().principal().getString("username"))
+					.put(SoileConfigLoader.getSessionProperty("userRoles"), context.user().principal().getJsonArray(SoileConfigLoader.getSessionProperty("userRoles"))));			
 			tokenPromise.complete(jwtToken);
 		}		
 		return tokenPromise.future();

@@ -3,6 +3,7 @@ package fi.abo.kogni.soile2.http_server;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -73,8 +74,9 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 										HttpResponse<Buffer> authWorked = authTest.result();
 										try
 										{												
-											context.assertTrue(new JsonObject(authWorked.body().toString()).getBoolean("authenticated"));
-											context.assertEquals("testUser", new JsonObject(authWorked.body().toString()).getString("user"));
+											context.assertTrue(authWorked.bodyAsJsonObject().getBoolean("authenticated"));
+											context.assertEquals("testUser", authWorked.bodyAsJsonObject().getString("user"));
+											context.assertTrue(authWorked.bodyAsJsonObject().getJsonArray("roles").contains(Roles.Participant.toString()));
 											Async loggedOut = context.async();
 											testLogout(context, newCookieSession,401)
 											.onComplete(logout -> {
@@ -103,6 +105,7 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 										{
 											context.assertTrue(new JsonObject(authWorked.body().toString()).getBoolean("authenticated"));
 											context.assertEquals("testUser", new JsonObject(authWorked.body().toString()).getString("user"));
+											context.assertTrue(authWorked.bodyAsJsonObject().getJsonArray("roles").contains(Roles.Participant.toString()));
 											Async loggedOut = context.async();
 											// Logout will have no effect if we supply a Token in the Header (which cannot be invalidated)
 											testLogout(context, newTokenSession, 200)
@@ -152,6 +155,7 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 										{
 											context.assertTrue(new JsonObject(authWorked.body().toString()).getBoolean("authenticated"));
 											context.assertEquals("testUser", new JsonObject(authWorked.body().toString()).getString("user"));
+											context.assertTrue(authWorked.bodyAsJsonObject().getJsonArray("roles").contains(Roles.Participant.toString()));
 											Async loggedOut = context.async();
 											testLogout(context, session,401)
 											.onComplete(logout -> {
