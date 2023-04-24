@@ -202,7 +202,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 	{
 		try {
 			LOGGER.debug(request.body().encodePrettily());
-			gitManager.writeGitFile(new GitFile(request.body()), request.body().getJsonObject("data"))
+			gitManager.writeGitFile(new GitFile(request.body()), request.body().getJsonObject("data"), request.body().getString("tag",null))
 			.onSuccess(version -> {
 				request.reply(version);
 			})
@@ -210,7 +210,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 		}
 		catch(ClassCastException e)
 		{
-			gitManager.writeGitFile(new GitFile(request.body()), request.body().getString("data"))
+			gitManager.writeGitFile(new GitFile(request.body()), request.body().getString("data"), request.body().getString("tag",null))
 			.onSuccess(version -> {
 				request.reply(version);
 			})

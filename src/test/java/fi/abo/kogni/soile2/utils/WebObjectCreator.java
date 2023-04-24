@@ -95,7 +95,8 @@ public class WebObjectCreator {
 						//This is the version with all Files added. 
 						JsonObject update = new JsonObject();
 						update.put("code", TaskCode);
-						update.put("private", TaskDef.getBoolean("private", false));						
+						update.put("private", TaskDef.getBoolean("private", false));
+						update.put("tag", "Initial_Version");
 						SoileWebTest.POST(webClient, "/task/" + taskID + "/" + latestVersion , null, update)
 						.onSuccess(response -> {
 							LOGGER.info("Task " + elementID + " created as: " + response.bodyAsJsonObject().encodePrettily());
@@ -227,6 +228,7 @@ public class WebObjectCreator {
 					}
 					// set private
 					experimentJson.put("private", ExperimentDef.getValue("private"));
+					experimentJson.put("tag", "Initial_Version");
 					SoileWebTest.POST(webClient, "/experiment/" + id + "/" + version , null, experimentJson)					
 					.onSuccess(response -> {						
 						SoileWebTest.GET(webClient, "/experiment/" + id + "/" + response.bodyAsJsonObject().getString("version") , null, null)
@@ -332,6 +334,7 @@ public class WebObjectCreator {
 						expList.addAll(experiments.values());
 						JsonArray expArray = new JsonArray(expList);
 						projectExperiments.addAll(expArray);
+						projectJson.put("tag", "Initial_Version");
 						SoileWebTest.POST(webClient, "/project/" + id + "/" + version , null, projectJson)					
 						.onSuccess(response -> {						
 							SoileWebTest.GET(webClient, "/project/" + id + "/" + response.bodyAsJsonObject().getString("version") , null, null)

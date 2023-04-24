@@ -11,6 +11,8 @@ import fi.abo.kogni.soile2.http_server.requestHandling.NonStaticHandler;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpHeaders;
@@ -37,6 +39,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		libraryHandler = new NonStaticHandler(FileSystemAccess.ROOT, SoileConfigLoader.getServerProperty("taskLibraryFolder"), "/lib/");
 		resourceHandler = resManager;
 	}		
+
 	
 	public void postResource(RoutingContext context)
 	{				
@@ -64,6 +67,27 @@ public class TaskRouter extends ElementRouter<Task> {
 				context.response().setStatusCode(200)
 				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
 				.end(new JsonObject().put("version", newversion).encode());
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+	
+	//TODO: Add to API.
+	public void getTaskInformation(RoutingContext context)
+	{
+		String elementID = context.pathParam("id");
+		String version = context.pathParam("version");	
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		.onSuccess(Void -> 
+		{									
+			eb.request("soile.task.getVersionInfo", new JsonObject().put("taskID", elementID).put("version", version))
+			.onSuccess(response -> {								
+				JsonObject responseBody = ((JsonObject) response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
+				context.response()
+				.setStatusCode(200)	
+				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+				.end(new JsonObject().put("finished", false).put("codeType", responseBody.getJsonObject("codeType")).encode());
 			})
 			.onFailure(err -> handleError(err, context));
 		})
@@ -135,7 +159,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		})
 		.onFailure(err -> handleError(err, context));		
 	}
-
+	
 	public void getResourceForExecution(RoutingContext context)
 	{
 		String elementID = context.pathParam("id");

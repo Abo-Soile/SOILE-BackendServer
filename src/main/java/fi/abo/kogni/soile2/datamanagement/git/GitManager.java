@@ -236,7 +236,7 @@ public class GitManager{
 	 * @param data
 	 * @return
 	 */
-	public Future<String> writeGitFile(GitFile file, String data)
+	public Future<String> writeGitFile(GitFile file, String data, String tag)
 	{
 		Promise<String> versionPromise = Promise.<String>promise();
 		if(!gitFileValid(file))
@@ -244,6 +244,11 @@ public class GitManager{
 			return Future.failedFuture("Supplied File was invalid");
 		}
 		JsonObject command = gitProviderVerticle.createWriteCommand(file.getRepoID(), file.getRepoVersion(), data, file.getFileName());
+		if( tag != null)
+		{
+			// we want to create a tag for this.
+			command.put(gitProviderVerticle.TAGFIELD, tag);
+		}
 		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), command).onSuccess(reply -> {
 			JsonObject info = (JsonObject)reply.body();
 			// return the new version of this repository (for future changes)
@@ -261,9 +266,9 @@ public class GitManager{
 	 * @param data the data that should be encoded in the file
 	 * @return the new version of the file.
 	 */
-	public Future<String> writeGitFile(GitFile file, JsonObject data)
+	public Future<String> writeGitFile(GitFile file, JsonObject data, String tag)
 	{
-		return writeGitFile(file, data.encodePrettily());
+		return writeGitFile(file, data.encodePrettily(), tag);
 	}
 		
 	/**
@@ -274,7 +279,8 @@ public class GitManager{
 	 */
 	public Future<String> writeGitResourceFile(GitFile file, String data)
 	{
-		return writeGitFile(new GitFile(resourceFolder + File.separator + file.getFileName(), file.getRepoID(), file.getRepoVersion()), data);
+		// a Resource will NEVER create a new tag!
+		return writeGitFile(new GitFile(resourceFolder + File.separator + file.getFileName(), file.getRepoID(), file.getRepoVersion()), data, null);
 	}
 	
 	/**

@@ -314,8 +314,8 @@ public class ElementManagerTest extends GitTest{
 		.onSuccess(apiTask -> {
 			taskManager.getTagListForElement(apiTask.getUUID())
 			.onSuccess(VersionList -> {
-				// No tags have been added yet.
-				context.assertEquals(0, VersionList.size());				
+				// There is one Tag for the Inital Version set up.
+				context.assertEquals(1, VersionList.size());				
 				testAsync.complete();
 			})
 			.onFailure(err -> context.fail(err));

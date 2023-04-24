@@ -103,7 +103,8 @@ public class ObjectGenerator {
 					apiTask.loadGitJson(TaskDef);
 					apiTask.setCode(TaskCode);
 					apiTask.setVersion(latestVersion);
-					apiTask.setUUID(task.getUUID());			
+					apiTask.setUUID(task.getUUID());	
+					apiTask.setTag("Initial_Version");
 					task.setPrivate(apiTask.getPrivate());				
 					task.save(client)
 					.onSuccess(res -> {
@@ -230,9 +231,11 @@ public class ObjectGenerator {
 
 						apiExperiment.getElements().add(elements.get(current.getString("instanceID")));
 					}
+					apiExperiment.setTag("Initial_Version");
 					experimentManager.updateElement(apiExperiment)
 					.onSuccess(newVersion -> { 
 						apiExperiment.setVersion(newVersion);
+						
 						experimentPromise.complete(apiExperiment);
 					})
 					.onFailure(err -> {
@@ -349,6 +352,7 @@ public class ObjectGenerator {
 						expList.addAll(experiments.values());
 						JsonArray expArray = new JsonArray(expList);
 						apiProject.setExperiments(expArray);
+						apiProject.setTag("Initial_Version");
 						projectManager.updateElement(apiProject)
 						.onSuccess( newVersion -> {
 								apiProject.setVersion(newVersion);

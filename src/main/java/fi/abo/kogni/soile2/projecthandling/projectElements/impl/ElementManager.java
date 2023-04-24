@@ -18,6 +18,7 @@ import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.NoNameChangeException;
+import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Element;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementDataHandler;
@@ -51,14 +52,14 @@ public class ElementManager<T extends ElementBase> {
 	String typeID;
 	TargetElementType type;
 	ElementDataHandler<T> dataHandler;
-	public static final Logger log = LogManager.getLogger(ElementManager.class);
+	public static final Logger LOGGER = LogManager.getLogger(ElementManager.class);
 	//private static DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SS");
 
 	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, Vertx vertx)
 	{
 		this(supplier, apisupplier, client, vertx, new ElementDataHandler<T>(new DataLakeResourceManager(vertx), supplier));		
 	}
-	
+
 	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, Vertx vertx, ElementDataHandler<T> handler)
 	{
 		this.apisupplier = apisupplier;
@@ -101,7 +102,7 @@ public class ElementManager<T extends ElementBase> {
 		factory.createElement(client, name, type, languageversion)
 		.onSuccess(element -> {
 			element.setName(name);	
-			log.debug(element.toJson().encodePrettily());
+			LOGGER.debug(element.toJson().encodePrettily());
 			eb.request("soile.git.initRepo",getGitIDForUUID(element.getUUID()))
 			.onSuccess(reply -> 
 			{
@@ -116,9 +117,9 @@ public class ElementManager<T extends ElementBase> {
 				eb.request("soile.git.writeGitFile", new GitFile("Object.json", getGitIDForUUID(element.getUUID()), initVersion).toJson().put("data",gitData))
 				.onSuccess(versionreply -> {
 					String version = (String) versionreply.body();
-					log.debug("Created a new element with name: " + name);
+					LOGGER.debug("Created a new element with name: " + name);
 					element.addVersion(version);
-					log.debug("and data: " + element.toJson().encodePrettily());
+					LOGGER.debug("and data: " + element.toJson().encodePrettily());
 					elementPromise.complete(element);
 					// store the created project.				
 				})
@@ -169,7 +170,7 @@ public class ElementManager<T extends ElementBase> {
 			if(fail instanceof ElementNameExistException)
 			{
 				ElementNameExistException e = (ElementNameExistException) fail; 
-				log.debug("Got a request for element with name: " + name + " but this already existed, so we load it.");
+				LOGGER.debug("Got a request for element with name: " + name + " but this already existed, so we load it.");
 				// so, it actually already exists. In this instance we will just load the element.
 				factory.loadElement(client, e.getExistingElementUUID())
 				.onSuccess(loadedelement -> {
@@ -209,7 +210,7 @@ public class ElementManager<T extends ElementBase> {
 	public Future<JsonObject> getGitJson(String elementID, String elementVersion)
 	{
 		GitFile target = new GitFile("Object.json", getGitIDForUUID(elementID), elementVersion);
-		log.debug("Requesting Data for Repo: "  + getGitIDForUUID(elementID));
+		LOGGER.debug("Requesting Data for Repo: "  + getGitIDForUUID(elementID));
 		Promise<JsonObject> elementPromise = Promise.promise();
 		eb.request("soile.git.getGitFileContentsAsJson",target.toJson())
 		.onSuccess(res -> {
@@ -236,6 +237,16 @@ public class ElementManager<T extends ElementBase> {
 	 */
 	public Future<String> updateElement(APIElement<T> newData)
 	{
+		return updateElement(newData, null);
+	}
+
+	/**
+	 * Update the given element in the database and on git using the Data from the provided API element
+	 * @param newData
+	 * @return
+	 */
+	public Future<String> updateElement(APIElement<T> newData, String tag)
+	{		
 		Promise<String> elementPromise = Promise.promise();
 		GitFile currentVersion = new GitFile("Object.json", getGitIDForUUID(newData.getUUID()), newData.getVersion());		
 		// This will return an updated Element given the newData object, so we don't need to update the internals of the object
@@ -247,8 +258,13 @@ public class ElementManager<T extends ElementBase> {
 				elementPromise.fail(new NoNameChangeException());
 				return;
 			}
+			JsonObject requestObject = currentVersion.toJson();
+			if(tag != null)
+			{
+				requestObject.put("tag", tag);				
+			}
 			// the gitJson can be directly derived from the API element.
-			eb.request("soile.git.writeGitFile", currentVersion.toJson().put("data", newData.getGitJson()))
+			eb.request("soile.git.writeGitFile", requestObject.put("data", newData.getGitJson()))
 			.onSuccess(reply -> {
 				String version = (String) reply.body();
 				if(newData.hasAdditionalGitContent())
@@ -256,7 +272,11 @@ public class ElementManager<T extends ElementBase> {
 					// this has additional data that we need to save in git.
 					newData.storeAdditionalData(version, eb, getGitIDForUUID(newData.getUUID()))
 					.onSuccess(newVersion -> {
-						element.addVersion(newVersion);				
+						element.addVersion(newVersion);
+						if( tag != null)
+						{
+							element.addTag(tag, newVersion);
+						}
 						element.save(client).onSuccess(res -> {
 							elementPromise.complete(newVersion);
 						})
@@ -320,7 +340,7 @@ public class ElementManager<T extends ElementBase> {
 			for(JsonObject current : res)
 			{
 				boolean addElement = true;
-				log.debug("Retrieved element: \n " + current.encodePrettily());
+				LOGGER.debug("Retrieved element: \n " + current.encodePrettily());
 				if(current.getBoolean("private", false))
 				{					
 					if(!permissions.contains(current.getString("_id")))
@@ -395,17 +415,32 @@ public class ElementManager<T extends ElementBase> {
 		Element e = supplier.get();
 		JsonArray result = new JsonArray();		
 		// should possibly be done via findBatch
-		client.findOne(e.getTargetCollection(), new JsonObject().put("_id", id), new JsonObject().put("versions", 1))
-		.onSuccess(res -> {						
-			JsonArray versionArray = res.getJsonArray("versions"); 
+		client.findOne(e.getTargetCollection(), new JsonObject().put("_id", id), new JsonObject().put("versions", 1).put("tags", 1))
+		.onSuccess(res -> {
+			if( res == null)
+			{
+				listPromise.fail(new ObjectDoesNotExist(id));
+				return;
+			}
+			JsonArray versionArray = res.getJsonArray("versions");
+			JsonArray tagArray = res.getJsonArray("tags");
+			HashMap<String, String> tagMap = new HashMap<>();
+			for( int i = 0; i < tagArray.size(); i++ )
+			{
+				tagMap.put(tagArray.getJsonObject(i).getString("version"),tagArray.getJsonObject(i).getString("tag"));
+			}
 			for(int i = 0; i < versionArray.size(); i++)
 			{	
 				JsonObject currentVersion = versionArray.getJsonObject(i);
-
-				result.add(new JsonObject()
-						.put("version", currentVersion.getString("version"))
-						.put("date", currentVersion.getLong("timestamp"))						
-						);				
+				JsonObject currentVersionObject = new JsonObject()
+						.put("version", currentVersion.getString("version"))						
+						.put("date", currentVersion.getLong("timestamp"));
+				String tagString = tagMap.get(currentVersion.getString("version"));
+				if(tagString != null)
+				{
+					currentVersionObject.put("tag", tagString);
+				}				
+				result.add(currentVersionObject);				
 			}
 			listPromise.complete(result);
 		})
@@ -449,7 +484,7 @@ public class ElementManager<T extends ElementBase> {
 				eb.request("soile.git.getGitFileContentsAsJson",currentVersion.toJson())
 				.onSuccess(jsonReply-> {
 					JsonObject gitJson = (JsonObject) jsonReply.body();
-					log.debug("Git returned: " + gitJson.encodePrettily());
+					LOGGER.debug("Git returned: " + gitJson.encodePrettily());
 					apiElement.loadGitJson(gitJson);
 					elementPromise.complete(apiElement);
 				})

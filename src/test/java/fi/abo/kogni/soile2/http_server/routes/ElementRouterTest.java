@@ -102,6 +102,46 @@ public class ElementRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 
+	
+	@Test
+	public void testListElementVersions(TestContext context)
+	{	
+		System.out.println("--------------------  Testing Task exists  ----------------------");
+
+		Async setupAsync = context.async();
+		WebClientSession currentSession = createSession();
+		createUser(vertx, "TestUser", "testPassword", Roles.Researcher)
+		.onSuccess(userCreated -> {
+			authenticateSession(currentSession, "TestUser", "testPassword")
+			.onSuccess(authed -> {
+				WebObjectCreator.createTask(currentSession, "Test2")
+				.onSuccess(taskData -> {							
+					Async listVersionsAsync = context.async();
+					POST(currentSession, "/task/" + taskData.getString("UUID") + "/list", null, null)
+					.onSuccess(res -> {
+						JsonArray versions = res.bodyAsJsonArray();
+						context.assertEquals(2, versions.size());
+						boolean init_version_found = false;
+						for(int i = 0; i < versions.size(); ++i)
+						{
+							if(versions.getJsonObject(i).containsKey("tag"))
+							{
+								context.assertEquals("Initial_Version", versions.getJsonObject(i).getString("tag"));
+								init_version_found = true;
+							}
+						}
+						context.assertTrue(init_version_found);
+						listVersionsAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));
+					setupAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));			 
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
 	@Test
 	public void testExperimentCreation(TestContext context)
 	{	

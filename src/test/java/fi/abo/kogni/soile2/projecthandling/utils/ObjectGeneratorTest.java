@@ -86,6 +86,22 @@ public class ObjectGeneratorTest extends GitTest {
 						context.assertEquals(2,list2.size());				
 						listAsync3.complete();
 					});
+					Async versionlistAsync = context.async();
+					expManager.getVersionListForElement(apiexp.getUUID()).onSuccess(list2 -> {
+						boolean init_version_found = false;
+						context.assertEquals(2,list2.size());
+						for(int i = 0; i < list2.size(); ++i)
+						{
+							if(list2.getJsonObject(i).containsKey("tag"))
+							{
+								context.assertEquals("Initial_Version", list2.getJsonObject(i).getString("tag"));
+								init_version_found = true;
+							}
+						}
+						context.assertTrue(init_version_found);
+						versionlistAsync.complete();
+					});
+					
 					Async listAsync4 = context.async();
 					expManager.getElementList(new JsonArray()).onSuccess(list2 -> {
 						context.assertEquals(1,list2.size());				
@@ -129,8 +145,25 @@ public class ObjectGeneratorTest extends GitTest {
 			taskManager.getElementList(new JsonArray()).onSuccess(list -> {
 				context.assertEquals(5,list.size()); // one private task
 				tlistAsync.complete();
+			})				
+			.onFailure(err -> context.fail(err));
+			Async versionlistAsync = context.async();
+			projManager.getVersionListForElement(apiproj.getUUID()).onSuccess(list2 -> {
+				boolean init_version_found = false;
+				context.assertEquals(2,list2.size());
+				for(int i = 0; i < list2.size(); ++i)
+				{
+					if(list2.getJsonObject(i).containsKey("tag"))
+					{
+						context.assertEquals("Initial_Version", list2.getJsonObject(i).getString("tag"));
+						init_version_found = true;
+					}
+				}
+				context.assertTrue(init_version_found);
+				versionlistAsync.complete();
 			})
 			.onFailure(err -> context.fail(err));
+			
 			projAsync.complete();
 		})
 		.onFailure(err -> context.fail(err));
@@ -144,7 +177,8 @@ public class ObjectGeneratorTest extends GitTest {
 		ElementFactory<Task> TaskFactory = new ElementFactory<Task>(Task::new);
 		ObjectGenerator.buildAPITask(taskManager, "Test2", mongo_client)
 		.onSuccess(apiTask -> {
-			Async tlistAsync = context.async();			
+			Async tlistAsync = context.async();		
+			
 			// check, that the created Elements actually exist.
 			taskManager.getElementList(new JsonArray())
 			.onSuccess(list -> {
@@ -163,7 +197,25 @@ public class ObjectGeneratorTest extends GitTest {
 					dbAsync.complete();							
 				})
 				.onFailure(err -> context.fail(err));
+				
 				tlistAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));
+			Async versionlistAsync = context.async();
+			taskManager.getVersionListForElement(apiTask.getUUID()).onSuccess(list2 -> {
+				boolean init_version_found = false;
+				// This has 3. One creation one adding the resources and the final version
+				context.assertEquals(3,list2.size());
+				for(int i = 0; i < list2.size(); ++i)
+				{
+					if(list2.getJsonObject(i).containsKey("tag"))
+					{
+						context.assertEquals("Initial_Version", list2.getJsonObject(i).getString("tag"));
+						init_version_found = true;
+					}
+				}
+				context.assertTrue(init_version_found);
+				versionlistAsync.complete();
 			})
 			.onFailure(err -> context.fail(err));
 			projAsync.complete();

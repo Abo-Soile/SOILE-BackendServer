@@ -51,7 +51,7 @@ public class GitManagerTest extends GitTest{
 		.onSuccess(initVersion -> {
 			GitFile nonResourceFile = new GitFile("NewNonResourceFile",targetElement,initVersion);
 			GitFile resource1 = new GitFile("NewFile1",targetElement,initVersion);
-			gitManager.writeGitFile(nonResourceFile, "Some Data")
+			gitManager.writeGitFile(nonResourceFile, "Some Data", null)
 			.onSuccess(version1 -> {
 				GitFile resource2 = new GitFile("NewFile2",targetElement,version1);			
 				gitManager.writeGitResourceFile(resource1, "New Data")

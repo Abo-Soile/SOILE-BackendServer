@@ -334,7 +334,7 @@ public abstract class ElementBase implements Element {
 	}
 	
 	/**
-	 * Save the current project, this will return the UUID of the project and 
+	 * Save the current element, this will return the UUID of the project and 
 	 * 
 	 * @return a Future of the UUID of the saved element.
 	 */
