@@ -103,14 +103,13 @@ public class ObjectGenerator {
 					apiTask.loadGitJson(TaskDef);
 					apiTask.setCode(TaskCode);
 					apiTask.setVersion(latestVersion);
-					apiTask.setUUID(task.getUUID());	
-					apiTask.setTag("Initial_Version");
+					apiTask.setUUID(task.getUUID());						
 					task.setPrivate(apiTask.getPrivate());				
 					task.save(client)
 					.onSuccess(res -> {
 						LOGGER.debug("Task saved");
 
-						manager.updateElement(apiTask)
+						manager.updateElement(apiTask,"Initial_Version")
 						.onSuccess(newVersion -> {
 							LOGGER.debug("Api Task Updated");
 							apiTask.setVersion(newVersion);
@@ -230,9 +229,8 @@ public class ObjectGenerator {
 						JsonObject current = (JsonObject) item;
 
 						apiExperiment.getElements().add(elements.get(current.getString("instanceID")));
-					}
-					apiExperiment.setTag("Initial_Version");
-					experimentManager.updateElement(apiExperiment)
+					}					
+					experimentManager.updateElement(apiExperiment,"Initial_Version")
 					.onSuccess(newVersion -> { 
 						apiExperiment.setVersion(newVersion);
 						
@@ -351,11 +349,11 @@ public class ObjectGenerator {
 						LinkedList<JsonObject> expList = new LinkedList<JsonObject>();
 						expList.addAll(experiments.values());
 						JsonArray expArray = new JsonArray(expList);
-						apiProject.setExperiments(expArray);
-						apiProject.setTag("Initial_Version");
-						projectManager.updateElement(apiProject)
+						apiProject.setExperiments(expArray);						
+						projectManager.updateElement(apiProject, "Initial_Version")
 						.onSuccess( newVersion -> {
 								apiProject.setVersion(newVersion);
+								//apiProject.setTag("Initial_Version");
 								// Saving the associated project.								
 								projectPromise.complete(apiProject);															
 							})

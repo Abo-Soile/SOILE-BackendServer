@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 
 import org.junit.Test;
 
+import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.MongoTest;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -85,6 +86,46 @@ public class SoileSetupServerTest extends MongoTest{
 		}
 	}
 
+	
+	@Test
+	public void testSetupContent(TestContext context){
+		Async serverSetupAsync = context.async();
+		try {
+			Vertx setupVertx = Vertx.vertx();
+			JsonObject setupConf = new JsonObject(Files.readString(Paths.get(SoileSetupServerTest.class.getClassLoader().getResource("setup.json").getPath())));
+			// for testing there is no specific data Folder
+			setupVertx.deployVerticle(new SetupServer(null), new DeploymentOptions())
+			.onSuccess(serverVerticleID -> 
+			{			
+				mongo_client.find(SoileConfigLoader.getDbCfg().getString("projectCollection"), new JsonObject())
+				.onSuccess(projectList -> {
+					context.assertEquals(1, projectList.size());
+					String projectID = projectList.get(0).getString("_id");
+					String projectVersion = projectList.get(0).getJsonArray("tags").getJsonObject(0).getString("version"); // this is the initial version. Can't be anything else.
+					GitFile f = new GitFile("Object.json", "P" + projectID, projectVersion);
+					setupVertx.eventBus().request("soile.git.getGitFileContentsAsJson", f.toJson())
+					.onSuccess(response -> {
+						JsonObject projectContent = (JsonObject)response.body();
+						context.assertEquals(2, projectContent.getJsonArray("tasks").size());
+						context.assertEquals(1, projectContent.getJsonArray("experiments").size());
+						context.assertEquals(1, projectContent.getJsonArray("filters").size());
+						setupVertx.undeploy(serverVerticleID).
+						onSuccess(undeployed -> {
+							serverSetupAsync.complete();	
+						})
+						.onFailure(err -> context.fail(err));
+					})
+					.onFailure(err -> context.fail(err));
+				})
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
+		}
+		catch(IOException e)
+		{
+			context.fail(e);
+		}
+	}
 
 	@Test
 	public void testReSetup(TestContext context){

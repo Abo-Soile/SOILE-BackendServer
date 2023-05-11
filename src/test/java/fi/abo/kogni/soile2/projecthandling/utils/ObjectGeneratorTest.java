@@ -157,6 +157,17 @@ public class ObjectGeneratorTest extends GitTest {
 					{
 						context.assertEquals("Initial_Version", list2.getJsonObject(i).getString("tag"));
 						init_version_found = true;
+						// check this project
+						Async GitObjectCorrectAsync = context.async();
+						projManager.getGitJson(apiproj.getUUID(), list2.getJsonObject(i).getString("version"))
+						.onSuccess(json -> {
+							context.assertEquals(2, json.getJsonArray("experiments").size());
+							context.assertEquals(2, json.getJsonArray("tasks").size());
+							context.assertEquals(1, json.getJsonArray("filters").size());
+							GitObjectCorrectAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
+
 					}
 				}
 				context.assertTrue(init_version_found);

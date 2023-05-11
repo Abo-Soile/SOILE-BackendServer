@@ -19,7 +19,8 @@
 		"taskLibraryFolder" : "/tmp/soile/libFolder",
 		"sslStoreFile" : "soile-keystore.p12",		
 		"sslSecret" : "secret",
-		"useSSL" : true
+		"useSSL" : true,
+		"corsURLS" : []
 	},
 
 	"db": {

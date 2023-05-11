@@ -6,13 +6,15 @@
 	"tasks": 
 		[
 			{
-				"instanceID": "tabcdefg0",				
+				"instanceID": "tabcdefg0",
+				"position" : {"x" : 50, "y" : 100},				
 				"outputs": ["smoker"],
 				"name": "Initial_Questionaire",
 				"next": "fabcdefg1"				
 			},
 			{
 				"instanceID": "tabcdefg1",
+				"position" : {"x" : 350, "y" : 450},
 				"outputs": ["clicktimes"],
 				"name": "FirstTask",
 				"next": "eabcdefg1"
@@ -22,6 +24,7 @@
 		[
 			{
 				"instanceID": "fabcdefg1",
+				"position" : {"x" : 350, "y" : 100},
 				"options": [
 							
 							{
@@ -38,12 +41,14 @@
 		[
 			{
 				"instanceID" : "eabcdefg1",
+				"position" : {"x" : 650, "y" : 100},
 				"name" : "TestExperiment1",
 				"random" : false,
 				"next": "eabcdefg2"										
 			},
 			{
-				"instanceID" : "eabcdefg2",			
+				"instanceID" : "eabcdefg2",	
+				"position" : {"x" : 950, "y" : 100},		
 				"name" : "TestExperiment2",
 				"random" : false
 			}						
@@ -57,13 +62,15 @@
 	"tasks": 
 		[
 			{
-				"instanceID": "tabcdefg0",				
+				"instanceID": "tabcdefg0",	
+				"position" : {"x" : 100, "y" : 100},			
 				"outputs": ["smoker"],
 				"name": "Initial_Questionaire",
 				"next": "tabcdefg1"				
 			},
 			{
 				"instanceID": "tabcdefg1",
+				"position" : {"x" : 350, "y" : 100},
 				"outputs": ["clicktimes"],
 				"name": "FirstTask",
 				"next": "eabcdefg1"
@@ -73,12 +80,14 @@
 		[
 			{
 				"instanceID" : "eabcdefg1",
+				"position" : {"x" : 650, "y" : 100},
 				"name" : "TestExperiment4",
 				"random" : true,
 				"next": "eabcdefg2"										
 			},
 			{
-				"instanceID" : "eabcdefg2",			
+				"instanceID" : "eabcdefg2",
+				"position" : {"x" : 950, "y" : 100},			
 				"name" : "TestExperiment2",
 				"random" : false
 			}						
@@ -91,12 +100,14 @@
 	"tasks": 
 		[
 			{
-				"instanceID": "tabcdefg0",				
+				"instanceID": "tabcdefg0",	
+				"position" : {"x" : 100, "y" : 100},			
 				"outputs": ["smoker"],
 				"name": "QuestionnaireExample",
 				"next": "fabcdefg1"				
 			},			
 			{
+				"position" : {"x" : 950, "y" : 100},
 				"instanceID": "tabcdefg3",								
 				"name": "JavascriptExample",
 				"next": "end"						
@@ -104,8 +115,9 @@
 		],	
 	"experiments": 
 		[
-			{
+			{			
 				"instanceID" : "eabcdefg1",
+				"position" : {"x" : 650, "y" : 300},
 				"name" : "ExampleExperiment1",
 				"random" : true,
 				"next": "tabcdefg3"										
@@ -115,6 +127,7 @@
 		[
 			{
 				"instanceID": "fabcdefg1",
+				"position" : {"x" : 350, "y" : 100},
 				"options": [
 							
 							{

@@ -286,7 +286,11 @@ public class ElementManager<T extends ElementBase> {
 				}
 				else
 				{
-					element.addVersion(version);				
+					element.addVersion(version);	
+					if( tag != null)
+					{
+						element.addTag(tag, version);
+					}
 					element.save(client).onSuccess(res -> {
 						elementPromise.complete(version);
 					})

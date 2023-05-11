@@ -8,6 +8,7 @@
 				"type": "task", 
 				"name": "Test1", 
 				"instanceID": "tabcdefg2",
+				"position" : {"x" : 100, "y" : 100},
 				"outputs": ["smoker"],
 				"next": "tabcdefg3"
 			},
@@ -15,6 +16,7 @@
 				"type": "task", 
 				"name": "Test2", 
 				"instanceID": "tabcdefg3",
+				"position" : {"x" : 350, "y" : 100},
 				"filter": "tabcdefg2.smoker = 0"
 			}
 		  ]						
@@ -23,11 +25,12 @@
 	{
 		"name" : "TestExperiment2",
 		"private" : true,
-		"items": [{"type": "task", "name": "Test3","instanceID": "tabcdefg4", "next": "fabcdefg2", "outputs": ["smoker"]},				  
-				  {"type": "task", "name": "Test4","instanceID": "tabcdefg5"},
+		"items": [{"type": "task", "name": "Test3","instanceID": "tabcdefg4", "next": "fabcdefg2", "outputs": ["smoker"], "position" : {"x" : 100, "y" : 100}},				  
+				  {"type": "task", "name": "Test4","instanceID": "tabcdefg5", "position" : {"x" : 650, "y" : 100}},
 				  {
 				   "type": "filter",
 				   "name": "Filter2",
+				   "position" : {"x" : 350, "y" : 100},
 				   "instanceID": "fabcdefg2", 
 				   "data":{				   									
 						"options": [
@@ -48,11 +51,12 @@
 	{
 		"name" : "TestExperiment3",
 		"private" : true,
-		"items": [{"type": "task", "name": "Test3","instanceID": "test1inExp", "outputs": ["smoker"], "next" : "filterInExp"},				  
-				  {"type": "task", "name": "Test4","instanceID": "test2inExp"},
+		"items": [{"type": "task", "name": "Test3","instanceID": "test1inExp", "position" : {"x" : 100, "y" : 100}, "outputs": ["smoker"], "next" : "filterInExp"},				  
+				  {"type": "task", "name": "Test4","position" : {"x" : 650, "y" : 100},"instanceID": "test2inExp"},
 				  {
 				   "type": "filter",
-				   "name": "Filter2", 
+				   "name": "Filter2",
+				   "position" : {"x" : 350, "y" : 100}, 
 				   "data":{
 				   		"instanceID": "filterInExp",								
 						"options": [
@@ -67,7 +71,9 @@
 					{
 						"type" : "experiment",
 						"name" : "TestExperiment2",
-						"instanceID" : "firstExp"						
+						"position" : {"x" : 650, "y" : 100},
+						"instanceID" : "firstExp"	
+											
 					}
 				]
 	},	
@@ -79,7 +85,8 @@
 		"items": [
 			{
 				"type": "task", 
-				"name": "Test1", 
+				"name": "Test1",
+				"position" : {"x" : 100, "y" : 100}, 
 				"instanceID": "tabcdefg20",
 				"outputs": ["smoker"],
 				"next": "tabcdefg21"
@@ -87,6 +94,7 @@
 			{
 				"type": "task", 
 				"name": "Test2", 
+				"position" : {"x" : 350, "y" : 100},
 				"instanceID": "tabcdefg21"
 			}
 		  ]						
@@ -99,12 +107,14 @@
 			{
 				"type": "task", 
 				"name": "ElangExample", 
+				"position" : {"x" : 100, "y" : 100},
 				"instanceID": "tabcdefg1",				
 				"next": "tabcdefg2"
 			},
 			{
 				"type": "task", 
-				"name": "PsychoPyExample", 
+				"name": "PsychoPyExample",
+				"position" : {"x" : 350, "y" : 100}, 
 				"instanceID": "tabcdefg2"
 			}
 		  ]						

@@ -2452,7 +2452,16 @@ components:
           type: string
           example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
           description: The Unique ID of this element within its project. This is a string of the form "\w + sha256" where \w depends on the type of object. (e.g. t for task, e for experiment etc.) This ID must be unique for each element (or subelement in a project and in an experiment. i.e. two experiments in the same project cannot have elements with the same instanceID)
-          
+        position: 
+          type: object
+          properties:
+            x: 
+              type: number
+              description: "x-position of the node"
+            y: 
+              type: number
+              description: "y-position of the node"
+                
     ElementVersions:
       type: array
       items:
@@ -2616,6 +2625,10 @@ components:
                 - filter
                 - next
               properties: 
+                name:
+                  type: string
+                  example: "Some Name"
+                  description: a descriptive name of the filter
                 filter: 
                   type: string
                   example: TaskInstanceID1.output1 * TaskInstanceID2.output2 > 4
