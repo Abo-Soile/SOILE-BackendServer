@@ -9,6 +9,7 @@
 				"instanceID": "tabcdefg0",
 				"position" : {"x" : 50, "y" : 100},				
 				"outputs": ["smoker"],
+				"persistent": ["smoker"],
 				"name": "Initial_Questionaire",
 				"next": "fabcdefg1"				
 			},
@@ -104,6 +105,7 @@
 				"position" : {"x" : 100, "y" : 100},			
 				"outputs": ["smoker"],
 				"name": "QuestionnaireExample",
+				"persistent": ["smoker"],
 				"next": "fabcdefg1"				
 			},			
 			{

@@ -52,4 +52,18 @@ public class FilterObjectInstance extends ElementInstanceBase {
 		return getNextIfThereIsOne(user, defaultOption);		
 	}
 
+	public static FieldSpecifications getFieldSpecs()
+	{
+		return new FieldSpecifications().put(new FieldSpecification("instanceID", String.class, String::new, false))																																								
+										.put(new FieldSpecification("options", JsonArray.class, JsonArray::new, false))
+										.put(new FieldSpecification("defaultOption", String.class, () -> "end", false))
+										.put(new FieldSpecification("position", JsonObject.class, () -> new JsonObject().put("x", 0).put("y", 0), true));
+	}
+	
+	@Override
+	public FieldSpecifications getElementSpecifications() {
+		// TODO Auto-generated method stub
+		return getFieldSpecs();
+	}
+
 }

@@ -175,7 +175,14 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 										.put(new FieldSpecification("version", String.class, () -> "", false))
 										.put(new FieldSpecification("elements", JsonArray.class, JsonArray::new, false))
 										.put(new FieldSpecification("next", String.class, () -> "end", false))
-										.put(new FieldSpecification("randomize", Boolean.class, () -> false, true));
+										.put(new FieldSpecification("randomize", Boolean.class, () -> false, true))
+										.put(new FieldSpecification("position", JsonObject.class, () -> new JsonObject().put("x", 0).put("y", 0), true));
+	}
+
+	@Override
+	public FieldSpecifications getElementSpecifications() {
+		// TODO Auto-generated method stub
+		return getFieldSpecs();
 	}
 	
 

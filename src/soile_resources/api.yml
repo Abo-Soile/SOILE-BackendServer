@@ -1538,7 +1538,6 @@ paths:
           description: UUID of the Project
           schema:
             type : string
-            
       responses:
         '200':
           description: Success
@@ -1561,7 +1560,14 @@ paths:
                         type: string
                         description: the version of the code type.
                         example: "1.0"
-                  
+                  outputs:
+                    type: array
+                    items: 
+                      type: string
+                  persistent:
+                    type: array
+                    items: 
+                      type: string
                   finished:
                     type: boolean
                     description: Whether this project is finished. clear indicator that this is finished in addition to the next property being undefined.
@@ -1571,6 +1577,39 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call
+
+  /projectexec/{id}/getpersistent:  
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+        - tokenAuth: []
+      tags:
+        - participation
+      summary: Get the persistent data for the authed user/participant for the given project
+      operationId: getPersistentData
+      description: "Get the persistent data for the authed user to be used in tasks"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Free form object with key/value pairs."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call          
           
   /projectexec/{id}/getcurrenttaskid:  
     post:
@@ -2223,6 +2262,24 @@ components:
           description: The value of an output (within outputData this can only be a number)
         timestamp:
           type: number
+    persistentData:
+      type: object
+      required: 
+        - name
+        - value
+      properties:
+        name: 
+          type: string
+          description: the name of the output, the format is "[0-9A-Za-z]+"
+          example: "smoker"
+        value:
+          oneOf:
+            - type: number
+            - type: string
+            - type: object
+          description: The value of an output (within outputData this can only be a number)
+        timestamp:
+          type: number
     resultData:
       oneOf:
         - $ref: '#/components/schemas/TaskResults'
@@ -2418,6 +2475,10 @@ components:
           type: array
           items: 
               $ref: '#/components/schemas/outputData'
+        persistentData:
+          type: array
+          items: 
+              $ref: '#/components/schemas/persistentData'              
         resultData:
           type: object
           properties:
@@ -2572,6 +2633,12 @@ components:
                 type: string
                 example: output1
               description: All outputs that this task provides which should be available for filtering outside this task within its project. Must be outputs generated in this task!
+            persistent:
+              type: array
+              items:
+                type: string
+                example: output1
+              description: All persistant data created this task
             next:
               type: string
               example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
@@ -2679,11 +2746,10 @@ components:
             properties: 
               elementType: 
                 type: string
-                description: either "experiment" or "task" or "filter"
+                description: either "task" or "filter"
               data:
-                description: one of either task or experiment or filter (as defined by the elementtype). Experiments are expected to be not nested for more than one level. The first element in this 
+                description: one of either task or filter (as defined by the elementtype). Experiments are expected to be not nested. The first element in this 
                 anyOf:
-                  - $ref: '#/components/schemas/ExperimentInstance'
                   - $ref: '#/components/schemas/FilterInstance'
                   - $ref: '#/components/schemas/TaskInstance'
 

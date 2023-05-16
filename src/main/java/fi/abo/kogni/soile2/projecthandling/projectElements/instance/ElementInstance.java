@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Element;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 
 /**
@@ -116,4 +117,9 @@ public interface ElementInstance {
 	 */
 	String nextTask(Participant user);
 
+	/**
+	 * Get the Field Specifications that make up this Element. Used for Initialization of an empty element.
+	 * @return Fieldspecifications that can be used to initialize the fields of this element
+	 */
+	FieldSpecifications getElementSpecifications();
 }

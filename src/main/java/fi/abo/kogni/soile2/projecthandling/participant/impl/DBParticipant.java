@@ -115,7 +115,7 @@ public class DBParticipant extends ParticipantImpl{
 	}
 	
 	/**
-	 * 
+	 * This is a bit awkward, but we keep the local copy and the db instance in sync manually. Not sure, if this is the best idea...
 	 */
 	@Override
 	public Future<Void> setOutputDataForTask(String taskID, JsonArray taskOutputData)
@@ -154,6 +154,44 @@ public class DBParticipant extends ParticipantImpl{
 	{		
 		outputMap = new DatedDataMap<>();
 		return manager.resetParticipant(this);
+	}
+
+	@Override
+	public Future<Void> setPersistentData(JsonArray persistentData) {
+	
+		{		
+			Promise<Void> outputsSetPromise = Promise.promise();
+			if(persistentData != null && persistentData.size() > 0)
+			{			
+				JsonArray changedOutputNames = new JsonArray();
+				for(int i = 0; i < persistentData.size(); i++)
+				{
+					changedOutputNames.add(persistentData.getJsonObject(i).getString("name"));
+				}
+				manager.updatePersistentData(this, persistentData, changedOutputNames)
+				.onSuccess(v-> {				
+					LOGGER.debug("Updated the db outputs");
+					for(Object output : persistentData)
+					{
+						JsonObject dataElement = (JsonObject) output;				
+						super.addPersistentData(dataElement.getString("name"), dataElement.getNumber("value"));					
+					}				
+					manager.getElement(this.getID())
+					.onSuccess(part -> {					
+						outputsSetPromise.complete();	
+					})
+					.onFailure(err -> outputsSetPromise.fail(err));
+					
+				})
+				.onFailure(err -> outputsSetPromise.fail(err));
+			}
+			else
+			{
+				outputsSetPromise.complete();
+			}
+			return outputsSetPromise.future();
+			
+		}
 	}
 	
 

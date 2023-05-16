@@ -12,6 +12,13 @@
 					"value" : 1											 
 				}
 			],
+			"persistentData" : 
+			[
+				{ 
+					"name" : "smoker",
+					"value" : 1											 
+				}
+			],
 			"resultData" : 
 			{
 				"jsonData" : 

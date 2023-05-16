@@ -473,6 +473,40 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	}
 	
 	/**
+	 * TODO: Check if the timestamp from the input data needs to be updated... 
+	 * Update the outputs of a participant for the given TaskID and Outputs array.
+	 * @param p The {@link Participant} to update
+	 * @param taskID the id of the Task for which to update the Outputs
+	 * @param Outputs The Output data
+	 * @return A Successfull future if the outputs were updated.
+	 */
+	public Future<Void> updatePersistentData(Participant p, JsonArray Outputs, JsonArray outputNames)
+	{
+		// We will pull the outputs for this task.
+		JsonObject pullUpdate = new JsonObject().put("$pull", new JsonObject()
+																  .put("persistentData", new JsonObject()
+																		  .put("name", new JsonObject().put("$in", outputNames))));
+																		  						 				  	
+		JsonObject pushUpdate = new JsonObject().put("$push", new JsonObject()
+				  .put("persistentData", new JsonObject().put("$each", Outputs)));
+		JsonObject setUpdate = new JsonObject().put("$set", new JsonObject()
+				  .put("modifiedStamp", System.currentTimeMillis()));		
+		JsonObject itemQuery = new JsonObject().put("_id", p.getID());
+		List<BulkOperation> pullAndPut = new LinkedList<>();
+		BulkOperation pullOp = BulkOperation.createUpdate(itemQuery, pullUpdate);
+		BulkOperation pushOp = BulkOperation.createUpdate(itemQuery, pushUpdate);
+		BulkOperation setOp = BulkOperation.createUpdate(itemQuery, setUpdate);
+		pullAndPut.add(pullOp);
+		pullAndPut.add(pushOp);				
+		pullAndPut.add(setOp);
+		return client.bulkWrite(participantCollection, pullAndPut).onSuccess(res -> {
+			LOGGER.debug(res.toJson());
+		}).mapEmpty();
+		
+	}
+	
+	
+	/**
 	 * Get the results for the participantIDs indicated in the provided {@link JsonArray}
 	 * @param participantIDs The participant IDs for which to obtain data.
 	 * @param projectID Nullable. If null or an empty string, participants from multiple projects can be queried simultaneously. 

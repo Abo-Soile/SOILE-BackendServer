@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.utils.DatedDataMap;
+import fi.abo.kogni.soile2.datamanagement.utils.OutputMap;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedData;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
@@ -47,7 +48,8 @@ public abstract class ParticipantImpl implements Participant{
 	/**
 	 * This map is a way to get output data faster than relying on outputData
 	 */	
-	protected DatedDataMap<String,Double> outputMap;	
+	protected DatedDataMap<String,Double> outputMap;
+	protected JsonObject persistentMap;
 	static final Logger LOGGER = LogManager.getLogger(ParticipantImpl.class);
 	private static DateFormat dateFormatter = new SimpleDateFormat("MM/dd/yyyy - HH:SS");
 
@@ -64,7 +66,13 @@ public abstract class ParticipantImpl implements Participant{
 		setupParticipant(data);
 	}
 
-
+	
+	@Override
+	public String getProjectID()
+	{
+		return project;
+	}
+	
 	protected void setupParticipant(JsonObject participantInfo)
 	{		
 		LOGGER.debug(participantInfo.encodePrettily());
@@ -73,7 +81,8 @@ public abstract class ParticipantImpl implements Participant{
 		currentStep = participantInfo.getInteger("currentStep",0);
 		steps = participantInfo.getJsonArray("steps",new JsonArray());
 		finished = participantInfo.getBoolean("finished",false);
-		parseOutputData(participantInfo.getJsonArray("outputData", new JsonArray()));	
+		parseOutputData(participantInfo.getJsonArray("outputData", new JsonArray()));
+		parsePersistentData(participantInfo.getJsonArray("persistentData", new JsonArray()));
 		activeExperiments = participantInfo.getJsonArray("activeExperiments",new JsonArray());
 		project = participantInfo.getString("project", "");
 		for(Object o : participantInfo.getJsonArray("finishedExperimentTasks",new JsonArray()))
@@ -116,11 +125,6 @@ public abstract class ParticipantImpl implements Participant{
 		}
 	}					
 
-	@Override
-	public String getProjectID()
-	{
-		return project;
-	}
 
 	/**
 	 * Get the map of Outputs to provide to a Math-parser. This is generated once per user on request and only updated afterwards.
@@ -160,6 +164,62 @@ public abstract class ParticipantImpl implements Participant{
 		outputMap.addDatedEntry(taskID + "." + outputName, new TimeStampedData<Double>(value.doubleValue()));							
 
 	}
+	
+	
+	/**
+	 *  For faster access, we convert the stored output data into a more quickly accessible format (which unfortunately cannot be well defined in OpenAPI.
+	 * @param data the outputData (i.e. results) for this participant
+	 */
+	private void parsePersistentData(JsonArray data)
+	{		
+		for(Object output : data)
+		{
+			JsonObject outputElement = (JsonObject)output;
+			addPersistentData(outputElement.getString("name"), outputElement.getNumber("value"));
+		}
+	}		
+
+	
+	/**
+	 * Add a piece of persistent data 
+	 * @param outputName the name of the output in the task
+	 * @param value the value of the output
+	 */
+	@Override
+	public void addPersistentData(String outputName, Object value)
+	{
+		if(persistentMap == null)
+		{
+			persistentMap = new OutputMap();
+		}		
+		persistentMap.put(outputName, value);							
+
+	}
+	
+	/**
+	 * Set persistant data 
+	 * @param persistentData The output data in the format as specified for TaskData.outputData
+	 */
+	@Override
+	public Future<Void> setPersistentData(JsonArray persistentData)
+	{		
+		if(persistentData != null)
+		{
+			for(Object output : persistentData)
+			{
+				JsonObject dataElement = (JsonObject) output;				
+				addPersistentData(dataElement.getString("name"), dataElement.getNumber("value"));
+			}
+		}	
+		return Future.succeededFuture();
+	}
+
+	@Override
+	public JsonObject getPersistentData() {
+		// TODO Auto-generated method stub
+		return persistentMap;
+	}
+	
 	/**
 	 * Get the position of this participant within its project
 	 * @return

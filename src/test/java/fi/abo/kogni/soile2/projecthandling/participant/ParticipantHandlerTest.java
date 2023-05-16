@@ -73,7 +73,7 @@ public class ParticipantHandlerTest extends GitTest{
 
 
 		JsonObject wrongquestionaireOutput = new JsonObject().put("outputData", new JsonArray().add(smokerOutput)).put("taskID", "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2"); 
-		JsonObject smokerQuestionaireOutput = new JsonObject().put("outputData", new JsonArray().add(smokerOutput)).put("taskID", "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1");
+		JsonObject smokerQuestionaireOutput = new JsonObject().put("persistentData", new JsonArray().add(smokerOutput)).put("outputData", new JsonArray().add(smokerOutput)).put("taskID", "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1");
 		Async participantAsync = context.async();
 		try
 		{
@@ -170,6 +170,11 @@ public class ParticipantHandlerTest extends GitTest{
 		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
+		JsonObject smokerOutput = new JsonObject()
+				.put("name", "smoker")
+				.put("value", 1);
+		JsonObject smokerQuestionaireOutput = new JsonObject().put("persistentData", new JsonArray().add(smokerOutput)).put("outputData", new JsonArray().add(smokerOutput));
+		
 		ElementManager<Project> projectManager = ElementManager.getProjectManager(mongo_client, vertx);
 		ObjectGenerator.buildAPIProject(projectManager, ElementManager.getExperimentManager(mongo_client, vertx), ElementManager.getTaskManager(mongo_client, vertx), mongo_client, "Testproject2")
 		.onSuccess(apiProject-> {
@@ -195,7 +200,7 @@ public class ParticipantHandlerTest extends GitTest{
 									context.assertTrue(participant2 == participant3);
 									context.assertFalse(participant == participant3);
 									//
-									projectInstance.finishStep(participant, new JsonObject().put("taskID", position))
+									projectInstance.finishStep(participant, smokerQuestionaireOutput.put("taskID", position))
 									.onSuccess(res -> {
 										partHandler.getParticipant(participant.getID())
 										.onSuccess(participant4 ->
