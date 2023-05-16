@@ -1538,7 +1538,6 @@ paths:
           description: UUID of the Project
           schema:
             type : string
-            
       responses:
         '200':
           description: Success
@@ -1563,10 +1562,12 @@ paths:
                         example: "1.0"
                   outputs:
                     type: array
-                    items: string
+                    items: 
+                      type: string
                   persistent:
                     type: array
-                    items: string
+                    items: 
+                      type: string
                   finished:
                     type: boolean
                     description: Whether this project is finished. clear indicator that this is finished in addition to the next property being undefined.
