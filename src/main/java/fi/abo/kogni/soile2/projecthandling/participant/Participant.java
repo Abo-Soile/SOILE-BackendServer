@@ -27,6 +27,12 @@ public interface Participant {
 	Map<String, Double> getOutputs();
 
 	/**
+	 * Get the array of persistent data.
+	 * @return a {@link JsonArray} of {"name" : string, "value" : any} values, containing the persistent data of the user.  
+	 */
+	JsonObject getPersistentData();
+	
+	/**
 	 * Get the position of this participant within its project
 	 * @return
 	 */
@@ -99,6 +105,22 @@ public interface Participant {
 	 */
 	Future<Void> setOutputDataForTask(String taskID, JsonArray taskOutputData);
 
+	
+	/**
+	 * Add a piece of persistent data to the participant
+	 * @param taskID The taskID for the output
+	 * @param outputName the name of the output in the task
+	 * @param value the value of the output
+	 */
+	void addPersistentData(String outputName, Object value);
+	
+	/**
+	 * Set a set of persistent data for the given user.
+	 * Note, that only the latest results of a task will be available in the outputs.
+	 * @param taskID he task for which to store data
+	 * @param taskOutputData The output data in the format as specified for TaskData.outputdata
+	 */
+	Future<Void> setPersistentData(JsonArray taskOutputData);	
 	
 	/**
 	 * Add the result to this participant

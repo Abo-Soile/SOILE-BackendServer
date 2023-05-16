@@ -1066,6 +1066,17 @@ Kuinka usein olet juonut kerralla kuusi tai useampia annoksia?
 }
 
 /p
+Tuppako?
+
+/singleselect {
+   default_value: "0",
+   dbcolumn: "smoker",
+   options: [[{dbvalue: "1", text: "Kyllä"},
+             {dbvalue: "0", text: "Ei"}             
+            ]]
+}
+
+/p
 Kuinka usein viimeisen vuoden aikana et ole juomisesi vuoksi saanut tehtyä jotain, mikä tavallisesti kuuluu tehtäviisi?
 /singleselect {
    default_value: "-1",

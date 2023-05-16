@@ -80,7 +80,7 @@ public class DBProjectTest extends GitTest{
 						)
 				)
 				.put("fileData", fileData);
-		JsonObject result = new JsonObject().put("outputData", OutputData).put("resultData", resultData);
+		JsonObject result = new JsonObject().put("persistentData", OutputData).put("outputData", OutputData).put("resultData", resultData);
 
 		System.out.println("--------------------  Testing DB Project progression ----------------------");
 		ElementManager<Project> projManager = new ElementManager<>(Project::new, APIProject::new, mongo_client, vertx);
@@ -112,7 +112,7 @@ public class DBProjectTest extends GitTest{
 						.onSuccess(position -> {							
 							projectInstance.finishStep(participant, result.copy().put("taskID", position))
 							.onSuccess(pos1 -> {								
-								projectInstance.finishStep(participant, result.copy().put("taskID", pos1))
+								projectInstance.finishStep(participant, result.copy().put("taskID", pos1).put("outputData", new JsonArray().add(new JsonObject().put("name", "clicktimes").put("value", 2))))
 								.onSuccess(pos2 -> {									
 									projectInstance.finishStep(participant, result.copy().put("taskID", pos2))
 									.onSuccess(pos3 -> {										

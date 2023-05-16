@@ -2,9 +2,13 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance;
 
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 import io.vertx.core.json.JsonObject;
 
@@ -19,9 +23,12 @@ public abstract class ElementInstanceBase implements ElementInstance {
 
 	protected ProjectInstance sourceProject;	 
 	protected JsonObject data;
+	  static final Logger LOGGER = LogManager.getLogger(ElementInstanceBase.class);
+
 	public ElementInstanceBase(JsonObject data, ProjectInstance source)
 	{
-		this.data = data;
+		setupFieldsAccordingToSpec();
+		this.data.mergeIn(data);
 		this.sourceProject = source; 
 	}
 	
@@ -153,4 +160,13 @@ public abstract class ElementInstanceBase implements ElementInstance {
 			return element.nextTask(user);
 		}
 	}	
+	private void setupFieldsAccordingToSpec()
+	{
+		this.data = new JsonObject();
+		FieldSpecifications specs = getElementSpecifications(); 
+		for(String field : specs.getFields())
+		{
+			this.data.put(field, specs.getDefaultForField(field));
+		}
+	}
 }

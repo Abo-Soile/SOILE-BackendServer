@@ -1,6 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -236,42 +237,94 @@ public abstract class ProjectInstance implements AccessElement{
 	 */
 	public Future<String> finishStep(Participant participant, JsonObject taskData)
 	{
-		LOGGER.debug("Handling participant: " + participant.toString() + " with data " + taskData.encodePrettily());
+		LOGGER.info("Handling participant: " + participant.toString() + " with data " + taskData.encodePrettily());
 		if(!isActive)
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
 		}		
 		Promise<String> finishedPromise = Promise.promise();
-		LOGGER.debug(taskData.encodePrettily());
+		LOGGER.info(taskData.encodePrettily());
 		if(taskData.getString("taskID") == null || !taskData.getString("taskID").equals(participant.getProjectPosition()))
 		{
 			finishedPromise.fail( new InvalidPositionException(participant.getProjectPosition(), taskData.getString("taskID")));			
 		}
 		else
 		{
+			//TODO: Check, whether the indicated outputs are actually present!
+			if(isDataOkForTask(taskData)) 
+			{
 			participant.setOutputDataForTask(participant.getProjectPosition(),taskData.getJsonArray("outputData",new JsonArray()))
-			.onSuccess(v -> {
-				
-				participant.addResult(participant.getProjectPosition(), getResultDataFromTaskData(taskData))
-				.onSuccess(v2 -> {
-					participant.finishCurrentTask()
-					.onSuccess(v3 -> {
-						setNextStep(participant).onSuccess( next -> 
-						{
-							finishedPromise.complete(next);
+			.onSuccess(outputsSet -> {
+				participant.setPersistentData(taskData.getJsonArray("persistentData",new JsonArray()))
+				.onSuccess(persistentSet -> {
+					participant.addResult(participant.getProjectPosition(), getResultDataFromTaskData(taskData))
+					.onSuccess(v2 -> {
+						participant.finishCurrentTask()
+						.onSuccess(v3 -> {
+							setNextStep(participant).onSuccess( next -> 
+							{
+								finishedPromise.complete(next);
+							})
+							.onFailure(err -> finishedPromise.fail(err));
 						})
 						.onFailure(err -> finishedPromise.fail(err));
 					})
-					.onFailure(err -> finishedPromise.fail(err));					
+					.onFailure(err -> finishedPromise.fail(err));
 				})
 				.onFailure(err -> finishedPromise.fail(err));
 				
 			})
 			.onFailure(err -> finishedPromise.fail(err));
+			}
+			else
+			{
+				// TODO: Create its own Exception
+				finishedPromise.fail(new Exception("Data Missing for task"));
+			}
 			
 		}
 		return finishedPromise.future();
 	}	
+	
+	private boolean isDataOkForTask(JsonObject taskData)
+	{
+		TaskObjectInstance currentTask = (TaskObjectInstance)getElement(taskData.getString("taskID"));
+		HashSet<String> outputs = new HashSet<>();
+		HashSet<String> persistent = new HashSet<>();
+		boolean outputsPresent = true;
+		JsonArray outputData = taskData.getJsonArray("outputData", new JsonArray());		
+		for(int i = 0; i < outputData.size(); i++)
+		{
+			outputs.add(outputData.getJsonObject(i).getString("name"));
+		}
+		JsonArray currentOutputs = currentTask.getOutputs(); 
+		for(int i = 0; i < currentOutputs.size(); i++)
+		{
+			if(!outputs.contains(currentOutputs.getString(i))) {
+				outputsPresent = false;
+				break;
+			}
+		}
+		boolean persistentPresent = true;
+		LOGGER.info(taskData.encodePrettily());		
+		JsonArray persistentData = taskData.getJsonArray("persistentData", new JsonArray());
+		LOGGER.info(currentOutputs.encodePrettily());
+		
+		for(int i = 0; i < persistentData.size(); i++)
+		{
+			persistent.add(persistentData.getJsonObject(i).getString("name"));
+		}
+		JsonArray currentPersistent = currentTask.getPersistent(); 
+		for(int i = 0; i < currentPersistent.size(); i++)
+		{
+			if(!persistent.contains(currentPersistent.getString(i))) {
+				persistentPresent = false;
+				break;
+			}
+		}
+		LOGGER.info(currentPersistent.encodePrettily());
+		return outputsPresent && persistentPresent;
+	}
 	
 	public boolean isActive() {
 		return isActive;

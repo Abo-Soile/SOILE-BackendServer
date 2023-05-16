@@ -32,7 +32,7 @@ public class DBParticipantTest extends GitTest{
 
 
 		JsonObject wrongquestionaireOutput = new JsonObject().put("outputData", new JsonArray().add(smokerOutput)).put("taskID", "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2"); 
-		JsonObject smokerQuestionaireOutput = new JsonObject().put("outputData", new JsonArray().add(smokerOutput)).put("taskID", "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1");
+		JsonObject smokerQuestionaireOutput = new JsonObject().put("persistentData", new JsonArray().add(smokerOutput)).put("outputData", new JsonArray().add(smokerOutput)).put("taskID", "t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1");
 		Async participantAsync = context.async();
 		try
 		{
@@ -91,7 +91,8 @@ public class DBParticipantTest extends GitTest{
 								
 							})
 							.onFailure(err -> context.fail(err));
-						});						
+						})
+						.onFailure(err -> context.fail(err));						
 					})
 					.onFailure(err -> context.fail(err));
 					participantAsync.complete();

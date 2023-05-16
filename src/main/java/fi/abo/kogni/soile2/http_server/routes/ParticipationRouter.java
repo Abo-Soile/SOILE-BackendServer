@@ -330,7 +330,7 @@ public class ParticipationRouter extends SoileRouter{
 								context.response()
 								.setStatusCode(200)	
 								.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-								.end(new JsonObject().put("finished", false).put("codeType", responseBody.getJsonObject("codeType")).put("outputs", currentTask.getOutputs()).put("id", participant.getProjectPosition()).encode());
+								.end(new JsonObject().put("finished", false).put("codeType", responseBody.getJsonObject("codeType")).put("outputs", currentTask.getOutputs()).put("persistent", currentTask.getPersistent()).put("id", participant.getProjectPosition()).encode());
 							})
 							.onFailure(err -> handleError(err, context));
 						}
@@ -351,6 +351,30 @@ public class ParticipationRouter extends SoileRouter{
 		.onFailure(err -> handleError(err, context));		
 	}
 
+	//TODO: Test
+	public void getPersistentData(RoutingContext context)
+	{
+		String requestedInstanceID = context.pathParam("id");;
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
+		.onSuccess(Void -> {
+			loadProject(requestedInstanceID)
+			.onSuccess(project -> {					
+				//JsonArray taskData = project.getTasksWithNames();
+				// this list needs to be filtered by access
+				getParticpantForUser(context.user(), project)				
+				.onSuccess(participant-> {							
+					context.response()
+					.setStatusCode(200)	
+					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+					.end(participant.getPersistentData().encode());
+					
+				})
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));		
+	}
 
 	public void runTask(RoutingContext context)
 	{
