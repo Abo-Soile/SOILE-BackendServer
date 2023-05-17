@@ -321,6 +321,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("getTask").handler(taskRouter::getElement);
 		builder.operation("updateTask").handler(taskRouter::writeElement);
 		builder.operation("getExecution").handler(taskRouter::getCompiledTask);
+		builder.operation("getTagForTaskVersion").handler(taskRouter::getTagForVersion);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
@@ -337,6 +338,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("createExperiment").handler(router::create);
 		builder.operation("getExperiment").handler(router::getElement);
 		builder.operation("updateExperiment").handler(router::writeElement);
+		builder.operation("getTagForExperimentVersion").handler(router::getTagForVersion);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 
@@ -353,6 +355,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("createProject").handler(router::create);
 		builder.operation("getProject").handler(router::getElement);
 		builder.operation("updateProject").handler(router::writeElement);
+		builder.operation("getTagForProjectVersion").handler(router::getTagForVersion);
 		builder.operation("isFilterValid").handler(router::isFilterValid);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
@@ -372,7 +375,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("stopProject").handler(router::stopProject);		
 		builder.operation("restartProject").handler(router::restartProject);
 		builder.operation("deleteProject").handler(router::deleteProject);
-		builder.operation("getProjectResults").handler(router::getProjectResults);
+		builder.operation("getProjectResults").handler(router::getProjectResults);		
 		builder.operation("downloadResults").handler(router::downloadResults);
 		builder.operation("downloadTest").handler(router::downloadTest);
 		builder.operation("createTokens").handler(router::createTokens);		
@@ -392,7 +395,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("runTask").handler(context -> {partRouter.handleRequest(context,partRouter::runTask);});
 		builder.operation("getID").handler(context -> {partRouter.handleRequest(context,partRouter::getID);});
 		builder.operation("signUpForProject").handler(context -> {partRouter.handleRequest(context,partRouter::signUpForProject);});
-		builder.operation("uploadData").handler(context -> {partRouter.handleRequest(context,partRouter::uploadData);});		
+		builder.operation("uploadData").handler(context -> {partRouter.handleRequest(context,partRouter::uploadData);});
+		builder.operation("getPersistentData").handler(context -> {partRouter.handleRequest(context,partRouter::getPersistentData);});		
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	/**

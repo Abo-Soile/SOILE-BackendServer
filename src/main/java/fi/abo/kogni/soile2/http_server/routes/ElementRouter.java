@@ -133,6 +133,27 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 	}
 
+	public void getTagForVersion(RoutingContext context)
+	{		
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String elementID = params.pathParameter("id").getString();
+		String elementversion = params.pathParameter("version").getString();
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		.onSuccess(Void -> 
+		{
+			elementManager.getTagForElementVersion(elementID, elementversion)
+			.onSuccess(tag -> {			
+				context.response()
+				.setStatusCode(200)
+				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+				.end(new JsonObject().put("tag", tag).encode());	
+			})
+			.onFailure(err -> handleError(err, context));	
+		})
+		.onFailure(err -> handleError(err, context));
+
+	}
+	
 	public void getVersionList(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);

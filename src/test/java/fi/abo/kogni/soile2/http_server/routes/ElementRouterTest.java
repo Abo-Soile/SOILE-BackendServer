@@ -178,6 +178,27 @@ public class ElementRouterTest extends SoileWebTest {
 
 	}
 
+	@Test
+	public void testGetTagForVersion(TestContext context)
+	{		
+		System.out.println("--------------------  Testing Project Generation ----------------------");
+		Async projAsync = context.async();
+		createUserAndAuthedSession("TestUser", "testPassword", Roles.Researcher)
+		.onSuccess(session -> {
+
+			WebObjectCreator.createProject(session, "Testproject")
+			.onSuccess( projectData -> {
+				GET(session, "/project/gettag/" + projectData.getString("UUID") +"/" +projectData.getString("version"), null, null)
+				.onSuccess(response -> {
+					context.assertEquals("Initial_Version", response.bodyAsJsonObject().getValue("tag"));
+					projAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
 
 	@Test
 	public void testBuildProject(TestContext context)

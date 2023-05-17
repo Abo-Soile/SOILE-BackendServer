@@ -293,7 +293,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 				)
 				.put("fileData", fileData);
 
-		JsonObject result = new JsonObject().put("outputData", OutputData).put("persistentData",OutputData).put("resultData", resultData);
+		JsonObject result = new JsonObject().put("outputData", OutputData).put("persistentData",OutputData).put("resultData", resultData);		
 		String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
 		File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
 		List<File> fileUploads = new LinkedList<>();
@@ -307,6 +307,15 @@ public class ParticipationRouterTest extends SoileWebTest{
 				tempSession.addHeader("Authorization", authToken);					
 				submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 				.onSuccess(submitted -> {
+					Async persistentAsync = context.async();
+					POST(tempSession,"/projectexec/" + instanceID + "/getpersistent", null, null)
+					.onSuccess( response -> {
+						JsonObject responsebody = response.bodyAsJsonObject();
+						context.assertTrue(responsebody.containsKey("smoker"));
+						context.assertEquals(1, responsebody.getNumber("smoker"));
+						persistentAsync.complete();						
+					})				
+					.onFailure(err -> context.fail(err));
 					submitFilesAndResults(tempSession, fileUploads, result.copy().put("outputData",  new JsonArray().add(new JsonObject().put("name",  "clicktimes").put("value", 0.5))), instanceID)
 					.onSuccess(submitted2 -> {
 						POST(tempSession,"/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)

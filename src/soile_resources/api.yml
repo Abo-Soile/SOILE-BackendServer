@@ -513,6 +513,46 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
+  /task/gettag/{id}/{version}:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Get the tag for the task at the specified version (if any))
+      operationId: getTagForTaskVersion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: version of the requested task, can be either a tag or a commit id or latest, which would refer to the latest commit. 
+          schema:
+            type : string
+      responses:
+        '200':
+          description: The task version tag
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tag:
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'
   /task/{id}/list:
     post:
       security:
@@ -1141,7 +1181,47 @@ paths:
           application/json:
             schema:
              $ref: '#/components/schemas/Project'
-        description: In addition to the required fields, this submission also needs a tag. Otherwise the only way to obtain this version again is by providing the returned version id.
+        description: In addition to the required fields, this submission also needs a tag. Otherwise the only way to obtain this version again is by providing the returned version id.      
+  /project/gettag/{id}/{version}:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Get the tag for the project at the specified version (if any))
+      operationId: getTagForProjectVersion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the project
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: version of the requested project, can be either a tag or a commit id or latest, which would refer to the latest commit. 
+          schema:
+            type : string
+      responses:
+        '200':
+          description: The project version tag
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tag:
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'       
   /projectexec/{id}/data/list:
     post:
       security:
@@ -1934,7 +2014,46 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
-          
+  /experiment/gettag/{id}/{version}:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - experiment
+      summary: Get the tag for the experiment at the specified version (if any))
+      operationId: getTagForExperimentVersion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the experiment
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: version of the requested experiment, can be either a tag or a commit id or latest, which would refer to the latest commit. 
+          schema:
+            type : string
+      responses:
+        '200':
+          description: The experiment version tag
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tag:
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'        
   /experiment/{id}/list:
     post:
       security:

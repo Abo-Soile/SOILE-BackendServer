@@ -405,10 +405,42 @@ public class ElementManager<T extends ElementBase> {
 		return listPromise.future();		
 	}
 
+	/**
+	 * Get the Tag of a specific version of an element, if it exists (null otherwise).  
+	 * @param id The id of the element in question
+	 * @param version The version of the element
+	 * @return
+	 */
+	public Future<String> getTagForElementVersion(String id, String version)
+	{
+		Promise<String> tagPromise = Promise.<String>promise();		
 
+		Element e = supplier.get();				
+		client.findOne(e.getTargetCollection(), new JsonObject().put("_id", id), new JsonObject().put("tags", 1))
+		.onSuccess(res -> {			
+			JsonArray tagArray = res.getJsonArray("tags");			
+			String tag = null;
+			for( int i = 0; i < tagArray.size(); i++ )
+			{
+				if(tagArray.getJsonObject(i).getString("version").equals(version))
+				{
+					tag = tagArray.getJsonObject(i).getString("tag");
+					break;
+				}				
+			}
+			
+			tagPromise.complete(tag);
+		})
+		.onFailure(err -> {
+			tagPromise.fail(err);
+		});
+		return tagPromise.future();		
+	}
+	
+	
 	/**
 	 * Get the list of all versions for the given element.  
-	 * Returns a list of 
+	 * Returns a list of all versions of the element with the given ID
 	 * @param id The id of the element in question
 	 * @return
 	 */
