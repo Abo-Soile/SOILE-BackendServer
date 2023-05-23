@@ -67,7 +67,7 @@ public class GitManagerTest extends GitTest{
 							context.assertEquals(1, list.size());
 							for(int i = 0; i < list.size(); i++)
 							{
-								expectedList.remove(list.getString(i));
+								expectedList.remove(list.getJsonObject(i).getString("label"));
 							}
 							context.assertEquals(0, expectedList.size());
 							firstTest.complete();
@@ -88,7 +88,7 @@ public class GitManagerTest extends GitTest{
 							context.assertEquals(2, list.size());
 							for(int i = 0; i < list.size(); i++)
 							{
-								expectedList.remove(list.getString(i));
+								expectedList.remove(list.getJsonObject(i).getString("label"));
 							}
 							context.assertEquals(0, expectedList.size());
 							secondTest.complete();
