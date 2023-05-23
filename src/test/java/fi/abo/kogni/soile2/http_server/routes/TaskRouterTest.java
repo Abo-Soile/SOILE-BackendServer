@@ -299,7 +299,7 @@ public class TaskRouterTest extends SoileWebTest{
 					WebObjectCreator.createOrRetrieveTask(authedSession, "FileRead")
 					.onSuccess(taskData -> {									
 						Async correctSessionAsync  = context.async();
-						GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/filelist", null, null)
+						GET(authedSession, "/task/filelist/" + taskData.getString("UUID") + "/" + taskData.getString("version"), null, null)
 						.onSuccess(response -> {										
 							JsonArray fileList = response.bodyAsJsonArray();
 							context.assertEquals(5, fileList.size());	
@@ -311,7 +311,7 @@ public class TaskRouterTest extends SoileWebTest{
 						})
 						.onFailure(err -> context.fail(err));
 						Async incorrectSessionAsync  = context.async();
-						GET(wrongSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/filelist", null, null)
+						GET(wrongSession, "/task/filelist/" + taskData.getString("UUID") + "/" + taskData.getString("version") , null, null)
 						.onSuccess(response -> context.fail("User has no Access"))																
 						.onFailure(invalid -> {
 							context.assertEquals(403, ((HttpException)invalid).getStatusCode());

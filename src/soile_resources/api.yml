@@ -587,7 +587,7 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
-  /task/{id}/{version}/filelist:
+  /task/filelist/{id}/{version}:
     get:
       security:
         - cookieAuth: []
