@@ -16,6 +16,7 @@ import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
@@ -159,6 +160,28 @@ public class TaskRouter extends ElementRouter<Task> {
 		})
 		.onFailure(err -> handleError(err, context));		
 	}
+
+	
+	public void getTaskFileList(RoutingContext context)
+	{
+		String elementID = context.pathParam("id");
+		String version = context.pathParam("version");		 
+
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,false)
+		.onSuccess(Void -> {
+			eb.request("soile.git.getResourceList", new JsonObject().put("repoID", elementManager.getGitIDForUUID(elementID)).put("version", version))
+			.onSuccess(response -> {
+				JsonArray responseBody = (JsonArray) response.body();
+				context.response()
+				.setStatusCode(200)
+				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+				.end(responseBody.encode());
+			})
+			.onFailure(err -> handleError(err, context));			
+		})
+		.onFailure(err -> handleError(err, context));		
+	}
+
 	
 	public void getResourceForExecution(RoutingContext context)
 	{

@@ -69,6 +69,14 @@
 		"codeFile": "JSExample.js",
 		"codeType" : { "language" : "javascript",
 					   "version" : "ES6"}
+	},
+	"FileRead": {							
+		"name": "Test3",
+		"private" : true,
+		"resources": ["minitest-legacy-browsers.js","minitest.js","other/Circle.png","images/apple.jpg","images/teddy.jpg","images/pear.jpg", "conditions.xlsx"],
+		"codeType" : { "language" : "psychopy",
+					 "version" : "2022.2.5"},		
+		"codeFile": "psychopy.html"
 	}
 	
 	

@@ -2,7 +2,9 @@ package fi.abo.kogni.soile2.http_server.routes;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -172,40 +174,40 @@ public class TaskRouterTest extends SoileWebTest{
 			.onSuccess(wrongSession -> {				 
 				WebObjectCreator.createOrRetrieveTask(authedSession, "FirstTask")
 				.onSuccess(taskData -> {
-				GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/execute/lib/testlib.js", null, null)
-				.onSuccess(response -> {
-					context.assertTrue(response.bodyAsString().contains("console.log"));
-					GET(wrongSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/execute/lib/testlib.js", null, null)
-					.onFailure(fail -> {
-						context.assertEquals(403, ((HttpException)fail).getStatusCode());
-						
-						testRunResource.complete();
+					GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/execute/lib/testlib.js", null, null)
+					.onSuccess(response -> {
+						context.assertTrue(response.bodyAsString().contains("console.log"));
+						GET(wrongSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/execute/lib/testlib.js", null, null)
+						.onFailure(fail -> {
+							context.assertEquals(403, ((HttpException)fail).getStatusCode());
+
+							testRunResource.complete();
+						})
+						.onSuccess(err -> context.fail("Should not be allowed"));	
 					})
-					.onSuccess(err -> context.fail("Should not be allowed"));	
+					.onFailure(err -> context.fail(err));
+					Async failedLibAsync = context.async();
+					GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/execute/lib/testlib2.js", null, null)
+					.onSuccess(response -> {
+						context.fail("Should not be possible");
+					})
+					.onFailure(err ->
+					{
+						if( err instanceof HttpException)
+						{
+							context.assertEquals(404, ((HttpException)err).getStatusCode());
+							failedLibAsync.complete();
+						}
+						else
+						{
+							context.fail(err);
+						}
+
+					});
 				})
 				.onFailure(err -> context.fail(err));
-				Async failedLibAsync = context.async();
-				GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/execute/lib/testlib2.js", null, null)
-				.onSuccess(response -> {
-					context.fail("Should not be possible");
-				})
-				.onFailure(err ->
-				{
-					if( err instanceof HttpException)
-					{
-						context.assertEquals(404, ((HttpException)err).getStatusCode());
-						failedLibAsync.complete();
-					}
-					else
-					{
-						context.fail(err);
-					}
-
-				});
 			})
 			.onFailure(err -> context.fail(err));
-		})
-		.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
 	}
@@ -222,7 +224,7 @@ public class TaskRouterTest extends SoileWebTest{
 				Async initQuest = context.async();				
 				WebObjectCreator.createOrRetrieveTask(authedSession, "Initial_Questionaire")
 				.onSuccess(taskData -> {									
-					
+
 					Async correctSessionAsync  = context.async();
 					GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/execute", null, null)
 					.onSuccess(response -> {
@@ -251,7 +253,7 @@ public class TaskRouterTest extends SoileWebTest{
 				Async firstTask = context.async();				
 				WebObjectCreator.createOrRetrieveTask(authedSession, "FirstTask")
 				.onSuccess(taskData -> {									
-					
+
 					Async correctSessionAsync  = context.async();
 					GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/execute", null, null)
 					.onSuccess(response -> {
@@ -277,5 +279,75 @@ public class TaskRouterTest extends SoileWebTest{
 			.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
+	}
+
+	@Test
+	public void runGetFileListForTaskTest(TestContext context)
+	{
+		Async runTestAsync = context.async();
+		String usedTask ="FileRead";
+		try
+		{
+			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(usedTask);			
+
+			System.out.println("--------------------  Running Tests for /task/{id}/{version}/filelist ----------------------");    
+			createUserAndAuthedSession("TestUser", "testpw", Roles.Researcher)
+			.onSuccess(authedSession -> {
+				createUserAndAuthedSession("TestUser2", "testpw", Roles.Researcher)
+				.onSuccess(wrongSession -> {	
+					Async firstTask = context.async();				
+					WebObjectCreator.createOrRetrieveTask(authedSession, "FileRead")
+					.onSuccess(taskData -> {									
+						Async correctSessionAsync  = context.async();
+						GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/filelist", null, null)
+						.onSuccess(response -> {										
+							JsonArray fileList = response.bodyAsJsonArray();
+							context.assertEquals(5, fileList.size());	
+							JsonArray resources = TaskDef.getJsonArray("resources").copy();
+							checkAndClear(resources, fileList, "", context);
+							// now all expected resources should be cleared
+							context.assertEquals(0, resources.size());
+							correctSessionAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
+						Async incorrectSessionAsync  = context.async();
+						GET(wrongSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/filelist", null, null)
+						.onSuccess(response -> context.fail("User has no Access"))																
+						.onFailure(invalid -> {
+							context.assertEquals(403, ((HttpException)invalid).getStatusCode());
+							incorrectSessionAsync.complete();
+						});
+						firstTask.complete();
+					})
+					.onFailure(err -> context.fail(err));		
+					runTestAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
+		}
+		catch(Exception e)
+		{
+			context.fail(e);
+		}
+	}
+
+	void checkAndClear(JsonArray expected, JsonArray presentFiles, String baseFolder, TestContext context)
+	{
+		for(int i = 0; i < presentFiles.size(); i++)
+		{
+			JsonObject currentElement = presentFiles.getJsonObject(i);
+			if(currentElement.containsKey("children"))
+			{
+				checkAndClear(expected, currentElement.getJsonArray("children"), baseFolder + currentElement.getString("label") + "/" , context);
+			}
+			else
+			{
+				if(!expected.remove(baseFolder + currentElement.getString("label")))
+				{
+					context.fail("Found value " + baseFolder + currentElement.getString("label") + " which was not expected");
+				}
+			}
+		}
 	}
 }

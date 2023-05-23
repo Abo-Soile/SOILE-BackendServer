@@ -210,18 +210,14 @@ public class GitManager{
 			JsonArray result = ((JsonObject)fileData.body()).getJsonArray(gitProviderVerticle.DATAFIELD);
 			LOGGER.debug(result.encodePrettily());
 			for(int i = 0; i < result.size(); ++i)
-			{				
-				if(result.getValue(i) instanceof JsonObject)
+			{		
+				if(result.getJsonObject(i).getString("label").equals(resourceFolder))
 				{
-					// this is a folder
-					if(result.getJsonObject(i).containsKey(resourceFolder))
-					{
-						dataPromise.complete(result.getJsonObject(i).getJsonArray(resourceFolder));
-						return;
-					}
-				}
-				// we didn't find the resource folder so we return an empty array.
+					dataPromise.complete(result.getJsonObject(i).getJsonArray("children"));
+					return;
+				}				
 			}
+			// we didn't find the resource folder so we return an empty array.
 			dataPromise.complete(new JsonArray());
 		}).onFailure(fail -> 
 		{

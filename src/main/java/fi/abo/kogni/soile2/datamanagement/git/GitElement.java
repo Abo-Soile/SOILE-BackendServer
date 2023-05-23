@@ -50,7 +50,7 @@ public class GitElement {
 		{
 			if(o instanceof GitElement)
 			{
-				return ((GitFile) o).getRepoID().equals(repoID) && ((GitFile) o).getRepoVersion().equals(repoVersion);
+				return ((GitElement) o).getRepoID().equals(repoID) && ((GitElement) o).getRepoVersion().equals(repoVersion);
 			}
 			return false;
 		}

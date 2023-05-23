@@ -3043,11 +3043,21 @@ components:
     FileDirectory:
       type: array
       items:
-        oneOf:
-          - $ref : '#/components/schemas/FileDirectory'
-          - type: string
-            description: A Filename in the directory
-            
+        $ref : '#/components/schemas/FileOrDirectory'    
+        
+    FileOrDirectory:
+      type: object
+      required: 
+        - label
+      properties:
+        label: 
+          type: string
+          description: the label of the element
+        children:
+          type: array
+          items:
+            $ref : '#/components/schemas/FileOrDirectory'    
+          description: Elements of this directory. Presence of a children element indicates that this is a folder
     DBDownloadScheme:
       type: object
       properties:
