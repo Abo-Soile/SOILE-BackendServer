@@ -77,7 +77,29 @@ public class ElementDataHandler<T extends Element>{
 		Promise<String> successPromise = Promise.promise();
 		String repoID = this.typeID + taskID;
 		GitFile f = new GitFile(filename, repoID, taskVersion);
-		resourceManager.writeUploadToGit(f, upload )			
+		resourceManager.writeUploadToGit(f, upload)			
+		.onSuccess(version -> {
+			LOGGER.debug("Element Written");
+			successPromise.complete(version);				
+		});		
+		return successPromise.future();
+	}
+	
+	
+	/**
+	 * Delete a file in the given Version of the object.
+	 * @param taskID the ID of the task
+	 * @param taskVersion the version of the task BEFORE adding the file (i.e. base version)
+	 * @param filename The name of the file that is being added
+	 * @return A {@link Future} of the Version {@link String} of the Task Version after the file was added 
+	 */
+	public Future<String> handleDeleteFile(String taskID, String taskVersion, String filename)
+	{
+		LOGGER.debug("Trying to post file: " + filename);
+		Promise<String> successPromise = Promise.promise();
+		String repoID = this.typeID + taskID;
+		GitFile f = new GitFile(filename, repoID, taskVersion);
+		resourceManager.deleteGitFile(f)			
 		.onSuccess(version -> {
 			LOGGER.debug("Element Written");
 			successPromise.complete(version);				

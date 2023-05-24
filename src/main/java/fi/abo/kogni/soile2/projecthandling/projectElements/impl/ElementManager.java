@@ -563,6 +563,18 @@ public class ElementManager<T extends ElementBase> {
 	}
 
 	/**
+	 * Delete a given file from the given Version returning a new version without the element.   
+	 * @param elementID the id of the element
+	 * @param elementVersion the version of the element to add the file to
+	 * @param filename the name of the file 
+	 * @return A Future with the New Version of the repository for this element with the data added.
+	 */
+	public Future<String> handleDeleteFile(String elementID, String elementVersion, String filename)
+	{
+		return dataHandler.handleDeleteFile(elementID, elementVersion, filename);
+	}
+	
+	/**
 	 * Get the supplier for the ElementType represented by this Manager
 	 * @return
 	 */

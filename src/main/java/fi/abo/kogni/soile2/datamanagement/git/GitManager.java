@@ -257,6 +257,52 @@ public class GitManager{
 	}
 	
 	/**
+	 * Delete the specified file from the git repo. 
+	 * @param file the GitFile containing name (including folders),  
+	 * @param tag A Tag to give 
+	 * @return
+	 */
+	public Future<String> deleteGitFile(GitFile file, String tag)
+	{
+		Promise<String> versionPromise = Promise.<String>promise();
+		if(!gitFileValid(file))
+		{
+			return Future.failedFuture("Supplied File was invalid");
+		}
+		LOGGER.info("Deleting file " + file.toJson().encodePrettily());
+		JsonObject command = gitProviderVerticle.createCommandForFileInRepoAtVersion(file.getRepoID(), file.getRepoVersion(), file.getFileName()).put(gitProviderVerticle.COMMANDFIELD, gitProviderVerticle.DELETE_FILE_COMMAND);
+		if( tag != null)
+		{
+			// we want to create a tag for this.
+			command.put(gitProviderVerticle.TAGFIELD, tag);
+		}
+		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), command).onSuccess(reply -> {
+			JsonObject info = (JsonObject)reply.body();
+			// return the new version of this repository (for future changes)
+			LOGGER.debug("Deleted File from version. new Version is: " + info.getString(gitProviderVerticle.VERSIONFIELD));
+			versionPromise.complete(info.getString(gitProviderVerticle.VERSIONFIELD));
+		}).onFailure(fail -> {
+			versionPromise.fail(fail);
+		});
+		return versionPromise.future();	
+	}
+		
+	/**
+	 * Write data to a file specified by the {@link GitFile} in the resources folder of the repo.  
+	 * @param file the GitFile containing name (including folders) but excluding the resources folder,  
+	 * @param data the data to be written to the file.
+	 * @return a Future with the version of the git repository after execution.
+	 */
+	public Future<String> deleteGitResourceFile(GitFile file)
+	{
+		// a Resource will NEVER create a new tag!
+		return deleteGitFile(new GitFile(resourceFolder + File.separator + file.getFileName(), file.getRepoID(), file.getRepoVersion()), null);
+	}
+	
+	
+	
+	
+	/**
 	 * Same as writeGitFile with a string, but encodes the provided Json as a pretty string.
 	 * @param file the file indicating where to write to.
 	 * @param data the data that should be encoded in the file

@@ -332,6 +332,67 @@ public class TaskRouterTest extends SoileWebTest{
 		}
 	}
 
+	@Test
+	public void deleteFileTest(TestContext context)
+	{
+		Async runTestAsync = context.async();
+		String usedTask ="FileRead";
+		try
+		{
+			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(usedTask);			
+
+			System.out.println("--------------------  Running Tests for /task/{id}/{version}/filelist ----------------------");    
+			createUserAndAuthedSession("TestUser", "testpw", Roles.Researcher)
+			.onSuccess(authedSession -> {
+				createUserAndAuthedSession("TestUser2", "testpw", Roles.Researcher)
+				.onSuccess(wrongSession -> {	
+					Async firstTask = context.async();				
+					WebObjectCreator.createOrRetrieveTask(authedSession, "FileRead")
+					.onSuccess(taskData -> {									
+						Async correctSessionAsync  = context.async();
+						POST(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/resource/" + TaskDef.getJsonArray("resources").getString(0), null, new JsonObject().put("delete", true))
+						.onSuccess(versionResponse -> {							
+							GET(authedSession, "/task/filelist/" + taskData.getString("UUID") + "/" + versionResponse.bodyAsJsonObject().getString("version"), null, null)
+							.onSuccess(response -> {										
+								JsonArray fileList = response.bodyAsJsonArray();
+								context.assertEquals(4, fileList.size());	
+								JsonArray resources = TaskDef.getJsonArray("resources").copy();
+								resources.remove(0);
+								checkAndClear(resources, fileList, "", context);
+								// now all expected resources should be cleared
+								context.assertEquals(0, resources.size());
+								correctSessionAsync.complete();
+							})
+							.onFailure(err -> context.fail(err));
+							GET(authedSession, "/task/filelist/" + taskData.getString("UUID") + "/" + taskData.getString("version"), null, null)
+							.onSuccess(response -> {									
+								JsonArray fileList = response.bodyAsJsonArray();								
+								context.assertEquals(5, fileList.size());	
+								JsonArray resources = TaskDef.getJsonArray("resources").copy();
+								checkAndClear(resources, fileList, "", context);
+								// now all expected resources should be cleared
+								context.assertEquals(0, resources.size());
+								correctSessionAsync.complete();
+							})
+							.onFailure(err -> context.fail(err));
+						})
+						.onFailure(err -> context.fail(err));						
+						firstTask.complete();
+					})
+					.onFailure(err -> context.fail(err));		
+					runTestAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
+		}
+		catch(Exception e)
+		{
+			context.fail(e);
+		}
+	}
+	
+	
 	void checkAndClear(JsonArray expected, JsonArray presentFiles, String baseFolder, TestContext context)
 	{
 		for(int i = 0; i < presentFiles.size(); i++)

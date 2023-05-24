@@ -63,6 +63,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 		consumers.add(eb.consumer("soile.git.getResourceList",this::getResourceList));
 		consumers.add(eb.consumer("soile.git.writeGitFile",this::writeGitFile));
 		consumers.add(eb.consumer("soile.git.writeGitResourceFile",this::writeGitResourceFile));
+		consumers.add(eb.consumer("soile.git.deleteGitResourceFile",this::deleteGitResourceFile));
 		consumers.add(eb.consumer("soile.git.cleanUp",this::cleanUp));
 	}
 	
@@ -244,6 +245,20 @@ public class GitManagerVerticle extends AbstractVerticle{
 		}
 	}
 
+	/**
+	 * Delete the specified git Resource file  
+	 * @param A Json representinga GitFile needs to be parsable into a GitFile.  
+	 * @return a Future with the version of the git repository after execution.
+	 */
+	public void deleteGitResourceFile(Message<JsonObject> request)
+	{
+		gitManager.deleteGitResourceFile(new GitFile(request.body()))
+		.onSuccess(version -> {
+			request.reply(version);
+		})
+		.onFailure(err -> handleFail(request,err));
+	}
+	
 	private void handleFail(Message request, Throwable err)
 	{
 		if( err instanceof ReplyException)

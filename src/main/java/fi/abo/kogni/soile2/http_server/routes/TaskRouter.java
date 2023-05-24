@@ -44,11 +44,11 @@ public class TaskRouter extends ElementRouter<Task> {
 	
 	public void postResource(RoutingContext context)
 	{				
-		LOGGER.debug("Trying to post a resource");
+		LOGGER.info("Trying to post a resource");
 		LOGGER.debug(context.pathParam("id") + "/" + context.pathParam("version") + "/" + context.pathParam("*") );				
 		String elementID = context.pathParam("id");
 		String version = context.pathParam("version");
-		String filename = context.pathParam("*");
+		String filename = context.pathParam("*");		
 		if(filename.startsWith("lib/"))
 		{
 			handleError(new HttpException(400, "lib/ is a restricted path!"), context);
@@ -57,19 +57,32 @@ public class TaskRouter extends ElementRouter<Task> {
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{
-			if(context.fileUploads().size() != 1)
+			if(context.is("application/json"))
 			{
-				handleError(new HttpException(400, "Missing or invalid file data, exactly one File expected"), context);
-				return;
+				elementManager.handleDeleteFile(elementID, version, filename)
+				.onSuccess(newversion -> {
+					context.response().setStatusCode(200)
+					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
+					.end(new JsonObject().put("version", newversion).encode());
+				})
+				.onFailure(err -> handleError(err, context));
 			}
-			
-			elementManager.handlePostFile(elementID,version,filename,context.fileUploads().get(0))
-			.onSuccess(newversion -> {
-				context.response().setStatusCode(200)
-				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
-				.end(new JsonObject().put("version", newversion).encode());
-			})
-			.onFailure(err -> handleError(err, context));
+			else
+			{
+				if(context.fileUploads().size() != 1)
+				{
+					handleError(new HttpException(400, "Missing or invalid file data, exactly one File expected"), context);
+					return;
+				}
+				
+				elementManager.handlePostFile(elementID,version,filename,context.fileUploads().get(0))
+				.onSuccess(newversion -> {
+					context.response().setStatusCode(200)
+					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
+					.end(new JsonObject().put("version", newversion).encode());
+				})
+				.onFailure(err -> handleError(err, context));
+			}
 		})
 		.onFailure(err -> handleError(err, context));
 	}

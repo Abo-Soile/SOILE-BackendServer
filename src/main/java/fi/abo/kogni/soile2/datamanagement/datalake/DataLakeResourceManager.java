@@ -74,6 +74,24 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 	}
 
 	/**
+	 * Delete a file from a version in git
+	 * @param targetGitFile the {@link GitFile} the new data should be written to. Indicating the location in the resources
+	 * @return
+	 */
+	public Future<String> deleteGitFile(GitFile targetGitFile)	
+	{		
+		Promise<String> versionUpdatePromise = Promise.promise();
+		eb.request("soile.git.deleteGitResourceFile", targetGitFile.toJson())
+		.onSuccess(reply -> {
+			LOGGER.debug("Git File written");
+			versionUpdatePromise.complete((String) reply.body());
+		})
+		.onFailure(err ->versionUpdatePromise.fail(err));		
+		return versionUpdatePromise.future();
+
+	}
+	
+	/**
 	 * Test, whether the git repository for a specific element (Task/Experiment/Project) exists
 	 * @param elementID the UUID of the element
 	 * @return A future whether the element exists
