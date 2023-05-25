@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
+import java.nio.charset.Charset;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -118,11 +120,21 @@ public class TaskRouter extends ElementRouter<Task> {
 		{
 			// Potentially update with fileProvider.
 			elementManager.handleGetFile(elementID, version, filename )
-			.onSuccess( datalakeFile -> {
-				context.response().
-				setStatusCode(200)
-				.putHeader(HttpHeaders.CONTENT_TYPE, datalakeFile.getFormat())
-				.sendFile(datalakeFile.getAbsolutePath());
+			.onSuccess( file -> {
+				String contentType = file.getFormat();
+				if (contentType.startsWith("text")) {
+					context.response().putHeader(HttpHeaders.CONTENT_TYPE, contentType + ";charset=" + Charset.defaultCharset().name());
+				} else {
+					context.response().putHeader(HttpHeaders.CONTENT_TYPE, contentType);
+				}
+				context.response().sendFile(file.getPath(), res2 -> {
+					if (res2.failed()) {
+						if (!context.request().isEnded()) {
+							context.request().resume();
+						}
+						context.fail(res2.cause());
+					}
+				});				
 			})
 			.onFailure(err -> handleError(err, context));
 		})
