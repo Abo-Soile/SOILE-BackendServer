@@ -801,7 +801,47 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'  
-  
+  /task/compile:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Compile code for execution and return the compiled code.
+      operationId: compileCode
+      description: Get the executable code for the task
+      responses:
+        '200':
+          description: The executable code for the submitted source code.
+          content: 
+            application/json:
+              schema: 
+                description: the json for qmarkup generation; TODO better spec
+                type: object
+                properties:
+                  title: 
+                    type: string
+            application/javascript:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code: 
+                  type: string
+                type:
+                  type: string
+                  
   /task/{id}/{version}/execute/lib/*:  
     get:
       security:
@@ -912,11 +952,6 @@ paths:
       responses:
         '200':
           description: The requested file, headers set according to the file name/type. 
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':

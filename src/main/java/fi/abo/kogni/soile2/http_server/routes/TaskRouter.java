@@ -173,6 +173,29 @@ public class TaskRouter extends ElementRouter<Task> {
 		.onFailure(err -> handleError(err, context));
 	}
 	
+	public void compileCode(RoutingContext context)
+	{
+		
+		accessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
+		.onSuccess(Void -> 
+		{
+			
+			JsonObject codeInfo = context.body().asJsonObject();
+			eb.request(SoileConfigLoader.getVerticleProperty("compilationAddress"),codeInfo)
+				.onSuccess(response -> {
+					LOGGER.info(response.body());
+					JsonObject responseBody = (JsonObject) response.body();
+					context.response()
+					.setStatusCode(200)
+					.putHeader(HttpHeaders.CONTENT_TYPE, SoileConfigLoader.getMimeTypeForTaskLanugage(codeInfo.getString("type")))
+					.end(responseBody.getString("code"));
+				})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+	
+	
 	public void getLib(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");

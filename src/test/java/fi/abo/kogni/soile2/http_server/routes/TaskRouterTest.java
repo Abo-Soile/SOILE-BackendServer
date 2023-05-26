@@ -3,22 +3,21 @@ package fi.abo.kogni.soile2.http_server.routes;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.List;
 
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.datamanagement.DataLakeManagerTest;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.http_server.verticles.CodeRetrieverVerticle;
+import fi.abo.kogni.soile2.http_server.verticles.CodeRetrieverVerticleTest;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.web.client.WebClientSession;
 import io.vertx.ext.web.handler.HttpException;
 
 public class TaskRouterTest extends SoileWebTest{
@@ -332,6 +331,50 @@ public class TaskRouterTest extends SoileWebTest{
 		}
 	}
 
+	@Test
+	public void testCodeCompilation(TestContext context)
+	{
+		System.out.println("--------------------  Testing Elang Verticle ----------------------");
+		try
+		{			
+			String originalCode2 = Files.readString(Paths.get(CodeRetrieverVerticleTest.class.getClassLoader().getResource("CodeTestData/FirstTask.elang").getPath()));
+			
+			String failingCode = Files.readString(Paths.get(CodeRetrieverVerticleTest.class.getClassLoader().getResource("CodeTestData/FirstTask_Error.elang").getPath()));
+			Async sessionAsync = context.async();
+			createUserAndAuthedSession("TestUser", "testpw", Roles.Researcher).
+			onSuccess(authedSession -> {
+				Async compilation2Async = context.async();
+				JsonObject CompileRequest = new JsonObject().put("code", originalCode2).put("type", CodeRetrieverVerticle.ELANG).put("version", "1.0");
+				POST(authedSession, "/task/compile", null, CompileRequest)
+				.onSuccess(response -> {
+					String code = response.bodyAsString();
+					// this could be made more explicit, testing actual contents.					
+					context.assertTrue(code.contains("SOILE2"));
+					compilation2Async.complete();				
+				})
+				.onFailure(err -> context.fail(err));
+							
+				Async compilationAsync = context.async();
+				JsonObject CompileRequest2 = new JsonObject().put("code", failingCode).put("type", CodeRetrieverVerticle.ELANG).put("version", "1.0");			
+				POST(authedSession, "/task/compile", null, CompileRequest2)
+				.onSuccess(reply-> {
+					System.out.println(reply.body());
+					context.fail("Should have failed since code does not compile");								
+				})
+				.onFailure(err -> {
+					compilationAsync.complete();
+				});
+				sessionAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));			
+
+		}
+		catch(IOException e)
+		{
+			context.fail(e);
+		}
+	}
+	
 	@Test
 	public void deleteFileTest(TestContext context)
 	{

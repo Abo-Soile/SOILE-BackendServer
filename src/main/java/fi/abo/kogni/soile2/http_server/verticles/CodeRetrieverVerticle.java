@@ -84,7 +84,7 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 		.onSuccess(compiledCode -> {			
 			sourceCode.reply(new JsonObject().put("code", compiledCode));
 		})
-		.onFailure(err -> sourceCode.fail(200, err.getMessage()));
+		.onFailure(err -> sourceCode.fail(400, err.getMessage()));
 	}
 	
 	private void compileGitCode(Message<JsonObject> codeLocation)
@@ -100,7 +100,7 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 		.onSuccess(compiledCode -> {			
 			codeLocation.reply(new JsonObject().put("code", compiledCode));
 		})
-		.onFailure(err -> codeLocation.fail(200, err.getMessage()));
+		.onFailure(err -> codeLocation.fail(400, err.getMessage()));
 	}
 	
 	
