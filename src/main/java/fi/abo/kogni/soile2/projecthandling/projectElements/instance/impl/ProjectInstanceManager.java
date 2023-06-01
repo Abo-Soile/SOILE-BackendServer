@@ -147,7 +147,7 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 					  .add(new JsonObject().put("_id", new JsonObject().put("$in", projectInstanceIDs)))
 					  );
 		}
-		LOGGER.info("Looking for Project matching:\n" + Query.encodePrettily());
+		LOGGER.debug("Looking for Project matching:\n" + Query.encodePrettily());
 		client.findWithOptions(instanceCollection,Query,new FindOptions().setFields(new JsonObject().put("_id",1).put("name", 1).put("description", 1).put("shortDescription", 1)))
 		.onSuccess(items -> 
 				{
@@ -157,7 +157,7 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 						o.put("uuid", o.getString("_id")).remove("_id");
 						result.add(o);
 					}
-					LOGGER.info("Result is: " + result.encodePrettily() );
+					LOGGER.debug("Result is: " + result.encodePrettily() );
 					listPromise.complete(result);
 							
 				})

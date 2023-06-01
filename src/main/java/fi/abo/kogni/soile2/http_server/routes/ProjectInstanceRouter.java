@@ -120,13 +120,9 @@ public class ProjectInstanceRouter extends SoileRouter {
 			case "full": permissionsFuture = authorizationRertiever.getFullPermissions(context.user(), TargetElementType.INSTANCE); restrictToPermissions = true; break;
 			default: permissionsFuture = authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.INSTANCE); break;
 		}			
-		String finalAccess = access;
 		Boolean onlyPermissions = restrictToPermissions;
 		permissionsFuture
 		.onSuccess( permissions -> {
-			LOGGER.info("Access type was:" + finalAccess);
-			LOGGER.info(context.user().principal().encodePrettily());
-			LOGGER.info("Permissions are:" + permissions.encodePrettily());
 			instanceHandler.getProjectList(permissions, onlyPermissions)		
 			.onSuccess(elementList -> {	
 				// this list needs to be filtered by access
