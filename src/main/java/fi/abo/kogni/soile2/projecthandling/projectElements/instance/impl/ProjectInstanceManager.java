@@ -132,13 +132,22 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 	 * @param projectInstanceIDs A JsonArray with strings for each permission/projectID
 	 * @return
 	 */
-	public Future<JsonArray> getProjectInstanceStatus(JsonArray projectInstanceIDs)
+	public Future<JsonArray> getProjectInstanceStatus(JsonArray projectInstanceIDs, Boolean idsOnly)
 	{
 		Promise<JsonArray> listPromise = Promise.promise();		 				
-		JsonObject Query = new JsonObject().put("$or", new JsonArray().add(new JsonObject().put("private",false))
-																	  .add(new JsonObject().put("_id", new JsonObject().put("$in", projectInstanceIDs)))
-																	  );
-		LOGGER.debug("Looking for Project matching:\n" + Query.encodePrettily());
+		
+		JsonObject Query = new JsonObject();
+		if(idsOnly)
+		{
+			Query.put("_id", new JsonObject().put("$in", projectInstanceIDs));
+		}
+		else			
+		{
+			Query.put("$or", new JsonArray().add(new JsonObject().put("private",false))
+					  .add(new JsonObject().put("_id", new JsonObject().put("$in", projectInstanceIDs)))
+					  );
+		}
+		LOGGER.info("Looking for Project matching:\n" + Query.encodePrettily());
 		client.findWithOptions(instanceCollection,Query,new FindOptions().setFields(new JsonObject().put("_id",1).put("name", 1).put("description", 1).put("shortDescription", 1)))
 		.onSuccess(items -> 
 				{
@@ -148,6 +157,7 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 						o.put("uuid", o.getString("_id")).remove("_id");
 						result.add(o);
 					}
+					LOGGER.info("Result is: " + result.encodePrettily() );
 					listPromise.complete(result);
 							
 				})

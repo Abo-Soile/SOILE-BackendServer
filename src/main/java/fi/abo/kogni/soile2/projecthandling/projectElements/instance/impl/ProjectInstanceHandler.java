@@ -161,11 +161,12 @@ public class ProjectInstanceHandler {
 	 * Get a list of project instances. based on the given Permissions
 	 * This will return non-private projects and all projects listed in the permissions.
 	 * @param Permissions  the permissions for the projects 
-	 * @return
+	 * @param permissionsOnly whether to only list those projects indicated by the permissions
+	 * @return A {@link Future} of the {@link JsonArray} containing the projects (id and name)
 	 */
-	public Future<JsonArray> getProjectList(JsonArray Permissions)
+	public Future<JsonArray> getProjectList(JsonArray Permissions, boolean permissionsOnly)
 	{
-		return manager.getProjectInstanceStatus(Permissions);
+		return manager.getProjectInstanceStatus(Permissions, permissionsOnly);
 	}
 	
 	

@@ -1368,6 +1368,13 @@ paths:
       summary: Get a list of all projects.
       operationId: getRunningProjectList
       description: Get a list of all projects which are currently running and that you have access to.
+      parameters:
+        - name: access
+          in: query
+          required: false
+          description: What type of access the user should have to the project, default is any (i.e. execute is sufficient to list the project)
+          schema:
+            type: string
       responses:
         '200':
           description: A List of Projects, with names and IDs
@@ -1381,7 +1388,6 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
-          
   /projectexec/{id}/stop:
     post:
       security:

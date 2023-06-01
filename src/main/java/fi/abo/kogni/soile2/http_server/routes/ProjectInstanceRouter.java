@@ -22,6 +22,7 @@ import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpHeaders;
@@ -30,6 +31,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
+import io.vertx.ext.web.validation.RequestParameter;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 
@@ -101,10 +103,31 @@ public class ProjectInstanceRouter extends SoileRouter {
 
 	public void getRunningProjectList(RoutingContext context)
 	{				
-		authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.INSTANCE)
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		RequestParameter accessParam = params.queryParameter("access");
+		String access = "general";
+		Boolean restrictToPermissions = false;
+		if(accessParam != null)
+		{
+			access = accessParam.getString();			
+		}
+		
+		Future<JsonArray> permissionsFuture;
+		switch(access)		
+		{
+			case "read": permissionsFuture = authorizationRertiever.getReadPermissions(context.user(), TargetElementType.INSTANCE); restrictToPermissions = true; break;
+			case "write": permissionsFuture = authorizationRertiever.getWritePermissions(context.user(), TargetElementType.INSTANCE); restrictToPermissions = true; break; 
+			case "full": permissionsFuture = authorizationRertiever.getFullPermissions(context.user(), TargetElementType.INSTANCE); restrictToPermissions = true; break;
+			default: permissionsFuture = authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.INSTANCE); break;
+		}			
+		String finalAccess = access;
+		Boolean onlyPermissions = restrictToPermissions;
+		permissionsFuture
 		.onSuccess( permissions -> {
-
-			instanceHandler.getProjectList(permissions)
+			LOGGER.info("Access type was:" + finalAccess);
+			LOGGER.info(context.user().principal().encodePrettily());
+			LOGGER.info("Permissions are:" + permissions.encodePrettily());
+			instanceHandler.getProjectList(permissions, onlyPermissions)		
 			.onSuccess(elementList -> {	
 				// this list needs to be filtered by access
 
@@ -119,7 +142,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		.onFailure(err -> {
 			if(err instanceof UserDoesNotExistException)
 			{
-				instanceHandler.getProjectList(new JsonArray())
+				instanceHandler.getProjectList(new JsonArray(), false)
 				.onSuccess(elementList -> {	
 					// this list needs to be filtered by access
 

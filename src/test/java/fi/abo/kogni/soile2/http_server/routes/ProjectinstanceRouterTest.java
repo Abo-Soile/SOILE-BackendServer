@@ -102,8 +102,8 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 
 						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec2 )
 						.onSuccess(response2 -> {
-						Async listAsync = context.async();
 						String id2 = response2.bodyAsJsonObject().getString("projectID");
+						Async listAsync = context.async();
 						POST(authedSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(2, listresponse.bodyAsJsonArray().size());
@@ -117,17 +117,37 @@ public class ProjectinstanceRouterTest extends SoileWebTest {
 							listAsync.complete();
 						})
 						.onFailure(err -> context.fail(err));
+						Async readlistasync = context.async();
+						POST(authedSession, "/projectexec/list", new JsonObject().put("access",  "read"),null)
+						.onSuccess(listresponse -> {
+							context.assertEquals(2, listresponse.bodyAsJsonArray().size());
+							List<String> uuids = new LinkedList<>();
+							for(int i = 0 ; i < listresponse.bodyAsJsonArray().size(); i++)
+							{
+								uuids.add(listresponse.bodyAsJsonArray().getJsonObject(i).getString("uuid"));								
+							}
+							context.assertTrue(uuids.contains(id1));
+							context.assertTrue(uuids.contains(id2));
+							readlistasync.complete();
+						})
+						.onFailure(err -> context.fail(err));
 						Async emptyListAsync = context.async();
 						
 						POST(wrongSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 							context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
-
 							emptyListAsync.complete();
 						})
 						.onFailure(err -> context.fail(err));
 						
+						Async accessAsync = context.async();
+						POST(wrongSession, "/projectexec/list", new JsonObject().put("access",  "read"),null)
+						.onSuccess(listresponse -> {
+							context.assertEquals(0, listresponse.bodyAsJsonArray().size());							
+							accessAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
 						Async unAuthAsync = context.async();
 						
 						POST(unAuthedSession, "/projectexec/list", null,null)
