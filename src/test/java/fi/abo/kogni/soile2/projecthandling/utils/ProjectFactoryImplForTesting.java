@@ -57,9 +57,9 @@ public class ProjectFactoryImplForTesting implements StudyFactory{
 		}
 
 		@Override
-		public Future<Void> deleteParticipant(Participant p) {
+		public Future<Boolean> deleteParticipant(Participant p) {
 			participants.remove(p.getID());
-			return Future.succeededFuture();
+			return Future.succeededFuture(true);
 		}
 
 		@Override
@@ -102,6 +102,12 @@ public class ProjectFactoryImplForTesting implements StudyFactory{
 		public FieldSpecifications getUpdateableDBFields() {
 			// TODO Auto-generated method stub
 			return null;
+		}
+
+		@Override
+		protected Future<Boolean> checkShortCutAvailable(String shortcut) {
+			// TODO Auto-generated method stub
+			return Future.succeededFuture(true);
 		}		
 	}
 	

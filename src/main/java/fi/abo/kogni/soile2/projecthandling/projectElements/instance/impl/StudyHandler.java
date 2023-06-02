@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
+import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.DBParticipant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
@@ -64,6 +65,30 @@ public class StudyHandler {
 		studies.cleanUp();
 		manager.cleanUp();
 	}
+	
+	
+	/**
+	 * Delete a study,
+	 * @return The Object that was deleted from the Study database
+	 */
+	
+	public Future<JsonObject> deleteStudy(String studyID)
+	{
+		Promise<JsonObject> deletionPromise = Promise.<JsonObject>promise();
+		loadStudy(studyID)
+		.onSuccess(currentStudy -> {
+			currentStudy.delete()
+			.onSuccess(studyJson -> {
+				this.studies.cleanElement(studyID);
+				deletionPromise.complete(studyJson);
+			})
+			.onFailure(err -> deletionPromise.fail(err));
+		})
+		.onFailure(err -> deletionPromise.fail(err));
+		
+		return deletionPromise.future();
+	}
+	
 	/**
 	 * Get a list of all Files associated with the specified {@link DBParticipant} within this {@link Study}.
 	 * @param p the {@link DBParticipant} for which to retrieve the file results.
@@ -109,25 +134,41 @@ public class StudyHandler {
 	 * Remove the participant with the given id from the project.
 	 * @param projectInstanceID The id of the project to which to add the participant.
 	 * @param participant The participant to remove from the project.
+	 * @param ensureDeletionFromStudy Whether this Future should fail, if the participant was just not present in the study.
 	 * @Return a Successfull future if the participant was removed
 	 */
-	public Future<Void> removeParticipant(String projectInstanceID, Participant participant)
+	public Future<Void> removeParticipant(String projectInstanceID, Participant participant, boolean ensureDeletionFromStudy)
 	{
 		
-		Promise<Void> addPromise = Promise.<Void>promise();
+		Promise<Void> removePromise = Promise.<Void>promise();
 				
 		// if no ID is provided, create a new Participant for the indicated project and add that participant to the list.		
 		studies.getData(projectInstanceID).onSuccess(targetProject -> 
 		{				
 			targetProject.deleteParticipant(participant)
-			.onSuccess(success -> {
-				addPromise.complete();
+			.onSuccess(deleted-> {
+				if(deleted || !ensureDeletionFromStudy)
+				{
+					removePromise.complete();
+				}
+				else
+				{
+					removePromise.fail("Could not delete participant from study, didn't exist in study");
+				}
 			})
-			.onFailure(err -> addPromise.fail(err));
+			.onFailure(err -> removePromise.fail(err));
 		}).onFailure(fail -> {
-				addPromise.fail(fail);	
+			if( fail instanceof ObjectDoesNotExist && !ensureDeletionFromStudy)
+			{
+				// the project does not exist so it is fine if this is skipped.
+				removePromise.complete();
+			}
+			else
+			{
+				removePromise.fail(fail);
+			}
 		});		
-		return addPromise.future();
+		return removePromise.future();
 	}
 	
 	
@@ -143,8 +184,6 @@ public class StudyHandler {
 	 */
 	public Future<Study> createProjectInstance(JsonObject projectInformation)	
 	{
-		LOGGER.info("Trying to load Project instance");
-		LOGGER.info(projectInformation.encodePrettily());
 		return manager.startProject(projectInformation);
 	}
 	
@@ -153,7 +192,7 @@ public class StudyHandler {
 	 * This can fail if the project does not exist.
 	 * @param projectInstanceID the instance ID of the project to retrieve.
 	 */
-	public  Future<Study> loadStudy(String projectInstanceID)
+	public Future<Study> loadStudy(String projectInstanceID)
 	{
 		return studies.getData(projectInstanceID);		
 	}
@@ -163,12 +202,13 @@ public class StudyHandler {
 	 * This can fail if the study does not exist OR if the requested update is not possible.
 	 * @param studyID the instance ID of the project to retrieve.
 	 */
-	public  Future<Void> updateStudy(String studyID, JsonObject newData)
+	public Future<Void> updateStudy(String studyID, JsonObject newData)
 	{
-		Promise<Void> updatePromise = Promise.promise();
+		Promise<Void> updatePromise = Promise.promise();		
 		studies.getData(studyID)
-		.onSuccess(currentStudy -> {
-			currentStudy.updateStudy(newData).onSuccess(updated -> {
+		.onSuccess(currentStudy -> {			
+			currentStudy.updateStudy(newData)
+			.onSuccess(updated -> {				
 				updatePromise.complete();
 			})
 			.onFailure(err -> updatePromise.fail(err));

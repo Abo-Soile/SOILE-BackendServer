@@ -18,7 +18,7 @@ import io.vertx.core.Promise;
  */
 public class TimeStampedMap<K,T> {
 
-	private ConcurrentHashMap<K, TimeStampedData<T>> experimentMap = new ConcurrentHashMap<K, TimeStampedData<T>>();
+	private ConcurrentHashMap<K, TimeStampedData<T>> elementMap = new ConcurrentHashMap<K, TimeStampedData<T>>();
 	DataRetriever<K,T> retriever;
 	long ttl;
 	public TimeStampedMap(DataRetriever<K,T> retriever, long TTL) {
@@ -37,9 +37,9 @@ public class TimeStampedMap<K,T> {
 	 */
 	public Collection<T> cleanUp()
 	{
-		Collection<K> toClean = CollectionUtils.select(experimentMap.keySet(), key -> !experimentMap.get(key).isValid()); 
-		Collection<T> cleaned = CollectionUtils.collect(toClean, key -> experimentMap.get(key).getData());				
-		experimentMap.keySet().removeAll(toClean);
+		Collection<K> toClean = CollectionUtils.select(elementMap.keySet(), key -> !elementMap.get(key).isValid()); 
+		Collection<T> cleaned = CollectionUtils.collect(toClean, key -> elementMap.get(key).getData());				
+		elementMap.keySet().removeAll(toClean);
 		return cleaned;
 	}
 	
@@ -62,7 +62,7 @@ public class TimeStampedMap<K,T> {
 	 */
 	public Future<T> getData(K itemID)
 	{
-		TimeStampedData<T> expData = experimentMap.get(itemID);
+		TimeStampedData<T> expData = elementMap.get(itemID);
 		Promise<T> itemPromise = Promise.<T>promise();
 		if(expData == null)
 		{
@@ -90,7 +90,7 @@ public class TimeStampedMap<K,T> {
 	 */
 	public void putData(K ItemID, T data)
 	{
-		experimentMap.put(ItemID, new TimeStampedData<T>(data, ttl));
+		elementMap.put(ItemID, new TimeStampedData<T>(data, ttl));
 	}
 	
 	/**
@@ -99,6 +99,6 @@ public class TimeStampedMap<K,T> {
 	 */
 	public void cleanElement(K ItemID)
 	{
-		experimentMap.remove(ItemID);
+		elementMap.remove(ItemID);
 	}
 }

@@ -214,25 +214,25 @@ public class StudyRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadStudy(requestedInstanceID)
-			.onSuccess(project -> {					
-				// TODO: Also delete the participants + data!!
-				project.delete()
-				.onSuccess(deletedObject -> {
-					List<Future> deletionFutures = new LinkedList<Future>();
-					for(int i = 0; i < deletedObject.getJsonArray("participants").size(); ++i)
-					{
-						deletionFutures.add(partHandler.deleteParticipant(deletedObject.getJsonArray("participants").getString(i)));
-					}
-					CompositeFuture.all(deletionFutures)
-					.onSuccess(done -> {
-							context.response()
-							.setStatusCode(200)						
-							.end();
-					})
-					.onFailure(err -> handleError(err, context));					
+			instanceHandler.deleteStudy(requestedInstanceID)
+			.onSuccess(deletedObject -> {
+				List<Future> deletionFutures = new LinkedList<Future>();
+				for(int i = 0; i < deletedObject.getJsonArray("participants").size(); ++i)
+				{
+					deletionFutures.add(partHandler.deleteParticipant(deletedObject.getJsonArray("participants").getString(i), false));
+				}
+				CompositeFuture.all(deletionFutures)
+				.onSuccess(done -> {					
+					context.response()
+					.setStatusCode(200)						
+					.end();
+
 				})
-				.onFailure(err -> handleError(err, context));
+				.onFailure(err -> { 
+					// the study was deleted from the handler and the db, but something went wrong when deleting the 
+					LOGGER.error("Something went wrong when deleting the study. the original db entry was: " + deletedObject.encodePrettily());
+					handleError(err, context);
+					});
 			})
 			.onFailure(err -> handleError(err, context));
 		})
@@ -255,7 +255,7 @@ public class StudyRouter extends SoileRouter {
 					List<Future> deletionFutures = new LinkedList<Future>();
 					for(int i = 0; i < participantsToDelete.size(); ++i)
 					{
-						deletionFutures.add(partHandler.deleteParticipant(participantsToDelete.getString(i)));
+						deletionFutures.add(partHandler.deleteParticipant(participantsToDelete.getString(i), false));
 					}
 					CompositeFuture.all(deletionFutures)
 					.onSuccess(done -> {
@@ -309,6 +309,7 @@ public class StudyRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ_WRITE,false)
 		.onSuccess(Void -> 
 		{			
+			LOGGER.debug("Access granted, updating Study");
 			instanceHandler.updateStudy(requestedInstanceID,context.body().asJsonObject())
 			.onSuccess(studyUpdated -> {
 				context.response()

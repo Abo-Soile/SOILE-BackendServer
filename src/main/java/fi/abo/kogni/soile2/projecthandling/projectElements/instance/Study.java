@@ -67,6 +67,7 @@ public abstract class Study implements AccessElement{
 	protected boolean isActive = true;
 	protected String shortDescription;
 	protected String description;
+	protected boolean isPrivate;
 	
 	/**
 	 *  This reflects all tasks/experiments and their respective String representation
@@ -87,6 +88,7 @@ public abstract class Study implements AccessElement{
 		name = "";
 		description = "";
 		shortDescription = "";
+		isPrivate = false; 
 	};
 	
 	/**
@@ -97,7 +99,8 @@ public abstract class Study implements AccessElement{
 	 */
 	protected void setupProject(JsonObject data)
 	{
-		elements = new HashMap<String, ElementInstance>();		
+		elements = new HashMap<String, ElementInstance>();
+		LOGGER.debug("Loading data into project from: " + data);
 		parseProject(data);
 	}		
 	
@@ -116,7 +119,7 @@ public abstract class Study implements AccessElement{
 		Study p = factory.createInstance();
 		LOGGER.debug(p);
 		LOGGER.debug(factory);
-		LOGGER.info(instantiationInfo.encodePrettily());
+		LOGGER.debug(instantiationInfo.encodePrettily());
 		p.load(instantiationInfo)
 		.onSuccess(dataJson -> {
 			LOGGER.debug("Trying to set up project from data: \n " + dataJson.encodePrettily());
@@ -186,7 +189,7 @@ public abstract class Study implements AccessElement{
 		sourceProject = data.getJsonObject("sourceProject");
 		shortDescription = data.getString("shortDescription", "");
 		description = data.getString("description","");
-		
+		isPrivate = data.getBoolean("private",false);
 		for(Object cTaskData : sourceProject.getJsonArray("tasks", new JsonArray()))
 		{
 			TaskObjectInstance cTask = new TaskObjectInstance((JsonObject)cTaskData, this);
@@ -282,7 +285,9 @@ public abstract class Study implements AccessElement{
 					.put("name", name)
 					.put("description", description )
 					.put("shortDescription", shortDescription)
+					.put("private", isPrivate)
 					.put("isActive", isActive);
+					
 			if(shortcut != null)
 			{
 				dbData.put("shortcut", shortcut);
@@ -298,13 +303,13 @@ public abstract class Study implements AccessElement{
 	 */
 	public Future<String> finishStep(Participant participant, JsonObject taskData)
 	{
-		LOGGER.info("Handling participant: " + participant.toString() + " with data " + taskData.encodePrettily());
+		LOGGER.debug("Handling participant: " + participant.toString() + " with data " + taskData.encodePrettily());
 		if(!isActive)
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
 		}		
 		Promise<String> finishedPromise = Promise.promise();
-		LOGGER.info(taskData.encodePrettily());
+		LOGGER.debug(taskData.encodePrettily());
 		if(taskData.getString("taskID") == null || !taskData.getString("taskID").equals(participant.getProjectPosition()))
 		{
 			finishedPromise.fail( new InvalidPositionException(participant.getProjectPosition(), taskData.getString("taskID")));			
@@ -367,9 +372,9 @@ public abstract class Study implements AccessElement{
 			}
 		}
 		boolean persistentPresent = true;
-		LOGGER.info(taskData.encodePrettily());		
+		LOGGER.debug(taskData.encodePrettily());		
 		JsonArray persistentData = taskData.getJsonArray("persistentData", new JsonArray());
-		LOGGER.info(currentOutputs.encodePrettily());
+		LOGGER.debug(currentOutputs.encodePrettily());
 		
 		for(int i = 0; i < persistentData.size(); i++)
 		{
@@ -383,7 +388,7 @@ public abstract class Study implements AccessElement{
 				break;
 			}
 		}
-		LOGGER.info(currentPersistent.encodePrettily());
+		LOGGER.debug(currentPersistent.encodePrettily());
 		return outputsPresent && persistentPresent;
 	}
 	
@@ -556,15 +561,37 @@ public abstract class Study implements AccessElement{
 		}
 		// if it has it it must be equal, or this fails.
 		if(hasParticipants && (projectChange || versionChange))
-		{
+		{			
 			return Future.failedFuture("Cannot change underlying project for Study with Participants");
 		}
-		setSourceUUID(updateInformation.getString("sourceUUID", getSourceUUID()));
-		setSourceVersion(updateInformation.getString("version", getSourceVersion()));
-		 
-		return updatePromise.future();
-			
+		checkShortCutAvailable(updateInformation.getString("shortcut",shortcut))
+		.onSuccess(allowed -> {
+			if(allowed)
+			{
+				setSourceUUID(updateInformation.getString("sourceUUID", getSourceUUID()));
+				setSourceVersion(updateInformation.getString("version", getSourceVersion()));
+				isPrivate = updateInformation.getBoolean("private", isPrivate);
+				isActive = updateInformation.getBoolean("active", isActive);
+				description = updateInformation.getString("description", description);
+				shortDescription = updateInformation.getString("shortDescription", shortDescription);
+				shortcut = updateInformation.getString("shortcut", shortcut);
+				save()
+				.onSuccess(res -> {
+					updatePromise.complete();
+				})
+				.onFailure(err -> updatePromise.fail(err));
+			}
+			else
+			{
+				updatePromise.fail("Conflicing shortcuts");
+			}
+		})
+		.onFailure(err -> updatePromise.fail(err));		
+		return updatePromise.future();			
 	}
+	
+	protected abstract Future<Boolean> checkShortCutAvailable(String shortcut);
+	
 	/**
 	 * This operation saves the Project. It should ensure that the data can be reconstructed by supplying what is returned 
 	 * form this function to the load() function of this class.
@@ -614,11 +641,12 @@ public abstract class Study implements AccessElement{
 	public abstract Future<Void> addParticipant(Participant participant);
 	
 	/**
-	 * Delete a participant from the list of participants of this projects 
+	 * Delete a participant from the list of participants of this projects
+	 * Will return false, if the participant was not removed 
 	 * @param p the participant to remove
-	 * @ A Future that suceeded if the participant was successfully removed
+	 * @ A Future that returning true, if the participant was removed, or false if it wasn't
 	 */
-	public abstract Future<Void> deleteParticipant(Participant participant);
+	public abstract Future<Boolean> deleteParticipant(Participant participant);
 	
 	/**
 	 * Get a list of Participants in the project 

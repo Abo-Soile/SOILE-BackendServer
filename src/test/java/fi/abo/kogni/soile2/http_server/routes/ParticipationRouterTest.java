@@ -35,7 +35,7 @@ import io.vertx.ext.web.handler.HttpException;
 
 public class ParticipationRouterTest extends SoileWebTest{
 
-	private WebClient generatorSession;
+	private WebClientSession generatorSession;
 	
 	@Test
 	public void getTaskInformationTest(TestContext context)
@@ -108,6 +108,78 @@ public class ParticipationRouterTest extends SoileWebTest{
 
 
 
+	// This test is more of a study test, but the helper functions are in here...
+	@Test	
+	public void runResetTest(TestContext context)
+	{
+		System.out.println("--------------------  Running Task Tests  ----------------------");    
+		Async creationAsync = context.async();
+		createAndStartProject(true)
+		.onSuccess(instanceID -> {
+			createTokenAndSignupUser(generatorSession, instanceID)
+			.onSuccess(authToken -> {
+				POST(generatorSession, "/projectexec/" + instanceID + "/reset", null,null)
+				.onSuccess(resetted -> {
+					Async codeTypeAsync = context.async();
+					WebClientSession tempSession = createSession();
+					tempSession.addHeader("Authorization", authToken);
+					POST(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+					.onSuccess(inforesponse -> {
+						context.fail("Should not be possible, since participant is no longer existing");						
+					})
+					.onFailure(err -> {
+						HttpException e = (HttpException) err;
+						// not authenticated, because the given participant no longer exists
+						context.assertEquals(401, e.getStatusCode());
+						codeTypeAsync.complete();
+					});
+					
+					creationAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+				
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+	
+	@Test	
+	public void deleteStudyTest(TestContext context)
+	{
+		System.out.println("--------------------  Running Task Tests  ----------------------");    
+		Async creationAsync = context.async();
+		createAndStartProject(true)
+		.onSuccess(instanceID -> {
+			createTokenAndSignupUser(generatorSession, instanceID)
+			.onSuccess(authToken -> {
+				POST(generatorSession, "/projectexec/" + instanceID + "/delete", null,null)
+				.onSuccess(resetted -> {
+					Async codeTypeAsync = context.async();
+					WebClientSession tempSession = createSession();
+					tempSession.addHeader("Authorization", authToken);
+					POST(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+					.onSuccess(inforesponse -> {
+						context.fail("Should not be possible, since participant is no longer existing");						
+					})
+					.onFailure(err -> {
+						HttpException e = (HttpException) err;
+						// not authenticated, because the given participant no longer exists
+						context.assertEquals(401, e.getStatusCode());
+						codeTypeAsync.complete();
+					});
+					
+					creationAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+				
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}	
+	
+	
 	@Test
 	public void submitTest(TestContext context)
 	{
@@ -618,16 +690,22 @@ public class ParticipationRouterTest extends SoileWebTest{
 	{
 		return createAndStartProject(priv, "newShortCut");
 	}
-
 	protected Future<String> createAndStartProject(boolean priv, String shortcut)
 	{
+		return createAndStartProject(priv, shortcut, "Testproject");
+	}
+			
+	protected Future<String> createAndStartProject(boolean priv, String shortcut, String ProjectName)
+	{
 		JsonObject projectExec = new JsonObject().put("private", priv).put("name", "New Project").put("shortcut",shortcut); 
-
 		Promise<String> projectInstancePromise = Promise.promise();
+		if(generatorSession == null)
+		{
+		
 		createUserAndAuthedSession("Researcher", "test", Roles.Researcher)
 		.onSuccess(authedSession -> {
 			generatorSession = authedSession;
-			WebObjectCreator.createProject(authedSession, "Testproject")
+			WebObjectCreator.createProject(authedSession,ProjectName)
 			.onSuccess(projectData -> {				
 				String projectID = projectData.getString("UUID");
 				String projectVersion = projectData.getString("version");
@@ -641,6 +719,22 @@ public class ParticipationRouterTest extends SoileWebTest{
 			.onFailure(err -> projectInstancePromise.fail(err));
 		})
 		.onFailure(err -> projectInstancePromise.fail(err));
+		}
+		else
+		{
+			WebObjectCreator.createProject(generatorSession, ProjectName)
+			.onSuccess(projectData -> {				
+				String projectID = projectData.getString("UUID");
+				String projectVersion = projectData.getString("version");
+				POST(generatorSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
+				.onSuccess(response -> {
+					projectInstancePromise.complete(response.bodyAsJsonObject().getString("projectID"));
+				})
+				.onFailure(err -> projectInstancePromise.fail(err));
+
+			})
+			.onFailure(err -> projectInstancePromise.fail(err));
+		}
 		return projectInstancePromise.future();
 	}
 

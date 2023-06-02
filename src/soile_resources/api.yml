@@ -2066,7 +2066,7 @@ paths:
               format: binary
               description: the file to upload
               
-  /projectexec/{id}:  
+  /projectexec/{id}/update:  
     post:
       security:
         - cookieAuth: []
@@ -2099,8 +2099,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ModifyiableStudyProperties'
-  
-    get:
+  /projectexec/{id}:  
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []

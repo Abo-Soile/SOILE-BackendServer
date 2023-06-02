@@ -416,7 +416,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	
 	/**
 	 * Reset the Participant based on the given participants data and empty results. 
-	 * @param project
+	 * @param studyHandler
 	 * @return
 	 */
 	public Future<Void> resetParticipant(Participant part)

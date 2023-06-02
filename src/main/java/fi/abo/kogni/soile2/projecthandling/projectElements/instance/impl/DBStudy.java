@@ -126,6 +126,9 @@ public class DBStudy extends Study{
 				{
 					LOGGER.debug("The data from the project git file is: \n" + projectData.encodePrettily());
 					// we got a positive reply.
+					// this is only the git data, so we need to set the UUID/version information
+					projectData.put("UUID",instanceJson.getString("sourceUUID"));
+					projectData.put("version",instanceJson.getString("version"));
 					instanceJson.put("sourceProject", projectData);					
 					LOGGER.debug(instanceJson.encodePrettily());	
 					loadSuccess.complete(instanceJson);					
@@ -200,23 +203,31 @@ public class DBStudy extends Study{
 	 * @param p the participant to remove
 	 */
 	@Override
-	public synchronized Future<Void> deleteParticipant(Participant p)
+	public synchronized Future<Boolean> deleteParticipant(Participant p)
 	{
-
-		Promise<Void> updatePromise = Promise.promise();
+		Promise<Boolean> updatePromise = Promise.promise();
 		JsonObject update = new JsonObject().put("$pull", new JsonObject().put("participants",p.getID()));
 		client.updateCollection(getTargetCollection(), new JsonObject().put("_id", instanceID), update )
 		.onSuccess(res -> {
 			if(res.getDocModified() != 1)
 			{
-				LOGGER.error("Modified multiple objects or none while only one ID was provided! Project was: " + instanceID );
-				updatePromise.fail("Mongo Error");
+				
+				if(res.getDocModified() == 0 )
+				{
+					LOGGER.error("Nothing was changed, participant did not exist in project: " + instanceID );
+					updatePromise.complete(false);
+				}
+				else
+				{
+					LOGGER.error("Modified multiple objects or none while only one ID was provided! Project was: " + instanceID );
+					updatePromise.fail("Mongo Error");
+				}
 
 			}
 			else
 			{
 				participants.remove(p.getID());		
-				updatePromise.complete();
+				updatePromise.complete(true);
 			}
 		})
 		.onFailure(err -> updatePromise.fail(err));		
@@ -367,6 +378,15 @@ public class DBStudy extends Study{
 				.put(new FieldSpecification("name", String.class, () -> getName(), false));
 								
 
+	}
+
+	@Override
+	protected Future<Boolean> checkShortCutAvailable(String shortcut) {
+		JsonObject query = new JsonObject().put("$and", new JsonArray()
+															.add(new JsonObject().put("shortcut", shortcut))
+															.add(new JsonObject().put("_id", new JsonObject().put("$ne", getID())))
+												);
+		return client.findOne(getTargetCollection(), query, null).map(res -> { return res == null; });		
 	}
 	
 

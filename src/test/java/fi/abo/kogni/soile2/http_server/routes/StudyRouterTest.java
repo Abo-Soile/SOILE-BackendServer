@@ -51,7 +51,7 @@ public class StudyRouterTest extends SoileWebTest {
 						})
 						.onFailure(err -> context.fail(err));
 						Async emptyListAsync = context.async();
-						
+
 						POST(wrongSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(0, listresponse.bodyAsJsonArray().size());
@@ -61,17 +61,17 @@ public class StudyRouterTest extends SoileWebTest {
 						startAsync.complete();
 					})
 					.onFailure(err -> context.fail(err));	
-					
+
 					setupAsync.complete();
 				})
 				.onFailure(err -> context.fail(err));
-				
+
 			})
 			.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
 	}
-	
+
 	/**
 	 * This test tests both starting and getting the list of running projects.
 	 * @param context
@@ -89,7 +89,7 @@ public class StudyRouterTest extends SoileWebTest {
 			createUserAndAuthedSession("Researcher2", "pw", Roles.Researcher)
 			.onSuccess(wrongSession -> {
 				WebClient unAuthedSession = createSession();
-				
+
 				WebObjectCreator.createProject(authedSession, "Testproject")
 				.onSuccess(projectData -> {
 					String projectID = projectData.getString("UUID");
@@ -102,79 +102,79 @@ public class StudyRouterTest extends SoileWebTest {
 
 						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec2 )
 						.onSuccess(response2 -> {
-						String id2 = response2.bodyAsJsonObject().getString("projectID");
-						Async listAsync = context.async();
-						POST(authedSession, "/projectexec/list", null,null)
-						.onSuccess(listresponse -> {
-							context.assertEquals(2, listresponse.bodyAsJsonArray().size());
-							List<String> uuids = new LinkedList<>();
-							for(int i = 0 ; i < listresponse.bodyAsJsonArray().size(); i++)
-							{
-								uuids.add(listresponse.bodyAsJsonArray().getJsonObject(i).getString("uuid"));								
-							}
-							context.assertTrue(uuids.contains(id1));
-							context.assertTrue(uuids.contains(id2));
-							listAsync.complete();
-						})
-						.onFailure(err -> context.fail(err));
-						Async readlistasync = context.async();
-						POST(authedSession, "/projectexec/list", new JsonObject().put("access",  "read"),null)
-						.onSuccess(listresponse -> {
-							context.assertEquals(2, listresponse.bodyAsJsonArray().size());
-							List<String> uuids = new LinkedList<>();
-							for(int i = 0 ; i < listresponse.bodyAsJsonArray().size(); i++)
-							{
-								uuids.add(listresponse.bodyAsJsonArray().getJsonObject(i).getString("uuid"));								
-							}
-							context.assertTrue(uuids.contains(id1));
-							context.assertTrue(uuids.contains(id2));
-							readlistasync.complete();
-						})
-						.onFailure(err -> context.fail(err));
-						Async emptyListAsync = context.async();
-						
-						POST(wrongSession, "/projectexec/list", null,null)
-						.onSuccess(listresponse -> {
-							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
-							context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
-							emptyListAsync.complete();
-						})
-						.onFailure(err -> context.fail(err));
-						
-						Async accessAsync = context.async();
-						POST(wrongSession, "/projectexec/list", new JsonObject().put("access",  "read"),null)
-						.onSuccess(listresponse -> {
-							context.assertEquals(0, listresponse.bodyAsJsonArray().size());							
-							accessAsync.complete();
-						})
-						.onFailure(err -> context.fail(err));
-						Async unAuthAsync = context.async();
-						
-						POST(unAuthedSession, "/projectexec/list", null,null)
-						.onSuccess(listresponse -> {
-							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
-							context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
+							String id2 = response2.bodyAsJsonObject().getString("projectID");
+							Async listAsync = context.async();
+							POST(authedSession, "/projectexec/list", null,null)
+							.onSuccess(listresponse -> {
+								context.assertEquals(2, listresponse.bodyAsJsonArray().size());
+								List<String> uuids = new LinkedList<>();
+								for(int i = 0 ; i < listresponse.bodyAsJsonArray().size(); i++)
+								{
+									uuids.add(listresponse.bodyAsJsonArray().getJsonObject(i).getString("uuid"));								
+								}
+								context.assertTrue(uuids.contains(id1));
+								context.assertTrue(uuids.contains(id2));
+								listAsync.complete();
+							})
+							.onFailure(err -> context.fail(err));
+							Async readlistasync = context.async();
+							POST(authedSession, "/projectexec/list", new JsonObject().put("access",  "read"),null)
+							.onSuccess(listresponse -> {
+								context.assertEquals(2, listresponse.bodyAsJsonArray().size());
+								List<String> uuids = new LinkedList<>();
+								for(int i = 0 ; i < listresponse.bodyAsJsonArray().size(); i++)
+								{
+									uuids.add(listresponse.bodyAsJsonArray().getJsonObject(i).getString("uuid"));								
+								}
+								context.assertTrue(uuids.contains(id1));
+								context.assertTrue(uuids.contains(id2));
+								readlistasync.complete();
+							})
+							.onFailure(err -> context.fail(err));
+							Async emptyListAsync = context.async();
 
-							unAuthAsync.complete();
+							POST(wrongSession, "/projectexec/list", null,null)
+							.onSuccess(listresponse -> {
+								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
+								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
+								emptyListAsync.complete();
+							})
+							.onFailure(err -> context.fail(err));
+
+							Async accessAsync = context.async();
+							POST(wrongSession, "/projectexec/list", new JsonObject().put("access",  "read"),null)
+							.onSuccess(listresponse -> {
+								context.assertEquals(0, listresponse.bodyAsJsonArray().size());							
+								accessAsync.complete();
+							})
+							.onFailure(err -> context.fail(err));
+							Async unAuthAsync = context.async();
+
+							POST(unAuthedSession, "/projectexec/list", null,null)
+							.onSuccess(listresponse -> {
+								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
+								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
+
+								unAuthAsync.complete();
+							})
+							.onFailure(err -> context.fail(err));
+
+							startAsync.complete();
 						})
-						.onFailure(err -> context.fail(err));
-						
-						startAsync.complete();
-					})
-					.onFailure(err -> context.fail(err));	
+						.onFailure(err -> context.fail(err));	
 					})
 					.onFailure(err -> context.fail(err));	
 					setupAsync.complete();
 				})
 				.onFailure(err -> context.fail(err));
-				
+
 			})
 			.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
 	}
-	
-	
+
+
 	/**
 	 * This test tests both starting and getting the list of running projects.
 	 * @param context
@@ -228,7 +228,7 @@ public class StudyRouterTest extends SoileWebTest {
 
 						})
 						.onFailure(err -> context.fail(err));
-						
+
 						POST(wrongSession, "/projectexec/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(0, listresponse.bodyAsJsonArray().size());
@@ -238,15 +238,191 @@ public class StudyRouterTest extends SoileWebTest {
 						startAsync.complete();
 					})
 					.onFailure(err -> context.fail(err));	
-					
+
 					setupAsync.complete();
 				})
 				.onFailure(err -> context.fail(err));
-				
+
 			})
 			.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
 	}
-		
+
+
+	/**
+	 * This test tests both starting and getting the list of running projects.
+	 * @param context
+	 */
+	@Test
+	public void testParticipantBlocksMod(TestContext context)
+	{
+		System.out.println("--------------------  Testing POST/GET study properties  ----------------------");    
+
+		JsonObject projectExec = new JsonObject().put("private", true).put("name", "New Project").put("shortcut","newShortcut"); 
+		Async setupAsync = context.async();
+		createUserAndAuthedSession("Researcher", "pw", Roles.Researcher)
+		.onSuccess(authedSession -> {
+			createUserAndAuthedSession("Researcher2", "pw", Roles.Researcher)
+			.onSuccess(wrongSession -> {
+				WebObjectCreator.createProject(authedSession, "Testproject")
+				.onSuccess(projectData -> {
+					String projectID = projectData.getString("UUID");
+					String projectVersion = projectData.getString("version");
+					WebObjectCreator.createProject(authedSession, "ExampleProject")
+					.onSuccess(projectData2 -> {
+						String projectID2 = projectData2.getString("UUID");
+						String projectVersion2 = projectData2.getString("version");
+						Async startAsync = context.async();
+						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )					
+						.onSuccess(response -> {
+							// we have a project set up. lets try to get the information.
+							String studyId = response.bodyAsJsonObject().getString("projectID");					
+							Async getsetasync = context.async();
+							POST(authedSession, "/projectexec/" + studyId, null, null)
+							.onSuccess(studyDataResponse -> {
+								POST(authedSession, "/projectexec/" + studyId + "/signup", null,null)
+								.onSuccess(res -> {
+									JsonObject studyData = studyDataResponse.bodyAsJsonObject();
+									JsonObject studyData2 = studyDataResponse.bodyAsJsonObject();
+									context.assertEquals("newShortcut", studyData.getString("shortcut"));
+									context.assertEquals(projectID, studyData.getString("sourceUUID"));
+									context.assertEquals(projectVersion, studyData.getString("version"));
+									context.assertEquals(true, studyData.getBoolean("private"));
+									studyData.put("private", false);
+									studyData.put("sourceUUID", projectID2);
+									studyData.put("version", projectVersion2);
+									Async failAsync = context.async();
+									POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData)
+									.onSuccess(updateResponse -> {
+										context.fail("This should not be possible");
+									})
+									.onFailure(err -> failAsync.complete());	
+									studyData2.put("private",false);
+									studyData2.put("shortDescription","Fancy");		
+									POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData2)
+									.onSuccess(updateResponse -> {
+										POST(authedSession, "/projectexec/" + studyId, null, null)
+										.onSuccess(updatedstudyDataResponse -> {
+											JsonObject studyDatanew = updatedstudyDataResponse.bodyAsJsonObject();
+											context.assertEquals("Fancy", studyDatanew.getString("shortDescription"));
+											context.assertEquals(projectID, studyDatanew.getString("sourceUUID"));
+											context.assertEquals(projectVersion, studyDatanew.getString("version"));
+											context.assertEquals(false, studyDatanew.getBoolean("private"));
+											getsetasync.complete();
+										})
+										.onFailure(err -> context.fail(err));
+
+									})									
+									.onFailure(err -> context.fail(err));									
+								})
+								.onFailure(err -> context.fail(err));
+
+							})
+							.onFailure(err -> context.fail(err));
+							Async failedAsync = context.async();
+							POST(wrongSession, "/projectexec/" + studyId, null,null)
+							.onSuccess(listresponse -> {
+								context.fail("Does not have accesss");
+							})
+							.onFailure(err -> {
+								context.assertEquals(403, ((HttpException)err).getStatusCode());
+								failedAsync.complete();
+							});
+							startAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));	
+
+						setupAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));
+				})
+				.onFailure(err -> context.fail(err));
+
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+
+
+	@Test
+	public void testModify(TestContext context)
+	{
+		System.out.println("--------------------  Testing POST/GET study properties  ----------------------");    
+
+		JsonObject projectExec = new JsonObject().put("private", true).put("name", "New Project").put("shortcut","newShortcut"); 
+		Async setupAsync = context.async();
+		createUserAndAuthedSession("Researcher", "pw", Roles.Researcher)
+		.onSuccess(authedSession -> {
+			createUserAndAuthedSession("Researcher2", "pw", Roles.Researcher)
+			.onSuccess(wrongSession -> {
+				WebObjectCreator.createProject(authedSession, "Testproject")
+				.onSuccess(projectData -> {
+					String projectID = projectData.getString("UUID");
+					String projectVersion = projectData.getString("version");
+					WebObjectCreator.createProject(authedSession, "ExampleProject")
+					.onSuccess(projectData2 -> {
+						String projectID2 = projectData2.getString("UUID");
+						String projectVersion2 = projectData2.getString("version");
+						Async startAsync = context.async();
+						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )					
+						.onSuccess(response -> {
+							// we have a project set up. lets try to get the information.
+							String studyId = response.bodyAsJsonObject().getString("projectID");					
+							Async getsetasync = context.async();
+							POST(authedSession, "/projectexec/" + studyId, null, null)
+							.onSuccess(studyDataResponse -> {
+
+								JsonObject studyData = studyDataResponse.bodyAsJsonObject();
+								context.assertEquals("newShortcut", studyData.getString("shortcut"));
+								context.assertEquals(projectID, studyData.getString("sourceUUID"));
+								context.assertEquals(projectVersion, studyData.getString("version"));
+								context.assertEquals(true, studyData.getBoolean("private"));
+								studyData.put("private", false);
+								studyData.put("sourceUUID", projectID2);
+								studyData.put("version", projectVersion2);
+								POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData)
+								.onSuccess(updateResponse -> {
+									POST(authedSession, "/projectexec/" + studyId, null, null)
+									.onSuccess(updatedstudyDataResponse -> {
+										JsonObject studyData2 = updatedstudyDataResponse.bodyAsJsonObject();
+										System.out.println(studyData2.encodePrettily());
+										context.assertEquals("newShortcut", studyData2.getString("shortcut"));
+										context.assertEquals(projectID2, studyData2.getString("sourceUUID"));
+										context.assertEquals(projectVersion2, studyData2.getString("version"));
+										context.assertEquals(false, studyData2.getBoolean("private"));
+										getsetasync.complete();				
+									})
+									.onFailure(err -> context.fail(err));
+
+								})
+								.onFailure(err -> context.fail(err));
+
+							})
+							.onFailure(err -> context.fail(err));
+							Async failedAsync = context.async();
+							POST(wrongSession, "/projectexec/" + studyId, null,null)
+							.onSuccess(listresponse -> {
+								context.fail("Does not have accesss");
+							})
+							.onFailure(err -> {
+								context.assertEquals(403, ((HttpException)err).getStatusCode());
+								failedAsync.complete();
+							});
+							startAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));	
+
+						setupAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));
+				})
+				.onFailure(err -> context.fail(err));
+
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
 }

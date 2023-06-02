@@ -69,7 +69,7 @@ public class ParticipantVerticle extends AbstractVerticle {
 		List<Future> deletionFutures = new LinkedList<>();
 		for(int i = 0; i< participantInformation.size(); ++i)
 		{
-			deletionFutures.add(partHandler.deleteParticipant(participantInformation.getJsonObject(i).getString("participantID")));			
+			deletionFutures.add(partHandler.deleteParticipant(participantInformation.getJsonObject(i).getString("participantID"), true));			
 		}
 		CompositeFuture.all(deletionFutures)
 		.onSuccess(succeeded -> 

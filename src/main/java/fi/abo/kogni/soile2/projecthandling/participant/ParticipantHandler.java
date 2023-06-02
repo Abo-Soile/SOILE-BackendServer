@@ -26,20 +26,20 @@ import io.vertx.ext.mongo.MongoClient;
  */
 public class ParticipantHandler {
 	MongoClient client;
-	StudyHandler project;
+	StudyHandler studyHandler;
 	CheckDirtyMap<String,Participant> activeparticipants;	
 	ParticipantManager manager;
 	Vertx vertx;
 	String dataLakeFolder;
 	static final Logger LOGGER = LogManager.getLogger(ParticipantHandler.class);
 
-	
-	
-	
+
+
+
 	public ParticipantHandler(MongoClient client, StudyHandler project, Vertx vertx) {
 		super();		
 		this.client = client;
-		this.project = project;
+		this.studyHandler = project;
 		this.manager = new ParticipantManager(client);
 		this.vertx = vertx;
 		activeparticipants = new CheckDirtyMap<String, Participant>(manager, 2*3600); //Keep for two hours
@@ -53,7 +53,7 @@ public class ParticipantHandler {
 	{
 		handler.handle(create(p));			
 	}
-	
+
 	/**
 	 * Create a participant in the database
 	 * @param p the ProjectInstance for which to create a participant
@@ -72,7 +72,7 @@ public class ParticipantHandler {
 	{
 		return manager.createTokenParticipant(p, usedToken);
 	}
-	
+
 	/**
 	 * Clean up the data currently stored by this Participant handler. 
 	 * This is necessary to avoid excessive data in memory.
@@ -81,7 +81,7 @@ public class ParticipantHandler {
 	{
 		activeparticipants.cleanup();
 	}
-	
+
 	/**
 	 * Retrieve a participant from the database (or memory) and return the participant
 	 * based on the participants uID.
@@ -92,7 +92,7 @@ public class ParticipantHandler {
 	{
 		activeparticipants.getData(id, handler);
 	}
-	
+
 	/**
 	 * Retrieve a participant from the database (or memory) and return the participant
 	 * based on the participants uID.
@@ -103,7 +103,7 @@ public class ParticipantHandler {
 	{
 		return activeparticipants.getData(id);		
 	}
-	
+
 	/**
 	 * Retrieve a participant from the database (or memory) and return the participant
 	 * based on the participants uID.
@@ -124,7 +124,7 @@ public class ParticipantHandler {
 		.onFailure(err -> partPromise.fail(err));
 		return partPromise.future();
 	}
-	
+
 	/**
 	 * Create a participant for a project with a given instanceID. 
 	 * @param id the uid of the participant
@@ -133,7 +133,7 @@ public class ParticipantHandler {
 	public Future<Participant> createParticipant(String projectInstanceID)
 	{
 		Promise<Participant> particpantPromise = Promise.promise();
-		project.loadStudy(projectInstanceID)
+		studyHandler.loadStudy(projectInstanceID)
 		.onSuccess( projectInstance -> {
 			manager.createParticipant(projectInstance)
 			.onSuccess(participant -> particpantPromise.complete(participant))
@@ -144,54 +144,81 @@ public class ParticipantHandler {
 
 	}
 
-	
+
 	/**
 	 * Delete a participant and all data associated with the participant from the project.
 	 * @param id
 	 */
-	public Future<Void> deleteParticipant(String id)
+	public Future<Void> deleteParticipant(String id, boolean participantHasToBeInStudy)
 	{
 		Promise<Void> deletionPromise = Promise.<Void>promise();
 		// all Files for a participant are stored in the folder: datalake/PARTICIPANTID
 		getParticipant(id)
 		.onSuccess( participant -> {
-			vertx.fileSystem().deleteRecursive(Path.of(dataLakeFolder, id).toString(), true)
-			.onSuccess(filesDeleted -> 			
-			{
-				//TODO: Need to change this, so that it is FIRST removed from the projectInstance and THEN deleted from the participant db.... 
-				
-				// now, all files and folders have been removed. So we will delete the participant ID.
-				project.removeParticipant(participant.getProjectID(), participant)
-				.onSuccess( success -> {
-					manager.deleteParticipant(id)
-					.onSuccess(deletionSuccess -> {
-										
-						activeparticipants.cleanElement(id);
-						deletionPromise.complete();
-					}).onFailure(err -> {
-						LOGGER.error("Error while deleting participant " + id + ". Couldnt remove from the participant database!");
-						LOGGER.error(err);
-						deletionPromise.fail(err);	
-					});										
-				})
-				.onFailure(err -> {
-					LOGGER.error("Error while deleting participant " + id + ". Couldnt remove from the Project !");
-					LOGGER.error(err);
-					deletionPromise.fail(err);	
-				});
-			})
-			.onFailure(
-					err -> {
+
+			vertx.fileSystem().exists(Path.of(dataLakeFolder, id).toString())
+			.onSuccess(deleteFiles -> {
+
+				if(deleteFiles)
+				{
+					vertx.fileSystem().deleteRecursive(Path.of(dataLakeFolder, id).toString(), true)
+					.onSuccess(filesDeleted -> 			
+					{
+						//TODO: Need to change this, so that it is FIRST removed from the projectInstance and THEN deleted from the participant db.... 
+						removeParticipantFromManager(participant, id, participantHasToBeInStudy)
+						.onSuccess(done -> deletionPromise.complete())
+						.onFailure(err -> deletionPromise.fail(err));
+						// now, all files and folders have been removed. So we will delete the participant ID.
+
+					})
+					.onFailure(
+					err -> {						
 						LOGGER.error("Error while deleting files for participant " + id + "!");
 						LOGGER.error(err);
 						deletionPromise.fail(err);	
 					});
+				}
+				else
+				{
+					removeParticipantFromManager(participant, id, participantHasToBeInStudy)
+					.onSuccess(done -> deletionPromise.complete())
+					.onFailure(err -> deletionPromise.fail(err));
+				}
+			}).onFailure(
+			err -> {						
+				LOGGER.error("Error while determining if files exist!");
+				LOGGER.error(err);
+				deletionPromise.fail(err);	
+			});
 		})
 		.onFailure(err -> deletionPromise.fail(err));			
 		return deletionPromise.future();
 	}
-		
-	
+
+	private Future<Void> removeParticipantFromManager(Participant participant, String id, boolean participantHasToBeInStudy)
+	{
+		Promise<Void> removedPromise = Promise.promise();
+		studyHandler.removeParticipant(participant.getProjectID(), participant, participantHasToBeInStudy)
+		.onSuccess( success -> {
+			manager.deleteParticipant(id)
+			.onSuccess(deletionSuccess -> {
+
+				activeparticipants.cleanElement(id);
+				removedPromise.complete();
+			}).onFailure(err -> {
+				LOGGER.error("Error while deleting participant " + id + ". Couldnt remove from the participant database!");
+				LOGGER.error(err);
+				removedPromise.fail(err);	
+			});										
+		})
+		.onFailure(err -> {
+			LOGGER.error("Error while deleting participant " + id + ". Couldnt remove from the Project !");
+			LOGGER.error(err);
+			removedPromise.fail(err);	
+		});
+		return removedPromise.future();
+	}
+
 	/**
 	 * Get a {@link JsonArray} of {@link JsonObject} elements that contain the 
 	 * @param project
@@ -204,14 +231,14 @@ public class ParticipantHandler {
 
 	/**
 	 * Get a {@link JsonArray} of {@link JsonObject} elements that contain the 
-	 * @param project
+	 * @param studyHandler
 	 * @return
 	 */
 	public Future<List<JsonObject>> getTaskDataforParticipants(JsonArray participantIDs, String taskID, String projectID)
 	{
 		return manager.getParticipantsResultsForTask(participantIDs, projectID, taskID);
 	}
-	
+
 	/**
 	 * Get a {@link List} of {@link JsonObject} elements that contain the results along with some additional information for each participant. 
 	 * @param project
@@ -232,7 +259,7 @@ public class ParticipantHandler {
 				.onFailure(err -> dataPromise.fail(err));
 			})
 			.onFailure(err -> dataPromise.fail(err));
-					
+
 		}
 		else
 		{
@@ -241,7 +268,7 @@ public class ParticipantHandler {
 				dataPromise.complete(res);
 			})
 			.onFailure(err -> dataPromise.fail(err));
-			
+
 		}
 		return dataPromise.future();
 	}	
