@@ -20,7 +20,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileSessionHandler;
 import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
 import fi.abo.kogni.soile2.http_server.routes.ElementRouter;
 import fi.abo.kogni.soile2.http_server.routes.ParticipationRouter;
-import fi.abo.kogni.soile2.http_server.routes.ProjectInstanceRouter;
+import fi.abo.kogni.soile2.http_server.routes.StudyRouter;
 import fi.abo.kogni.soile2.http_server.routes.ProjectRouter;
 import fi.abo.kogni.soile2.http_server.routes.SoileRouter;
 import fi.abo.kogni.soile2.http_server.routes.TaskRouter;
@@ -35,7 +35,7 @@ import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.qmarkup.verticle.QuestionnaireRenderVerticle;
 import fi.abo.kogni.soile2.utils.DebugRouter;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -81,7 +81,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private SoileAuthorization soileAuthorization;
 	private DataLakeResourceManager resourceManager;
 	private ParticipantHandler partHandler;
-	private ProjectInstanceHandler projHandler;
+	private StudyHandler projHandler;
 	private TaskRouter taskRouter;
 	private ParticipationRouter partRouter;
 	private IDSpecificFileProvider fileProvider;
@@ -99,7 +99,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		this.client = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg(), "ROUTER_MONGO");
 		resourceManager = new DataLakeResourceManager(vertx);
 		soileAuthorization = new SoileAuthorization(client);
-		projHandler = new ProjectInstanceHandler(client, vertx);
+		projHandler = new StudyHandler(client, vertx);
 		partHandler = new ParticipantHandler(client, projHandler, vertx);
 		fileProvider = new IDSpecificFileProvider(resourceManager);
 		LOGGER.debug("Starting Routerbuilder");
@@ -111,7 +111,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		.compose(this::setupTaskAPI)
 		.compose(this::setupExperimentAPI)
 		.compose(this::setupProjectAPI)
-		.compose(this::setupProjectexecutionAPI)
+		.compose(this::setupStudyAPI)
 		.compose(this::setupParticipationAPI)
 		.compose(this::setupUserAPI)					 
 		.onSuccess( routerBuilder ->
@@ -368,9 +368,9 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	 * @param builder
 	 * @return
 	 */
-	private Future<RouterBuilder> setupProjectexecutionAPI(RouterBuilder builder)
+	private Future<RouterBuilder> setupStudyAPI(RouterBuilder builder)
 	{
-		ProjectInstanceRouter router = new ProjectInstanceRouter(soileAuthorization, vertx, client, partHandler, projHandler);
+		StudyRouter router = new StudyRouter(soileAuthorization, vertx, client, partHandler, projHandler);
 		builder.operation("listDownloadData").handler(router::listDownloadData);
 		builder.operation("startProject").handler(router::startProject);
 		builder.operation("getRunningProjectList").handler(router::getRunningProjectList);
@@ -380,7 +380,10 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("getProjectResults").handler(router::getProjectResults);		
 		builder.operation("downloadResults").handler(router::downloadResults);
 		builder.operation("downloadTest").handler(router::downloadTest);
-		builder.operation("createTokens").handler(router::createTokens);		
+		builder.operation("createTokens").handler(router::createTokens);
+		builder.operation("resetStudy").handler(router::resetStudy);
+		builder.operation("updateStudy").handler(router::updateStudy);
+		builder.operation("getStudyProperties").handler(router::getStudyProperties);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	

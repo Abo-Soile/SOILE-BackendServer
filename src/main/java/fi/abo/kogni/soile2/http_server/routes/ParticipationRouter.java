@@ -17,8 +17,8 @@ import fi.abo.kogni.soile2.http_server.requestHandling.NonStaticHandler;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -46,7 +46,7 @@ public class ParticipationRouter extends SoileRouter{
 
 	NonStaticHandler libraryHandler;
 	IDSpecificFileProvider resourceHandler;
-	ProjectInstanceHandler instanceHandler;
+	StudyHandler instanceHandler;
 	AccessHandler accessHandler;
 	SoileAuthorization authorizationRertiever;
 	ParticipantHandler partHandler;
@@ -55,10 +55,10 @@ public class ParticipationRouter extends SoileRouter{
 	EventBus eb;
 	Vertx vertx;
 
-	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);
+	static final Logger LOGGER = LogManager.getLogger(StudyRouter.class);
 
 
-	public ParticipationRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, ProjectInstanceHandler projHandler, IDSpecificFileProvider fileProvider) {
+	public ParticipationRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, StudyHandler projHandler, IDSpecificFileProvider fileProvider) {
 		super(auth,client);
 		eb = vertx.eventBus();
 		this.vertx = vertx;			
@@ -228,7 +228,7 @@ public class ParticipationRouter extends SoileRouter{
 	}
 
 	
-	private Future<String> createTokenParticipant(ProjectInstance project, String token, RoutingContext context)
+	private Future<String> createTokenParticipant(Study project, String token, RoutingContext context)
 	{
 
 		Promise<String> tokenPromise = Promise.<String>promise();
@@ -240,7 +240,7 @@ public class ParticipationRouter extends SoileRouter{
 				// if the principal is empty, that means we have not used authentication, but passed through 
 				// the auth-less route
 				// we don't have a user, so we just respond with the token after we started the project for this participant. 
-				project.startProject(participant)
+				project.startStudy(participant)
 				.onSuccess(position -> {
 					tokenPromise.complete(participant.getToken());					
 				})
@@ -280,7 +280,7 @@ public class ParticipationRouter extends SoileRouter{
 							eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInProject"),partData)
 							.onSuccess( participantAdded ->
 							{
-								project.startProject(participant)
+								project.startStudy(participant)
 								.onSuccess(position -> {
 									tokenPromise.complete(participant.getToken());								
 								})
@@ -536,11 +536,11 @@ public class ParticipationRouter extends SoileRouter{
 	/**
 	 * Get the participant for the current user. 
 	 * @param user the authenticated {@link User} from a routing context
-	 * @param project the {@link ProjectInstance} for which the participant is requested. If there is none yet, one will be created.
+	 * @param project the {@link Study} for which the participant is requested. If there is none yet, one will be created.
 	 * @param failIfExist Fail the retrieval if the participant already exists (to avoid double signup);
 	 * @return
 	 */
-	Future<Participant> getParticpantForUser(User user, ProjectInstance project)
+	Future<Participant> getParticpantForUser(User user, Study project)
 	{
 
 		if(user.principal().getString("username") == null)
@@ -576,7 +576,7 @@ public class ParticipationRouter extends SoileRouter{
 	}		
 
 	
-	public Future<Participant> createParticipantForUser(User user, ProjectInstance project)
+	public Future<Participant> createParticipantForUser(User user, Study project)
 	{			
 		Promise<Participant> partPromise = Promise.promise();
 		partHandler.create(project)
@@ -599,7 +599,7 @@ public class ParticipationRouter extends SoileRouter{
 	public void handleRequest(RoutingContext context, Handler<RoutingContext> method)
 	{
 		String projectID = context.pathParam("id");
-		instanceHandler.loadProject(projectID)
+		instanceHandler.loadStudy(projectID)
 		.onSuccess(exists -> {		
 			method.handle(context);
 		})
@@ -621,10 +621,10 @@ public class ParticipationRouter extends SoileRouter{
 	}
 	
 	
-	private Future<ProjectInstance> loadProject(String id)
+	private Future<Study> loadProject(String id)
 	{
-		Promise<ProjectInstance> projPromise = Promise.promise();
-		instanceHandler.loadProject(id).
+		Promise<Study> projPromise = Promise.promise();
+		instanceHandler.loadStudy(id).
 		onSuccess(project -> {
 			if(project.isActive())
 			{				

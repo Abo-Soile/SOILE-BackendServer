@@ -16,7 +16,7 @@ import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.utils.DataProvider;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -28,14 +28,14 @@ import io.vertx.ext.web.FileUpload;
 
 public class DataBundleTest extends ElementTester {
 
-	ProjectInstanceHandler projHandler;
+	StudyHandler projHandler;
 	ParticipantHandler partHandler;
 	DataBundleGeneratorVerticle dbg;
 	@Override
 	public void runBeforeTests(TestContext context)
 	{
 		super.runBeforeTests(context);	
-		projHandler = new ProjectInstanceHandler(mongo_client, vertx);
+		projHandler = new StudyHandler(mongo_client, vertx);
 		partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		dbg = new DataBundleGeneratorVerticle(mongo_client, projHandler, partHandler);
 		vertx.deployVerticle(dbg);
@@ -56,11 +56,11 @@ public class DataBundleTest extends ElementTester {
 			.onSuccess(projInstance -> {
 				partHandler.create(projInstance)				
 				.onSuccess(participant -> {
-					projInstance.startProject(participant)
+					projInstance.startStudy(participant)
 					.onSuccess(position1 -> { 
 						partHandler.create(projInstance)
 						.onSuccess(participant2 -> {
-							projInstance.startProject(participant2)
+							projInstance.startStudy(participant2)
 							.onSuccess(position2 -> {
 								participant.getCurrentStep().onSuccess(p1step -> {
 									participant2.getCurrentStep().onSuccess(p2step -> {

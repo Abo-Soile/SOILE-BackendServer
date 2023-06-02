@@ -2,7 +2,7 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.mongo.MongoClient;
 
@@ -11,20 +11,20 @@ import io.vertx.ext.mongo.MongoClient;
  * @author Thomas Pfau
  *
  */
-public class ElementToDBProjectInstanceFactory extends DBProjectInstanceFactory {
+public class ElementToDBStudyFactory extends DBStudyFactory {
 
 	/**
 	 * Default constructor
 	 * @param client
 	 * @param projectInstanceDB
 	 */
-	public ElementToDBProjectInstanceFactory(ElementManager<Project> manager, MongoClient client, EventBus eb) {
+	public ElementToDBStudyFactory(ElementManager<Project> manager, MongoClient client, EventBus eb) {
 		super(manager, client, eb);
 	}
 
 	@Override
-	public ProjectInstance createInstance() { 		
-		return new ElementToDBProjectInstance(projManager, client, eb);
+	public Study createInstance() { 		
+		return new ElementToDBStudy(projManager, client, eb);
 	}
 
 }

@@ -8,7 +8,7 @@ import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import fi.abo.kogni.soile2.utils.DataProvider;
@@ -33,7 +33,7 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 				.put("value", 1);
 		ParticipantDataLakeManager dlm = new ParticipantDataLakeManager(resultDataLakeDir, vertx);
 		JsonObject nonSmokerQuestionaireOutput = new JsonObject().put("outputData", new JsonArray().add(smokerOutput));		
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx);
+		StudyHandler projHandler = new StudyHandler(mongo_client, vertx);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		ObjectGenerator.createProject(mongo_client, vertx, "Testproject")
 		.onSuccess(projectData -> {
@@ -44,7 +44,7 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 				partHandler.create(proj)
 				.onSuccess(participant1 -> {
 					System.out.println("------------------------------------------------Participant 1 created");
-					proj.startProject(participant1)
+					proj.startStudy(participant1)
 					.onSuccess(taskID -> {
 						System.out.println("------------------------------------------------Participant 1 started");
 						participant1.getCurrentStep()

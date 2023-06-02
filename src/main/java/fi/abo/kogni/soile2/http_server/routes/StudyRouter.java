@@ -19,9 +19,10 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
@@ -42,9 +43,9 @@ import io.vertx.ext.web.validation.ValidationHandler;
  * @author Thomas Pfau
  *
  */
-public class ProjectInstanceRouter extends SoileRouter {
+public class StudyRouter extends SoileRouter {
 
-	ProjectInstanceHandler instanceHandler;
+	StudyHandler instanceHandler;
 	AccessHandler instanceAccessHandler;
 	AccessHandler projectAccessHandler;
 	ParticipantHandler partHandler;
@@ -52,9 +53,9 @@ public class ProjectInstanceRouter extends SoileRouter {
 	EventBus eb;
 	Vertx vertx;
 
-	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceRouter.class);	
+	static final Logger LOGGER = LogManager.getLogger(StudyRouter.class);	
 
-	public ProjectInstanceRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, ProjectInstanceHandler projHandler) {
+	public StudyRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, StudyHandler projHandler) {
 		super(auth,client);
 		eb = vertx.eventBus();
 		this.vertx = vertx;		
@@ -69,8 +70,9 @@ public class ProjectInstanceRouter extends SoileRouter {
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String id = params.pathParameter("id").getString();
-		String version = params.pathParameter("version").getString();		
-		JsonObject projectData = params.body().getJsonObject().put("sourceUUID", id).put("version", version).mergeIn(context.body().asJsonObject());
+		String version = params.pathParameter("version").getString();
+		JsonObject sourceProjectInfo = new JsonObject().put("UUID", id).put("version", version);
+		JsonObject projectData = new JsonObject().put("sourceProject", sourceProjectInfo).mergeIn(context.body().asJsonObject());
 		// we need to check, whether the user has access to the actual project indicated.
 		projectAuth.getAuthorizations(context.user())
 		.onSuccess(Void -> {
@@ -165,7 +167,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadProject(requestedInstanceID)
+			instanceHandler.loadStudy(requestedInstanceID)
 			.onSuccess(project -> {	
 				// this list needs to be filtered by access
 				project.deactivate()
@@ -189,7 +191,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadProject(requestedInstanceID)
+			instanceHandler.loadStudy(requestedInstanceID)
 			.onSuccess(project -> {	
 				// this list needs to be filtered by access
 				project.activate()
@@ -212,14 +214,23 @@ public class ProjectInstanceRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadProject(requestedInstanceID)
+			instanceHandler.loadStudy(requestedInstanceID)
 			.onSuccess(project -> {					
-				// this list needs to be filtered by access
+				// TODO: Also delete the participants + data!!
 				project.delete()
-				.onSuccess(success -> {
-					context.response()
-					.setStatusCode(200)						
-					.end();
+				.onSuccess(deletedObject -> {
+					List<Future> deletionFutures = new LinkedList<Future>();
+					for(int i = 0; i < deletedObject.getJsonArray("participants").size(); ++i)
+					{
+						deletionFutures.add(partHandler.deleteParticipant(deletedObject.getJsonArray("participants").getString(i)));
+					}
+					CompositeFuture.all(deletionFutures)
+					.onSuccess(done -> {
+							context.response()
+							.setStatusCode(200)						
+							.end();
+					})
+					.onFailure(err -> handleError(err, context));					
 				})
 				.onFailure(err -> handleError(err, context));
 			})
@@ -228,6 +239,40 @@ public class ProjectInstanceRouter extends SoileRouter {
 		.onFailure(err -> handleError(err, context));			
 	}
 
+	public void resetStudy(RoutingContext context)
+	{				
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
+		.onSuccess(Void -> 
+		{
+			instanceHandler.loadStudy(requestedInstanceID)
+			.onSuccess(study -> {					
+				//
+				
+				study.reset()
+				.onSuccess(participantsToDelete -> {
+					List<Future> deletionFutures = new LinkedList<Future>();
+					for(int i = 0; i < participantsToDelete.size(); ++i)
+					{
+						deletionFutures.add(partHandler.deleteParticipant(participantsToDelete.getString(i)));
+					}
+					CompositeFuture.all(deletionFutures)
+					.onSuccess(done -> {
+							context.response()
+							.setStatusCode(200)						
+							.end();
+					})
+					.onFailure(err -> handleError(err, context));
+					
+				})
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));			
+	}
+	
 	public void listDownloadData(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -235,7 +280,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> {
-			instanceHandler.loadProject(requestedInstanceID)
+			instanceHandler.loadStudy(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -255,7 +300,46 @@ public class ProjectInstanceRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));		
 	}
-
+	
+	public void updateStudy(RoutingContext context)
+	{				
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		//TODO: not implemented properly yet
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ_WRITE,false)
+		.onSuccess(Void -> 
+		{			
+			instanceHandler.updateStudy(requestedInstanceID,context.body().asJsonObject())
+			.onSuccess(studyUpdated -> {
+				context.response()
+				.setStatusCode(200)				
+				.end();
+			})
+			.onFailure(err -> handleError(err, context));										
+		})
+		.onFailure(err -> handleError(err, context));			
+	}
+	
+	public void getStudyProperties(RoutingContext context)
+	{				
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		//TODO: not implemented properly yet
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		.onSuccess(Void -> 
+		{			
+			instanceHandler.loadStudy(requestedInstanceID)
+			.onSuccess(study-> {				
+				context.response()
+				.setStatusCode(200)				
+				.end(study.toDBJson().encode());
+			})
+			.onFailure(err -> handleError(err, context));										
+		})
+		.onFailure(err -> handleError(err, context));			
+	}
+	
+	
 	public void getProjectResults(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -394,7 +478,7 @@ public class ProjectInstanceRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,false)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadProject(requestedInstanceID)
+			instanceHandler.loadStudy(requestedInstanceID)
 			.onSuccess(instance -> {
 				if(unique)
 				{

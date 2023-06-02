@@ -28,7 +28,7 @@ public class TestProjectProgression extends ProjectBaseTest{
 				.onSuccess(participant1 -> {
 
 					Async startAsync = context.async();
-					project.startProject(participant1)
+					project.startStudy(participant1)
 					.onSuccess(position -> {
 						context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", participant1.getProjectPosition());
 						context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", position);

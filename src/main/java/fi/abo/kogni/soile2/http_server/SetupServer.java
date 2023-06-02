@@ -7,7 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -172,10 +172,10 @@ public class SetupServer extends SoileServerVerticle {
 			}
 
 			LOGGER.info("Starting private Project");
-			ProjectInstanceHandler instanceHandler = new ProjectInstanceHandler(MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg()), vertx);		
+			StudyHandler instanceHandler = new StudyHandler(MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg()), vertx);		
 			JsonObject privateProject = new JsonObject().put("private", true).put("name", "Example Private Project").put("shortcut","newShortcut");
-			JsonObject projectData = new JsonObject().put("sourceUUID", projectInformation.getValue("UUID")).put("version", projectInformation.getValue("version"));
-			instanceHandler.createProjectInstance(privateProject.mergeIn(projectData))
+			JsonObject projectData = new JsonObject().put("UUID", projectInformation.getValue("UUID")).put("version", projectInformation.getValue("version"));
+			instanceHandler.createProjectInstance(privateProject.put("sourceProject",projectData))
 			.onSuccess(instance -> {
 				LOGGER.info("Starting public Project");
 				JsonObject publicProject = new JsonObject().put("private", false).put("name", "Example Public Project").put("shortcut","newPublicShortcut");			

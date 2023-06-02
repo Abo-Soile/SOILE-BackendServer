@@ -15,7 +15,7 @@ import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEn
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.DBParticipantFactory;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.TokenParticipantFactory;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
 import fi.abo.kogni.soile2.utils.MongoAggregationHandler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -105,7 +105,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 * database.
 	 * @param handler the handler to handle the created participant
 	 */
-	public void createParticipant(ProjectInstance p,  Handler<AsyncResult<Participant>> handler)
+	public void createParticipant(Study p,  Handler<AsyncResult<Participant>> handler)
 	{
 		handler.handle(createParticipant(p));
 	}
@@ -115,7 +115,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 * database.
 	 * @param handler the handler to handle the created participant
 	 */
-	public Future<Participant> createParticipant(ProjectInstance p)
+	public Future<Participant> createParticipant(Study p)
 	{	
 		Promise<Participant> participantPromise = Promise.<Participant>promise();
 		JsonObject defaultParticipant = getDefaultParticipantInfo(p.getID()); 
@@ -140,7 +140,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 * database.
 	 * @param handler the handler to handle the created participant
 	 */
-	public Future<Participant> createTokenParticipant(ProjectInstance p, String usedToken)
+	public Future<Participant> createTokenParticipant(Study p, String usedToken)
 	{	
 		Promise<Participant> participantPromise = Promise.<Participant>promise();
 		JsonObject defaultParticipant = getDefaultParticipantInfo(p.getID());
@@ -385,7 +385,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 * @param project
 	 * @return
 	 */
-	public Future<JsonArray> getParticipantStatusForProject(ProjectInstance project)
+	public Future<JsonArray> getParticipantStatusForProject(Study project)
 	{
 		Promise<JsonArray> participantsPromise = Promise.promise();
 		project.getParticipants()

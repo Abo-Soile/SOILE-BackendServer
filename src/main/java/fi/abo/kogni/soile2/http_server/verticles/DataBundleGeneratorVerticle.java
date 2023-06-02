@@ -12,8 +12,8 @@ import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
@@ -35,14 +35,14 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	MongoClient client;
 	ParticipantHandler partHandler;
-	ProjectInstanceHandler projHandler;
+	StudyHandler projHandler;
 	ParticipantDataLakeManager dlmgr;
 	String dataLakeFolder;
 	String downloadCollection;
 	static final Logger LOGGER = LogManager.getLogger(DataBundleGeneratorVerticle.class);
 
 
-	public DataBundleGeneratorVerticle(MongoClient client, ProjectInstanceHandler projHandler, ParticipantHandler partHandler)
+	public DataBundleGeneratorVerticle(MongoClient client, StudyHandler projHandler, ParticipantHandler partHandler)
 	{
 		dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
 		downloadCollection = SoileConfigLoader.getdbProperty("downloadCollection");
@@ -251,7 +251,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		startDownload(projectID)
 		.onSuccess(startedDownload -> {
 			String dlID = startedDownload.dlID;
-			ProjectInstance projectInstance = startedDownload.projInst;
+			Study projectInstance = startedDownload.projInst;
 			if( tasks.isEmpty())
 			{				
 				for(Object o : projectInstance.getTasksInstancesWithNames())
@@ -357,7 +357,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		startDownload(projectID)
 		.onSuccess(startedDownload -> {
 			String dlID = startedDownload.dlID;
-			ProjectInstance projectInstance = startedDownload.projInst;
+			Study projectInstance = startedDownload.projInst;
 			LOGGER.debug("Obtaining data for: " + participants.encode());
 
 			partHandler.getParticipantData(projectInstance, participants)
@@ -440,7 +440,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		Promise<Download> collectionStartedPromise = Promise.promise();
 		createDLID(projectID)
 		.onSuccess(dlID -> {
-			projHandler.loadProject(projectID)
+			projHandler.loadStudy(projectID)
 			.onSuccess(projectInstance ->
 			{		
 				client.updateCollection(downloadCollection, new JsonObject().put("_id",dlID), statusUpdate(DownloadStatus.collecting))
@@ -850,8 +850,8 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	private class Download{
 
 		public String dlID;
-		public ProjectInstance projInst;
-		public Download(ProjectInstance p, String dlID)
+		public Study projInst;
+		public Download(Study p, String dlID)
 		{
 			this.dlID = dlID;
 			this.projInst = p;

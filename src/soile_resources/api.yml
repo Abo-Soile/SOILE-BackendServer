@@ -19,7 +19,7 @@ tags:
     description: Anything connected to login and registration
   - name: project
     description: Operations associated with a project.
-  - name: projectexecution
+  - name: study
     description: Anything to do with running projects / project instances.
   - name: participation
     description: Operations that are used by participants of a project.
@@ -1263,7 +1263,7 @@ paths:
         - cookieAuth: []
         - JWTAuth: []
       tags:
-        - projectexecution
+        - study
       summary: Get a list of result data downloadable for the specific project
       operationId: listDownloadData
       description: "Get a list of all data that is available for a project. There are multiple different pieces of data, which can be available and which will be listed, that include: 1. Form-Data, which is all data that can be directly obtained from questionaires clicks etc (i.e. any small-scale data). 2. Video data, for each participant. 3. Audio Data for each participant. 4. binary data for each participant (in whichever format it was stored in). Data is associated with tasks in the experiment."
@@ -1295,7 +1295,7 @@ paths:
         - JWTAuth: []
       tags:
         - project
-        - projectexecution
+        - study
       summary: start a project
       operationId: startProject
       description: Start a project, making it available to the outside world. 
@@ -1353,6 +1353,9 @@ paths:
                 description:
                   type: string
                   description: Some description about the project. Will be displayed at signup.
+                shortDescription:
+                  type: string
+                  description: Some description about the project. Will be displayed at signup.
                 shortcut:
                   type: string
                   description: a shortcut that can be used to more easily access the contents.
@@ -1364,7 +1367,7 @@ paths:
         - JWTAuth: []
         - {} # Security on this endpoint is optional. Allows listing of active, public projects by anyone (and thus signing up to those projects).
       tags:
-        - projectexecution
+        - study
       summary: Get a list of all projects.
       operationId: getRunningProjectList
       description: Get a list of all projects which are currently running and that you have access to.
@@ -1394,7 +1397,7 @@ paths:
         - cookieAuth: []
         - JWTAuth: []
       tags:
-        - projectexecution
+        - study
       summary: stop a project
       operationId: stopProject
       description: Stop a project, disabling the project from execution.
@@ -1423,7 +1426,7 @@ paths:
         - cookieAuth: []
         - JWTAuth: []
       tags:
-        - projectexecution
+        - study
       summary: restart a project that was previously stopped
       operationId: restartProject
       description: Restarting a previously stopped project. 
@@ -1446,12 +1449,12 @@ paths:
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
   /projectexec/{id}/delete:
-    get:
+    post:
       security:
         - cookieAuth: []
         - JWTAuth: []
       tags:
-        - projectexecution
+        - study
       summary: Delete a project instance and all associated data. 
       operationId: deleteProject
       description: "DANGER: This endpoint will delete ALL data associated with the given project. 
@@ -1476,13 +1479,47 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
+          
+  /projectexec/{id}/reset:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - study
+      summary: Reset a study.
+      operationId: resetStudy
+      description: "DANGER: This endpoint will delete ALL data associated with the given study. 
+                    It will will irreversibly delete all participant 
+                    information currently stored for this study."
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+            
+      responses:
+        '200':
+          description: Project was successfully reset.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist' 
+          
+          
   /projectexec/{id}/data:
     post:
       security:
         - cookieAuth: []
         - JWTAuth: []
       tags:
-        - projectexecution
+        - study
       summary: Get the result data for a project  
       operationId: getProjectResults
       description: "This is the general access point for data retrieval for projects. A simple request without any body will generate one huge tar file with all data while individual files can be requested using the same scheme as returned under the   /project/{id}/data/list endpoint. This post will return an ID that can then be downloaded via /project/{id}/download/{downloadid}, where a tar file is waiting for download."
@@ -1522,7 +1559,7 @@ paths:
         - cookieAuth: []
         - JWTAuth: []
       tags:
-        - projectexecution
+        - study
       summary: Download the collected results from a request.
       operationId: downloadResults
       description: "This request will make a zipped data file available for download. NOTE: Upon request, the file might not exist yet, and is just being created. Files will be cleared reguarily to avoid massive buildup of intermediary tar files."
@@ -1561,7 +1598,7 @@ paths:
         - cookieAuth: []
         - JWTAuth: []
       tags:
-        - projectexecution
+        - study
       summary: Check, whether the specified download is ready.
       operationId: downloadTest
       description: This Request tests, whether the specified download is ready. A Json will be replied to indicate whether the download creation was successfull/failed or is still in progress.
@@ -1942,7 +1979,7 @@ paths:
         - cookieAuth: []
         - JWTAuth: []
       tags:
-        - projectexecution
+        - study
       summary: create accesstokens for the project
       operationId: createTokens
       description: >-
@@ -2029,8 +2066,71 @@ paths:
               format: binary
               description: the file to upload
               
-
+  /projectexec/{id}:  
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+        - tokenAuth: []
+      tags:
+        - study
+      summary: Update a study. Note, the underlying project Can only be changed while there are no participants in the study, 
+      operationId: updateStudy
+      description: "Update an existing study"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
             
+      responses:
+        '200':
+          description: Update successfull
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid or change in project, while already got participants'
+        '403':
+          description: User has no authorization to make this call            
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifyiableStudyProperties'
+  
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+        - tokenAuth: []
+      tags:
+        - study
+      summary: Get the properties of a study. 
+      operationId: getStudyProperties
+      description: "Update an existing study"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModifyiableStudyProperties'
+          description: Update successfull
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call            
+
   /experiment/list:
     post:
       security:
@@ -2937,12 +3037,9 @@ components:
       - $ref: '#/components/schemas/ProjectElements'
       - $ref: '#/components/schemas/APIElement'
       
-    ProjectInstance:
+    ModifyiableStudyProperties:
       type: object
       properties:
-        UUID: 
-          type: string
-          description: The unique Id of this instance
         sourceUUID: 
           type: string
           description: This is the ID of the source project of this instance.
@@ -2952,29 +3049,44 @@ components:
         description: 
           type: string
           description: Some Description about the project (i.e. what it is about etc. Will be displayed on the Signup Page)
-        participants:
-          type: array
-          items:
-            type: string
-            description: the id of a participant of this project
+        shortDescription: 
+          type: string
+          description: Some short Description about the project (i.e. what it is about etc. Will be displayed on the Signup Page)
         private:
           type: boolean
           description: whether access to this project is limited
-        name:
-          type: string 
-          description: A unique name for this project, this name and the UUID have to be the same, or the name has to not be listed.
         shortcut:
           type: string
           description: "a shortcut string tht can be used for access via /e/shortcut"
-        accessTokens:
-          type: array
-          items: 
-            type: string
-            description: random access tokens that can be used to get Read (i.e. execution) access to the project via the signup api endpoint). Once a token is used it is removed.
-        permanentAccessToken:
-          type: string
-          description: a permanent access token that can be used to sign up to the project.
+
+    ProjectInstance:
+      allOf: 
+        - $ref: '#/components/schemas/ModifyiableStudyProperties'
+        - type: object
+          properties:
+            UUID: 
+              type: string
+              description: The unique Id of this instance
+            participants:
+              type: array
+              items:
+                type: string
+                description: the id of a participant of this project
+            accessTokens:
+              type: array
+              items: 
+                type: string
+                description: random access tokens that can be used to get Read (i.e. execution) access to the project via the signup api endpoint). Once a token is used it is removed.
+            permanentAccessToken:
+              type: string
+              description: a permanent access token that can be used to sign up to the project.
+            name:
+              type: string 
+              description: A unique name for this project, this name and the UUID have to be the same, or the name has to not be listed.
       description: This is an instance of a running project. This has a UUID which is going to be stored in the instance database. 
+    
+    
+    
     ProjectElements:
       type: object
       properties:

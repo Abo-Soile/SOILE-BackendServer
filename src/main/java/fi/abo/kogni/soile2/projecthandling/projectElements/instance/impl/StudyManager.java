@@ -7,8 +7,8 @@ import fi.abo.kogni.soile2.datamanagement.utils.DataRetriever;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstanceFactory;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.StudyFactory;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -28,25 +28,25 @@ import io.vertx.ext.mongo.MongoClient;
  * @author Thomas Pfau
  *
  */
-public class ProjectInstanceManager implements DataRetriever<String, ProjectInstance> {
+public class StudyManager implements DataRetriever<String, Study> {
 
-	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceManager.class);
+	static final Logger LOGGER = LogManager.getLogger(StudyManager.class);
 	
 	MongoClient client;
 	// should go to the constructor.
-	private ProjectInstanceFactory dbFactory;
-	private ProjectInstanceFactory createFactory;
+	private StudyFactory dbFactory;
+	private StudyFactory createFactory;
 	private String instanceCollection;
 	private TimeStampedMap<String, String> projectPathes;
-	public ProjectInstanceManager(MongoClient client, Vertx vertx)
+	public StudyManager(MongoClient client, Vertx vertx)
 	{						
 		this(client,
-				new ElementToDBProjectInstanceFactory(ElementManager.getProjectManager(client, vertx),client, vertx.eventBus()),								
-				new DBProjectInstanceFactory(ElementManager.getProjectManager(client, vertx),client, vertx.eventBus())				 
+				new ElementToDBStudyFactory(ElementManager.getProjectManager(client, vertx),client, vertx.eventBus()),								
+				new DBStudyFactory(ElementManager.getProjectManager(client, vertx),client, vertx.eventBus())				 
 				);				
 	}		
 		
-	public ProjectInstanceManager(MongoClient client, ProjectInstanceFactory createFactory, ProjectInstanceFactory dbFactory)
+	public StudyManager(MongoClient client, StudyFactory createFactory, StudyFactory dbFactory)
 	{
 		this.client = client;
 		this.dbFactory = dbFactory;
@@ -62,12 +62,12 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 	
 	
 	@Override
-	public Future<ProjectInstance> getElement(String key) {		
-		return ProjectInstance.instantiateProject(new JsonObject().put("_id", key), dbFactory);				
+	public Future<Study> getElement(String key) {		
+		return Study.instantiateProject(new JsonObject().put("_id", key), dbFactory);				
 	}
 
 	@Override
-	public void getElement(String key, Handler<AsyncResult<ProjectInstance>> handler) {
+	public void getElement(String key, Handler<AsyncResult<Study>> handler) {
 		handler.handle(getElement(key));
 	}
 
@@ -79,7 +79,7 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 	 * @param projectVersion - The name of the instance.
 	 * @param handler the handler to handle the created participant
 	 */
-	public ProjectInstanceManager startProject(JsonObject projectInformation, Handler<AsyncResult<ProjectInstance>> handler, String projectInstanceName)
+	public StudyManager startProject(JsonObject projectInformation, Handler<AsyncResult<Study>> handler, String projectInstanceName)
 	{
 		handler.handle(startProject(projectInformation));
 		return this;
@@ -94,10 +94,10 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 	 * 4. "name" a name field.
 	 * 5. "shortcut" (optional), that can be used as a shortcut to the project.
 	 */
-	public Future<ProjectInstance> startProject(JsonObject projectInformation )
+	public Future<Study> startProject(JsonObject projectInformation )
 	{						
 		LOGGER.debug("Trying to instanciate Project ");
-		return ProjectInstance.instantiateProject(projectInformation, createFactory);
+		return Study.instantiateProject(projectInformation, createFactory);
 	}
 	
 	/**
@@ -118,7 +118,7 @@ public class ProjectInstanceManager implements DataRetriever<String, ProjectInst
 	 * @param proj
 	 * @return
 	 */
-	public Future<JsonObject> save(ProjectInstance proj)
+	public Future<JsonObject> save(Study proj)
 	{
 		if(proj.getShortCut() != null)
 		{

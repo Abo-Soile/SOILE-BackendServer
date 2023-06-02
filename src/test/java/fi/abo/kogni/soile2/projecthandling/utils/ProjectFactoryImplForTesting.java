@@ -6,22 +6,23 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstanceFactory;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.StudyFactory;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
+public class ProjectFactoryImplForTesting implements StudyFactory{
 
 	@Override
-	public ProjectInstance createInstance() {
+	public Study createInstance() {
 		return new TestProject();
 	}
 
 	
-	private class TestProject extends ProjectInstance
+	private class TestProject extends Study
 	{
 
 		@Override
@@ -89,6 +90,18 @@ public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
 		@Override
 		public Future<Void> useToken(String token) {
 			return null;
+		}
+
+		@Override
+		public Future<JsonArray> reset() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public FieldSpecifications getUpdateableDBFields() {
+			// TODO Auto-generated method stub
+			return null;
 		}		
 	}
 	
@@ -101,15 +114,15 @@ public class ProjectFactoryImplForTesting implements ProjectInstanceFactory{
 	{
 		JsonArray ProjectInstanceDef = new JsonArray(Files.readString(Paths.get(ProjectFactoryImplForTesting.class.getClassLoader().getResource("ProjectDefinition.json").getPath())));
 		JsonArray projectGitDef = new JsonArray(Files.readString(Paths.get(ProjectFactoryImplForTesting.class.getClassLoader().getResource("GitProjObj.json").getPath())));
-		projectGitDef.getJsonObject(i).mergeIn(ProjectInstanceDef.getJsonObject(i));
-		return projectGitDef.getJsonObject(i);
+		ProjectInstanceDef.getJsonObject(i).put("sourceProject", projectGitDef.getJsonObject(i));		
+		return ProjectInstanceDef.getJsonObject(i);
 
 	}
 	
-	public static Future<ProjectInstance> loadProject(JsonObject id) throws IOException 
+	public static Future<Study> loadProject(JsonObject id) throws IOException 
 	{		
 		ProjectFactoryImplForTesting fac = new ProjectFactoryImplForTesting();
-		return ProjectInstance.instantiateProject(id, fac);
+		return Study.instantiateProject(id, fac);
 		
 	}
 }

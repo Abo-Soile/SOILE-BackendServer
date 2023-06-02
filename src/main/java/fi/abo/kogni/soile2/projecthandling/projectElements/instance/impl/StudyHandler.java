@@ -10,7 +10,7 @@ import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.DBParticipant;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -24,13 +24,13 @@ import io.vertx.ext.mongo.MongoClient;
  * @author Thomas Pfau
  *
  */
-public class ProjectInstanceHandler {
+public class StudyHandler {
 
-	static final Logger LOGGER = LogManager.getLogger(ProjectInstanceHandler.class);
+	static final Logger LOGGER = LogManager.getLogger(StudyHandler.class);
 
-	private TimeStampedMap<String, ProjectInstance> projects;
+	private TimeStampedMap<String, Study> studies;
 	private String dataLakeFolder;
-	private ProjectInstanceManager manager;	 
+	private StudyManager manager;	 
 	
 	/**
 	 * Default constructor that sets up a Manager with DB connections.
@@ -38,8 +38,8 @@ public class ProjectInstanceHandler {
 	 * @param dataLakeFolder The Folder where the dataLake for result files is located
 	 * @param client the mongoclient for connecting to the mongo database
 	 */
-	public ProjectInstanceHandler(MongoClient client, Vertx vertx) {
-		this(client, new ProjectInstanceManager(client, vertx) );		
+	public StudyHandler(MongoClient client, Vertx vertx) {
+		this(client, new StudyManager(client, vertx) );		
 	}
 
 	/**
@@ -49,11 +49,11 @@ public class ProjectInstanceHandler {
 	 * @param client the mongoclient for connecting to the mongo database
 	 * @param manager a custom project Manager.
 	 */
-	public ProjectInstanceHandler(MongoClient client, ProjectInstanceManager manager) {
+	public StudyHandler(MongoClient client, StudyManager manager) {
 		super();
 		this.dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
 		this.manager = manager;
-		projects = new TimeStampedMap<String, ProjectInstance>(manager, 1000*60*60);
+		studies = new TimeStampedMap<String, Study>(manager, 1000*60*60);
 	}
 
 	/**
@@ -61,11 +61,11 @@ public class ProjectInstanceHandler {
 	 */
 	public void cleanup()
 	{
-		projects.cleanUp();
+		studies.cleanUp();
 		manager.cleanUp();
 	}
 	/**
-	 * Get a list of all Files associated with the specified {@link DBParticipant} within this {@link ProjectInstance}.
+	 * Get a list of all Files associated with the specified {@link DBParticipant} within this {@link Study}.
 	 * @param p the {@link DBParticipant} for which to retrieve the file results.
 	 * @return
 	 */
@@ -91,7 +91,7 @@ public class ProjectInstanceHandler {
 		Promise<Void> addPromise = Promise.<Void>promise();
 				
 		// if no ID is provided, create a new Participant for the indicated project and add that participant to the list.		
-		projects.getData(projectInstanceID).onSuccess(targetProject -> 
+		studies.getData(projectInstanceID).onSuccess(targetProject -> 
 		{	
 			
 			targetProject.addParticipant(participant)
@@ -117,7 +117,7 @@ public class ProjectInstanceHandler {
 		Promise<Void> addPromise = Promise.<Void>promise();
 				
 		// if no ID is provided, create a new Participant for the indicated project and add that participant to the list.		
-		projects.getData(projectInstanceID).onSuccess(targetProject -> 
+		studies.getData(projectInstanceID).onSuccess(targetProject -> 
 		{				
 			targetProject.deleteParticipant(participant)
 			.onSuccess(success -> {
@@ -141,9 +141,10 @@ public class ProjectInstanceHandler {
 	 * 5. "shortcut" (optional), that can be used as a shortcut to the project.
 	 * @param projectInformation The information needed to start this project.
 	 */
-	public Future<ProjectInstance> createProjectInstance(JsonObject projectInformation)	
+	public Future<Study> createProjectInstance(JsonObject projectInformation)	
 	{
-		LOGGER.debug("Trying to load Project instance");
+		LOGGER.info("Trying to load Project instance");
+		LOGGER.info(projectInformation.encodePrettily());
 		return manager.startProject(projectInformation);
 	}
 	
@@ -152,9 +153,28 @@ public class ProjectInstanceHandler {
 	 * This can fail if the project does not exist.
 	 * @param projectInstanceID the instance ID of the project to retrieve.
 	 */
-	public  Future<ProjectInstance> loadProject(String projectInstanceID)
+	public  Future<Study> loadStudy(String projectInstanceID)
 	{
-		return projects.getData(projectInstanceID);		
+		return studies.getData(projectInstanceID);		
+	}
+	
+	/**
+	 * Update a study 
+	 * This can fail if the study does not exist OR if the requested update is not possible.
+	 * @param studyID the instance ID of the project to retrieve.
+	 */
+	public  Future<Void> updateStudy(String studyID, JsonObject newData)
+	{
+		Promise<Void> updatePromise = Promise.promise();
+		studies.getData(studyID)
+		.onSuccess(currentStudy -> {
+			currentStudy.updateStudy(newData).onSuccess(updated -> {
+				updatePromise.complete();
+			})
+			.onFailure(err -> updatePromise.fail(err));
+		})
+		.onFailure(err -> updatePromise.fail(err));
+		return updatePromise.future();
 	}
 	
 	/**

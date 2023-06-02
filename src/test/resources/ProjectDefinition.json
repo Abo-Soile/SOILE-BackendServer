@@ -1,8 +1,8 @@
 [
 {
 	"_id" : "223e4567-e89b-12d3-a456-556642440000",
-	"projectID" : "223e4567-e89b-12d3-a456-556642440000",
-	"version" : "8701f5772dce42201e3801eefa74c4dc19022e6f",
+	"sourceUUID" : "223e4567-e89b-12d3-a456-556642440000",
+	"version" : "8701f5772dce42201e3801eefa74c4dc19022e6f",	
 	"participants": []					
 }
 ]

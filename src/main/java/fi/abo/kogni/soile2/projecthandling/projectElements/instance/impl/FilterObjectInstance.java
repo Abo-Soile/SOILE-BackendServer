@@ -7,7 +7,7 @@ import java.util.List;
 import fi.aalto.scicomp.mathparser.MathHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -21,7 +21,7 @@ public class FilterObjectInstance extends ElementInstanceBase {
 	List<String> options = new LinkedList<>();
 	HashMap<String,String> optionsNext = new HashMap<String,String>();
 	String defaultOption; 
-	public FilterObjectInstance(JsonObject data, ProjectInstance source) {
+	public FilterObjectInstance(JsonObject data, Study source) {
 		super(data, source);
 		parseOptions(data.getJsonArray("options"));
 		defaultOption = data.getString("defaultOption");

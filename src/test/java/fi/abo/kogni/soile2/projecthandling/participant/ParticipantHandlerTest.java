@@ -10,7 +10,7 @@ import fi.abo.kogni.soile2.projecthandling.ProjectBaseTest;
 import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import fi.abo.kogni.soile2.projecthandling.utils.ProjectFactoryImplForTesting;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -27,7 +27,7 @@ public class ParticipantHandlerTest extends GitTest{
 	@Test
 	public void testGetParticipantStatus(TestContext context) {
 		System.out.println("--------------------  Testing Participant Status retrieval ----------------------");
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx);
+		StudyHandler projHandler = new StudyHandler(mongo_client, vertx);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
 		ObjectGenerator.buildAPIProject(ElementManager.getProjectManager(mongo_client, vertx), ElementManager.getExperimentManager(mongo_client, vertx), ElementManager.getTaskManager(mongo_client, vertx), mongo_client, "Testproject")
@@ -65,7 +65,7 @@ public class ParticipantHandlerTest extends GitTest{
 	@Test
 	public void testParticipantStatus(TestContext context) {
 		System.out.println("--------------------  Testing Participnt Status settings ----------------------");
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx);
+		StudyHandler projHandler = new StudyHandler(mongo_client, vertx);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		JsonObject smokerOutput = new JsonObject()
 				.put("name", "smoker")
@@ -82,7 +82,7 @@ public class ParticipantHandlerTest extends GitTest{
 				partHandler.create(proj)
 				.onSuccess(participant -> {
 					Async projTestAsync = context.async();
-					proj.startProject(participant)
+					proj.startStudy(participant)
 					.onSuccess(v1 -> {
 						context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", participant.getProjectPosition());
 						Async invalidAsync = context.async();
@@ -167,7 +167,7 @@ public class ParticipantHandlerTest extends GitTest{
 	@Test
 	public void testCreateAndGet(TestContext context) {
 		System.out.println("--------------------  Testing Participant Creating and retrieval ----------------------");
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx);
+		StudyHandler projHandler = new StudyHandler(mongo_client, vertx);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		Async testAsync = context.async();
 		JsonObject smokerOutput = new JsonObject()
@@ -185,7 +185,7 @@ public class ParticipantHandlerTest extends GitTest{
 					partHandler.createParticipant(projectInstance.getID())				
 					.onSuccess( participant -> 
 					{				
-						projectInstance.startProject(participant)
+						projectInstance.startStudy(participant)
 						.onSuccess(position -> {
 							partHandler.getParticipant(participant.getID())
 							.onSuccess(participant2 -> 

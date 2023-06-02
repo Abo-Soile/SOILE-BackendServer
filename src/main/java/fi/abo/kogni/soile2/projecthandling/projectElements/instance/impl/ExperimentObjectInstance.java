@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -26,7 +26,7 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	List<String> elementIDs;
 	static final Logger LOGGER = LogManager.getLogger(ExperimentObjectInstance.class);
 
-	public ExperimentObjectInstance(JsonObject data, ProjectInstance source) {
+	public ExperimentObjectInstance(JsonObject data, Study source) {
 		super(data, source);
 		defineElements();		
 	}

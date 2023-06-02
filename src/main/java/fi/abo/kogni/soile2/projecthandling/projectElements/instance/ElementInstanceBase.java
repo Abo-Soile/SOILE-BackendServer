@@ -21,11 +21,11 @@ import io.vertx.core.json.JsonObject;
  */
 public abstract class ElementInstanceBase implements ElementInstance {
 
-	protected ProjectInstance sourceProject;	 
+	protected Study sourceProject;	 
 	protected JsonObject data;
 	  static final Logger LOGGER = LogManager.getLogger(ElementInstanceBase.class);
 
-	public ElementInstanceBase(JsonObject data, ProjectInstance source)
+	public ElementInstanceBase(JsonObject data, Study source)
 	{
 		setupFieldsAccordingToSpec();
 		this.data.mergeIn(data);

@@ -20,17 +20,17 @@ import io.vertx.ext.mongo.MongoClient;
  * @author Thomas Pfau
  *
  */
-public class ElementToDBProjectInstance extends DBProjectInstance{
+public class ElementToDBStudy extends DBStudy{
 
-	private static final Logger log = LogManager.getLogger(ElementToDBProjectInstance.class.getName());	
+	private static final Logger log = LogManager.getLogger(ElementToDBStudy.class.getName());	
 
-	public ElementToDBProjectInstance(ElementManager<Project> manager, MongoClient client, EventBus eb) {
+	public ElementToDBStudy(ElementManager<Project> manager, MongoClient client, EventBus eb) {
 		super(manager, client, eb);
 	}
 	
 	
 	/**
-	 * The Json provided to this Instance needs to contain:
+	 * The Json provided to this Instance needs to contain, essentially it can be either a APIProject or a JsonObject that has the respective fields.:
 	 * 1. "sourceUUID" of the project from which this was started
 	 * 2. "Version" of the project from which this was started
 	 * 3. "private" field wrt access for this 
@@ -62,6 +62,7 @@ public class ElementToDBProjectInstance extends DBProjectInstance{
 		client.findOne(getTargetCollection(), query, null)
 		.onSuccess(res -> {
 			log.debug("Got reply:" + res);
+			log.info(inputJson.encodePrettily());
 			if(res == null)
 			{				
 				// no collisions exist, so lets save it.
@@ -73,15 +74,18 @@ public class ElementToDBProjectInstance extends DBProjectInstance{
 				dbJson.put("name", inputJson.getString("name"));
 				dbJson.put("description", inputJson.getString("description", "This is a new project"));
 				dbJson.put("shortDescription", inputJson.getString("shortDescription", "This is a new project"));
-				if(inputJson.containsKey("sourceUUID"))
+				if(inputJson.containsKey("sourceProject"))
 				{
-					dbJson.put("sourceUUID", inputJson.getValue("sourceUUID"));
+					// this is created via a path
+					dbJson.put("sourceUUID", inputJson.getJsonObject("sourceProject").getValue("UUID"));
+					dbJson.put("version", inputJson.getJsonObject("sourceProject").getValue("version"));
 				}
 				else
 				{
+					//this is created directly from a project API instance.
 					dbJson.put("sourceUUID", inputJson.getValue("UUID"));
+					dbJson.put("version", inputJson.getValue("version"));
 				}
-				dbJson.put("version", inputJson.getValue("version"));
 				dbJson.put("private", inputJson.getBoolean("private",false));
 				String shortcut = inputJson.getString("shortcut",null);
 				if(shortcut != null)

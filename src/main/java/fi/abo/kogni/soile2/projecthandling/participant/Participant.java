@@ -154,7 +154,7 @@ public interface Participant {
 	 * @param taskID The task to set as the starting task
 	 * @return Retuurning the position of this participant
 	 */
-	Future<Void> startProject(String taskID);
+	Future<Void> startStudy(String taskID);
 
 	/**
 	 * Get a Json of this participant that contains all necessary information to continue the project.

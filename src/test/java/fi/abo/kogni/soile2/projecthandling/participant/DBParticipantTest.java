@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
 import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.projecthandling.ProjectBaseTest;
 import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.projecthandling.utils.ProjectFactoryImplForTesting;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.json.JsonArray;
@@ -24,7 +24,7 @@ public class DBParticipantTest extends GitTest{
 	@Test
 	public void testCreationAndExp(TestContext context) {
 		System.out.println("--------------------  Testing Participant Creation and Progress ----------------------");
-		ProjectInstanceHandler projHandler = new ProjectInstanceHandler(mongo_client, vertx);
+		StudyHandler projHandler = new StudyHandler(mongo_client, vertx);
 		ParticipantHandler partHandler = new ParticipantHandler(mongo_client, projHandler, vertx);
 		JsonObject smokerOutput = new JsonObject()
 				.put("name", "smoker")
@@ -41,7 +41,7 @@ public class DBParticipantTest extends GitTest{
 				partHandler.create(proj)
 				.onSuccess(participant -> {
 					Async projTestAsync = context.async();
-					proj.startProject(participant)
+					proj.startStudy(participant)
 					.onSuccess(v1 -> {
 						context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", participant.getProjectPosition());
 						Async invalidAsync = context.async();

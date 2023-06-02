@@ -7,8 +7,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.utils.CheckDirtyMap;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -26,7 +26,7 @@ import io.vertx.ext.mongo.MongoClient;
  */
 public class ParticipantHandler {
 	MongoClient client;
-	ProjectInstanceHandler project;
+	StudyHandler project;
 	CheckDirtyMap<String,Participant> activeparticipants;	
 	ParticipantManager manager;
 	Vertx vertx;
@@ -36,7 +36,7 @@ public class ParticipantHandler {
 	
 	
 	
-	public ParticipantHandler(MongoClient client, ProjectInstanceHandler project, Vertx vertx) {
+	public ParticipantHandler(MongoClient client, StudyHandler project, Vertx vertx) {
 		super();		
 		this.client = client;
 		this.project = project;
@@ -49,7 +49,7 @@ public class ParticipantHandler {
 	 * Create a participant in the database, store that  and let the handler handle it
 	 * @param handler
 	 */
-	public void create(ProjectInstance p, Handler<AsyncResult<Participant>> handler)
+	public void create(Study p, Handler<AsyncResult<Participant>> handler)
 	{
 		handler.handle(create(p));			
 	}
@@ -58,17 +58,17 @@ public class ParticipantHandler {
 	 * Create a participant in the database
 	 * @param p the ProjectInstance for which to create a participant
 	 */
-	public Future<Participant> create(ProjectInstance p)
+	public Future<Participant> create(Study p)
 	{
 		return manager.createParticipant(p);
 	}
 
 	/**
 	 * Create a participant in the database
-	 * @param p the {@link ProjectInstance} for which to create a participant
+	 * @param p the {@link Study} for which to create a participant
 	 * 
 	 */
-	public Future<Participant> createTokenParticipant(ProjectInstance p, String usedToken)
+	public Future<Participant> createTokenParticipant(Study p, String usedToken)
 	{
 		return manager.createTokenParticipant(p, usedToken);
 	}
@@ -133,7 +133,7 @@ public class ParticipantHandler {
 	public Future<Participant> createParticipant(String projectInstanceID)
 	{
 		Promise<Participant> particpantPromise = Promise.promise();
-		project.loadProject(projectInstanceID)
+		project.loadStudy(projectInstanceID)
 		.onSuccess( projectInstance -> {
 			manager.createParticipant(projectInstance)
 			.onSuccess(participant -> particpantPromise.complete(participant))
@@ -197,7 +197,7 @@ public class ParticipantHandler {
 	 * @param project
 	 * @return
 	 */
-	public Future<JsonArray> getParticipantStatusForProject(ProjectInstance project)
+	public Future<JsonArray> getParticipantStatusForProject(Study project)
 	{
 		return manager.getParticipantStatusForProject(project);
 	}
@@ -217,7 +217,7 @@ public class ParticipantHandler {
 	 * @param project
 	 * @return
 	 */
-	public Future<List<JsonObject>> getParticipantData(ProjectInstance project, JsonArray particpantIDs)
+	public Future<List<JsonObject>> getParticipantData(Study project, JsonArray particpantIDs)
 	{
 		Promise<List<JsonObject>> dataPromise = Promise.<List<JsonObject>>promise();
 		if(particpantIDs == null)

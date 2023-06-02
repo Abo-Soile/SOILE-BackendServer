@@ -7,7 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ProjectInstanceHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
@@ -27,11 +27,11 @@ import io.vertx.core.json.JsonObject;
 public class ParticipantVerticle extends AbstractVerticle {
 
 	ParticipantHandler partHandler;
-	ProjectInstanceHandler projHandler;
+	StudyHandler projHandler;
 	static final Logger LOGGER = LogManager.getLogger(ParticipantVerticle.class);
 	private List<MessageConsumer> consumers;
 	
-	public ParticipantVerticle(ParticipantHandler partHandler, ProjectInstanceHandler projHandler)
+	public ParticipantVerticle(ParticipantHandler partHandler, StudyHandler projHandler)
 	{
 		this.partHandler = partHandler;
 		this.projHandler = projHandler;

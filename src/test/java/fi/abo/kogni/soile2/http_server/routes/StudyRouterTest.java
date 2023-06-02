@@ -16,7 +16,7 @@ import io.vertx.ext.web.client.WebClientSession;
 import io.vertx.ext.web.handler.HttpException;
 
 //TODO: Test Project deletion and Project Stop.
-public class ProjectinstanceRouterTest extends SoileWebTest {
+public class StudyRouterTest extends SoileWebTest {
 
 	/**
 	 * This test tests both starting and getting the list of running projects.

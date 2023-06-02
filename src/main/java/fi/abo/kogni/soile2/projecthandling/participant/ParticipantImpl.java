@@ -323,7 +323,7 @@ public abstract class ParticipantImpl implements Participant{
 	}
 
 	@Override 
-	public Future<Void> startProject(String taskID)
+	public Future<Void> startStudy(String taskID)
 	{				
 		position = taskID;
 		currentStep = 1;

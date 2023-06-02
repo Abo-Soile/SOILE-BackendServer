@@ -15,6 +15,8 @@ import fi.abo.kogni.soile2.projecthandling.exceptions.ProjectIsInactiveException
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecification;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FilterObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -24,7 +26,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 /**
- * Instance of a Project in Soile. 
+ * Instance of a Study in Soile. 
  * This reflects  running instance of a project. The Project Management (during creation and modfication of the project)
  * is handled in the {@link Project} class, which represents a project in the database that the {@link ProjectManagerImpl} 
  * links with the respective code in the git Repository.
@@ -39,9 +41,9 @@ import io.vertx.core.json.JsonObject;
  * @author Thomas Pfau
  *
  */
-public abstract class ProjectInstance implements AccessElement{
+public abstract class Study implements AccessElement{
 
-	static final Logger LOGGER = LogManager.getLogger(ProjectInstance.class);
+	static final Logger LOGGER = LogManager.getLogger(Study.class);
 
 	/**
 	 * This is the projectInstance _id
@@ -50,26 +52,41 @@ public abstract class ProjectInstance implements AccessElement{
 	/**
 	 * This is the reference project ID.
 	 */
-	protected String sourceUUID;
-	protected String version;
+	protected JsonObject sourceProject;
 	/**
 	 * Access to the participants array needs to be synchronized, at least after initiation of the object. 
 	 */
-	protected List<String> participants;	
+	protected List<String> participants;
+	
+	
+	/**
+	 * Fields reflecting the other db Fields
+	 */
 	protected String name;	
-	// This reflects all tasks/experiments and their respective String representation
-	protected HashMap<String, ElementInstance> elements;
-	protected String start;
-	// a url shortcut.
 	protected String shortcut;	
 	protected boolean isActive = true;
+	protected String shortDescription;
+	protected String description;
+	
+	/**
+	 *  This reflects all tasks/experiments and their respective String representation
+	 *  They are generated on load and not stored in the database, but retrieved from the source Project.
+	 */
+
+	protected HashMap<String, ElementInstance> elements;
+		
 	/**
 	 * A basic constructor that can be called by any Implementing class. 
 	 */
-	protected ProjectInstance()
+	protected Study()
 	{		
 		participants = new LinkedList<String>();
 		elements = new HashMap<String, ElementInstance>();
+		sourceProject = new JsonObject();
+		shortcut = "";
+		name = "";
+		description = "";
+		shortDescription = "";
 	};
 	
 	/**
@@ -85,21 +102,21 @@ public abstract class ProjectInstance implements AccessElement{
 	}		
 	
 	/**
-	 * Instantiate the project (return a {@link ProjectInstance} when finished), where data is data the provided project implementation
+	 * Instantiate the project (return a {@link Study} when finished), where data is data the provided project implementation
 	 * can use to retrieve the information required by setupProject.
 	 * @param instantiationInfo All information needed by the Instance generated from the provided factory to create the instance.
 	 * @param data The data required by the project implementation to build the Project data
 	 * @param pManager the project Manager 
 	 * @return a Future that will have the instantiated project created from the factory.
 	 */
-	public static Future<ProjectInstance> instantiateProject(JsonObject instantiationInfo, ProjectInstanceFactory factory) 
+	public static Future<Study> instantiateProject(JsonObject instantiationInfo, StudyFactory factory) 
 	{
-		Promise<ProjectInstance> projPromise = Promise.<ProjectInstance>promise();
+		Promise<Study> projPromise = Promise.<Study>promise();
 		LOGGER.debug("Creating instance");
-		ProjectInstance p = factory.createInstance();
+		Study p = factory.createInstance();
 		LOGGER.debug(p);
 		LOGGER.debug(factory);
-		LOGGER.debug(instantiationInfo.encodePrettily());
+		LOGGER.info(instantiationInfo.encodePrettily());
 		p.load(instantiationInfo)
 		.onSuccess(dataJson -> {
 			LOGGER.debug("Trying to set up project from data: \n " + dataJson.encodePrettily());
@@ -110,7 +127,48 @@ public abstract class ProjectInstance implements AccessElement{
 		});
 		return projPromise.future();
 	}
+	/***
+	 * Get the UUID of the project run by this study.
+	 * @return The UUID of this studies source project
+	 */
+	public String getSourceUUID()
+	{
+		return this.sourceProject.getString("UUID");
+	}
+	/***
+	 * Set the UUID of the project run by this study.
+	 * @param newUUID The UUID of this studies source project
+	 */
+	public void setSourceUUID(String newUUID)
+	{
+		this.sourceProject.put("UUID", newUUID);
+	}
 	
+	/***
+	 * Get the version of the project run by this study.
+	 * @return The version of this studies source project
+	 */
+	public String getSourceVersion()
+	{
+		return this.sourceProject.getString("version");
+	}
+	/***
+	 * Set the version of the project run by this study.
+	 * @param newVersion The new version of this studies source project
+	 */
+	public void setSourceVersion(String newVersion)
+	{
+		this.sourceProject.put("version", newVersion);
+	}
+	
+	/**
+	 * Get the ID of the start element of the project run by this study.
+	 * @return newStart The new start ID of this studies source project
+	 */
+	public String getStart()
+	{
+		return this.sourceProject.getString("start");
+	}
 	
 	/**
 	 * Parse a project from Json data.
@@ -120,25 +178,26 @@ public abstract class ProjectInstance implements AccessElement{
 	{
 		// Get the top-level information
 		LOGGER.debug("Parsing data");
-		LOGGER.debug(data.encodePrettily());
-		sourceUUID = data.getString("sourceUUID");
-		start = data.getString("start"); 
+		LOGGER.debug(data.encodePrettily());	
 		instanceID = data.getString("_id");
-		version = data.getString("version");
 		name = data.getString("name");
 		shortcut = data.getString("shortcut",null);
 		isActive = data.getBoolean("isActive",true);
-		for(Object cTaskData : data.getJsonArray("tasks", new JsonArray()))
+		sourceProject = data.getJsonObject("sourceProject");
+		shortDescription = data.getString("shortDescription", "");
+		description = data.getString("description","");
+		
+		for(Object cTaskData : sourceProject.getJsonArray("tasks", new JsonArray()))
 		{
 			TaskObjectInstance cTask = new TaskObjectInstance((JsonObject)cTaskData, this);
 			elements.put(cTask.getInstanceID(), cTask);
 		}
-		for(Object cTaskData : data.getJsonArray("filters", new JsonArray()))
+		for(Object cTaskData : sourceProject.getJsonArray("filters", new JsonArray()))
 		{
 			FilterObjectInstance cFilter= new FilterObjectInstance((JsonObject)cTaskData, this);
 			elements.put(cFilter.getInstanceID(), cFilter);
 		}
-		for(Object cExperimentData : data.getJsonArray("experiments", new JsonArray()))
+		for(Object cExperimentData : sourceProject.getJsonArray("experiments", new JsonArray()))
 		{
 			parseExperiment((JsonObject)cExperimentData);
 		}
@@ -218,9 +277,11 @@ public abstract class ProjectInstance implements AccessElement{
 	{		
 			JsonObject dbData = new JsonObject()
 					.put("_id",instanceID)
-					.put("sourceUUID",sourceUUID)
-					.put("version", version)
-					.put("name", name)					
+					.put("sourceUUID",getSourceUUID())					
+					.put("version", getSourceVersion())
+					.put("name", name)
+					.put("description", description )
+					.put("shortDescription", shortDescription)
 					.put("isActive", isActive);
 			if(shortcut != null)
 			{
@@ -384,15 +445,15 @@ public abstract class ProjectInstance implements AccessElement{
 	 * @param user
 	 * @return A Future of the position the user will be at after they have started.
 	 */
-	public Future<String> startProject(Participant user)
+	public Future<String> startStudy(Participant user)
 	{		
 		if(!isActive)
 		{
 			return Future.failedFuture(new ProjectIsInactiveException(name));
 		}
 		Promise<String> startPositionPromise = Promise.promise();
-		LOGGER.debug("Trying to start User at position: " + start);
-		user.startProject(start).map(start)
+		LOGGER.debug("Trying to start User at position: " + getStart());
+		user.startStudy(getStart()).map(getStart())
 		.onSuccess(startElement -> {		
 			LOGGER.debug("StartElement id is: " + startElement);
 			if(elements.get(startElement) instanceof TaskObjectInstance)
@@ -404,7 +465,7 @@ public abstract class ProjectInstance implements AccessElement{
 				LOGGER.debug("Element at start is: " + elements.get(startElement));
 				setNextStep(user)
 				.onSuccess(taskID -> {
-					user.startProject(taskID)
+					user.startStudy(taskID)
 					.onSuccess(success -> {
 						startPositionPromise.complete(taskID);
 					})
@@ -481,6 +542,30 @@ public abstract class ProjectInstance implements AccessElement{
 	}	
 	
 	/**
+	 * Update
+	 */
+	public Future<Void> updateStudy(JsonObject updateInformation)
+	{
+		Promise<Void> updatePromise = Promise.<Void>promise();
+		boolean hasParticipants = false;
+		boolean projectChange = !getSourceUUID().equals(updateInformation.getValue("sourceUUID", getSourceUUID()));
+		boolean versionChange = !getSourceVersion().equals(updateInformation.getValue("version", getSourceVersion()));
+		if(this.participants.size() > 0)
+		{
+			hasParticipants = true;
+		}
+		// if it has it it must be equal, or this fails.
+		if(hasParticipants && (projectChange || versionChange))
+		{
+			return Future.failedFuture("Cannot change underlying project for Study with Participants");
+		}
+		setSourceUUID(updateInformation.getString("sourceUUID", getSourceUUID()));
+		setSourceVersion(updateInformation.getString("version", getSourceVersion()));
+		 
+		return updatePromise.future();
+			
+	}
+	/**
 	 * This operation saves the Project. It should ensure that the data can be reconstructed by supplying what is returned 
 	 * form this function to the load() function of this class.
 	 * @return A JsonObject 
@@ -491,7 +576,7 @@ public abstract class ProjectInstance implements AccessElement{
 	 * Load all data that is necessary for the project. This function should work with the Data contained in the future provided by 
 	 * the save function.  
 	 * @param object The object to retrieve the data from. Can be specific to the Actual implementation used. e.g. can only contain one ID if loading from a DB or multiple fields if construction from multiple DBs. 
-	 * @return A Future containing all data actually necessary for {@link ProjectInstance} to reconstruct all necessary fields. 
+	 * @return A Future containing all data actually necessary for {@link Study} to reconstruct all necessary fields. 
 	 */
 	public abstract Future<JsonObject> load(JsonObject instanceInfo);
 	
@@ -502,6 +587,12 @@ public abstract class ProjectInstance implements AccessElement{
 	 * participants, that deletion should be handled at whatever place this Future is requested. 
 	 */
 	public abstract Future<JsonObject> delete();
+	
+	/**
+	 * Reset the project (this will remove any access tokens and clear the participants array for this study). 
+	 * @return A future that contains the participants array of this Study in order to remove their data. 
+	 */
+	public abstract Future<JsonArray> reset();
 	
 	/**
 	 * Deactivate a project
@@ -556,6 +647,8 @@ public abstract class ProjectInstance implements AccessElement{
 	 */
 	public abstract Future<Void> useToken(String token);
 	
-	
-	
+	/**
+	 * 
+	 */
+	public abstract FieldSpecifications getUpdateableDBFields();
 }

@@ -3,6 +3,7 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -13,7 +14,7 @@ import fi.abo.kogni.soile2.projecthandling.exceptions.ProjectIsInactiveException
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
@@ -27,14 +28,14 @@ import io.vertx.ext.web.handler.HttpException;
  * @author thomas
  *
  */
-public class DBProjectInstance extends ProjectInstance{
+public class DBStudy extends Study{
 
 	MongoClient client;
 	EventBus eb;
 	ElementManager<Project> projectManager;	
-	static final Logger LOGGER = LogManager.getLogger(DBProjectInstance.class);
+	static final Logger LOGGER = LogManager.getLogger(DBStudy.class);
 
-	public DBProjectInstance(ElementManager<Project> projManager, MongoClient client, EventBus eb) {
+	public DBStudy(ElementManager<Project> projManager, MongoClient client, EventBus eb) {
 		super();
 		this.projectManager = projManager;
 		this.client = client;
@@ -46,18 +47,60 @@ public class DBProjectInstance extends ProjectInstance{
 		Promise<JsonObject> saveSuccess = Promise.<JsonObject>promise();
 		//TODO: If we at some point allow later modification of Name and shortcut, we need to add checks here that they do not conflict
 		// For an implementation have a look at @ElementToDBProjectInstance
-		JsonObject query = new JsonObject().put("_id", instanceID);		
 		// remove id and participants, these are handled directly.
 		
 		JsonObject update = new JsonObject().put("$set", toDBJson());
 		update.remove("_id");		
+		//first check, that this change does not interfere with another object.
+		JsonObject query = new JsonObject();
+		if(shortcut != null && !"".equals(shortcut))
+		{
+			// the shortcut is not allowed to clash with either the IDs OR other shortcuts 
+			query.put("$or", new JsonArray().add(new JsonObject()
+													 .put("name",getName()))
+											.add(new JsonObject()
+													.put("shortcut",shortcut))
+											.add(new JsonObject()
+													.put("_id",shortcut)));
+		}
+		else
+		{
+			query.put("name",getName());
+		}
+		client.find(getTargetCollection(),query)
+		.onSuccess(res -> 
+		{
+			// this should only bring up the entry corresponding to this element. 
+			if(res.size() > 1)
+			{
+				saveSuccess.fail("Shortcut or name in use by another project");
+				return;
+			}
+			else
+			{
+				if(res.size() == 1)
+				{
+					// check that this is the correct object.
+					if(!res.get(0).getString("_id").equals(instanceID))
+					{
+						saveSuccess.fail("Shortcut or name in use by another project");
+						return;
+					}									
+				}
+				JsonObject updateQuery = new JsonObject().put("_id", instanceID);		
 
-		client.updateCollection(getTargetCollection(), query, update).onSuccess(result ->
-		{			
-			saveSuccess.complete(toDBJson());					
-		}).onFailure(fail ->{
-			saveSuccess.fail(fail);
-		});		
+				client.updateCollection(getTargetCollection(), updateQuery, update).onSuccess(result ->
+				{			
+					saveSuccess.complete(toDBJson());					
+				}).onFailure(fail ->{
+					saveSuccess.fail(fail);
+				});
+			}
+				
+		})
+		.onFailure(err -> saveSuccess.fail(err));
+		
+				
 		return saveSuccess.future();		
 	}
 
@@ -83,7 +126,7 @@ public class DBProjectInstance extends ProjectInstance{
 				{
 					LOGGER.debug("The data from the project git file is: \n" + projectData.encodePrettily());
 					// we got a positive reply.
-					instanceJson.mergeIn(projectData);
+					instanceJson.put("sourceProject", projectData);					
 					LOGGER.debug(instanceJson.encodePrettily());	
 					loadSuccess.complete(instanceJson);					
 				}).onFailure(fail -> {
@@ -103,7 +146,22 @@ public class DBProjectInstance extends ProjectInstance{
 		JsonObject query = new JsonObject().put("_id", this.instanceID);
 		return client.findOneAndDelete(getTargetCollection(), query);		
 	}
-
+	
+	@Override
+	public Future<JsonArray> reset() {
+		JsonObject query = new JsonObject().put("_id", this.instanceID);
+		Promise<JsonArray> resetPromise = Promise.<JsonArray>promise();
+		client.findOneAndUpdate(getTargetCollection(), query, new JsonObject().put("$set",new JsonObject().put("participants", new JsonArray()))
+																			  .put("$unset", new JsonObject().put("usedTokens", "")
+																					  						 .put("accessTokens","")
+																					  						 .put("permanentAccessToken", "")))
+		.onSuccess(result -> {
+			resetPromise.complete(result.getJsonArray("participants", new JsonArray()));
+		})
+		.onFailure(err -> resetPromise.fail(err));
+		
+		return resetPromise.future();
+	}
 
 	/**
 	 * Add a participant to the list of participants of this projects
@@ -290,6 +348,26 @@ public class DBProjectInstance extends ProjectInstance{
 		return tokenUsedPromise.future();
 	}
 
+	@Override
+	public FieldSpecifications getUpdateableDBFields() {
+		
+		return new FieldSpecifications().put(new FieldSpecification("description", String.class, () -> "", true))
+				.put(new FieldSpecification("shortDescription", String.class, () -> "", false))
+				.put(new FieldSpecification("description", String.class, () -> "", false))
+				.put(new FieldSpecification("private", Boolean.class, () -> true, false))										
+				.put(new FieldSpecification("sourceUUID", String.class, () -> getSourceUUID(), true))
+				.put(new FieldSpecification("version", String.class, () -> getSourceVersion(), true));				
 
+	}
+		
+	public FieldSpecifications getUnmodifyableDBFields() {
+		
+		return new FieldSpecifications().put(new FieldSpecification("_id", String.class, () -> getID(), true))
+				.put(new FieldSpecification("participants", JsonArray.class, () -> this.getParticipants().result(), false))
+				.put(new FieldSpecification("name", String.class, () -> getName(), false));
+								
+
+	}
+	
 
 }

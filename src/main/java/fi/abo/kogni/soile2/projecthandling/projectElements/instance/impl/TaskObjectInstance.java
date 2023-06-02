@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ProjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -22,7 +22,7 @@ public class TaskObjectInstance extends ElementInstanceBase {
 	
 	  static final Logger LOGGER = LogManager.getLogger(TaskObjectInstance.class);
 
-	  public TaskObjectInstance(JsonObject data, ProjectInstance source)
+	  public TaskObjectInstance(JsonObject data, Study source)
 	  {
 		  super(data, source);
 	  }

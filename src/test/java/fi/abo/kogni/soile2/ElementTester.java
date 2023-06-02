@@ -51,10 +51,11 @@ public abstract class ElementTester extends GitTest {
 	public static JsonObject getCreationJson(Project project, String instanceName, String shortcut)
 	{
 		return new JsonObject()
-				.put("sourceUUID", project.getUUID())
+				.put("sourceProject", new JsonObject()
+										.put("UUID", project.getUUID())
+										.put("version", project.getCurrentVersion()))
 				.put("name", instanceName)
-				// this works here, since no other version could be added in between.
-				.put("version", project.getCurrentVersion())
+				// this works here, since no other version could be added in between.				
 				.put("private", true)
 				.put("shortcut", shortcut);		
 	}
