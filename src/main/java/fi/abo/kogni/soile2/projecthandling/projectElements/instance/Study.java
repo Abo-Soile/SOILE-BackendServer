@@ -315,6 +315,19 @@ public abstract class Study implements AccessElement{
 	}			
 	
 	/**
+	 * Create the Json to return for the API. This will contain a UUID instead of an _id field and no modification stamp.  
+	 * @return the {@link JsonObject} representing a study schema
+	 */
+	public JsonObject toAPIJson()
+	{		
+		JsonObject data = toDBJson();
+		data.put("UUID", data.remove("_id"));
+		data.remove("modifiedStamp");			
+		return data;
+	}	
+	
+	
+	/**
 	 * Finish a step for a particular participant storing the supplied output information obtained for the user.
 	 * @param participant the participant for whom to finish the step
 	 * @param taskData the participants data for this task

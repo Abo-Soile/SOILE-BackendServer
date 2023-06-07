@@ -325,7 +325,7 @@ public class StudyRouter extends SoileRouter {
 			.onSuccess(study-> {				
 				context.response()
 				.setStatusCode(200)				
-				.end(study.toDBJson().encode());
+				.end(study.toAPIJson().encode());
 			})
 			.onFailure(err -> handleError(err, context));										
 		})
