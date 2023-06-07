@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
+import java.util.Date;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -93,7 +95,7 @@ public class ElementToDBStudy extends DBStudy{
 					dbJson.put("shortcut", inputJson.getString("shortcut"));
 				}				
 				log.debug("Trying to save Instance:\n" + dbJson.encodePrettily());
-
+				dbJson.put("modifiedStamp", new Date().getTime());
 				client.save(getTargetCollection(), dbJson)
 				.onSuccess( dbID -> {
 					log.debug("DB Item has ID: " + dbID);

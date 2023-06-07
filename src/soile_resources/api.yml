@@ -1973,6 +1973,7 @@ paths:
           description: Code invalid
         '406':
           description: User is finished.
+          
   /projectexec/{id}/createtokens:
     post:
       security:
@@ -2013,6 +2014,54 @@ paths:
                       description: Access tokens usable with the project.
                   - type: string
                     description: A Master access token
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: Not authorized to create tokens
+        '410':
+          description: The project does (no longer) exist.
+  
+  /projectexec/{id}/tokeninfo:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - study
+      summary: get Information about tokens in the study
+      operationId: getTokenInformation
+      description: >-
+                   Create access tokens that can be used to invite people to the project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project instance
+          schema:
+            type : string
+      responses:
+        '200':
+          description: Information about the tokens currently in use in the project
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  permanentAccessToken:
+                    type: string
+                    description: The master token (anonymous registration if private) for the project
+                  accessTokens:
+                    type: array
+                    items: 
+                      type: string  
+                      description: individual tokens
+                  usedTokens: 
+                    type: array
+                    items: 
+                      type: string  
+                      description: Tokens that were available in the project but have already been used for registration
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -3058,7 +3107,9 @@ components:
         shortcut:
           type: string
           description: "a shortcut string tht can be used for access via /e/shortcut"
-
+        active: 
+          type: boolean
+          description: whether the study is private or publicly visible
     ProjectInstance:
       allOf: 
         - $ref: '#/components/schemas/ModifyiableStudyProperties'

@@ -17,7 +17,6 @@ import org.junit.Test;
 
 import fi.abo.kogni.soile2.datamanagement.DataLakeManagerTest;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
-import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
@@ -34,15 +33,13 @@ import io.vertx.ext.web.client.WebClientSession;
 import io.vertx.ext.web.handler.HttpException;
 
 public class ParticipationRouterTest extends SoileWebTest{
-
-	private WebClientSession generatorSession;
 	
 	@Test
 	public void getTaskInformationTest(TestContext context)
 	{
 		System.out.println("--------------------  Running get Task information test  ----------------------");    
 		Async creationAsync = context.async();
-		createAndStartProject(true)
+		createAndStartTestProject(true)
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)
 			.onSuccess(authToken -> {
@@ -71,7 +68,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 	{
 		System.out.println("--------------------  Running Task Tests  ----------------------");    
 		Async creationAsync = context.async();
-		createAndStartProject(true)
+		createAndStartTestProject(true)
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)
 			.onSuccess(authToken -> {
@@ -114,7 +111,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 	{
 		System.out.println("--------------------  Running Task Tests  ----------------------");    
 		Async creationAsync = context.async();
-		createAndStartProject(true)
+		createAndStartTestProject(true)
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)
 			.onSuccess(authToken -> {
@@ -149,7 +146,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 	{
 		System.out.println("--------------------  Running Task Tests  ----------------------");    
 		Async creationAsync = context.async();
-		createAndStartProject(true)
+		createAndStartTestProject(true)
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)
 			.onSuccess(authToken -> {
@@ -201,7 +198,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 				.put("fileData", new JsonArray());
 		JsonObject result = new JsonObject().put("outputData", OutputData).put("resultData", resultData);
 
-		createAndStartProject(true)
+		createAndStartTestProject(true)
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)			
 			.onSuccess(authToken -> {
@@ -251,7 +248,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 		String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
 		String filename = "Image.jpg";
 		File upload = new File(Path.of(TestDataFolder, "ImageData.jpg").toString());
-		createAndStartProject(true)
+		createAndStartTestProject(true)
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)			
 			.onSuccess(authToken -> {
@@ -370,7 +367,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 		File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
 		List<File> fileUploads = new LinkedList<>();
 		fileUploads.add(upload);
-		createAndStartProject(true)
+		createAndStartTestProject(true)
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)			
 			.onSuccess(authToken -> {
@@ -457,7 +454,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 		fileUploads.add(upload);
 
 		Async testRunResource = context.async();
-		createAndStartProject(true, "testProject")
+		createAndStartTestProject(true, "testProject")
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)
 			.onSuccess(authToken -> {
@@ -520,7 +517,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 		System.out.println("--------------------  Running Tests for /run/{id}/{taskID}/lib/*  ----------------------");    
 
 		Async testRunResource = context.async();
-		createAndStartProject(true)
+		createAndStartTestProject(true)
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)
 			.onSuccess(authToken -> {
@@ -560,65 +557,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 		.onFailure(err -> context.fail(err));
 	}
 
-	protected Future<String> signUpToProjectWithToken(WebClient client,String Token, String projectID)
-	{
-		Promise<String> tokenPromise = Promise.promise();
-		POST(client,"/projectexec/" + projectID + "/signup", new JsonObject().put("token", Token), null)
-		.onSuccess(response -> {
-			tokenPromise.complete(response.bodyAsJsonObject().getString("token"));
-		})
-		.onFailure(err -> tokenPromise.fail(err));
-		return tokenPromise.future();
-	}
-
-	protected Future<Void> signUpToProject(WebClient client, String projectID)
-	{
-		Promise<Void> tokenPromise = Promise.promise();
-		POST(client,"/projectexec/" + projectID + "/signup", null, null)
-		.onSuccess(response -> {
-			tokenPromise.complete();
-		})
-		.onFailure(err -> tokenPromise.fail(err));
-		return tokenPromise.future();
-	}
-
-	protected Future<JsonArray> createTokens(WebClient client, String projectID, int count, boolean unique)
-	{
-		Promise<JsonArray> resultPromise = Promise.promise();
-		POST(client,"/projectexec/" + projectID + "/createtokens", new JsonObject().put("unique", unique).put("count", count), null )
-		.onSuccess(response -> {
-			if(unique)
-			{
-				resultPromise.complete(new JsonArray().add(response.bodyAsString()));
-			}
-			else
-			{
-				resultPromise.complete(response.bodyAsJsonArray());
-			}
-		})
-		.onFailure(err -> resultPromise.fail(err));
-
-		return resultPromise.future();
-	}
-
-	protected Future<Void> submitResult(WebClient client, JsonObject resultData, String instanceID)
-	{
-		Promise<Void> submittedPromise = Promise.promise();
-		POST(client, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
-		.onSuccess(response -> {
-			String taskInstanceID = response.bodyAsJsonObject().getString("id");			
-			resultData.put("taskID",taskInstanceID);
-			POST(client, "/projectexec/" + instanceID + "/submit", null, resultData)
-			.onSuccess(submitted -> {
-				submittedPromise.complete();								
-			})
-			.onFailure(err -> submittedPromise.fail(err));
-		})
-		.onFailure(err -> submittedPromise.fail(err));
-
-		return submittedPromise.future();
-	}
-
+	
 
 	/**
 	 * Submit files and results with the given webclient(session). 
@@ -672,96 +611,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 		return submittedPromise.future();
 	}
 
-	protected Future<String> createMasterToken(WebClient client, String projectID)
-	{
-		return createTokens(client,projectID,0,true).map(output -> {return output.getString(0);});
-	}
-
-	protected Future<String> createTokenAndSignupUser(WebClient authedSession, String projectID)
-	{
-		return createTokens(authedSession, projectID,1,false)
-				.compose(tokenArray -> {
-					String token = tokenArray.getString(0);
-					return signUpToProjectWithToken(createSession(), token, projectID);
-				});		
-	}
-
-	protected Future<String> createAndStartProject(boolean priv)
-	{
-		return createAndStartProject(priv, "newShortCut");
-	}
-	protected Future<String> createAndStartProject(boolean priv, String shortcut)
-	{
-		return createAndStartProject(priv, shortcut, "Testproject");
-	}
-			
-	protected Future<String> createAndStartProject(boolean priv, String shortcut, String ProjectName)
-	{
-		JsonObject projectExec = new JsonObject().put("private", priv).put("name", "New Project").put("shortcut",shortcut); 
-		Promise<String> projectInstancePromise = Promise.promise();
-		if(generatorSession == null)
-		{
-		
-		createUserAndAuthedSession("Researcher", "test", Roles.Researcher)
-		.onSuccess(authedSession -> {
-			generatorSession = authedSession;
-			WebObjectCreator.createProject(authedSession,ProjectName)
-			.onSuccess(projectData -> {				
-				String projectID = projectData.getString("UUID");
-				String projectVersion = projectData.getString("version");
-				POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
-				.onSuccess(response -> {
-					projectInstancePromise.complete(response.bodyAsJsonObject().getString("projectID"));
-				})
-				.onFailure(err -> projectInstancePromise.fail(err));
-
-			})
-			.onFailure(err -> projectInstancePromise.fail(err));
-		})
-		.onFailure(err -> projectInstancePromise.fail(err));
-		}
-		else
-		{
-			WebObjectCreator.createProject(generatorSession, ProjectName)
-			.onSuccess(projectData -> {				
-				String projectID = projectData.getString("UUID");
-				String projectVersion = projectData.getString("version");
-				POST(generatorSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
-				.onSuccess(response -> {
-					projectInstancePromise.complete(response.bodyAsJsonObject().getString("projectID"));
-				})
-				.onFailure(err -> projectInstancePromise.fail(err));
-
-			})
-			.onFailure(err -> projectInstancePromise.fail(err));
-		}
-		return projectInstancePromise.future();
-	}
-
-	protected Future<JsonObject> getParticipantInfoForToken(String token)
-	{			
-		return mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"), new JsonObject().put("token", token), null);		
-	}
-
-	protected Future<Void> checkTaskIsCorrect(WebClient client, String instanceID, String taskID)
-	{
-		Promise<Void> correctTask = Promise.promise();
-		POST(client, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
-		.onSuccess(nexttaskID -> {
-			if(nexttaskID.bodyAsJsonObject().getString("id").equals(taskID))
-			{
-				correctTask.complete();				
-			}
-			else
-			{
-				correctTask.fail("Got " + nexttaskID.bodyAsString() + " expected " + taskID);
-			}
-		})
-		.onFailure(err -> correctTask.fail(err));
-
-
-		return correctTask.future();
-	}
+	
 
 	protected Future<JsonObject> getParticipantInfoForUsername(String username, String projectID)
 	{
@@ -802,6 +652,16 @@ public class ParticipationRouterTest extends SoileWebTest{
 		return participantPromise.future();		
 	}
 
+	/**
+	 * Get the participant information for a Token directly from the database.
+	 * @param token
+	 * @return
+	 */
+	protected Future<JsonObject> getParticipantInfoForToken(String token)
+	{			
+		return mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"), new JsonObject().put("token", token), null);		
+	}
+	
 	private Future<Void> awaitDownloadReady(WebClient client, String projectID, String dlID, Promise<Void> readyPromise)
 	{		
 		POST(client, "/projectexec/" + projectID + "/download/" + dlID + "/check", null, null).onSuccess(response -> 
@@ -866,6 +726,24 @@ public class ParticipationRouterTest extends SoileWebTest{
 		zis.close();
 		fis.close();
 
+	}
+
+	protected Future<Void> submitResult(WebClient client, JsonObject resultData, String instanceID)
+	{
+		Promise<Void> submittedPromise = Promise.promise();
+		POST(client, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+		.onSuccess(response -> {
+			String taskInstanceID = response.bodyAsJsonObject().getString("id");			
+			resultData.put("taskID",taskInstanceID);
+			POST(client, "/projectexec/" + instanceID + "/submit", null, resultData)
+			.onSuccess(submitted -> {
+				submittedPromise.complete();								
+			})
+			.onFailure(err -> submittedPromise.fail(err));
+		})
+		.onFailure(err -> submittedPromise.fail(err));
+
+		return submittedPromise.future();
 	}
 
 }

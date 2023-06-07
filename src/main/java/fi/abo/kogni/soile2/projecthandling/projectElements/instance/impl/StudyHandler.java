@@ -3,10 +3,14 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.sound.sampled.TargetDataLine;
+import javax.swing.table.TableStringConverter;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
+import fi.abo.kogni.soile2.datamanagement.utils.CheckDirtyMap;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
@@ -29,7 +33,7 @@ public class StudyHandler {
 
 	static final Logger LOGGER = LogManager.getLogger(StudyHandler.class);
 
-	private TimeStampedMap<String, Study> studies;
+	private CheckDirtyMap<String, Study> studies;
 	private String dataLakeFolder;
 	private StudyManager manager;	 
 	
@@ -54,7 +58,7 @@ public class StudyHandler {
 		super();
 		this.dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
 		this.manager = manager;
-		studies = new TimeStampedMap<String, Study>(manager, 1000*60*60);
+		studies = new CheckDirtyMap<String, Study>(manager, 1000*60*60);
 	}
 
 	/**
@@ -62,20 +66,36 @@ public class StudyHandler {
 	 */
 	public void cleanup()
 	{
-		studies.cleanUp();
+		studies.cleanup();
 		manager.cleanUp();
 	}
 	
+	/**
+	 * Deactivate a study
+	 * @param study the study to deactivate
+	 */	
+	public Future<Void> deactivate(String id)
+	{		
+		return studies.getData(id).compose((study) -> manager.deactivate(study));
+	}
+	
+	/**
+	 * Activate a study
+	 * @param study the study to activate
+	 */	
+	public Future<Void> activate(String id)
+	{
+		return studies.getData(id).compose((study) -> manager.activate(study));
+	}
 	
 	/**
 	 * Delete a study,
 	 * @return The Object that was deleted from the Study database
-	 */
-	
+	 */		
 	public Future<JsonObject> deleteStudy(String studyID)
 	{
 		Promise<JsonObject> deletionPromise = Promise.<JsonObject>promise();
-		loadStudy(studyID)
+		loadUpToDateStudy(studyID)
 		.onSuccess(currentStudy -> {
 			currentStudy.delete()
 			.onSuccess(studyJson -> {
@@ -192,9 +212,19 @@ public class StudyHandler {
 	 * This can fail if the project does not exist.
 	 * @param projectInstanceID the instance ID of the project to retrieve.
 	 */
-	public Future<Study> loadStudy(String projectInstanceID)
+	public Future<Study> loadUpToDateStudy(String projectInstanceID)
 	{
 		return studies.getData(projectInstanceID);		
+	}
+	
+	/**
+	 * Load a project with the given ID and don't care whether it is current (only the ID is important here.. 
+	 * This can fail if the project does not exist.
+	 * @param projectInstanceID the instance ID of the project to retrieve.
+	 */
+	public Future<Study> loadPotentiallyOutdatedStudy(String projectInstanceID)
+	{
+		return studies.getDirtyData(projectInstanceID);		
 	}
 	
 	/**
@@ -207,7 +237,7 @@ public class StudyHandler {
 		Promise<Void> updatePromise = Promise.promise();		
 		studies.getData(studyID)
 		.onSuccess(currentStudy -> {			
-			currentStudy.updateStudy(newData)
+			manager.updateStudy(currentStudy, newData)
 			.onSuccess(updated -> {				
 				updatePromise.complete();
 			})

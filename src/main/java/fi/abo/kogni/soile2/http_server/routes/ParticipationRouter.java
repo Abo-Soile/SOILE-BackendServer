@@ -599,7 +599,7 @@ public class ParticipationRouter extends SoileRouter{
 	public void handleRequest(RoutingContext context, Handler<RoutingContext> method)
 	{
 		String projectID = context.pathParam("id");
-		instanceHandler.loadStudy(projectID)
+		instanceHandler.loadUpToDateStudy(projectID)
 		.onSuccess(exists -> {		
 			method.handle(context);
 		})
@@ -624,7 +624,7 @@ public class ParticipationRouter extends SoileRouter{
 	private Future<Study> loadProject(String id)
 	{
 		Promise<Study> projPromise = Promise.promise();
-		instanceHandler.loadStudy(id).
+		instanceHandler.loadUpToDateStudy(id).
 		onSuccess(project -> {
 			if(project.isActive())
 			{				

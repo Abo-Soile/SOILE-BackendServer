@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -56,7 +57,7 @@ public abstract class Study implements AccessElement{
 	/**
 	 * Access to the participants array needs to be synchronized, at least after initiation of the object. 
 	 */
-	protected List<String> participants;
+	//protected List<String> participants;
 	
 	
 	/**
@@ -68,7 +69,7 @@ public abstract class Study implements AccessElement{
 	protected String shortDescription;
 	protected String description;
 	protected boolean isPrivate;
-	
+	protected Long modifiedStamp;
 	/**
 	 *  This reflects all tasks/experiments and their respective String representation
 	 *  They are generated on load and not stored in the database, but retrieved from the source Project.
@@ -81,7 +82,7 @@ public abstract class Study implements AccessElement{
 	 */
 	protected Study()
 	{		
-		participants = new LinkedList<String>();
+		//participants = new LinkedList<String>();
 		elements = new HashMap<String, ElementInstance>();
 		sourceProject = new JsonObject();
 		shortcut = "";
@@ -89,7 +90,26 @@ public abstract class Study implements AccessElement{
 		description = "";
 		shortDescription = "";
 		isPrivate = false; 
+		modifiedStamp = new Date().getTime();
 	};
+	
+	/**
+	 * Set the modification date.
+	 * @param date
+	 */
+	public void setModifiedDate()
+	{
+		modifiedStamp = new Date().getTime();		
+	}
+	
+	/**
+	 * Get the last modification date of this OBJECT. Note this is not necessarily the same as the one in the database.
+	 * @return the modification date of this object
+	 */
+	public long getModifiedDate()
+	{
+		return modifiedStamp;		
+	}
 	
 	/**
 	 * A Project will be set up based on the data provided here.
@@ -119,7 +139,7 @@ public abstract class Study implements AccessElement{
 		Study p = factory.createInstance();
 		LOGGER.debug(p);
 		LOGGER.debug(factory);
-		LOGGER.debug(instantiationInfo.encodePrettily());
+		LOGGER.info(instantiationInfo.encodePrettily());		
 		p.load(instantiationInfo)
 		.onSuccess(dataJson -> {
 			LOGGER.debug("Trying to set up project from data: \n " + dataJson.encodePrettily());
@@ -190,6 +210,7 @@ public abstract class Study implements AccessElement{
 		shortDescription = data.getString("shortDescription", "");
 		description = data.getString("description","");
 		isPrivate = data.getBoolean("private",false);
+		modifiedStamp = data.getLong("modifiedStamp", new Date().getTime());
 		for(Object cTaskData : sourceProject.getJsonArray("tasks", new JsonArray()))
 		{
 			TaskObjectInstance cTask = new TaskObjectInstance((JsonObject)cTaskData, this);
@@ -205,10 +226,10 @@ public abstract class Study implements AccessElement{
 			parseExperiment((JsonObject)cExperimentData);
 		}
 		// these are all strings...
-		for(Object o : data.getJsonArray("participants"))
+	/*	for(Object o : data.getJsonArray("participants"))
 		{
 			participants.add(o.toString());
-		}
+		}*/
 	}
 
 	/**
@@ -286,7 +307,8 @@ public abstract class Study implements AccessElement{
 					.put("description", description )
 					.put("shortDescription", shortDescription)
 					.put("private", isPrivate)
-					.put("isActive", isActive);
+					.put("isActive", isActive)
+					.put("modifiedStamp", modifiedStamp);
 					
 			if(shortcut != null)
 			{
@@ -547,46 +569,48 @@ public abstract class Study implements AccessElement{
 	}	
 	
 	/**
-	 * Update
+	 * Update the Study, returns the modification date set in the database.
 	 */
-	public Future<Void> updateStudy(JsonObject updateInformation)
+	public Future<Long> updateStudy(JsonObject updateInformation)
 	{
-		Promise<Void> updatePromise = Promise.<Void>promise();
-		boolean hasParticipants = false;
-		boolean projectChange = !getSourceUUID().equals(updateInformation.getValue("sourceUUID", getSourceUUID()));
-		boolean versionChange = !getSourceVersion().equals(updateInformation.getValue("version", getSourceVersion()));
-		if(this.participants.size() > 0)
-		{
-			hasParticipants = true;
-		}
-		// if it has it it must be equal, or this fails.
-		if(hasParticipants && (projectChange || versionChange))
-		{			
-			return Future.failedFuture("Cannot change underlying project for Study with Participants");
-		}
-		checkShortCutAvailable(updateInformation.getString("shortcut",shortcut))
-		.onSuccess(allowed -> {
-			if(allowed)
-			{
-				setSourceUUID(updateInformation.getString("sourceUUID", getSourceUUID()));
-				setSourceVersion(updateInformation.getString("version", getSourceVersion()));
-				isPrivate = updateInformation.getBoolean("private", isPrivate);
-				isActive = updateInformation.getBoolean("active", isActive);
-				description = updateInformation.getString("description", description);
-				shortDescription = updateInformation.getString("shortDescription", shortDescription);
-				shortcut = updateInformation.getString("shortcut", shortcut);
-				save()
-				.onSuccess(res -> {
-					updatePromise.complete();
-				})
-				.onFailure(err -> updatePromise.fail(err));
+		Promise<Long> updatePromise = Promise.<Long>promise();
+		getParticipants()
+		.onSuccess(participants -> {
+			boolean hasParticipants = participants.size() > 0;
+			boolean projectChange = !getSourceUUID().equals(updateInformation.getValue("sourceUUID", getSourceUUID()));
+			boolean versionChange = !getSourceVersion().equals(updateInformation.getValue("version", getSourceVersion()));
+
+			// if it has it it must be equal, or this fails.
+			if(hasParticipants && (projectChange || versionChange))
+			{			
+				updatePromise.fail("Cannot change underlying project for Study with Participants");
 			}
-			else
-			{
-				updatePromise.fail("Conflicing shortcuts");
-			}
+			checkShortCutAvailable(updateInformation.getString("shortcut",shortcut))
+			.onSuccess(allowed -> {
+				if(allowed)
+				{
+					setSourceUUID(updateInformation.getString("sourceUUID", getSourceUUID()));
+					setSourceVersion(updateInformation.getString("version", getSourceVersion()));
+					isPrivate = updateInformation.getBoolean("private", isPrivate);
+					isActive = updateInformation.getBoolean("active", isActive);
+					description = updateInformation.getString("description", description);
+					shortDescription = updateInformation.getString("shortDescription", shortDescription);
+					shortcut = updateInformation.getString("shortcut", shortcut);				
+					setModifiedDate();				
+					save()
+					.onSuccess(res -> {
+						updatePromise.complete(this.modifiedStamp);
+					})
+					.onFailure(err -> updatePromise.fail(err));
+				}
+				else
+				{
+					updatePromise.fail("Conflicing shortcuts");
+				}
+			})
+			.onFailure(err -> updatePromise.fail(err));		
 		})
-		.onFailure(err -> updatePromise.fail(err));		
+		.onFailure(err -> updatePromise.fail(err));
 		return updatePromise.future();			
 	}
 	
@@ -625,13 +649,13 @@ public abstract class Study implements AccessElement{
 	 * Deactivate a project
 	 * @return A Future that succeeded if the project was successfully deactivated (or was already inactive)
 	 */
-	public abstract Future<Void> deactivate();
+	public abstract void deactivate();
 	
 	/**
 	 * Restart a project if it was deactivated. By default a project is active.
 	 * @return A Future that succeeded if the project was successfully activated (or was already active)
 	 */
-	public abstract Future<Void> activate();
+	public abstract void activate();
 	
 	/**
 	 * Add a participant to the list of participants of this projects
@@ -659,7 +683,7 @@ public abstract class Study implements AccessElement{
 	 * @param count - the number of access tokens to create
 	 * @return - a {@link JsonArray} of one-time access tokens that can be used to sign up for this project
 	 */
-	public abstract Future<JsonArray> createAccessTokens(int count);
+	public abstract Future<JsonArray> createSignupTokens(int count);
 	
 	/**
 	 * Create a general access token for this project. This token is reusable and not linked to a specific user.
@@ -667,6 +691,12 @@ public abstract class Study implements AccessElement{
 	 * @return
 	 */
 	public abstract Future<String> createPermanentAccessToken();
+
+	/**
+	 * Get information about the tokens for this Study, master, access and used tokens
+	 * @return a {@link Future} of a {@link JsonObject} with entries for masterToken, signupTokens( {@link JsonArray} ) and usedTokens ( {@link JsonArray} ) 
+	 */
+	public abstract Future<JsonObject> getTokenInformation();
 	
 	/**
 	 * Use a token for the given project. If the provided token is a one-time token it will deactivate this token.
@@ -679,4 +709,11 @@ public abstract class Study implements AccessElement{
 	 * 
 	 */
 	public abstract FieldSpecifications getUpdateableDBFields();
+	
+	/**
+	 * Get the modification date of this study stored in the database.
+	 * This is only updated in the save() method of the Study, and does not consider modifications of fields 
+	 * which are accessed directly in the db and not stored on the project instance. 
+	 */
+	public abstract Future<Long> getStoredModificationDate();
 }

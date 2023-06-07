@@ -7,13 +7,23 @@ import org.junit.Test;
 
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientSession;
+import io.vertx.ext.web.client.spi.CookieStore;
 import io.vertx.ext.web.handler.HttpException;
+import io.vertx.uritemplate.UriTemplate;
 
 //TODO: Test Project deletion and Project Stop.
 public class StudyRouterTest extends SoileWebTest {
@@ -72,6 +82,9 @@ public class StudyRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 
+	
+	
+	
 	/**
 	 * This test tests both starting and getting the list of running projects.
 	 * @param context
@@ -424,5 +437,61 @@ public class StudyRouterTest extends SoileWebTest {
 			.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
+	}
+	@Test
+	public void testTokens(TestContext context)
+	{
+		System.out.println("--------------------  Testing Creation and retrieval of tokens ----------------------");
+		Async setupAsync = context.async();
+		createAndStartTestProject(false)
+		.onSuccess(projectID -> {
+			createTokens(generatorSession, projectID, 10, false)
+			.onSuccess(createdTokens -> {
+				createTokens(generatorSession, projectID, 10, true)
+				.onSuccess(masterToken -> {
+					WebClientSession unauthed = createSession();
+					signUpToProjectWithToken(unauthed, createdTokens.getString(0), projectID)
+					.onSuccess(accessToken -> {
+						Async requestTokensAsync = context.async();
+						Async mongoAsync = context.async();
+						mongo_client.find(SoileConfigLoader.getdbProperty("projectInstanceCollection"), new JsonObject())
+						.onSuccess(results -> {
+							for(JsonObject o : results)
+							{
+								System.out.println(o.encodePrettily());
+							}
+							mongoAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
+						POST(generatorSession, "/projectexec/" + projectID + "/tokeninfo", null, null)
+						.onSuccess(Response -> {
+							JsonObject tokeninfo = Response.bodyAsJsonObject();
+							System.out.println(tokeninfo.encodePrettily());
+							
+							context.assertEquals(1, tokeninfo.getJsonArray("usedTokens").size());
+							context.assertEquals(createdTokens.getString(0), tokeninfo.getJsonArray("usedTokens").getString(0));
+							context.assertFalse(tokeninfo.getJsonArray("signupTokens").contains(createdTokens.getString(0)));
+							context.assertEquals(createdTokens.getString(0), tokeninfo.getJsonArray("usedTokens").getString(0));
+							context.assertEquals(9,tokeninfo.getJsonArray("signupTokens").size());
+							for(int i = 1; i < createdTokens.size(); ++i)
+							{
+								context.assertTrue(tokeninfo.getJsonArray("signupTokens").contains(createdTokens.getString(i)));
+							}
+							// The masterToken is also a JsonArray.
+							context.assertEquals(masterToken.getString(0),tokeninfo.getString("permanentAccessToken"));
+							requestTokensAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));	
+						
+						setupAsync.complete();	
+					})
+					.onFailure(err -> context.fail(err));										
+				})
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+		
 	}
 }

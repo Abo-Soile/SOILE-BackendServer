@@ -4,6 +4,7 @@ import java.io.File;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -17,18 +18,201 @@ import io.vertx.ext.web.client.WebClientSession;
 import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.multipart.MultipartForm;
 
+/**
+ * This class is a base class for Web Tests. It provides several convenience functions for use within tests. 
+ * @author Thomas Pfau
+ *
+ */
 public abstract class SoileWebTest extends SoileVerticleTest implements UserVerticleTest{
 
-/*	public Future<HttpResponse<Buffer>> GET(String targetURL, JsonObject queryParameters, Object queryBody)
+	protected WebClientSession generatorSession;
+
+	/**
+	 * Create a Master Token for the given project using the given client 
+	 * @param client
+	 * @param projectID
+	 * @return
+	 */
+	protected Future<String> createMasterToken(WebClient client, String projectID)
 	{
-		return GET(webclient, targetURL, queryParameters, queryBody);
+		return createTokens(client,projectID,0,true).map(output -> {return output.getString(0);});
+	}
+	
+	/**
+	 * Create a Token and signup as user using the provided session.
+	 * @param authedSession
+	 * @param projectID
+	 * @return
+	 */
+	protected Future<String> createTokenAndSignupUser(WebClient authedSession, String projectID)
+	{
+		return createTokens(authedSession, projectID,1,false)
+				.compose(tokenArray -> {
+					String token = tokenArray.getString(0);
+					return signUpToProjectWithToken(createSession(), token, projectID);
+				});		
 	}
 
-	public Future<HttpResponse<Buffer>> POST(String targetURL, JsonObject queryParameters, Object queryBody)
+	/**
+	 * Create andstart the Testproject it will get a shortCut "newShortCut"
+	 * @param priv whether the instance should be private
+	 * @return
+	 */
+	protected Future<String> createAndStartTestProject(boolean priv)
 	{
-		return POST(webclient, targetURL, queryParameters, queryBody);
-	}*/
+		return createAndStartTestProject(priv, "newShortCut");
+	}
+	
+	/**
+	 * Create andstart the Testproject with the given privacy setting and shortcut
+	 * @param priv
+	 * @param shortcut
+	 * @return
+	 */
+	protected Future<String> createAndStartTestProject(boolean priv, String shortcut)
+	{
+		return createAndStartProject(priv, shortcut, "Testproject");
+	}
+			
+	/**
+	 * Create and start the a project from the APIProjects with the given name 
+	 * @param priv
+	 * @param shortcut
+	 * @param ProjectName
+	 * @return
+	 */
+	protected Future<String> createAndStartProject(boolean priv, String shortcut, String ProjectName)
+	{
+		JsonObject projectExec = new JsonObject().put("private", priv).put("name", "New Project").put("shortcut",shortcut); 
+		Promise<String> projectInstancePromise = Promise.promise();
+		if(generatorSession == null)
+		{
+		
+		createUserAndAuthedSession("Researcher", "test", Roles.Researcher)
+		.onSuccess(authedSession -> {
+			generatorSession = authedSession;
+			WebObjectCreator.createProject(authedSession,ProjectName)
+			.onSuccess(projectData -> {				
+				String projectID = projectData.getString("UUID");
+				String projectVersion = projectData.getString("version");
+				POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
+				.onSuccess(response -> {
+					projectInstancePromise.complete(response.bodyAsJsonObject().getString("projectID"));
+				})
+				.onFailure(err -> projectInstancePromise.fail(err));
 
+			})
+			.onFailure(err -> projectInstancePromise.fail(err));
+		})
+		.onFailure(err -> projectInstancePromise.fail(err));
+		}
+		else
+		{
+			WebObjectCreator.createProject(generatorSession, ProjectName)
+			.onSuccess(projectData -> {				
+				String projectID = projectData.getString("UUID");
+				String projectVersion = projectData.getString("version");
+				POST(generatorSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
+				.onSuccess(response -> {
+					projectInstancePromise.complete(response.bodyAsJsonObject().getString("projectID"));
+				})
+				.onFailure(err -> projectInstancePromise.fail(err));
+
+			})
+			.onFailure(err -> projectInstancePromise.fail(err));
+		}
+		return projectInstancePromise.future();
+	}
+
+	/**
+	 * Check, whether the task is correct for the user authenticated in the given client session.
+	 * @param client
+	 * @param instanceID
+	 * @param taskID
+	 * @return
+	 */
+	protected Future<Void> checkTaskIsCorrect(WebClientSession client, String instanceID, String taskID)
+	{
+		Promise<Void> correctTask = Promise.promise();
+		POST(client, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+		.onSuccess(nexttaskID -> {
+			if(nexttaskID.bodyAsJsonObject().getString("id").equals(taskID))
+			{
+				correctTask.complete();				
+			}
+			else
+			{
+				correctTask.fail("Got " + nexttaskID.bodyAsString() + " expected " + taskID);
+			}
+		})
+		.onFailure(err -> correctTask.fail(err));
+
+
+		return correctTask.future();
+	}
+	
+	/**
+	 * Signup the session with the given token for the given project.
+	 * @param client
+	 * @param Token
+	 * @param projectID
+	 * @return
+	 */
+	protected Future<String> signUpToProjectWithToken(WebClientSession client,String Token, String projectID)
+	{
+		Promise<String> tokenPromise = Promise.promise();
+		POST(client,"/projectexec/" + projectID + "/signup", new JsonObject().put("token", Token), null)
+		.onSuccess(response -> {
+			tokenPromise.complete(response.bodyAsJsonObject().getString("token"));
+		})
+		.onFailure(err -> tokenPromise.fail(err));
+		return tokenPromise.future();
+	}
+
+	/**
+	 * Sign up to the given project. This requires the session to be allowed to sign up or it will fail.
+	 * @param client
+	 * @param projectID
+	 * @return
+	 */
+	protected Future<Void> signUpToProject(WebClient client, String projectID)
+	{
+		Promise<Void> tokenPromise = Promise.promise();
+		POST(client,"/projectexec/" + projectID + "/signup", null, null)
+		.onSuccess(response -> {
+			tokenPromise.complete();
+		})
+		.onFailure(err -> tokenPromise.fail(err));
+		return tokenPromise.future();
+	}
+
+	/**
+	 * Create Tokens for the given project. If unique is false, the number of tokens will be equal to the provided count, 
+	 * if true, only one master token will be created. 
+	 * @param client
+	 * @param projectID
+	 * @param count
+	 * @param unique
+	 * @return a {@link JsonArray} {@link Future}. In case of unique being true, the array contains exactly one element which is the master token.
+	 */
+	protected Future<JsonArray> createTokens(WebClient client, String projectID, int count, boolean unique)
+	{
+		Promise<JsonArray> resultPromise = Promise.promise();
+		POST(client,"/projectexec/" + projectID + "/createtokens", new JsonObject().put("unique", unique).put("count", count), null )
+		.onSuccess(response -> {
+			if(unique)
+			{
+				resultPromise.complete(new JsonArray().add(response.bodyAsString()));
+			}
+			else
+			{
+				resultPromise.complete(response.bodyAsJsonArray());
+			}
+		})
+		.onFailure(err -> resultPromise.fail(err));
+
+		return resultPromise.future();
+	}
 
 	public static Future<HttpResponse<Buffer>> GET(WebClient client, String targetURL, JsonObject queryParameters, Object queryBody)
 	{

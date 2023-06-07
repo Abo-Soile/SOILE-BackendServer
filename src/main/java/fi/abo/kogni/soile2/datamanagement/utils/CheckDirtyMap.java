@@ -86,6 +86,28 @@ public class CheckDirtyMap<K,T> {
 		return itemPromise.future();
 	}
 	
+	/**
+	 * Get an item with a specific key. This item can be "dirty" i.e. not up to date. Use with care! 
+	 * If it can't be found the handler has to handle a failedFuture with a {@link NoSuchElementException} error 
+	 * @param itemID
+	 * @return the item to be looked for. or null, if it doesn't exist.
+	 */
+	public Future<T> getDirtyData(K itemID)
+	{
+		TimeStampedData<T> expData = elementMap.get(itemID);
+		Promise<T> itemPromise = Promise.<T>promise();
+		if(expData == null)
+		{			
+				getElementFromRetriever(itemID, itemPromise);	
+		}
+		else
+		{
+			itemPromise.complete(expData.data);						
+		}
+		return itemPromise.future();
+	}
+	
+	
 	private void getElementFromRetriever(K itemID, Promise<T> itemPromise)
 	{
 		retriever.getElement(itemID).onSuccess(result -> {

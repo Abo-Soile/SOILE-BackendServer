@@ -1,11 +1,15 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
+import java.util.HashMap;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.utils.DataRetriever;
+import fi.abo.kogni.soile2.datamanagement.utils.DirtyDataRetriever;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
+import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.StudyFactory;
@@ -28,7 +32,7 @@ import io.vertx.ext.mongo.MongoClient;
  * @author Thomas Pfau
  *
  */
-public class StudyManager implements DataRetriever<String, Study> {
+public class StudyManager implements DirtyDataRetriever<String, Study> {
 
 	static final Logger LOGGER = LogManager.getLogger(StudyManager.class);
 	
@@ -38,6 +42,7 @@ public class StudyManager implements DataRetriever<String, Study> {
 	private StudyFactory createFactory;
 	private String instanceCollection;
 	private TimeStampedMap<String, String> projectPathes;
+	private HashMap<String,Long> studyTimes;
 	public StudyManager(MongoClient client, Vertx vertx)
 	{						
 		this(client,
@@ -53,12 +58,14 @@ public class StudyManager implements DataRetriever<String, Study> {
 		this.createFactory = createFactory;		
 		instanceCollection = SoileConfigLoader.getdbProperty("projectInstanceCollection");
 		projectPathes = new TimeStampedMap<String, String>(this::getProjectIDForPathIDfromDB, 1000*60*60);
+		studyTimes = new HashMap<>();
 	}
 
 	public void cleanUp()
 	{
 		projectPathes.cleanUp();
 	}
+	
 	
 	
 	@Override
@@ -71,6 +78,39 @@ public class StudyManager implements DataRetriever<String, Study> {
 		handler.handle(getElement(key));
 	}
 
+	@Override
+	public Future<Study> getElementIfDirty(String key) {
+		Promise<Study> dirtyPromise = Promise.promise();
+		client.findOne(instanceCollection,  new JsonObject().put("_id", key), new JsonObject().put("modifiedStamp",1))
+		.onSuccess(res -> {
+			LOGGER.info(res.encodePrettily());
+			LOGGER.info(studyTimes.get(key));
+			
+			if(!studyTimes.containsKey(key) || studyTimes.get(key) >= res.getLong("modifiedStamp"))
+			{
+				dirtyPromise.complete(null);
+			}
+			else
+			{
+				getElement(key).onSuccess(part ->
+				{
+					updateStudy(part);
+					dirtyPromise.complete(part);
+				})
+				.onFailure(err -> dirtyPromise.fail(err));
+			}
+		})
+		.onFailure(err -> dirtyPromise.fail(err));
+		return dirtyPromise.future();			
+	}
+
+	@Override
+	public void getElementIfDirty(String key, Handler<AsyncResult<Study>> handler) {
+		// TODO Auto-generated method stub
+		handler.handle(getElementIfDirty(key));
+	}
+
+	
 	/**
 	 * Create a new Project with empty information provide it to the Handler
 	 * database.
@@ -110,21 +150,35 @@ public class StudyManager implements DataRetriever<String, Study> {
 							   .put("version", projectVersion)
 							   .put("participants", new JsonArray())
 							   .put("private", false)
-							   .put("accessTokens",new JsonArray());
+							   .put("signupTokens",new JsonArray());
 	}
 	
 	/**
 	 * Save the given Project instance.
+	 * @param study
+	 * @return
+	 */
+	public Future<JsonObject> save(Study study)
+	{
+		if(study.getShortCut() != null)
+		{
+			projectPathes.putData(study.getShortCut(), study.getID());
+		}
+		return study.save();
+	}
+	
+	/**
+	 * Update the data relevant for the manager.
 	 * @param proj
 	 * @return
 	 */
-	public Future<JsonObject> save(Study proj)
+	public void updateStudy(Study study)
 	{
-		if(proj.getShortCut() != null)
+		if(study.getShortCut() != null)
 		{
-			projectPathes.putData(proj.getShortCut(), proj.getID());
+			projectPathes.putData(study.getShortCut(), study.getID());
 		}
-		return proj.save();
+		studyTimes.put(study.getID(), study.getModifiedDate());
 	}
 	
 	/**
@@ -198,5 +252,38 @@ public class StudyManager implements DataRetriever<String, Study> {
 		.onFailure(err -> idPromise.fail(err));		
 		return idPromise.future();
 	}
+
+	public Future<Void> activate(Study study) {
+		// activate the instance,		
+		study.activate();
+		// set the modified date
+		study.setModifiedDate();
+		// update the information
+		updateStudy(study);
+		// and save the study.
+		return study.save().mapEmpty();		
+	}
+
 	
+	public Future<Void> deactivate(Study study) {
+		// activate the instance,		
+		study.deactivate();
+		// set the modified date
+		study.setModifiedDate();
+		// update the information
+		updateStudy(study);
+		// and save the study.
+		return study.save().mapEmpty();		
+	}
+	
+	public Future<Void> updateStudy(Study study, JsonObject newData)
+	{
+		Promise<Void> updatePromise = Promise.promise();
+		study.updateStudy(newData).onSuccess(modifiedDate -> {
+			updateStudy(study);
+			updatePromise.complete();
+		})
+		.onFailure(err -> updatePromise.fail(err));
+		return updatePromise.future();
+	}
 }

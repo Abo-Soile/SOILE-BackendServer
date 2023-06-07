@@ -133,7 +133,7 @@ public class ParticipantHandler {
 	public Future<Participant> createParticipant(String projectInstanceID)
 	{
 		Promise<Participant> particpantPromise = Promise.promise();
-		studyHandler.loadStudy(projectInstanceID)
+		studyHandler.loadUpToDateStudy(projectInstanceID)
 		.onSuccess( projectInstance -> {
 			manager.createParticipant(projectInstance)
 			.onSuccess(participant -> particpantPromise.complete(participant))

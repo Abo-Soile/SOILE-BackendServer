@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -24,7 +23,9 @@ import io.vertx.ext.auth.VertxContextPRNG;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.handler.HttpException;
 /**
- * This is a Project stored in a (most likely git) Database. 
+ * This is a Project stored in a (most likely git) Database.
+ * Both the participants field and the tokens fields are independent of the the this Object and always directly retrieved from the database
+ *   
  * @author thomas
  *
  */
@@ -47,7 +48,7 @@ public class DBStudy extends Study{
 		Promise<JsonObject> saveSuccess = Promise.<JsonObject>promise();
 		//TODO: If we at some point allow later modification of Name and shortcut, we need to add checks here that they do not conflict
 		// For an implementation have a look at @ElementToDBProjectInstance
-		// remove id and participants, these are handled directly.
+		// remove id.
 		
 		JsonObject update = new JsonObject().put("$set", toDBJson());
 		update.remove("_id");		
@@ -119,7 +120,7 @@ public class DBStudy extends Study{
 				loadSuccess.fail(new ObjectDoesNotExist(instanceID));
 			}
 			else
-			{		
+			{				
 				LOGGER.debug(instanceJson.encodePrettily());									
 				projectManager.getGitJson(instanceJson.getString("sourceUUID"),instanceJson.getString("version"))
 				.onSuccess(projectData -> 
@@ -156,7 +157,7 @@ public class DBStudy extends Study{
 		Promise<JsonArray> resetPromise = Promise.<JsonArray>promise();
 		client.findOneAndUpdate(getTargetCollection(), query, new JsonObject().put("$set",new JsonObject().put("participants", new JsonArray()))
 																			  .put("$unset", new JsonObject().put("usedTokens", "")
-																					  						 .put("accessTokens","")
+																					  						 .put("signupTokens","")
 																					  						 .put("permanentAccessToken", "")))
 		.onSuccess(result -> {
 			resetPromise.complete(result.getJsonArray("participants", new JsonArray()));
@@ -190,7 +191,6 @@ public class DBStudy extends Study{
 			}
 			else
 			{
-				participants.add(p.getID());		
 				updatePromise.complete();
 			}
 		})
@@ -226,7 +226,6 @@ public class DBStudy extends Study{
 			}
 			else
 			{
-				participants.remove(p.getID());		
 				updatePromise.complete(true);
 			}
 		})
@@ -249,29 +248,27 @@ public class DBStudy extends Study{
 	}
 
 	@Override
-	public Future<Void> deactivate()
+	public void deactivate()
 	{
-		isActive = false;
-		return save().mapEmpty();
+		isActive = false;		
 	}
 
 	@Override
-	public Future<Void> activate()
+	public void activate()
 	{
-		isActive = true;
-		return save().mapEmpty();
+		isActive = true;		
 	}
 
 	@Override
-	public Future<JsonArray> createAccessTokens(int count) {		 
+	public Future<JsonArray> createSignupTokens(int count) {		 
 		Promise<JsonArray> tokenPromise = Promise.promise();				
 		JsonObject query = new JsonObject().put("_id", instanceID);
-		client.findOne(getTargetCollection(), query, new JsonObject().put("accessTokens", 1).put("usedTokens", 1))
+		client.findOne(getTargetCollection(), query, new JsonObject().put("signupTokens", 1).put("usedTokens", 1))
 		.onSuccess( res -> {
 			// TODO: Check, whether there are more efficient ways to do this...
 			JsonArray newTokens = new JsonArray();
 			Set<Object> currentTokens = new HashSet<Object>();
-			for(Object o : res.getJsonArray("accessTokens", new JsonArray()))
+			for(Object o : res.getJsonArray("signupTokens", new JsonArray()))
 			{
 				currentTokens.add(o);
 			}
@@ -294,7 +291,7 @@ public class DBStudy extends Study{
 				}					
 			}			
 			LOGGER.debug("New tokens are:\n" + newTokens.encodePrettily());
-			client.updateCollection(getTargetCollection(), query, new JsonObject().put("$push", new JsonObject().put("accessTokens",new JsonObject().put("$each", newTokens))))
+			client.updateCollection(getTargetCollection(), query, new JsonObject().put("$push", new JsonObject().put("signupTokens",new JsonObject().put("$each", newTokens))))
 			.onSuccess( updated -> {
 
 				tokenPromise.complete(newTokens);
@@ -322,7 +319,7 @@ public class DBStudy extends Study{
 		if(token.length() == 30)
 		{
 			LOGGER.debug("Testing single use Access Token");
-			client.updateCollection(getTargetCollection(), query, new JsonObject().put("$pull", new JsonObject().put("accessTokens",token)))
+			client.updateCollection(getTargetCollection(), query, new JsonObject().put("$pull", new JsonObject().put("signupTokens",token)))
 			.onSuccess( updated -> {
 				LOGGER.debug(updated.toJson().encodePrettily());
 				if(updated.getDocModified() == 0)
@@ -360,6 +357,18 @@ public class DBStudy extends Study{
 	}
 
 	@Override
+	public Future<JsonObject> getTokenInformation() {
+		return client.findOne(getTargetCollection(), new JsonObject().put("_id", getID()), new JsonObject().put("signupTokens", 1).put("permanentAccessToken", 1).put("usedTokens", 1))
+				.map(data -> { 
+					JsonObject result = new JsonObject();
+					result.put("signupTokens", data.getJsonArray("signupTokens",new JsonArray()))
+						  .put("permanentAccessToken", data.getString("permanentAccessToken",""))
+						  .put("usedTokens", data.getJsonArray("usedTokens",new JsonArray()));
+					return result;
+					});			
+	}
+	
+	@Override
 	public FieldSpecifications getUpdateableDBFields() {
 		
 		return new FieldSpecifications().put(new FieldSpecification("description", String.class, () -> "", true))
@@ -387,6 +396,12 @@ public class DBStudy extends Study{
 															.add(new JsonObject().put("_id", new JsonObject().put("$ne", getID())))
 												);
 		return client.findOne(getTargetCollection(), query, null).map(res -> { return res == null; });		
+	}
+
+	@Override
+	public Future<Long> getStoredModificationDate() {
+		return client.findOne(getTargetCollection(), new JsonObject().put("_id", getID()), new JsonObject().put("modifiedStamp", 1))
+		.map(data -> data.getLong("modifiedStamp"));	
 	}
 	
 

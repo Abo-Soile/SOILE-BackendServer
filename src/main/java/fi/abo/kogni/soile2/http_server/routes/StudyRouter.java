@@ -167,16 +167,12 @@ public class StudyRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadStudy(requestedInstanceID)
+			instanceHandler.deactivate(requestedInstanceID)
 			.onSuccess(project -> {	
-				// this list needs to be filtered by access
-				project.deactivate()
-				.onSuccess(success -> {
 					context.response()
 					.setStatusCode(200)						
 					.end();
-				})
-				.onFailure(err -> handleError(err, context));
+			
 			})
 			.onFailure(err -> handleError(err, context));
 		})
@@ -191,16 +187,12 @@ public class StudyRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadStudy(requestedInstanceID)
+			instanceHandler.activate(requestedInstanceID)
 			.onSuccess(project -> {	
 				// this list needs to be filtered by access
-				project.activate()
-				.onSuccess(success -> {
 					context.response()
 					.setStatusCode(200)						
 					.end();
-				})
-				.onFailure(err -> handleError(err, context));
 			})
 			.onFailure(err -> handleError(err, context));
 		})
@@ -246,7 +238,7 @@ public class StudyRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadStudy(requestedInstanceID)
+			instanceHandler.loadPotentiallyOutdatedStudy(requestedInstanceID)
 			.onSuccess(study -> {					
 				//
 				
@@ -280,7 +272,7 @@ public class StudyRouter extends SoileRouter {
 
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> {
-			instanceHandler.loadStudy(requestedInstanceID)
+			instanceHandler.loadUpToDateStudy(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -329,7 +321,7 @@ public class StudyRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{			
-			instanceHandler.loadStudy(requestedInstanceID)
+			instanceHandler.loadUpToDateStudy(requestedInstanceID)
 			.onSuccess(study-> {				
 				context.response()
 				.setStatusCode(200)				
@@ -466,7 +458,30 @@ public class StudyRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
-
+	
+	public void getTokenInformation(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = params.pathParameter("id").getString();
+		
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		.onSuccess(Void -> 
+		{
+			instanceHandler.loadPotentiallyOutdatedStudy(requestedInstanceID)
+			.onSuccess(currentStudy -> {
+				currentStudy.getTokenInformation()
+				.onSuccess(tokenInformation -> {
+					context.response()
+					.setStatusCode(200)
+					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+					.end(tokenInformation.encode());
+				})
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));		
+	}
 
 	public void createTokens(RoutingContext context)
 	{				
@@ -479,7 +494,7 @@ public class StudyRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,false)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadStudy(requestedInstanceID)
+			instanceHandler.loadPotentiallyOutdatedStudy(requestedInstanceID)
 			.onSuccess(instance -> {
 				if(unique)
 				{
@@ -495,7 +510,7 @@ public class StudyRouter extends SoileRouter {
 				else
 				{
 
-					instance.createAccessTokens(count).
+					instance.createSignupTokens(count).
 					onSuccess(tokenArray -> {
 						LOGGER.debug("Replying with: \n " + tokenArray.encodePrettily());
 						context.response()

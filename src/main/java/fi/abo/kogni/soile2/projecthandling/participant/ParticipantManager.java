@@ -100,6 +100,34 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		handler.handle(getElement(key));
 	}
 
+	@Override
+	public Future<Participant> getElementIfDirty(String key) {
+		Promise<Participant> dirtyPromise = Promise.promise();
+		client.findOne(participantCollection,  new JsonObject().put("_id", key), new JsonObject().put("modifiedStamp",1))
+		.onSuccess(res -> {
+			if(dirtyTimeStamps.get(key) >= res.getLong("modifiedStamp"))
+			{
+				dirtyPromise.complete(null);
+			}
+			else
+			{
+				getElement(key).onSuccess(part ->
+				{
+							dirtyPromise.complete(part);
+				})
+				.onFailure(err -> dirtyPromise.fail(err));
+			}
+		})
+		.onFailure(err -> dirtyPromise.fail(err));
+		return dirtyPromise.future();
+	}
+
+	@Override
+	public void getElementIfDirty(String key, Handler<AsyncResult<Participant>> handler) {
+		handler.handle(getElementIfDirty(key));		
+	}
+
+	
 	/**
 	 * Create a new Participant with empty information and retrieve a new ID from the 
 	 * database.
@@ -147,7 +175,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		VertxContextPRNG rng = VertxContextPRNG.current();		
 		// the token contains the project ID, to retrieve it from the token, if needed.
 		String Token = rng.nextString(35) + "$"+ p.getID();		
-		defaultParticipant.put("accessToken", usedToken);
+		defaultParticipant.put("signupToken", usedToken);
 		client.save(participantCollection,defaultParticipant).onSuccess(res ->
 		{					
 			// this ensures, that the generated token is UNIQUE for the participant collection and still cannot be easily guessed. 
@@ -319,35 +347,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		.onFailure(err -> savePromise.fail(err));				
 		return savePromise.future();
 	}
-	
-	
-	@Override
-	public Future<Participant> getElementIfDirty(String key) {
-		Promise<Participant> dirtyPromise = Promise.promise();
-		client.findOne(participantCollection,  new JsonObject().put("_id", key), new JsonObject().put("modifiedStamp",1))
-		.onSuccess(res -> {
-			if(dirtyTimeStamps.get(key) >= res.getLong("modifiedStamp"))
-			{
-				dirtyPromise.complete(null);
-			}
-			else
-			{
-				getElement(key).onSuccess(part ->
-				{
-							dirtyPromise.complete(part);
-				})
-				.onFailure(err -> dirtyPromise.fail(err));
-			}
-		})
-		.onFailure(err -> dirtyPromise.fail(err));
-		return dirtyPromise.future();
-	}
-
-	@Override
-	public void getElementIfDirty(String key, Handler<AsyncResult<Participant>> handler) {
-		handler.handle(getElementIfDirty(key));		
-	}
-	
+		
 	
 	/**
 	 * Update the results for the given task. 

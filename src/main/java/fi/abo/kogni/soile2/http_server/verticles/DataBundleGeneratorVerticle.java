@@ -440,7 +440,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		Promise<Download> collectionStartedPromise = Promise.promise();
 		createDLID(projectID)
 		.onSuccess(dlID -> {
-			projHandler.loadStudy(projectID)
+			projHandler.loadUpToDateStudy(projectID)
 			.onSuccess(projectInstance ->
 			{		
 				client.updateCollection(downloadCollection, new JsonObject().put("_id",dlID), statusUpdate(DownloadStatus.collecting))

@@ -177,7 +177,7 @@ public class DBProjectTest extends GitTest{
 				Async permAsync = context.async();
 				projInstance.createPermanentAccessToken()
 				.onSuccess(permToken -> {				
-					projInstance.createAccessTokens(20)
+					projInstance.createSignupTokens(20)
 					.onSuccess(tokens -> {
 
 						mongo_client.findOne(projInstance.getTargetCollection(), new JsonObject().put("_id", projInstance.getID()), null)

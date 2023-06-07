@@ -24,7 +24,7 @@ public class ProjectFactoryImplForTesting implements StudyFactory{
 	
 	private class TestProject extends Study
 	{
-
+		JsonArray participants = new JsonArray();
 		@Override
 		public Future<JsonObject> save() {
 			// do nothing;
@@ -64,21 +64,19 @@ public class ProjectFactoryImplForTesting implements StudyFactory{
 
 		@Override
 		public Future<JsonArray> getParticipants() {
-			return Future.succeededFuture(new JsonArray(List.copyOf(participants)));
+			return Future.succeededFuture(participants.copy());
 		}
 
 		@Override
-		public Future<Void> deactivate() {
-			return Future.succeededFuture();
+		public void deactivate() {			
 		}
 
 		@Override
-		public Future<Void> activate() {
-			return Future.succeededFuture();
+		public void activate() {			
 		}
 
 		@Override
-		public Future<JsonArray> createAccessTokens(int count) {
+		public Future<JsonArray> createSignupTokens(int count) {
 			return null;
 		}
 
@@ -108,6 +106,18 @@ public class ProjectFactoryImplForTesting implements StudyFactory{
 		protected Future<Boolean> checkShortCutAvailable(String shortcut) {
 			// TODO Auto-generated method stub
 			return Future.succeededFuture(true);
+		}
+
+		@Override
+		public Future<Long> getStoredModificationDate() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public Future<JsonObject> getTokenInformation() {
+			// TODO Auto-generated method stub
+			return null;
 		}		
 	}
 	
