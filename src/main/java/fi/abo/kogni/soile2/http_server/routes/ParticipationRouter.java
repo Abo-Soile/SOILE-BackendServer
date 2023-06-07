@@ -626,14 +626,18 @@ public class ParticipationRouter extends SoileRouter{
 		Promise<Study> projPromise = Promise.promise();
 		instanceHandler.loadUpToDateStudy(id).
 		onSuccess(project -> {
-			if(project.isActive())
-			{				
-				projPromise.complete(project);
-			}
-			else
-			{
-				projPromise.fail(new HttpException(410,"Project is currently inactive"));
-			}
+			project.isActive()
+			.onSuccess(active -> {
+				if(active)
+				{
+					projPromise.complete(project);	
+				}
+				else
+				{
+					projPromise.fail(new HttpException(410,"Project is currently inactive"));	
+				}
+			})
+			.onFailure(err -> projPromise.fail(err));			
 		})
 		.onFailure(err -> projPromise.fail(err));
 		return projPromise.future();

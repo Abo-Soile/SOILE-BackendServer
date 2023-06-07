@@ -40,26 +40,28 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 			System.out.println("------------------------------------------------Project created");
 			projHandler.createProjectInstance(projectData.put("name", "NewProjectInstance").put("private", false))
 			.onSuccess(proj -> {
-				System.out.println("------------------------------------------------Project Instance created");
-				partHandler.create(proj)
-				.onSuccess(participant1 -> {
-					System.out.println("------------------------------------------------Participant 1 created");
-					proj.startStudy(participant1)
-					.onSuccess(taskID -> {
-						System.out.println("------------------------------------------------Participant 1 started");
-						participant1.getCurrentStep()
-						// create The File Data
-						.onSuccess(stepVal -> 
-						{
-							System.out.println("------------------------------------------------Current step obtained");
-							createUpload(participant1, stepVal, taskID, dlm)
+				proj.activate()
+				.onSuccess(activated -> {
+					System.out.println("------------------------------------------------Project Instance created");
+					partHandler.create(proj)
+					.onSuccess(participant1 -> {
+						System.out.println("------------------------------------------------Participant 1 created");
+						proj.startStudy(participant1)
+						.onSuccess(taskID -> {
+							System.out.println("------------------------------------------------Participant 1 started");
+							participant1.getCurrentStep()
+							// create The File Data
+							.onSuccess(stepVal -> 
+							{
+								System.out.println("------------------------------------------------Current step obtained");
+								createUpload(participant1, stepVal, taskID, dlm)
 								.onSuccess( fileData -> {
 									System.out.println("------------------------------------------------Upload created");
 									//now, build the result data
 									nonSmokerQuestionaireOutput.put("resultData", new JsonObject().put("fileData", fileData)
 											.put("jsonData", new JsonArray().add(new JsonObject().put("name", "something")
-											.put("value", "more"))))
-											.put("taskID", taskID);
+													.put("value", "more"))))
+									.put("taskID", taskID);
 									proj.finishStep(participant1, nonSmokerQuestionaireOutput)
 									.onSuccess(res -> {
 										System.out.println("------------------------------------------------Step finished");
@@ -96,47 +98,48 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 											.onFailure(err -> context.fail(err));
 										})
 										.onFailure(err -> context.fail(err));												
-										
+
 									})
 									.onFailure(err -> context.fail(err));
 								})
 								.onFailure(err -> context.fail(err));
+							})
+							.onFailure(err -> context.fail(err));
+						})
+						.onFailure(err -> context.fail(err));					
 					})
-						.onFailure(err -> context.fail(err));
+					.onFailure(err -> context.fail(err));	
+
+
 				})
-					.onFailure(err -> context.fail(err));					
-
-
-
-			})
 				.onFailure(err -> context.fail(err));
-		})
+			})
 			.onFailure(err -> context.fail(err));
-	})
-		.onFailure(err -> context.fail(err));
-}
-
-private Future<JsonArray> createUpload(Participant participant, int p1step, String position1, ParticipantDataLakeManager dlm)
-{
-	Promise<JsonArray> resultData = Promise.promise();
-	String dataDir = DataBundleTest.class.getClassLoader().getResource("FileTestData").getPath();		
-	try {
-		String tempDataDir = DataProvider.createTempDataDirectory(dataDir);
-		// Add some Files for the participants
-		FileUpload tempUpload = DataProvider.getFileUploadForTarget(Path.of(tempDataDir,"ImageData.jpg").toString(), "TestImage.jpg", "image/jpg");
-		dlm.storeParticipantData(participant.getID(), p1step, position1, tempUpload)
-		.onSuccess(fileID1 -> {					
-
-			resultData.complete(new JsonArray().add(new JsonObject().put("targetid", fileID1)
-					.put("fileformat", "image/jpg")
-					.put("filename", "TestImage.jpg")));
 		})
-		.onFailure(err -> resultData.fail(err));
+		.onFailure(err -> context.fail(err));
 	}
-	catch(Exception e)
+
+	private Future<JsonArray> createUpload(Participant participant, int p1step, String position1, ParticipantDataLakeManager dlm)
 	{
-		resultData.fail(e);					
+		Promise<JsonArray> resultData = Promise.promise();
+		String dataDir = DataBundleTest.class.getClassLoader().getResource("FileTestData").getPath();		
+		try {
+			String tempDataDir = DataProvider.createTempDataDirectory(dataDir);
+			// Add some Files for the participants
+			FileUpload tempUpload = DataProvider.getFileUploadForTarget(Path.of(tempDataDir,"ImageData.jpg").toString(), "TestImage.jpg", "image/jpg");
+			dlm.storeParticipantData(participant.getID(), p1step, position1, tempUpload)
+			.onSuccess(fileID1 -> {					
+
+				resultData.complete(new JsonArray().add(new JsonObject().put("targetid", fileID1)
+						.put("fileformat", "image/jpg")
+						.put("filename", "TestImage.jpg")));
+			})
+			.onFailure(err -> resultData.fail(err));
+		}
+		catch(Exception e)
+		{
+			resultData.fail(e);					
+		}
+		return resultData.future();
 	}
-	return resultData.future();
-}
 }

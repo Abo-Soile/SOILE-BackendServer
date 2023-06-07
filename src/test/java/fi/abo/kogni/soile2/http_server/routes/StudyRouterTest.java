@@ -82,9 +82,9 @@ public class StudyRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 
-	
-	
-	
+
+
+
 	/**
 	 * This test tests both starting and getting the list of running projects.
 	 * @param context
@@ -280,77 +280,81 @@ public class StudyRouterTest extends SoileWebTest {
 			.onSuccess(wrongSession -> {
 				WebObjectCreator.createProject(authedSession, "Testproject")
 				.onSuccess(projectData -> {
-					String projectID = projectData.getString("UUID");
-					String projectVersion = projectData.getString("version");
-					WebObjectCreator.createProject(authedSession, "ExampleProject")
-					.onSuccess(projectData2 -> {
-						String projectID2 = projectData2.getString("UUID");
-						String projectVersion2 = projectData2.getString("version");
-						Async startAsync = context.async();
-						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )					
-						.onSuccess(response -> {
-							// we have a project set up. lets try to get the information.
-							String studyId = response.bodyAsJsonObject().getString("projectID");					
-							Async getsetasync = context.async();
-							POST(authedSession, "/projectexec/" + studyId, null, null)
-							.onSuccess(studyDataResponse -> {
-								POST(authedSession, "/projectexec/" + studyId + "/signup", null,null)
-								.onSuccess(res -> {
-									JsonObject studyData = studyDataResponse.bodyAsJsonObject();
-									JsonObject studyData2 = studyDataResponse.bodyAsJsonObject();
-									context.assertEquals("newShortcut", studyData.getString("shortcut"));
-									context.assertEquals(projectID, studyData.getString("sourceUUID"));
-									context.assertEquals(projectVersion, studyData.getString("version"));
-									context.assertEquals(true, studyData.getBoolean("private"));
-									studyData.put("private", false);
-									studyData.put("sourceUUID", projectID2);
-									studyData.put("version", projectVersion2);
-									Async failAsync = context.async();
-									POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData)
-									.onSuccess(updateResponse -> {
-										context.fail("This should not be possible");
-									})
-									.onFailure(err -> failAsync.complete());	
-									studyData2.put("private",false);
-									studyData2.put("shortDescription","Fancy");		
-									POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData2)
-									.onSuccess(updateResponse -> {
-										POST(authedSession, "/projectexec/" + studyId, null, null)
-										.onSuccess(updatedstudyDataResponse -> {
-											JsonObject studyDatanew = updatedstudyDataResponse.bodyAsJsonObject();
-											context.assertEquals("Fancy", studyDatanew.getString("shortDescription"));
-											context.assertEquals(projectID, studyDatanew.getString("sourceUUID"));
-											context.assertEquals(projectVersion, studyDatanew.getString("version"));
-											context.assertEquals(false, studyDatanew.getBoolean("private"));
-											getsetasync.complete();
+					String projectID = projectData.getString("UUID");					
+						String projectVersion = projectData.getString("version");
+						WebObjectCreator.createProject(authedSession, "ExampleProject")
+						.onSuccess(projectData2 -> {
+							String projectID2 = projectData2.getString("UUID");						
+							String projectVersion2 = projectData2.getString("version");
+							Async startAsync = context.async();
+							POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )					
+							.onSuccess(response -> {
+								// we have a project set up. lets try to get the information.
+								String studyId = response.bodyAsJsonObject().getString("projectID");					
+								Async getsetasync = context.async();
+								POST(authedSession, "/projectexec/" + studyId + "/restart", null, null)
+								.onSuccess(active2 -> {
+									POST(authedSession, "/projectexec/" + studyId, null, null)
+									.onSuccess(studyDataResponse -> {
+										POST(authedSession, "/projectexec/" + studyId + "/signup", null,null)
+										.onSuccess(res -> {
+											JsonObject studyData = studyDataResponse.bodyAsJsonObject();
+											JsonObject studyData2 = studyDataResponse.bodyAsJsonObject();
+											context.assertEquals("newShortcut", studyData.getString("shortcut"));
+											context.assertEquals(projectID, studyData.getString("sourceUUID"));
+											context.assertEquals(projectVersion, studyData.getString("version"));
+											context.assertEquals(true, studyData.getBoolean("private"));
+											studyData.put("private", false);
+											studyData.put("sourceUUID", projectID2);
+											studyData.put("version", projectVersion2);
+											Async failAsync = context.async();
+											POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData)
+											.onSuccess(updateResponse -> {
+												context.fail("This should not be possible");
+											})
+											.onFailure(err -> failAsync.complete());	
+											studyData2.put("private",false);
+											studyData2.put("shortDescription","Fancy");		
+											POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData2)
+											.onSuccess(updateResponse -> {
+												POST(authedSession, "/projectexec/" + studyId, null, null)
+												.onSuccess(updatedstudyDataResponse -> {
+													JsonObject studyDatanew = updatedstudyDataResponse.bodyAsJsonObject();
+													context.assertEquals("Fancy", studyDatanew.getString("shortDescription"));
+													context.assertEquals(projectID, studyDatanew.getString("sourceUUID"));
+													context.assertEquals(projectVersion, studyDatanew.getString("version"));
+													context.assertEquals(false, studyDatanew.getBoolean("private"));
+													getsetasync.complete();
+												})
+												.onFailure(err -> context.fail(err));
+
+											})									
+											.onFailure(err -> context.fail(err));									
 										})
 										.onFailure(err -> context.fail(err));
 
-									})									
-									.onFailure(err -> context.fail(err));									
+									})
+									.onFailure(err -> context.fail(err));
+									Async failedAsync = context.async();
+									POST(wrongSession, "/projectexec/" + studyId, null,null)
+									.onSuccess(listresponse -> {
+										context.fail("Does not have accesss");
+									})
+									.onFailure(err -> {
+										context.assertEquals(403, ((HttpException)err).getStatusCode());
+										failedAsync.complete();
+									});
+									startAsync.complete();
 								})
-								.onFailure(err -> context.fail(err));
+								.onFailure(err -> context.fail(err));	
 
+								setupAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));
-							Async failedAsync = context.async();
-							POST(wrongSession, "/projectexec/" + studyId, null,null)
-							.onSuccess(listresponse -> {
-								context.fail("Does not have accesss");
-							})
-							.onFailure(err -> {
-								context.assertEquals(403, ((HttpException)err).getStatusCode());
-								failedAsync.complete();
-							});
-							startAsync.complete();
 						})
-						.onFailure(err -> context.fail(err));	
-
-						setupAsync.complete();
+						.onFailure(err -> context.fail(err));
 					})
 					.onFailure(err -> context.fail(err));
-				})
-				.onFailure(err -> context.fail(err));
 
 			})
 			.onFailure(err -> context.fail(err));
@@ -467,7 +471,7 @@ public class StudyRouterTest extends SoileWebTest {
 						.onSuccess(Response -> {
 							JsonObject tokeninfo = Response.bodyAsJsonObject();
 							System.out.println(tokeninfo.encodePrettily());
-							
+
 							context.assertEquals(1, tokeninfo.getJsonArray("usedTokens").size());
 							context.assertEquals(createdTokens.getString(0), tokeninfo.getJsonArray("usedTokens").getString(0));
 							context.assertFalse(tokeninfo.getJsonArray("signupTokens").contains(createdTokens.getString(0)));
@@ -482,7 +486,7 @@ public class StudyRouterTest extends SoileWebTest {
 							requestTokensAsync.complete();
 						})
 						.onFailure(err -> context.fail(err));	
-						
+
 						setupAsync.complete();	
 					})
 					.onFailure(err -> context.fail(err));										
@@ -492,6 +496,6 @@ public class StudyRouterTest extends SoileWebTest {
 			.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
-		
+
 	}
 }

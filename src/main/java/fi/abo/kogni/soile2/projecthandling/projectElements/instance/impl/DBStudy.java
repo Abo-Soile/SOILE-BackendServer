@@ -174,27 +174,34 @@ public class DBStudy extends Study{
 	@Override
 	public synchronized Future<Void> addParticipant(Participant p)
 	{
-		if(!isActive)
-		{
-			return Future.failedFuture(new ProjectIsInactiveException(name));
-		}
-
 		Promise<Void> updatePromise = Promise.promise();
-		JsonObject update = new JsonObject().put("$push", new JsonObject().put("participants",p.getID()));
-		client.updateCollection(getTargetCollection(), new JsonObject().put("_id", instanceID), update )
-		.onSuccess(res -> {
-			if(res.getDocModified() != 1)
+		isActive()
+		.onSuccess(active -> {
+			if(!active)
 			{
-				LOGGER.error("Modified multiple object while only one ID was provided! Project was: " + instanceID );
-				updatePromise.fail("Mongo Error");
-
+				updatePromise.fail(new ProjectIsInactiveException(name));
 			}
 			else
 			{
-				updatePromise.complete();
+				JsonObject update = new JsonObject().put("$push", new JsonObject().put("participants",p.getID()));
+				client.updateCollection(getTargetCollection(), new JsonObject().put("_id", instanceID), update )
+				.onSuccess(res -> {
+					if(res.getDocModified() != 1)
+					{
+						LOGGER.error("Modified multiple object while only one ID was provided! Project was: " + instanceID );
+						updatePromise.fail("Mongo Error");
+
+					}
+					else
+					{
+						updatePromise.complete();
+					}
+				})
+				.onFailure(err -> updatePromise.fail(err));	
 			}
 		})
-		.onFailure(err -> updatePromise.fail(err));		
+		.onFailure(err -> updatePromise.fail(err));
+					
 		return updatePromise.future();
 	}
 
@@ -248,17 +255,28 @@ public class DBStudy extends Study{
 	}
 
 	@Override
-	public void deactivate()
+	public Future<Void> deactivate()
 	{
-		isActive = false;		
+		return client.findOneAndUpdate(getTargetCollection(), createStudyQuery(), new JsonObject().put("$set", new JsonObject().put("active", false))).mapEmpty();		
 	}
 
 	@Override
-	public void activate()
+	public Future<Void> activate()
 	{
-		isActive = true;		
+		return client.findOneAndUpdate(getTargetCollection(), createStudyQuery(), new JsonObject().put("$set", new JsonObject().put("active", true))).mapEmpty();		
 	}
-
+	
+	@Override
+	public Future<Boolean> isActive()
+	{
+		return client.findOne(getTargetCollection(), createStudyQuery(), new JsonObject().put("active", 1)).map(activitistate -> activitistate.getBoolean("active", true));		
+	}
+	
+	private JsonObject createStudyQuery()
+	{
+		return new JsonObject().put("_id", getID());
+	}
+	
 	@Override
 	public Future<JsonArray> createSignupTokens(int count) {		 
 		Promise<JsonArray> tokenPromise = Promise.promise();				

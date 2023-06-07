@@ -10,6 +10,7 @@ import fi.abo.kogni.soile2.projecthandling.ProjectBaseTest;
 import fi.abo.kogni.soile2.projecthandling.exceptions.InvalidPositionException;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import fi.abo.kogni.soile2.projecthandling.utils.ProjectFactoryImplForTesting;
@@ -33,26 +34,30 @@ public class ParticipantHandlerTest extends GitTest{
 		ObjectGenerator.buildAPIProject(ElementManager.getProjectManager(mongo_client, vertx), ElementManager.getExperimentManager(mongo_client, vertx), ElementManager.getTaskManager(mongo_client, vertx), mongo_client, "Testproject")
 		.onSuccess(apiProject-> {
 			projHandler.createProjectInstance(apiProject.getAPIJson())
-			.onSuccess(projectInstance -> {			
-				LinkedList<Future> participantFutures = new LinkedList<Future>();
-				participantFutures.add(partHandler.createParticipant(projectInstance.getID()));
-				participantFutures.add(partHandler.createParticipant(projectInstance.getID()));
-				participantFutures.add(partHandler.createParticipant(projectInstance.getID()));
-				CompositeFuture.all(participantFutures).mapEmpty()
-				.onSuccess(res -> {
-					partHandler.getParticipantStatusForProject(projectInstance)
-					.onSuccess(participantInfo -> 
-					{
-						context.assertEquals(3, participantInfo.size());
-						for(int i = 0; i < participantInfo.size(); ++i)
+			.onSuccess(projectInstance -> {
+				projectInstance.activate()
+				.onSuccess(active -> {
+					LinkedList<Future> participantFutures = new LinkedList<Future>();
+					participantFutures.add(partHandler.createParticipant(projectInstance.getID()));
+					participantFutures.add(partHandler.createParticipant(projectInstance.getID()));
+					participantFutures.add(partHandler.createParticipant(projectInstance.getID()));
+					CompositeFuture.all(participantFutures).mapEmpty()
+					.onSuccess(res -> {
+						partHandler.getParticipantStatusForProject(projectInstance)
+						.onSuccess(participantInfo -> 
 						{
-							context.assertFalse(participantInfo.getJsonObject(i).getBoolean("finished"));
-						}
-						testAsync.complete();
+							context.assertEquals(3, participantInfo.size());
+							for(int i = 0; i < participantInfo.size(); ++i)
+							{
+								context.assertFalse(participantInfo.getJsonObject(i).getBoolean("finished"));
+							}
+							testAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
 					})
 					.onFailure(err -> context.fail(err));
 				})
-				.onFailure(err -> context.fail(err));	
+				.onFailure(err -> context.fail(err));
 			})
 			.onFailure(err -> context.fail(err));
 
@@ -174,51 +179,55 @@ public class ParticipantHandlerTest extends GitTest{
 				.put("name", "smoker")
 				.put("value", 1);
 		JsonObject smokerQuestionaireOutput = new JsonObject().put("persistentData", new JsonArray().add(smokerOutput)).put("outputData", new JsonArray().add(smokerOutput));
-		
+
 		ElementManager<Project> projectManager = ElementManager.getProjectManager(mongo_client, vertx);
 		ObjectGenerator.buildAPIProject(projectManager, ElementManager.getExperimentManager(mongo_client, vertx), ElementManager.getTaskManager(mongo_client, vertx), mongo_client, "Testproject2")
 		.onSuccess(apiProject-> {
 			projHandler.createProjectInstance(apiProject.getAPIJson())
-			.onSuccess(projectInstance -> {				
-				projectManager.getGitJson(apiProject.getUUID(), apiProject.getVersion())
-				.onSuccess(gitJson -> {
-					partHandler.createParticipant(projectInstance.getID())				
-					.onSuccess( participant -> 
-					{				
-						projectInstance.startStudy(participant)
-						.onSuccess(position -> {
-							partHandler.getParticipant(participant.getID())
-							.onSuccess(participant2 -> 
-							{
-								context.assertEquals(participant, participant2);
-								context.assertFalse(participant == participant2);
+			.onSuccess(projectInstance -> {		
+				projectInstance.activate()
+				.onSuccess(active -> {
+					projectManager.getGitJson(apiProject.getUUID(), apiProject.getVersion())
+					.onSuccess(gitJson -> {
+						partHandler.createParticipant(projectInstance.getID())				
+						.onSuccess( participant -> 
+						{				
+							projectInstance.startStudy(participant)
+							.onSuccess(position -> {
 								partHandler.getParticipant(participant.getID())
-								.onSuccess(participant3 -> 
+								.onSuccess(participant2 -> 
 								{
-									context.assertEquals(participant, participant3);
-									// those should be the very same object as retrieved by the participantHandler.
-									context.assertTrue(participant2 == participant3);
-									context.assertFalse(participant == participant3);
-									//
-									projectInstance.finishStep(participant, smokerQuestionaireOutput.put("taskID", position))
-									.onSuccess(res -> {
-										partHandler.getParticipant(participant.getID())
-										.onSuccess(participant4 ->
-										{
-											//this should be a new object, as the participant should have been made "dirty"
-											context.assertEquals(participant, participant4);
-											// those should be the very same object as retrieved by the participantHandler.									
-											context.assertFalse(participant == participant4);
-											context.assertFalse(participant2 == participant4);
-											testAsync.complete();			
+									context.assertEquals(participant, participant2);
+									context.assertFalse(participant == participant2);
+									partHandler.getParticipant(participant.getID())
+									.onSuccess(participant3 -> 
+									{
+										context.assertEquals(participant, participant3);
+										// those should be the very same object as retrieved by the participantHandler.
+										context.assertTrue(participant2 == participant3);
+										context.assertFalse(participant == participant3);
+										//
+										projectInstance.finishStep(participant, smokerQuestionaireOutput.put("taskID", position))
+										.onSuccess(res -> {
+											partHandler.getParticipant(participant.getID())
+											.onSuccess(participant4 ->
+											{
+												//this should be a new object, as the participant should have been made "dirty"
+												context.assertEquals(participant, participant4);
+												// those should be the very same object as retrieved by the participantHandler.									
+												context.assertFalse(participant == participant4);
+												context.assertFalse(participant2 == participant4);
+												testAsync.complete();			
+											})
+											.onFailure(err -> context.fail(err));
 										})
-										.onFailure(err -> context.fail(err));
+										.onFailure(err -> context.fail(err));		
 									})
-									.onFailure(err -> context.fail(err));		
+									.onFailure(err -> context.fail(err));														
 								})
-								.onFailure(err -> context.fail(err));														
+								.onFailure(err -> context.fail(err));					
 							})
-							.onFailure(err -> context.fail(err));					
+							.onFailure(err -> context.fail(err));
 						})
 						.onFailure(err -> context.fail(err));
 					})

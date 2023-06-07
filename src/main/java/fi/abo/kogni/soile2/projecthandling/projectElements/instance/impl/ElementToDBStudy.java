@@ -89,6 +89,7 @@ public class ElementToDBStudy extends DBStudy{
 					dbJson.put("version", inputJson.getValue("version"));
 				}
 				dbJson.put("private", inputJson.getBoolean("private",false));
+				dbJson.put("active", inputJson.getBoolean("active",false));
 				String shortcut = inputJson.getString("shortcut",null);
 				if(shortcut != null)
 				{

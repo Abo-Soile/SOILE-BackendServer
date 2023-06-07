@@ -257,7 +257,7 @@ public class WebObjectCreator {
 			experimentPromise.fail(e);
 		}
 		return experimentPromise.future();
-	}
+	}	
 	
 	@SuppressWarnings("rawtypes")
 	public static Future<JsonObject> createProject(WebClientSession webClient, String projectName)

@@ -65,7 +65,6 @@ public abstract class Study implements AccessElement{
 	 */
 	protected String name;	
 	protected String shortcut;	
-	protected boolean isActive = true;
 	protected String shortDescription;
 	protected String description;
 	protected boolean isPrivate;
@@ -205,7 +204,6 @@ public abstract class Study implements AccessElement{
 		instanceID = data.getString("_id");
 		name = data.getString("name");
 		shortcut = data.getString("shortcut",null);
-		isActive = data.getBoolean("isActive",true);
 		sourceProject = data.getJsonObject("sourceProject");
 		shortDescription = data.getString("shortDescription", "");
 		description = data.getString("description","");
@@ -307,7 +305,6 @@ public abstract class Study implements AccessElement{
 					.put("description", description )
 					.put("shortDescription", shortDescription)
 					.put("private", isPrivate)
-					.put("isActive", isActive)
 					.put("modifiedStamp", modifiedStamp);
 					
 			if(shortcut != null)
@@ -326,51 +323,60 @@ public abstract class Study implements AccessElement{
 	public Future<String> finishStep(Participant participant, JsonObject taskData)
 	{
 		LOGGER.debug("Handling participant: " + participant.toString() + " with data " + taskData.encodePrettily());
-		if(!isActive)
-		{
-			return Future.failedFuture(new ProjectIsInactiveException(name));
-		}		
 		Promise<String> finishedPromise = Promise.promise();
-		LOGGER.debug(taskData.encodePrettily());
-		if(taskData.getString("taskID") == null || !taskData.getString("taskID").equals(participant.getProjectPosition()))
-		{
-			finishedPromise.fail( new InvalidPositionException(participant.getProjectPosition(), taskData.getString("taskID")));			
-		}
-		else
-		{
-			//TODO: Check, whether the indicated outputs are actually present!
-			if(isDataOkForTask(taskData)) 
+		
+		isActive()
+		.onSuccess(active -> {
+			if(!active)
 			{
-			participant.setOutputDataForTask(participant.getProjectPosition(),taskData.getJsonArray("outputData",new JsonArray()))
-			.onSuccess(outputsSet -> {
-				participant.setPersistentData(taskData.getJsonArray("persistentData",new JsonArray()))
-				.onSuccess(persistentSet -> {
-					participant.addResult(participant.getProjectPosition(), getResultDataFromTaskData(taskData))
-					.onSuccess(v2 -> {
-						participant.finishCurrentTask()
-						.onSuccess(v3 -> {
-							setNextStep(participant).onSuccess( next -> 
-							{
-								finishedPromise.complete(next);
+				finishedPromise.fail(new ProjectIsInactiveException(name));
+			}
+			else
+			{
+				LOGGER.debug(taskData.encodePrettily());
+				if(taskData.getString("taskID") == null || !taskData.getString("taskID").equals(participant.getProjectPosition()))
+				{
+					finishedPromise.fail( new InvalidPositionException(participant.getProjectPosition(), taskData.getString("taskID")));			
+				}
+				else
+				{
+					//TODO: Check, whether the indicated outputs are actually present!
+					if(isDataOkForTask(taskData)) 
+					{
+					participant.setOutputDataForTask(participant.getProjectPosition(),taskData.getJsonArray("outputData",new JsonArray()))
+					.onSuccess(outputsSet -> {
+						participant.setPersistentData(taskData.getJsonArray("persistentData",new JsonArray()))
+						.onSuccess(persistentSet -> {
+							participant.addResult(participant.getProjectPosition(), getResultDataFromTaskData(taskData))
+							.onSuccess(v2 -> {
+								participant.finishCurrentTask()
+								.onSuccess(v3 -> {
+									setNextStep(participant).onSuccess( next -> 
+									{
+										finishedPromise.complete(next);
+									})
+									.onFailure(err -> finishedPromise.fail(err));
+								})
+								.onFailure(err -> finishedPromise.fail(err));
 							})
 							.onFailure(err -> finishedPromise.fail(err));
 						})
 						.onFailure(err -> finishedPromise.fail(err));
+						
 					})
 					.onFailure(err -> finishedPromise.fail(err));
-				})
-				.onFailure(err -> finishedPromise.fail(err));
-				
-			})
-			.onFailure(err -> finishedPromise.fail(err));
+					}
+					else
+					{
+						// TODO: Create its own Exception
+						finishedPromise.fail(new Exception("Data Missing for task"));
+					}
+					
+				}
 			}
-			else
-			{
-				// TODO: Create its own Exception
-				finishedPromise.fail(new Exception("Data Missing for task"));
-			}
-			
-		}
+		})
+		.onFailure(err -> finishedPromise.fail(err));
+
 		return finishedPromise.future();
 	}	
 	
@@ -412,10 +418,6 @@ public abstract class Study implements AccessElement{
 		}
 		LOGGER.debug(currentPersistent.encodePrettily());
 		return outputsPresent && persistentPresent;
-	}
-	
-	public boolean isActive() {
-		return isActive;
 	}
 
 	/**
@@ -474,34 +476,43 @@ public abstract class Study implements AccessElement{
 	 */
 	public Future<String> startStudy(Participant user)
 	{		
-		if(!isActive)
-		{
-			return Future.failedFuture(new ProjectIsInactiveException(name));
-		}
+		
 		Promise<String> startPositionPromise = Promise.promise();
-		LOGGER.debug("Trying to start User at position: " + getStart());
-		user.startStudy(getStart()).map(getStart())
-		.onSuccess(startElement -> {		
-			LOGGER.debug("StartElement id is: " + startElement);
-			if(elements.get(startElement) instanceof TaskObjectInstance)
+		isActive()
+		.onSuccess(active -> {
+			if(!active)
 			{
-				startPositionPromise.complete(startElement);
+				startPositionPromise.fail(new ProjectIsInactiveException(name));
 			}
 			else
 			{
-				LOGGER.debug("Element at start is: " + elements.get(startElement));
-				setNextStep(user)
-				.onSuccess(taskID -> {
-					user.startStudy(taskID)
-					.onSuccess(success -> {
-						startPositionPromise.complete(taskID);
-					})
-					.onFailure(err -> startPositionPromise.fail(err));
+				LOGGER.debug("Trying to start User at position: " + getStart());
+				user.startStudy(getStart()).map(getStart())
+				.onSuccess(startElement -> {		
+					LOGGER.debug("StartElement id is: " + startElement);
+					if(elements.get(startElement) instanceof TaskObjectInstance)
+					{
+						startPositionPromise.complete(startElement);
+					}
+					else
+					{
+						LOGGER.debug("Element at start is: " + elements.get(startElement));
+						setNextStep(user)
+						.onSuccess(taskID -> {
+							user.startStudy(taskID)
+							.onSuccess(success -> {
+								startPositionPromise.complete(taskID);
+							})
+							.onFailure(err -> startPositionPromise.fail(err));
+						})
+						.onFailure(err -> startPositionPromise.fail(err));
+					}
 				})
 				.onFailure(err -> startPositionPromise.fail(err));
 			}
 		})
 		.onFailure(err -> startPositionPromise.fail(err));
+		
 		
 		return startPositionPromise.future();
 	}
@@ -514,22 +525,48 @@ public abstract class Study implements AccessElement{
 	 */
 	public Future<String> setNextStep(Participant participant)
 	{		
-		if(!isActive)
-		{
-			return Future.failedFuture(new ProjectIsInactiveException(name));
-		}		
-		LOGGER.debug("Trying to set next step for user currently at position: " + participant.getProjectPosition());		
-		ElementInstance current = getElement(participant.getProjectPosition());
-		LOGGER.debug("Element is : " + current);
-		String nextElement = current.nextTask(participant);
-		LOGGER.debug("Next element is : " + nextElement);
-		if("".equals(nextElement) || nextElement == null)
-		{
-			// This indicates we are done. 
-			return participant.setProjectPosition(null);	
-		}
-		LOGGER.debug("Updating user position:" + current.getInstanceID() + " -> " + nextElement);		
-		return participant.setProjectPosition(nextElement);
+		Promise<String> nextStepPromise = Promise.promise(); 
+		isActive()
+		.onSuccess(active -> {
+			if(!active)
+			{
+				nextStepPromise.fail(new ProjectIsInactiveException(name));
+			}
+			else
+			{
+				LOGGER.debug("Trying to set next step for user currently at position: " + participant.getProjectPosition());		
+				ElementInstance current = getElement(participant.getProjectPosition());
+				LOGGER.debug("Element is : " + current);
+				String nextElement = current.nextTask(participant);
+				LOGGER.debug("Next element is : " + nextElement);
+				if("".equals(nextElement) || nextElement == null)
+				{
+					// This indicates we are done. 
+					participant.setProjectPosition(null)
+					.onSuccess(nextStep -> 
+					{
+						nextStepPromise.complete(nextStep);
+					})
+					.onFailure(err -> nextStepPromise.fail(err));
+					 
+				}
+				else
+				{
+					
+					LOGGER.debug("Updating user position:" + current.getInstanceID() + " -> " + nextElement);		
+					participant.setProjectPosition(nextElement)
+					.onSuccess(nextStep -> 
+					{
+						nextStepPromise.complete(nextStep);
+					})
+					.onFailure(err -> nextStepPromise.fail(err));
+					
+				}
+			}
+		})
+		.onFailure(err -> nextStepPromise.fail(err));
+		return nextStepPromise.future();
+		
 	}				
 		
 	/**
@@ -593,7 +630,6 @@ public abstract class Study implements AccessElement{
 					setSourceUUID(updateInformation.getString("sourceUUID", getSourceUUID()));
 					setSourceVersion(updateInformation.getString("version", getSourceVersion()));
 					isPrivate = updateInformation.getBoolean("private", isPrivate);
-					isActive = updateInformation.getBoolean("active", isActive);
 					description = updateInformation.getString("description", description);
 					shortDescription = updateInformation.getString("shortDescription", shortDescription);
 					shortcut = updateInformation.getString("shortcut", shortcut);				
@@ -650,13 +686,19 @@ public abstract class Study implements AccessElement{
 	 * Deactivate a project
 	 * @return A Future that succeeded if the project was successfully deactivated (or was already inactive)
 	 */
-	public abstract void deactivate();
+	public abstract Future<Void> deactivate();	
 	
 	/**
 	 * Restart a project if it was deactivated. By default a project is active.
 	 * @return A Future that succeeded if the project was successfully activated (or was already active)
 	 */
-	public abstract void activate();
+	public abstract Future<Void> activate();
+	
+	/**
+	 * Check, whether the current project is active.
+	 * @return A Future o the activity status of this Study.
+	 */
+	public abstract Future<Boolean> isActive();
 	
 	/**
 	 * Add a participant to the list of participants of this projects

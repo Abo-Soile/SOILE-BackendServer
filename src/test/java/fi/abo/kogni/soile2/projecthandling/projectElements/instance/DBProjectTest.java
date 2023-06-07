@@ -67,8 +67,8 @@ public class DBProjectTest extends GitTest{
 	public void testProgression(TestContext context)
 	{
 		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
-				   .put("value", 1)
-				   .put("timestamp", System.currentTimeMillis()));
+				.put("value", 1)
+				.put("timestamp", System.currentTimeMillis()));
 		JsonArray fileData = new JsonArray();
 		JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
 				.put("value", 1)
@@ -106,24 +106,28 @@ public class DBProjectTest extends GitTest{
 						.put("shortcut", "thisIsSomeShortcut");							
 				projInstHandler.createProjectInstance(creationJson)
 				.onSuccess(projectInstance -> {
-					Async progressionAsync = context.async(); 
-					partHandler.create(projectInstance).onSuccess(participant -> {
-						//TODO: Run the project						
-						projectInstance.startStudy(participant)
-						.onSuccess(position -> {							
-							projectInstance.finishStep(participant, result.copy().put("taskID", position))
-							.onSuccess(pos1 -> {								
-								projectInstance.finishStep(participant, result.copy().put("taskID", pos1).put("outputData", new JsonArray().add(new JsonObject().put("name", "clicktimes").put("value", 2))))
-								.onSuccess(pos2 -> {									
-									projectInstance.finishStep(participant, result.copy().put("taskID", pos2))
-									.onSuccess(pos3 -> {										
-										projectInstance.finishStep(participant, result.copy().put("taskID", pos3))
-										.onSuccess(pos4 -> {											
-											projectInstance.finishStep(participant, result.copy().put("taskID", pos4))
-											.onSuccess(pos5 -> {
-												// this is done. So now we get null.
-												context.assertNull(pos5);
-												progressionAsync.complete();
+					projectInstance.activate()
+					.onSuccess(active -> {
+						Async progressionAsync = context.async(); 
+						partHandler.create(projectInstance).onSuccess(participant -> {
+							//TODO: Run the project						
+							projectInstance.startStudy(participant)
+							.onSuccess(position -> {							
+								projectInstance.finishStep(participant, result.copy().put("taskID", position))
+								.onSuccess(pos1 -> {								
+									projectInstance.finishStep(participant, result.copy().put("taskID", pos1).put("outputData", new JsonArray().add(new JsonObject().put("name", "clicktimes").put("value", 2))))
+									.onSuccess(pos2 -> {									
+										projectInstance.finishStep(participant, result.copy().put("taskID", pos2))
+										.onSuccess(pos3 -> {										
+											projectInstance.finishStep(participant, result.copy().put("taskID", pos3))
+											.onSuccess(pos4 -> {											
+												projectInstance.finishStep(participant, result.copy().put("taskID", pos4))
+												.onSuccess(pos5 -> {
+													// this is done. So now we get null.
+													context.assertNull(pos5);
+													progressionAsync.complete();
+												})
+												.onFailure(err -> context.fail(err));
 											})
 											.onFailure(err -> context.fail(err));
 										})
@@ -136,7 +140,8 @@ public class DBProjectTest extends GitTest{
 							.onFailure(err -> context.fail(err));
 						})
 						.onFailure(err -> context.fail(err));
-					});
+					})
+					.onFailure(err -> context.fail(err));
 					Async partListAsync = context.async();
 					projectInstance.getParticipants()
 					.onSuccess(parts -> {

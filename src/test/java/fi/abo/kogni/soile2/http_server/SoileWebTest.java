@@ -97,7 +97,13 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 				String projectVersion = projectData.getString("version");
 				POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
 				.onSuccess(response -> {
-					projectInstancePromise.complete(response.bodyAsJsonObject().getString("projectID"));
+					POST(authedSession, "/projectexec/" + response.bodyAsJsonObject().getString("projectID") + "/restart", null, null )
+					.onSuccess(activated -> {
+						projectInstancePromise.complete(response.bodyAsJsonObject().getString("projectID"));	
+					})
+					.onFailure(err -> projectInstancePromise.fail(err));
+					
+					
 				})
 				.onFailure(err -> projectInstancePromise.fail(err));
 
@@ -391,7 +397,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		String URL = "/task/" + TaskID + "/" + TaskVersion  + "/resource/" + Filename;
 		return upload(webClient, URL, Filename, target, mimeType, "version");		
 	}		
-
+	
 	/** Upload a file for a executing project and receive the File ID for results. 
 	 * 
 	 * @param webClient

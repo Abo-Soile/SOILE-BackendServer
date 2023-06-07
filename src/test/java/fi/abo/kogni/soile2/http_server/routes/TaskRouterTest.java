@@ -394,7 +394,8 @@ public class TaskRouterTest extends SoileWebTest{
 					.onSuccess(taskData -> {									
 						Async correctSessionAsync  = context.async();
 						POST(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/resource/" + TaskDef.getJsonArray("resources").getString(0), null, new JsonObject().put("delete", true))
-						.onSuccess(versionResponse -> {							
+						.onSuccess(versionResponse -> {		
+							// this is the version of the deleted file. 
 							GET(authedSession, "/task/filelist/" + taskData.getString("UUID") + "/" + versionResponse.bodyAsJsonObject().getString("version"), null, null)
 							.onSuccess(response -> {										
 								JsonArray fileList = response.bodyAsJsonArray();
@@ -407,6 +408,8 @@ public class TaskRouterTest extends SoileWebTest{
 								correctSessionAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));
+							// this is the version with the file
+							Async originalAsync = context.async();
 							GET(authedSession, "/task/filelist/" + taskData.getString("UUID") + "/" + taskData.getString("version"), null, null)
 							.onSuccess(response -> {									
 								JsonArray fileList = response.bodyAsJsonArray();								
@@ -415,7 +418,7 @@ public class TaskRouterTest extends SoileWebTest{
 								checkAndClear(resources, fileList, "", context);
 								// now all expected resources should be cleared
 								context.assertEquals(0, resources.size());
-								correctSessionAsync.complete();
+								originalAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));
 						})

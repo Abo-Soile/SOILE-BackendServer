@@ -25,6 +25,7 @@ public class ProjectFactoryImplForTesting implements StudyFactory{
 	private class TestProject extends Study
 	{
 		JsonArray participants = new JsonArray();
+		private boolean active = true;
 		@Override
 		public Future<JsonObject> save() {
 			// do nothing;
@@ -68,13 +69,19 @@ public class ProjectFactoryImplForTesting implements StudyFactory{
 		}
 
 		@Override
-		public void deactivate() {			
+		public Future<Void> deactivate() {
+			active = false;
+			return Future.succeededFuture();
 		}
 
 		@Override
-		public void activate() {			
+		public Future<Void> activate() {
+			active = true;
+			return Future.succeededFuture(); 
 		}
-
+		public Future<Boolean> isActive() {			
+			return Future.succeededFuture(active); 
+		}
 		@Override
 		public Future<JsonArray> createSignupTokens(int count) {
 			return null;
