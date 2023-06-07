@@ -584,6 +584,7 @@ public abstract class Study implements AccessElement{
 			if(hasParticipants && (projectChange || versionChange))
 			{			
 				updatePromise.fail("Cannot change underlying project for Study with Participants");
+				return;
 			}
 			checkShortCutAvailable(updateInformation.getString("shortcut",shortcut))
 			.onSuccess(allowed -> {
