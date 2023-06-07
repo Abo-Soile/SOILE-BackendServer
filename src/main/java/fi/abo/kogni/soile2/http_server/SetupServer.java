@@ -176,11 +176,17 @@ public class SetupServer extends SoileServerVerticle {
 			JsonObject privateProject = new JsonObject().put("private", true).put("name", "Example Private Project").put("shortcut","newShortcut");
 			JsonObject projectData = new JsonObject().put("UUID", projectInformation.getValue("UUID")).put("version", projectInformation.getValue("version"));
 			instanceHandler.createProjectInstance(privateProject.put("sourceProject",projectData))
-			.onSuccess(instance -> {
+			.compose(instance -> instance.activate())
+			.onSuccess(active -> {
 				LOGGER.info("Starting public Project");
 				JsonObject publicProject = new JsonObject().put("private", false).put("name", "Example Public Project").put("shortcut","newPublicShortcut");			
-				instanceHandler.createProjectInstance(publicProject.mergeIn(projectData)).mapEmpty();
-				projectInstanceSetupPromise.complete();
+				instanceHandler.createProjectInstance(publicProject.mergeIn(projectData))
+				.compose(cinstance -> cinstance.activate())
+				.onSuccess(active2 -> 
+				{
+					projectInstanceSetupPromise.complete();
+				})
+				.onFailure(err -> projectInstanceSetupPromise.fail(err));
 			})
 			.onFailure(err -> projectInstanceSetupPromise.fail(err));
 		})

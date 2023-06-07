@@ -321,11 +321,16 @@ public class StudyRouter extends SoileRouter {
 		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{			
-			instanceHandler.loadUpToDateStudy(requestedInstanceID)
-			.onSuccess(study-> {				
-				context.response()
-				.setStatusCode(200)				
-				.end(study.toAPIJson().encode());
+			instanceHandler.loadUpToDateStudy(requestedInstanceID)			
+			.onSuccess(study -> {
+				study.isActive()
+				.onSuccess(active -> {
+					// we add the "Active" field, since it is a useful property.
+					context.response()
+					.setStatusCode(200)				
+					.end(study.toAPIJson().put("active", active).encode());
+				})
+				.onFailure(err -> handleError(err, context));	
 			})
 			.onFailure(err -> handleError(err, context));										
 		})
