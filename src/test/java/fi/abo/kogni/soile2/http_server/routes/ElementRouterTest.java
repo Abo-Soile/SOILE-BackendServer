@@ -2,8 +2,11 @@ package fi.abo.kogni.soile2.http_server.routes;
 
 import org.junit.Test;
 
+import fi.aalto.scicomp.gitFs.gitProviderVerticle;
+import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -269,4 +272,49 @@ public class ElementRouterTest extends SoileWebTest {
 		})
 		.onFailure(err -> context.fail(err));
 	}
+	
+	@Test
+	public void testProjectsParseOK(TestContext context)
+	{		
+		System.out.println("--------------------  Testing Project Generation ----------------------");
+		Async projAsync = context.async();
+		createUserAndAuthedSession("TestUser", "testPassword", Roles.Researcher)
+		.onSuccess(session -> {
+			WebObjectCreator.createProject(session, "ExampleProject")
+			.onSuccess( projectData -> {				
+				JsonArray tasks = projectData.getJsonArray("tasks");
+				for(int i = 0; i < tasks.size(); ++i)
+				{
+					if(tasks.getJsonObject(i).getString("name").equals("JSExp"))
+					{
+						context.assertTrue(tasks.getJsonObject(i).containsKey("position"));
+						context.assertEquals(950, tasks.getJsonObject(i).getJsonObject("position").getNumber("x"));
+					}
+					else
+					{
+						context.assertTrue(tasks.getJsonObject(i).containsKey("position"));
+						context.assertEquals(100, tasks.getJsonObject(i).getJsonObject("position").getNumber("x"));
+					}
+				}
+				Async gitRepoAsync = context.async();
+				vertx.eventBus().request("soile.git.getGitFileContentsAsJson",new GitFile("Object.json", "P" + projectData.getString("UUID"), projectData.getString("version")).toJson())
+				.onSuccess(response -> {
+					JsonObject gitData = (JsonObject) response.body();
+					System.out.println(gitData.encodePrettily());
+					gitRepoAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+				JsonArray experiments = projectData.getJsonArray("experiments");
+				context.assertTrue(experiments.getJsonObject(0).containsKey("position"));
+				context.assertEquals(650, experiments.getJsonObject(0).getJsonObject("position").getNumber("x"));				
+				JsonArray filters = projectData.getJsonArray("filters");
+				context.assertTrue(filters.getJsonObject(0).containsKey("position"));
+				context.assertEquals(350, filters.getJsonObject(0).getJsonObject("position").getNumber("x"));											
+				projAsync.complete();				
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+	
 }

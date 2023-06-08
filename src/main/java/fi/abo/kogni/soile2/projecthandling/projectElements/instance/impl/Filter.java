@@ -63,7 +63,9 @@ public class Filter {
 	{
 		return new FieldSpecifications().put(new FieldSpecification("instanceID", String.class, String::new, false))
 										.put(new FieldSpecification("options", JsonArray.class, JsonArray::new, true))
-										.put(new FieldSpecification("defaultOption", String.class, () -> "end", false));
+										.put(new FieldSpecification("defaultOption", String.class, () -> "end", false))
+										.put(new FieldSpecification("position", JsonObject.class, () -> new JsonObject().put("x", 0).put("y", 0), true));
+
 	}
 	
 }

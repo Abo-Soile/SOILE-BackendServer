@@ -288,10 +288,11 @@ public class WebObjectCreator {
 								newTask.put("instanceID", current.getString("instanceID"));
 								newTask.put("next", current.getString("next"));
 								newTask.put("outputs", current.getJsonArray("outputs", new JsonArray()));
+								newTask.put("position", current.getValue("position"));
 								newTask.put("UUID", task.getString("UUID"));
 								newTask.put("name", task.getString("name"));
 								newTask.put("version", task.getString("version"));
-								newTask.put("codeType", task.getJsonObject("codeType"));
+								newTask.put("codeType", task.getJsonObject("codeType"));								
 								tasks.put(current.getString("instanceID"), newTask);
 							})
 					);
@@ -320,7 +321,8 @@ public class WebObjectCreator {
 									
 									experiment.put("instanceID",current.getString("instanceID"))
 									.put("next", current.getString("next", "end"))
-									.put("random", current.getBoolean("random", true));
+									.put("random", current.getBoolean("random", true))
+									.put("position", current.getValue("position"));
 									experiments.put(current.getString("instanceID"), experiment);
 									// update the links in the task/element IDs.
 									updateExperimentElementTargets(experiment);
