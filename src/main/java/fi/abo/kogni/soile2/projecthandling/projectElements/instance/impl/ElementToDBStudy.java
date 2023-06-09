@@ -24,7 +24,7 @@ import io.vertx.ext.mongo.MongoClient;
  */
 public class ElementToDBStudy extends DBStudy{
 
-	private static final Logger log = LogManager.getLogger(ElementToDBStudy.class.getName());	
+	private static final Logger LOGGER = LogManager.getLogger(ElementToDBStudy.class.getName());	
 
 	public ElementToDBStudy(ElementManager<Project> manager, MongoClient client, EventBus eb) {
 		super(manager, client, eb);
@@ -63,8 +63,8 @@ public class ElementToDBStudy extends DBStudy{
 		}		
 		client.findOne(getTargetCollection(), query, null)
 		.onSuccess(res -> {
-			log.debug("Got reply:" + res);
-			log.info(inputJson.encodePrettily());
+			LOGGER.debug("Got reply:" + res);
+			LOGGER.debug(inputJson.encodePrettily());
 			if(res == null)
 			{				
 				// no collisions exist, so lets save it.
@@ -95,15 +95,15 @@ public class ElementToDBStudy extends DBStudy{
 				{
 					dbJson.put("shortcut", inputJson.getString("shortcut"));
 				}				
-				log.debug("Trying to save Instance:\n" + dbJson.encodePrettily());
+				LOGGER.debug("Trying to save Instance:\n" + dbJson.encodePrettily());
 				dbJson.put("modifiedStamp", new Date().getTime());
 				client.save(getTargetCollection(), dbJson)
 				.onSuccess( dbID -> {
-					log.debug("DB Item has ID: " + dbID);
+					LOGGER.debug("DB Item has ID: " + dbID);
 					// load it, so we got all we need.
 					super.load(new JsonObject().put("_id", dbID))
 					.onSuccess(dbResult -> {
-						log.debug("Successfully loaded db Result");						
+						LOGGER.debug("Successfully loaded db Result");						
 						savePromise.complete(dbResult);	
 					})
 					.onFailure(fail -> savePromise.fail(fail));
@@ -112,7 +112,7 @@ public class ElementToDBStudy extends DBStudy{
 			}
 			else
 			{
-				log.debug(res.encodePrettily());
+				LOGGER.debug(res.encodePrettily());
 				if(res.getString("name").equals(inputJson.getString("name")))
 				{
 					savePromise.fail(new ElementNameExistException(inputJson.getString("name"), res.getString("_id")));					

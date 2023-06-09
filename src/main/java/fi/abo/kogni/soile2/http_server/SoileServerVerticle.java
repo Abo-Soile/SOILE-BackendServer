@@ -20,6 +20,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PfxOptions;
 
 /**
@@ -205,12 +206,24 @@ public class SoileServerVerticle extends AbstractVerticle {
 		if(SoileConfigLoader.getServerBooleanProperty("useSSL", false))
 		{
 			LOGGER.info("Using HTTPS");	
-			PfxOptions keyOptions = new PfxOptions()
+			String sslStoreFile = SoileConfigLoader.getServerProperty("sslStoreFile");
+			opts.setSsl(true);
+			if(sslStoreFile.endsWith(".p12"))
+			{
+			PfxOptions keyOptions = new PfxOptions()					
 			.setPath(SoileConfigLoader.getServerProperty("sslStoreFile"))
 				.setPassword(SoileConfigLoader.getServerProperty("sslSecret"))
-				.setAlias("soile2");				
-			opts.setSsl(true)
-			.setPfxKeyCertOptions(keyOptions);
+				.setAlias("soile2");
+				opts.setPfxKeyCertOptions(keyOptions);
+			}
+			if(sslStoreFile.endsWith(".pem"))
+			{
+				PemKeyCertOptions keyOptions = new PemKeyCertOptions()
+													.setCertPath(SoileConfigLoader.getServerProperty("sslStoreFile"))
+													.setKeyPath(SoileConfigLoader.getServerProperty("sslSecret"));
+				opts.setPemKeyCertOptions(keyOptions);
+			}
+		
 		}
 		
 		HttpServer server = vertx.createHttpServer(opts).requestHandler(soileRouter.getRouter());
