@@ -269,7 +269,7 @@ public class GitManager{
 		{
 			return Future.failedFuture("Supplied File was invalid");
 		}
-		LOGGER.info("Deleting file " + file.toJson().encodePrettily());
+		LOGGER.debug("Deleting file " + file.toJson().encodePrettily());
 		JsonObject command = gitProviderVerticle.createCommandForFileInRepoAtVersion(file.getRepoID(), file.getRepoVersion(), file.getFileName()).put(gitProviderVerticle.COMMANDFIELD, gitProviderVerticle.DELETE_FILE_COMMAND);
 		if( tag != null)
 		{

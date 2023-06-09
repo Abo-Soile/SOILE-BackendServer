@@ -23,7 +23,6 @@ import de.flapdoodle.embed.process.runtime.Network;
 import de.flapdoodle.reverse.TransitionWalker.ReachedState;
 import de.flapdoodle.reverse.transitions.Start;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;

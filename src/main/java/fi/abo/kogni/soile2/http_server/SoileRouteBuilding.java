@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.http_server;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,9 +19,9 @@ import fi.abo.kogni.soile2.http_server.auth.SoileSessionHandler;
 import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
 import fi.abo.kogni.soile2.http_server.routes.ElementRouter;
 import fi.abo.kogni.soile2.http_server.routes.ParticipationRouter;
-import fi.abo.kogni.soile2.http_server.routes.StudyRouter;
 import fi.abo.kogni.soile2.http_server.routes.ProjectRouter;
 import fi.abo.kogni.soile2.http_server.routes.SoileRouter;
+import fi.abo.kogni.soile2.http_server.routes.StudyRouter;
 import fi.abo.kogni.soile2.http_server.routes.TaskRouter;
 import fi.abo.kogni.soile2.http_server.routes.UserRouter;
 import fi.abo.kogni.soile2.http_server.verticles.CodeRetrieverVerticle;
@@ -60,10 +59,7 @@ import io.vertx.ext.web.handler.ChainAuthHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.JWTAuthHandler;
 import io.vertx.ext.web.handler.LoggerHandler;
-import io.vertx.ext.web.handler.PlatformHandler;
-import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import io.vertx.ext.web.openapi.RouterBuilderOptions;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 /**
  * Verticle that handles Route Building for the Soile Backend Platform 

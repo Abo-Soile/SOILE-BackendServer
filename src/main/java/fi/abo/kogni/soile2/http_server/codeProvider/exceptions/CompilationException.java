@@ -7,6 +7,8 @@ package fi.abo.kogni.soile2.http_server.codeProvider.exceptions;
  */
 public class CompilationException extends Exception{
 
+	private static final long serialVersionUID = 1L;
+
 	public CompilationException(String reason)
 	{
 		super(reason);

@@ -5,11 +5,9 @@ import java.util.HashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.datamanagement.utils.DataRetriever;
 import fi.abo.kogni.soile2.datamanagement.utils.DirtyDataRetriever;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
-import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.StudyFactory;
@@ -83,8 +81,8 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 		Promise<Study> dirtyPromise = Promise.promise();
 		client.findOne(instanceCollection,  new JsonObject().put("_id", key), new JsonObject().put("modifiedStamp",1))
 		.onSuccess(res -> {
-			LOGGER.info(res.encodePrettily());
-			LOGGER.info(studyTimes.get(key));
+			LOGGER.debug(res.encodePrettily());
+			LOGGER.debug(studyTimes.get(key));
 			
 			if(!studyTimes.containsKey(key) || studyTimes.get(key) >= res.getLong("modifiedStamp"))
 			{

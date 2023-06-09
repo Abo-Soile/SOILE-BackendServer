@@ -1,7 +1,11 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
 import java.util.function.Supplier;
-
+/**
+ * Specification for a field
+ * @author Thomas Pfau
+ *
+ */
 public class FieldSpecification
 {
 	private String fieldName;

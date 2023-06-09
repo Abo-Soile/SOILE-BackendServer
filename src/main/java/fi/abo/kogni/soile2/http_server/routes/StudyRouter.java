@@ -208,6 +208,7 @@ public class StudyRouter extends SoileRouter {
 		{
 			instanceHandler.deleteStudy(requestedInstanceID)
 			.onSuccess(deletedObject -> {
+				@SuppressWarnings("rawtypes")
 				List<Future> deletionFutures = new LinkedList<Future>();
 				for(int i = 0; i < deletedObject.getJsonArray("participants").size(); ++i)
 				{
@@ -244,6 +245,7 @@ public class StudyRouter extends SoileRouter {
 				
 				study.reset()
 				.onSuccess(participantsToDelete -> {
+					@SuppressWarnings("rawtypes")
 					List<Future> deletionFutures = new LinkedList<Future>();
 					for(int i = 0; i < participantsToDelete.size(); ++i)
 					{

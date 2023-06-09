@@ -17,7 +17,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
-import io.vertx.ext.web.handler.HttpException;
 
 public class PermissionVerticle extends AbstractVerticle {
 
@@ -38,6 +37,7 @@ public class PermissionVerticle extends AbstractVerticle {
 	@Override
 	public void stop(Promise<Void> stopPromise)
 	{
+		@SuppressWarnings("rawtypes")
 		List<Future> undeploymentFutures = new LinkedList<Future>();
 		for(MessageConsumer<JsonObject> consumer : consumers)
 		{
@@ -84,19 +84,6 @@ public class PermissionVerticle extends AbstractVerticle {
 		catch(Exception err)
 		{
 			permissionMessage.fail(400, err.getMessage());
-		}
-	}
-	
-	
-	private String getCollectionName(String target) throws HttpException
-	{
-		switch(target)
-		{
-		case "task": return SoileConfigLoader.getCollectionName("taskCollection");
-		case "experiment": return SoileConfigLoader.getCollectionName("experimentCollection");
-		case "project": return SoileConfigLoader.getCollectionName("projectCollection");
-		case "instance": return SoileConfigLoader.getCollectionName("projectInstanceCollection");
-		default: throw new HttpException(400, "Invalid permission type: " + target);
 		}
 	}
 }

@@ -39,7 +39,6 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.http_server.authentication.utils.UserUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -74,7 +73,7 @@ import io.vertx.ext.web.impl.Utils;
  */
 public class NonStaticHandler implements StaticHandler {
 
-  private static final Logger LOG = LogManager.getLogger(NonStaticHandler.class);
+  private static final Logger LOGGER = LogManager.getLogger(NonStaticHandler.class);
 
 
   // TODO change to private final after setWebRoot has been removed
@@ -164,11 +163,11 @@ public class NonStaticHandler implements StaticHandler {
   @Override
   public void handle(RoutingContext context) {
     HttpServerRequest request = context.request();
-    LOG.info("Trying to access library");
+    LOGGER.debug("Trying to access library");
     if (request.method() != HttpMethod.GET && request.method() != HttpMethod.HEAD) {
-      if (LOG.isTraceEnabled())
-        LOG.trace("Not GET or HEAD so ignoring request");
-      LOG.info("Lib not found");
+      if (LOGGER.isTraceEnabled())
+        LOGGER.trace("Not GET or HEAD so ignoring request");
+      LOGGER.debug("Lib not found");
       context.next();
     } else {
       if (!request.isEnded()) {
@@ -178,7 +177,7 @@ public class NonStaticHandler implements StaticHandler {
       String uriDecodedPath = URIDecoder.decodeURIComponent(context.normalizedPath(), false);
       // if the normalized path is null it cannot be resolved
       if (uriDecodedPath == null) {
-        LOG.warn("Invalid path: " + context.request().path());
+        LOGGER.debug("Invalid path: " + context.request().path());
         context.next();
         return;
       }
@@ -696,8 +695,8 @@ public class NonStaticHandler implements StaticHandler {
 
   private String getFile(String path, RoutingContext context) {
     String file = webRoot + Utils.pathOffset(path, context);
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("File to serve is " + file);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("File to serve is " + file);
     }
     return file;
   }
@@ -902,8 +901,8 @@ public class NonStaticHandler implements StaticHandler {
         double avg = (double) totalTime / numServesBlocking;
         if (avg > maxAvgServeTimeNanoSeconds) {
           useAsyncFS = true;
-          if (LOG.isInfoEnabled()) {
-            LOG.info(
+          if (LOGGER.isInfoEnabled()) {
+            LOGGER.debug(
                 "Switching to async file system access in static file server as fs access is slow! (Average access time of "
                     + avg + " ns)");
           }

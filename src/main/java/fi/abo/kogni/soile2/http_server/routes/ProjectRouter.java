@@ -2,9 +2,6 @@ package fi.abo.kogni.soile2.http_server.routes;
 
 import java.util.HashMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import fi.aalto.scicomp.mathparser.MathHandler;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
@@ -18,7 +15,6 @@ import io.vertx.ext.web.RoutingContext;
 
 public class ProjectRouter extends ElementRouter<Project>{
 
-	private static final Logger LOGGER = LogManager.getLogger(ProjectRouter.class);
 	public ProjectRouter(ElementManager<Project> manager, SoileAuthorization auth, EventBus eb, MongoClient client) {
 		super(manager, auth, eb, client);
 		// TODO Auto-generated constructor stub

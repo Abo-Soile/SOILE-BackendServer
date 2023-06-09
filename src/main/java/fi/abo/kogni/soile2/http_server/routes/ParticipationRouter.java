@@ -520,7 +520,7 @@ public class ParticipationRouter extends SoileRouter{
 						String treatedPath = HttpUtils.removeDots(uriDecodedPath.replace('\\', '/'));
 						// +1 because we need to ignore the first / 
 						String path = treatedPath.substring(treatedPath.indexOf(pathPrefix)+pathPrefix.length()+1);
-						LOGGER.info("Requested path is: " + path);
+						LOGGER.debug("Requested path is: " + path);
 						// For now we just add the "T"
 						GitFile targetResource = new GitFile(path, "T" + currentTask.getUUID(),currentTask.getVersion());
 						resourceHandler.returnResource(context, targetResource);						

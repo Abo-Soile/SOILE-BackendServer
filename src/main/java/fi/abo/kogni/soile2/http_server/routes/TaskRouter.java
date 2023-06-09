@@ -13,7 +13,6 @@ import fi.abo.kogni.soile2.http_server.requestHandling.NonStaticHandler;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Vertx;
@@ -46,7 +45,7 @@ public class TaskRouter extends ElementRouter<Task> {
 	
 	public void postResource(RoutingContext context)
 	{				
-		LOGGER.info("Trying to post a resource");
+		LOGGER.debug("Trying to post a resource");
 		LOGGER.debug(context.pathParam("id") + "/" + context.pathParam("version") + "/" + context.pathParam("*") );				
 		String elementID = context.pathParam("id");
 		String version = context.pathParam("version");
@@ -183,7 +182,7 @@ public class TaskRouter extends ElementRouter<Task> {
 			JsonObject codeInfo = context.body().asJsonObject();
 			eb.request(SoileConfigLoader.getVerticleProperty("compilationAddress"),codeInfo)
 				.onSuccess(response -> {
-					LOGGER.info(response.body());
+					LOGGER.debug(response.body());
 					JsonObject responseBody = (JsonObject) response.body();
 					context.response()
 					.setStatusCode(200)
@@ -234,7 +233,6 @@ public class TaskRouter extends ElementRouter<Task> {
 	public void getResourceForExecution(RoutingContext context)
 	{
 		String elementID = context.pathParam("id");
-		String version = context.pathParam("version");			
 		accessHandler.checkAccess(context.user(),elementID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {			
 			resourceHandler.handleContext(context, elementManager.getElementSupplier().get());			

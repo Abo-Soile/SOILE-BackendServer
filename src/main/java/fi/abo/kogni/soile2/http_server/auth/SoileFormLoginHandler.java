@@ -18,7 +18,6 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.handler.HttpException;
-import io.vertx.ext.web.handler.impl.AuthenticationHandlerImpl;
 
 public class SoileFormLoginHandler implements AuthenticationHandler{
 	static final Logger LOGGER = LogManager.getLogger(SoileFormLoginHandler.class);
@@ -54,8 +53,8 @@ public class SoileFormLoginHandler implements AuthenticationHandler{
 
 	  
 	  public void authenticate(RoutingContext context, Handler<AsyncResult<User>> handler) {
-		LOGGER.info("Trying to authenticate a request");
-		LOGGER.info("Request is: " + context.body().asString());
+		LOGGER.debug("Trying to authenticate a request");
+		LOGGER.debug("Request is: " + context.body().asString());
 	    HttpServerRequest req = context.request();
 	    if (req.method() != HttpMethod.POST) {
 	      handler.handle(Future.failedFuture(BAD_METHOD)); // Must be a POST

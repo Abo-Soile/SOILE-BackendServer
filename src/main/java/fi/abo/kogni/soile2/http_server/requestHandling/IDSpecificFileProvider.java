@@ -60,7 +60,7 @@ public class IDSpecificFileProvider {
 	 */
 	public void returnResource(RoutingContext context, GitFile requestTarget)
 	{
-		LOGGER.info(requestTarget.toJson());
+		LOGGER.debug(requestTarget.toJson());
 		FileWithProps localFile = cache.get(requestTarget);
 		if(localFile != null)
 		{
@@ -156,6 +156,7 @@ public class IDSpecificFileProvider {
 
 	private class SizedCache<K, V> extends LinkedHashMap<K, V>
 	{
+		private static final long serialVersionUID = 1L;
 		private int maxSize;
 
 		public SizedCache(int maxSize)

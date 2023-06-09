@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.projecthandling.projectElements.instance;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -16,7 +15,6 @@ import fi.abo.kogni.soile2.projecthandling.exceptions.ProjectIsInactiveException
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecification;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FilterObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
@@ -136,9 +134,6 @@ public abstract class Study implements AccessElement{
 		Promise<Study> projPromise = Promise.<Study>promise();
 		LOGGER.debug("Creating instance");
 		Study p = factory.createInstance();
-		LOGGER.debug(p);
-		LOGGER.debug(factory);
-		LOGGER.info(instantiationInfo.encodePrettily());		
 		p.load(instantiationInfo)
 		.onSuccess(dataJson -> {
 			LOGGER.debug("Trying to set up project from data: \n " + dataJson.encodePrettily());

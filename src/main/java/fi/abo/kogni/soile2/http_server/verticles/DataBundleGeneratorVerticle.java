@@ -860,6 +860,8 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 	private class DownloadNotReadyException extends Exception
 	{
+		private static final long serialVersionUID = 1L;
+
 		public DownloadNotReadyException(String id) {
 			super(id + " not ready");
 		}

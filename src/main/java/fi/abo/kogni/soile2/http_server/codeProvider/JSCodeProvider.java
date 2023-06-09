@@ -5,7 +5,6 @@ import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedMap;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.json.JsonObject;
 
 /**
  * A Code provider that provides Javascript code. 

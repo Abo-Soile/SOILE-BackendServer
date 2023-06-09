@@ -99,7 +99,7 @@ public class WebObjectCreator {
 						update.put("tag", "Initial_Version");
 						SoileWebTest.POST(webClient, "/task/" + taskID + "/" + latestVersion , null, update)
 						.onSuccess(response -> {
-							LOGGER.info("Task " + elementID + " created as: " + response.bodyAsJsonObject().encodePrettily());
+							LOGGER.debug("Task " + elementID + " created as: " + response.bodyAsJsonObject().encodePrettily());
 							taskPromise.complete(response.bodyAsJsonObject().put("name", TaskDef.getString("name"))
 																			.put("UUID", taskID)
 																			.put("private", TaskDef.getBoolean("private", false))

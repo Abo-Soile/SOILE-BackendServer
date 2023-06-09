@@ -1,7 +1,6 @@
 package fi.abo.kogni.soile2.http_server;
 
 import java.util.LinkedList;
-
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -21,7 +20,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PfxOptions;
 
 /**
@@ -77,6 +75,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 	public void undeploy(Promise<Void> stopPromise) throws Exception {
 		LOGGER.debug("Stopping Server Verticle");
 		
+		@SuppressWarnings("rawtypes")
 		List<Future> unDeploymentFutures = new LinkedList<Future>();		
 		for(String deploymentID : deployedVerticles)
 		{
