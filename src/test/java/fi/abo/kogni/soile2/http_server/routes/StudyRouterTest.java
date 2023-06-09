@@ -285,7 +285,7 @@ public class StudyRouterTest extends SoileWebTest {
 								Async getsetasync = context.async();
 								POST(authedSession, "/projectexec/" + studyId + "/restart", null, null)
 								.onSuccess(active2 -> {
-									POST(authedSession, "/projectexec/" + studyId, null, null)
+									POST(authedSession, "/projectexec/" + studyId + "/get", null, null)
 									.onSuccess(studyDataResponse -> {
 										POST(authedSession, "/projectexec/" + studyId + "/signup", null,null)
 										.onSuccess(res -> {
@@ -308,7 +308,7 @@ public class StudyRouterTest extends SoileWebTest {
 											studyData2.put("shortDescription","Fancy");		
 											POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData2)
 											.onSuccess(updateResponse -> {
-												POST(authedSession, "/projectexec/" + studyId, null, null)
+												POST(authedSession, "/projectexec/" + studyId + "/get", null, null)
 												.onSuccess(updatedstudyDataResponse -> {
 													JsonObject studyDatanew = updatedstudyDataResponse.bodyAsJsonObject();
 													context.assertEquals("Fancy", studyDatanew.getString("shortDescription"));
@@ -327,7 +327,7 @@ public class StudyRouterTest extends SoileWebTest {
 									})
 									.onFailure(err -> context.fail(err));
 									Async failedAsync = context.async();
-									POST(wrongSession, "/projectexec/" + studyId, null,null)
+									POST(wrongSession, "/projectexec/" + studyId + "/get", null,null)
 									.onSuccess(listresponse -> {
 										context.fail("Does not have accesss");
 									})
@@ -379,7 +379,7 @@ public class StudyRouterTest extends SoileWebTest {
 							// we have a project set up. lets try to get the information.
 							String studyId = response.bodyAsJsonObject().getString("projectID");					
 							Async getsetasync = context.async();
-							POST(authedSession, "/projectexec/" + studyId, null, null)
+							POST(authedSession, "/projectexec/" + studyId + "/get", null, null)
 							.onSuccess(studyDataResponse -> {
 
 								JsonObject studyData = studyDataResponse.bodyAsJsonObject();
@@ -392,7 +392,7 @@ public class StudyRouterTest extends SoileWebTest {
 								studyData.put("version", projectVersion2);
 								POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData)
 								.onSuccess(updateResponse -> {
-									POST(authedSession, "/projectexec/" + studyId, null, null)
+									POST(authedSession, "/projectexec/" + studyId + "/get", null, null)
 									.onSuccess(updatedstudyDataResponse -> {
 										JsonObject studyData2 = updatedstudyDataResponse.bodyAsJsonObject();
 										System.out.println(studyData2.encodePrettily());
@@ -410,11 +410,12 @@ public class StudyRouterTest extends SoileWebTest {
 							})
 							.onFailure(err -> context.fail(err));
 							Async failedAsync = context.async();
-							POST(wrongSession, "/projectexec/" + studyId, null,null)
+							POST(wrongSession, "/projectexec/" + studyId + "/get", null,null)
 							.onSuccess(listresponse -> {
 								context.fail("Does not have accesss");
 							})
 							.onFailure(err -> {
+								System.out.println("Access denied");
 								context.assertEquals(403, ((HttpException)err).getStatusCode());
 								failedAsync.complete();
 							});

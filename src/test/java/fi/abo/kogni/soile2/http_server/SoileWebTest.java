@@ -369,7 +369,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 
 	public static Future<JsonObject> getElement(WebClient webClient, String elementAPI, String elementID, String Version)
 	{
-		return GET(webClient, "/" + elementAPI + "/" + elementID + "/" + Version, null, null).map(res -> {return res.bodyAsJsonObject(); });				
+		return GET(webClient, "/" + elementAPI + "/" + elementID + "/" + Version + "/get", null, null).map(res -> {return res.bodyAsJsonObject(); });				
 	}
 
 	public static Future<JsonArray> getElementList(WebClient webClient, String elementAPI)

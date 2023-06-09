@@ -97,7 +97,7 @@ public class WebObjectCreator {
 						update.put("code", TaskCode);
 						update.put("private", TaskDef.getBoolean("private", false));
 						update.put("tag", "Initial_Version");
-						SoileWebTest.POST(webClient, "/task/" + taskID + "/" + latestVersion , null, update)
+						SoileWebTest.POST(webClient, "/task/" + taskID + "/" + latestVersion + "/post" , null, update)
 						.onSuccess(response -> {
 							LOGGER.debug("Task " + elementID + " created as: " + response.bodyAsJsonObject().encodePrettily());
 							taskPromise.complete(response.bodyAsJsonObject().put("name", TaskDef.getString("name"))
@@ -233,9 +233,9 @@ public class WebObjectCreator {
 					// set private
 					experimentJson.put("private", ExperimentDef.getValue("private"));
 					experimentJson.put("tag", "Initial_Version");
-					SoileWebTest.POST(webClient, "/experiment/" + id + "/" + version , null, experimentJson)					
+					SoileWebTest.POST(webClient, "/experiment/" + id + "/" + version + "/post", null, experimentJson)					
 					.onSuccess(response -> {						
-						SoileWebTest.GET(webClient, "/experiment/" + id + "/" + response.bodyAsJsonObject().getString("version") , null, null)
+						SoileWebTest.GET(webClient, "/experiment/" + id + "/" + response.bodyAsJsonObject().getString("version") + "/get", null, null)
 						.onSuccess(res -> {
 							LOGGER.debug("Experiment " + experimentName +  "  created and retrieved" );							
 							experimentPromise.complete(res.bodyAsJsonObject());
@@ -341,9 +341,9 @@ public class WebObjectCreator {
 						JsonArray expArray = new JsonArray(expList);
 						projectExperiments.addAll(expArray);
 						projectJson.put("tag", "Initial_Version");
-						SoileWebTest.POST(webClient, "/project/" + id + "/" + version , null, projectJson)					
+						SoileWebTest.POST(webClient, "/project/" + id + "/" + version + "/post", null, projectJson)					
 						.onSuccess(response -> {						
-							SoileWebTest.GET(webClient, "/project/" + id + "/" + response.bodyAsJsonObject().getString("version") , null, null)
+							SoileWebTest.GET(webClient, "/project/" + id + "/" + response.bodyAsJsonObject().getString("version") + "/get", null, null)
 							.onSuccess(res -> {														
 								projectPromise.complete(res.bodyAsJsonObject());
 							})

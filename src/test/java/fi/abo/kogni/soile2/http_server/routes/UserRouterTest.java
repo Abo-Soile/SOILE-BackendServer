@@ -99,7 +99,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 					createUserAndAuthedSession("NonAdmin", "testpw", Roles.Researcher)
 					.onSuccess(userSession -> {
 						Async failedAccessAsync = context.async();
-						GET(userSession,"/experiment/" + experimentInfo.getString("UUID") + "/" + experimentInfo.getString("version"), null, null )
+						GET(userSession,"/experiment/" + experimentInfo.getString("UUID") + "/" + experimentInfo.getString("version") + "/get", null, null )
 						.onSuccess(err -> context.fail("Is private not accessible"))
 						.onFailure(rejected -> {						
 							context.assertEquals(403, ((HttpException)rejected).getStatusCode());
@@ -114,7 +114,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 								POST(adminsession, "/user/setpermissions",null,permissionChange)
 								.onSuccess(permissionsSet -> {
 									// now we should have access
-									GET(userSession,"/experiment/" + experimentInfo.getString("UUID") + "/" + experimentInfo.getString("version"), null, null )
+									GET(userSession,"/experiment/" + experimentInfo.getString("UUID") + "/" + experimentInfo.getString("version") + "/get", null, null )
 									.onSuccess(objInfo -> {
 										context.assertEquals(experimentInfo, objInfo.bodyAsJsonObject());
 										POST(userSession, "/user/setpermissions",null,permissionChangeOther)

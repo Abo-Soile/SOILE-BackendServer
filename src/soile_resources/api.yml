@@ -513,7 +513,7 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
-  /task/gettag/{id}/{version}:
+  /task/{id}/{version}/gettag:
     get:
       security:
         - cookieAuth: []
@@ -587,7 +587,7 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
-  /task/filelist/{id}/{version}:
+  /task/{id}/{version}/filelist:
     get:
       security:
         - cookieAuth: []
@@ -674,7 +674,7 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
-  /task/{id}/{version}:
+  /task/{id}/{version}/get:
     get:
       security:
         - cookieAuth: []
@@ -714,6 +714,7 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'  
+  /task/{id}/{version}/post:
     post:
       security:
         - cookieAuth: []
@@ -1136,7 +1137,7 @@ paths:
           description: User has no authorization to make this call 
         '409':
           description: "Name already exists"
-  /project/{id}/{version}:
+  /project/{id}/{version}/get:
     get:
       security:
         - cookieAuth: []
@@ -1176,6 +1177,7 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
+  /project/{id}/{version}/post:
     post:
       security:
         - cookieAuth: []
@@ -1217,7 +1219,7 @@ paths:
             schema:
              $ref: '#/components/schemas/Project'
         description: In addition to the required fields, this submission also needs a tag. Otherwise the only way to obtain this version again is by providing the returned version id.      
-  /project/gettag/{id}/{version}:
+  /project/{id}/{version}/gettag:
     get:
       security:
         - cookieAuth: []
@@ -2052,7 +2054,7 @@ paths:
                   permanentAccessToken:
                     type: string
                     description: The master token (anonymous registration if private) for the project
-                  accessTokens:
+                  signupTokens:
                     type: array
                     items: 
                       type: string  
@@ -2148,7 +2150,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ModifyiableStudyProperties'
-  /projectexec/{id}:  
+  /projectexec/{id}/get:  
     post:
       security:
         - cookieAuth: []
@@ -2204,7 +2206,7 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
-  /experiment/gettag/{id}/{version}:
+  /experiment/{id}/{version}/gettag:
     get:
       security:
         - cookieAuth: []
@@ -2311,7 +2313,7 @@ paths:
           description: User has no authorization to make this call 
         '409':
           description: "Name already exists"
-  /experiment/{id}/{version}:
+  /experiment/{id}/{version}/get:
     get:
       security:
         - cookieAuth: []
@@ -2351,6 +2353,7 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'
+  /experiment/{id}/{version}/post:
     post:
       security:
         - cookieAuth: []
@@ -2644,7 +2647,7 @@ components:
         token:
           type: string
           description: optional token. if a participant has a token, this token can be used to authenticate to run a specific project with a given 
-        accessToken:
+        signupToken:
           type: string
           description: The access token that was used to create this participant
         project:
@@ -3123,7 +3126,7 @@ components:
               items:
                 type: string
                 description: the id of a participant of this project
-            accessTokens:
+            signupTokens:
               type: array
               items: 
                 type: string

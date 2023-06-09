@@ -189,7 +189,7 @@ public class ElementRouterTest extends SoileWebTest {
 
 			WebObjectCreator.createProject(session, "Testproject")
 			.onSuccess( projectData -> {
-				GET(session, "/project/gettag/" + projectData.getString("UUID") +"/" +projectData.getString("version"), null, null)
+				GET(session, "/project/" + projectData.getString("UUID") +"/" +projectData.getString("version") + "/gettag", null, null)
 				.onSuccess(response -> {
 					context.assertEquals("Initial_Version", response.bodyAsJsonObject().getValue("tag"));
 					projAsync.complete();
