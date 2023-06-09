@@ -12,3 +12,13 @@
 logs/*
 
 /target/
+
+
+### Folders ###
+git/**/*
+gitLake/**/*
+libs/**/*
+resultLake/**/*
+
+### Vertx Deployment
+vertx-start-process.id
