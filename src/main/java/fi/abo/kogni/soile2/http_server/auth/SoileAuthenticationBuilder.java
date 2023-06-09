@@ -4,6 +4,7 @@ import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Vertx;
 import io.vertx.ext.auth.KeyStoreOptions;
+import io.vertx.ext.auth.PubSecKeyOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.mongo.MongoClient;
@@ -29,10 +30,9 @@ public class SoileAuthenticationBuilder {
 	{
 		if(authProvider == null)
 		{
-			JWTAuthOptions config = new JWTAuthOptions()
-										.setKeyStore(new KeyStoreOptions()
-										.setPath("soile.jceks")
-										.setPassword(SoileConfigLoader.getServerProperty("jwtStoreSecret")));
+			JWTAuthOptions config = new JWTAuthOptions().addPubSecKey(new PubSecKeyOptions()
+				    .setAlgorithm("HS256")
+				    .setBuffer(SoileConfigLoader.getServerProperty("jwtStoreSecret")));
 			authProvider = JWTAuth.create(vertx, config);
 		}
 		return authProvider;
