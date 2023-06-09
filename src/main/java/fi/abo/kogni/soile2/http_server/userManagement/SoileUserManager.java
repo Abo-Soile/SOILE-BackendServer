@@ -534,7 +534,7 @@ public class SoileUserManager implements MongoUserUtil{
 		// We hash this vs timing attacks.
 		String hashedSessionID = strategy.hash(hashingAlgorithm,
 				null,
-				SoileConfigLoader.getSessionProperty("sessionStoreSecret"),
+				SoileConfigLoader.getServerProperty("sessionStoreSecret"),
 				sessionID); 
 		JsonObject query = new JsonObject()
 				.put(authnOptions.getUsernameField(), username); 
@@ -621,7 +621,7 @@ public class SoileUserManager implements MongoUserUtil{
 		// We hash this vs timing attacks.
 		String hashedSessionID = strategy.hash(hashingAlgorithm,
 				null,
-				SoileConfigLoader.getSessionProperty("sessionStoreSecret"),
+				SoileConfigLoader.getServerProperty("sessionStoreSecret"),
 				sessionID);
 		LOGGER.debug("sessionID is :" + sessionID);
 		LOGGER.debug("hashed ID is :" + hashedSessionID);
@@ -708,7 +708,7 @@ public class SoileUserManager implements MongoUserUtil{
 		}
 		String hashedSessionID = strategy.hash(hashingAlgorithm,
 				null,
-				SoileConfigLoader.getSessionProperty("sessionStoreSecret"),
+				SoileConfigLoader.getServerProperty("sessionStoreSecret"),
 				sessionID);
 		LOGGER.debug("sessionID is: " + sessionID);
 		LOGGER.debug("hashed ID is: " + hashedSessionID);

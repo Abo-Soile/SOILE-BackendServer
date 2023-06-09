@@ -334,7 +334,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				getUserDetailsFromDB(mongo_client, "NewUser")
 				.onSuccess(data -> {
 					HashingStrategy strategy = new SoileHashing(SoileConfigLoader.getUserProperty("serverSalt"));
-					String sessionHash = strategy.hash(SoileConfigLoader.getUserProperty("hashingAlgorithm"), null, SoileConfigLoader.getSessionProperty("sessionStoreSecret"), "NewSession");
+					String sessionHash = strategy.hash(SoileConfigLoader.getUserProperty("hashingAlgorithm"), null, SoileConfigLoader.getServerProperty("sessionStoreSecret"), "NewSession");
 					context.assertTrue(data.getJsonObject(SoileConfigLoader.getUserdbField("storedSessions")).containsKey(sessionHash));
 					Async removeSession = context.async();
 					eb.request(getUsermanagerEventBusAddress("removeSession"), new JsonObject().put("sessionID", "OldSession").put("username", "NewUser"))
