@@ -182,6 +182,7 @@ public class WebObjectCreator {
 								createOrRetrieveTask(webClient, current.getString("name"))
 								.onSuccess(taskInstance -> {		
 									taskInstance.put("instanceID", current.getString("instanceID"))
+									.put("position", current.getValue("position"))
 									.put("next", current.getString("next", "end"))									
 									.put("filter", current.getString("filter",""))									
 									.put("outputs", current.getJsonArray("outputs",new JsonArray()));
@@ -194,7 +195,9 @@ public class WebObjectCreator {
 					if(current.getString("type").equals("filter"))
 					{
 						elements.put(current.getString("instanceID"), new JsonObject().put("elementType", "filter")
-								.put("data",current.getJsonObject("data").put("instanceID", current.getString("instanceID"))));
+								.put("position", current.getValue("position"))
+								.put("data",current.getJsonObject("data")
+								.put("instanceID", current.getString("instanceID"))));
 					}					
 					if(current.getString("type").equals("experiment"))
 					{
@@ -203,6 +206,7 @@ public class WebObjectCreator {
 									
 									JsonObject experimentInstance = new JsonObject();
 									experimentInstance.put("instanceID", current.getString("instanceID"))
+									.put("position", current.getValue("position"))
 									.put("next", current.getString("next", null))
 									.put("UUID", subexperiment.getString("UUID"))
 									.put("version", subexperiment.getString("version"))

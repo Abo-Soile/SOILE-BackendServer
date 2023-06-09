@@ -3,6 +3,7 @@ package fi.abo.kogni.soile2.projecthandling.utils;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.GitTest;
+import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
@@ -12,6 +13,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 
@@ -180,6 +182,107 @@ public class ObjectGeneratorTest extends GitTest {
 		})
 		.onFailure(err -> context.fail(err));
 	}
+		
+	@Test
+	public void testExampleProject(TestContext context)
+	{
+		System.out.println("--------------------  Testing Project Generation with Example project ----------------------");
+		Async proj2Async = context.async();
+		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager,mongo_client, "ExampleProject")
+		.onSuccess(apiproj -> {
+			Async gitRepoAsync = context.async();
+			vertx.eventBus().request("soile.git.getGitFileContentsAsJson",new GitFile("Object.json", "P" + apiproj.getUUID(), apiproj.getVersion()).toJson())
+			.onSuccess(response -> {
+				// Check, that it is correct in git.
+				JsonObject gitData = (JsonObject) response.body();
+				JsonArray tasks = gitData.getJsonArray("tasks");
+				context.assertEquals(2, tasks.size());
+				for(int i = 0; i < tasks.size(); ++i)
+				{
+					if(tasks.getJsonObject(i).getString("name").equals("JSExp"))
+					{
+						context.assertTrue(tasks.getJsonObject(i).containsKey("position"));
+						context.assertEquals(950, tasks.getJsonObject(i).getJsonObject("position").getNumber("x"));
+					}
+					else
+					{
+						context.assertTrue(tasks.getJsonObject(i).containsKey("position"));
+						context.assertEquals(100, tasks.getJsonObject(i).getJsonObject("position").getNumber("x"));
+					}
+				}
+
+				JsonArray experiments = gitData.getJsonArray("experiments");
+				context.assertTrue(experiments.getJsonObject(0).containsKey("position"));
+				context.assertEquals(650, experiments.getJsonObject(0).getJsonObject("position").getNumber("x"));
+				JsonArray expElements = experiments.getJsonObject(0).getJsonArray("elements");
+				context.assertEquals(2, expElements.size());
+				for(int i = 0; i < expElements.size(); ++i)
+				{
+					context.assertTrue(expElements.getJsonObject(i).containsKey("data"));
+					JsonObject elementData = expElements.getJsonObject(i).getJsonObject("data"); 
+					if(elementData.getString("name").equals("ElangExp"))
+					{
+						context.assertTrue(elementData.containsKey("position"));
+						context.assertEquals(100, elementData.getJsonObject("position").getNumber("x"));
+					}
+					else
+					{
+						context.assertTrue(elementData.containsKey("position"));
+						context.assertEquals(350, elementData.getJsonObject("position").getNumber("x"));
+					}
+				}
+				JsonArray filters = gitData.getJsonArray("filters");
+				context.assertTrue(filters.getJsonObject(0).containsKey("position"));
+				context.assertEquals(350, filters.getJsonObject(0).getJsonObject("position").getNumber("x"));
+				gitRepoAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));
+			JsonArray tasks = apiproj.getTasks();
+			context.assertEquals(2, tasks.size());
+			for(int i = 0; i < tasks.size(); ++i)
+			{
+				if(tasks.getJsonObject(i).getString("name").equals("JSExp"))
+				{
+					context.assertTrue(tasks.getJsonObject(i).containsKey("position"));
+					context.assertEquals(950, tasks.getJsonObject(i).getJsonObject("position").getNumber("x"));
+				}
+				else
+				{
+					context.assertTrue(tasks.getJsonObject(i).containsKey("position"));
+					context.assertEquals(100, tasks.getJsonObject(i).getJsonObject("position").getNumber("x"));
+				}
+			}
+
+			JsonArray experiments = apiproj.getExperiments();
+			context.assertTrue(experiments.getJsonObject(0).containsKey("position"));
+			context.assertEquals(650, experiments.getJsonObject(0).getJsonObject("position").getNumber("x"));
+			JsonArray expElements = experiments.getJsonObject(0).getJsonArray("elements");
+			context.assertEquals(2, expElements.size());
+			for(int i = 0; i < expElements.size(); ++i)
+			{
+				context.assertTrue(expElements.getJsonObject(i).containsKey("data"));
+				JsonObject elementData = expElements.getJsonObject(i).getJsonObject("data"); 
+				if(elementData.getString("name").equals("ElangExp"))
+				{
+					context.assertTrue(elementData.containsKey("position"));
+					context.assertEquals(100, elementData.getJsonObject("position").getNumber("x"));
+				}
+				else
+				{
+					context.assertTrue(elementData.containsKey("position"));
+					context.assertEquals(350, elementData.getJsonObject("position").getNumber("x"));
+				}
+			}
+			JsonArray filters = apiproj.getFilters();
+			context.assertTrue(filters.getJsonObject(0).containsKey("position"));
+			context.assertEquals(350, filters.getJsonObject(0).getJsonObject("position").getNumber("x"));
+			
+			proj2Async.complete();
+		})
+		.onFailure(err -> context.fail(err));
+	}
+	
+	
 	
 	@Test
 	public void testBuildTask(TestContext context)

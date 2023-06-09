@@ -185,6 +185,7 @@ public class ObjectGenerator {
 									JsonObject taskInstance = new JsonObject();
 									taskInstance.put("instanceID", current.getString("instanceID"))
 									.put("next", current.getString("next", "end"))
+									.put("position", current.getValue("position"))
 									.put("UUID", task.getUUID())
 									.put("version", task.getVersion())
 									.put("filter", current.getString("filter",""))
@@ -198,8 +199,11 @@ public class ObjectGenerator {
 					}
 					if(current.getString("type").equals("filter"))
 					{
-						elements.put(current.getString("instanceID"), new JsonObject().put("elementType", "filter")
-								.put("data",current.getJsonObject("data").put("instanceID", current.getString("instanceID"))));
+						elements.put(current.getString("instanceID"), 
+									 new JsonObject().put("elementType", "filter")
+									 				 .put("position", current.getValue("position"))
+									 				 .put("data",current.getJsonObject("data")
+									 				 .put("instanceID", current.getString("instanceID"))));
 					}					
 					if(current.getString("type").equals("experiment"))
 					{
@@ -208,6 +212,7 @@ public class ObjectGenerator {
 									experiment.addElement(subexperiment.getUUID());
 									JsonObject experimentInstance = new JsonObject();
 									experimentInstance.put("instanceID", current.getString("instanceID"))
+									.put("position", current.getValue("position"))
 									.put("next", current.getString("next", "end"))
 									.put("UUID", subexperiment.getUUID())
 									.put("version", subexperiment.getVersion())
@@ -302,6 +307,7 @@ public class ObjectGenerator {
 								project.addElement(task.getUUID());
 								JsonObject taskInstance = new JsonObject();
 								taskInstance.put("instanceID", current.getString("instanceID"))
+								.put("position", current.getValue("position"))
 								.put("next", current.getString("next", "end"))
 								.put("UUID", task.getUUID())
 								.put("version", task.getVersion())
@@ -336,8 +342,9 @@ public class ObjectGenerator {
 									project.addElement(experiment.getUUID());						
 									JsonObject expinstance = experiment.getAPIJson();
 									expinstance.put("instanceID",current.getString("instanceID"))
-									.put("next", current.getString("next", "end"))
-									.put("random", current.getBoolean("random", true));
+											   .put("position", current.getValue("position"))
+											   .put("next", current.getString("next", "end"))
+											   .put("random", current.getBoolean("random", true));
 									updateExperimentElementTargets(expinstance);
 									experiments.put(current.getString("name"), expinstance);								
 								})
