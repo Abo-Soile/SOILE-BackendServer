@@ -6,11 +6,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Element;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 
 /**
- * Representation of an element in either a projectInstance OR a Experiment Instance.  
+ * Representation of an element in either a {@link Study} OR a {@link ExperimentObjectInstance}.  
  * @author Thomas Pfau
  *
  */

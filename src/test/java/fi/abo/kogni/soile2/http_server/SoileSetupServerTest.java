@@ -39,7 +39,7 @@ public class SoileSetupServerTest extends MongoTest{
 					else
 					{
 						context.assertEquals(setupConf.getString("adminuser"), res.get(0).getString("username"));
-						mongo_client.find(SoileConfigLoader.getDbCfg().getString("projectInstanceCollection"), new JsonObject())
+						mongo_client.find(SoileConfigLoader.getDbCfg().getString("studyCollection"), new JsonObject())
 						.onSuccess(projectRes -> {
 							context.assertEquals(2,projectRes.size());
 							// now lets just check the content of one of those Projects.
@@ -154,7 +154,7 @@ public class SoileSetupServerTest extends MongoTest{
 							else
 							{
 								context.assertEquals(setupConf.getString("adminuser"), res.get(0).getString("username"));
-								mongo_client.find(SoileConfigLoader.getDbCfg().getString("projectInstanceCollection"), new JsonObject())
+								mongo_client.find(SoileConfigLoader.getDbCfg().getString("studyCollection"), new JsonObject())
 								.onSuccess(projectRes -> {
 									context.assertEquals(2,projectRes.size());								
 									serverSetupAsync.complete();	

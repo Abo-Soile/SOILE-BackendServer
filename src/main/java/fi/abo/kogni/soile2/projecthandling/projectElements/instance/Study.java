@@ -45,7 +45,7 @@ public abstract class Study implements AccessElement{
 	static final Logger LOGGER = LogManager.getLogger(Study.class);
 
 	/**
-	 * This is the projectInstance _id
+	 * This is the study _id
 	 */
 	protected String instanceID;
 	/**
@@ -110,7 +110,7 @@ public abstract class Study implements AccessElement{
 	
 	/**
 	 * A Project will be set up based on the data provided here.
-	 * The fields defined in the "Project" and "projectInstance" schemas need to be specified in this 
+	 * The fields defined in the "Project" and "Study" schemas need to be specified in this 
 	 * json.
 	 * @param data
 	 */
@@ -583,7 +583,7 @@ public abstract class Study implements AccessElement{
 	 */
 	public TargetElementType getElementType()
 	{
-		return TargetElementType.INSTANCE;
+		return TargetElementType.STUDY;
 	}
 	/**
 	 * Get the collection in which projects Instances are stored.
@@ -591,7 +591,7 @@ public abstract class Study implements AccessElement{
 	 */
 	public String getTargetCollection()
 	{
-		return SoileConfigLoader.getCollectionName("projectInstanceCollection");
+		return SoileConfigLoader.getCollectionName("studyCollection");
 	}
 	
 	/**
@@ -679,7 +679,7 @@ public abstract class Study implements AccessElement{
 	/**
 	 * Delete the project instance represented by this Object. Note: This must NOT delete the actual Project data, but only the data 
 	 * associated with this run of the project.
-	 * @return A future that contains the data that was associated with the ProjectInstance. This function must NOT handle the deletion of it's 
+	 * @return A future that contains the data that was associated with the Study. This function must NOT handle the deletion of it's 
 	 * participants, that deletion should be handled at whatever place this Future is requested. 
 	 */
 	public abstract Future<JsonObject> delete();

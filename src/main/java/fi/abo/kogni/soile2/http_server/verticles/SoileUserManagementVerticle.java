@@ -95,8 +95,8 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession));		
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("makeUserParticipantInProject"), this::makeUserParticipantInProject));		
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getParticipantForUserInProject"), this::getParticipantForUser));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("makeUserParticipantInStudy"), this::makeUserParticipantInStudy));		
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getParticipantForUserInStudy"), this::getParticipantForUser));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getParticipantsForUser"), this::getParticipantsForUser));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("listUsers"), this::listUsers));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("setUserInfo"), this::setUserInfo));
@@ -382,7 +382,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	void getParticipantForUser(Message<JsonObject> msg)
 	{
 		JsonObject command = msg.body();			
-		userManager.getParticipantIDForUserInProject(command.getString(getDBField("usernameField")), command.getString("projectInstanceID"))
+		userManager.getParticipantIDForUserInStudy(command.getString(getDBField("usernameField")), command.getString("studyID"))
 		.onSuccess(res -> {
 			msg.reply(SoileCommUtils.successObject().put("participantID", res));
 		})
@@ -574,7 +574,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 					.put("tasks", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("taskPermissionsField"))))
 					.put("projects", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("projectPermissionsField"))))
 					.put("experiments", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("experimentPermissionsField"))))
-					.put("instances", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField"))))
+					.put("instances", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("studyPermissionsField"))))
 					);
 			msg.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, response));
 		})
@@ -630,15 +630,15 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	}
 	
 	/**
-	 * Make a User participant in a project. The message must contain the username along with the projectInstanceID and the participantID. 
+	 * Make a User participant in a project. The message must contain the username along with the studyID and the participantID. 
 	 * @param msg
 	 */
-	void makeUserParticipantInProject(Message<JsonObject> msg)
+	void makeUserParticipantInStudy(Message<JsonObject> msg)
 	{
 		//make sure we actually get the right thing
 		JsonObject command = msg.body();			
 
-		userManager.makeUserParticipantInProject(command.getString(getDBField("usernameField")), command.getString("projectInstanceID"), command.getString("participantID"))
+		userManager.makeUserParticipantInStudy(command.getString(getDBField("usernameField")), command.getString("studyID"), command.getString("participantID"))
 		.onSuccess(res -> {
 			msg.reply(SoileCommUtils.successObject());
 		})
@@ -799,7 +799,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			case TASK: return SoileConfigLoader.getMongoTaskAuthorizationOptions();
 			case EXPERIMENT: return SoileConfigLoader.getMongoExperimentAuthorizationOptions();
 			case PROJECT: return SoileConfigLoader.getMongoProjectAuthorizationOptions();
-			case INSTANCE: return SoileConfigLoader.getMongoInstanceAuthorizationOptions();
+			case STUDY: return SoileConfigLoader.getMongoStudyAuthorizationOptions();
 			default: return null;
 			}
 		}

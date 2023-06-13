@@ -143,7 +143,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param skip how many results to skip
 	 * @param limit how many results at most to return
 	 * @param query a search query to look up in the usernames
-	 * @param partsInProject restricts search to users who participate in this project
+	 * @param namesOnly only list the names
 	 * @return A List of JsonObjects with the results.
 	 */
 	public Future<JsonArray> getUserList(Integer skip, Integer limit, String query, boolean namesOnly)
@@ -443,7 +443,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param project
 	 * @return A Future of the ID of the participant for this user in the project.If the user has no participant in the project, the Future will be <code>null</code>. 
 	 */
-	public Future<String> getParticipantIDForUserInProject(String username, String project)
+	public Future<String> getParticipantIDForUserInStudy(String username, String project)
 	{
 		Promise<String> participantPromise = Promise.promise();
 		client.findOne(authnOptions.getCollectionName(),new JsonObject().put(authnOptions.getUsernameField(), username), new JsonObject().put(SoileConfigLoader.getUserdbField("participantField"),1 ))
@@ -470,7 +470,7 @@ public class SoileUserManager implements MongoUserUtil{
 	/**
 	 * Get all project/participant ID combinations for the given user.
 	 * @param username The user for which data is requested.
-	 * @return A {@link Future} of a {@link JsonArray} containing objects  with { uuid: <projectInstanceID>, participantID : <IDofParticipantInPRoject> }. 
+	 * @return A {@link Future} of a {@link JsonArray} containing objects  with { uuid: <studyID>, participantID : <IDofParticipantInStudy> }. 
 	 */
 	public Future<JsonArray> getParticipantInfoForUser(String username)
 	{
@@ -486,21 +486,21 @@ public class SoileUserManager implements MongoUserUtil{
 	}
 
 	/**
-	 * Assign the given participantID to the user in the projectInstance indicated by the projectInstanceID.
+	 * Assign the given participantID to the user in the Study indicated by the studyID.
 	 * @param username The username for whom to assign a participantID
-	 * @param projectInstanceID the projectinstance in which to assign the id
+	 * @param studyID the study in which to assign the id
 	 * @param participantID the participantID.
 	 * @return A successfull future if this call worked.
 	 */
-	public Future<Void> makeUserParticipantInProject(String username, String projectInstanceID, String participantID)
+	public Future<Void> makeUserParticipantInStudy(String username, String studyID, String participantID)
 	{
 		JsonObject query = new JsonObject().put(authnOptions.getUsernameField(), username);
 		JsonObject pullUpdate = new JsonObject().put("$pull", new JsonObject()
 				.put(SoileConfigLoader.getUserdbField("participantField"), new JsonObject()
 						.put("uuid", new JsonObject()
-								.put("$eq", projectInstanceID))));
+								.put("$eq", studyID))));
 		JsonObject pushUpdate = new JsonObject().put("$push", new JsonObject()
-				.put(SoileConfigLoader.getUserdbField("participantField"), new JsonObject().put("uuid", projectInstanceID).put("participantID", participantID)));
+				.put(SoileConfigLoader.getUserdbField("participantField"), new JsonObject().put("uuid", studyID).put("participantID", participantID)));
 		List<BulkOperation> pullAndPut = new LinkedList<>();
 		BulkOperation pullOp = BulkOperation.createUpdate(query, pullUpdate);
 		BulkOperation pushOp = BulkOperation.createUpdate(query, pushUpdate);
@@ -953,7 +953,7 @@ public class SoileUserManager implements MongoUserUtil{
 		JsonObject query = new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), username);
 		JsonObject fields = new JsonObject().put(SoileConfigLoader.getUserdbField("userRolesField"), 1)
 											.put(SoileConfigLoader.getUserdbField("experimentPermissionsField"), 1)
-											.put(SoileConfigLoader.getUserdbField("instancePermissionsField"), 1)
+											.put(SoileConfigLoader.getUserdbField("studyPermissionsField"), 1)
 											.put(SoileConfigLoader.getUserdbField("projectPermissionsField"), 1)
 											.put(SoileConfigLoader.getUserdbField("taskPermissionsField"), 1)
 											.put("_id", 0);
@@ -966,18 +966,18 @@ public class SoileUserManager implements MongoUserUtil{
 	 */
 	public Future<JsonArray> getUserWithAccessToStudy(String studyID) {
 		String permissionQuery = SoilePermissionProvider.buildPermissionQuery(studyID, PermissionType.READ);
-		JsonObject query = new JsonObject().put(SoileConfigLoader.getUserdbField("instancePermissionsField"),
+		JsonObject query = new JsonObject().put(SoileConfigLoader.getUserdbField("studyPermissionsField"),
 												new JsonObject().put("$elemMatch", 
 																	 new JsonObject().put("$regex", SoilePermissionProvider.buildPermissionQuery(studyID, PermissionType.READ))));
 		JsonObject fields = new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), 1)											
-											.put(SoileConfigLoader.getUserdbField("instancePermissionsField"), new JsonObject().put("$elemMatch", 
+											.put(SoileConfigLoader.getUserdbField("studyPermissionsField"), new JsonObject().put("$elemMatch", 
 													 new JsonObject().put("$regex", SoilePermissionProvider.buildPermissionQuery(studyID, PermissionType.READ))))																						
 											.put("_id", 0);
 		return client.findWithOptions(authnOptions.getCollectionName(),query,new FindOptions().setFields(fields)).map(targets -> {
 			JsonArray result = new JsonArray();
 			for(JsonObject res : targets)
 			{
-				JsonArray existingpermissions = res.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField"));
+				JsonArray existingpermissions = res.getJsonArray(SoileConfigLoader.getUserdbField("studyPermissionsField"));
 				JsonObject user = new JsonObject().put("user", res.getString(SoileConfigLoader.getUserdbField("usernameField")));
 				List<PermissionType> permissions = new LinkedList<>();
 				for(int i = 0; i < existingpermissions.size(); i++)
@@ -997,7 +997,7 @@ public class SoileUserManager implements MongoUserUtil{
 	{
 		return new JsonObject().put(SoileConfigLoader.getUserdbField("userRolesField"), new JsonArray().add(Roles.Participant.toString()))
 								.put(SoileConfigLoader.getUserdbField("experimentPermissionsField"), new JsonArray())
-								.put(SoileConfigLoader.getUserdbField("instancePermissionsField"), new JsonArray())
+								.put(SoileConfigLoader.getUserdbField("studyPermissionsField"), new JsonArray())
 								.put(SoileConfigLoader.getUserdbField("projectPermissionsField"), new JsonArray())
 								.put(SoileConfigLoader.getUserdbField("taskPermissionsField"), new JsonArray())
 								.put(SoileConfigLoader.getUserdbField("userEmailField"), "")

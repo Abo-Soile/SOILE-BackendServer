@@ -198,7 +198,7 @@ public class StudyHandler {
 	 * 5. "shortcut" (optional), that can be used as a shortcut to the project.
 	 * @param projectInformation The information needed to start this project.
 	 */
-	public Future<Study> createProjectInstance(JsonObject projectInformation)	
+	public Future<Study> createStudy(JsonObject projectInformation)	
 	{
 		return manager.startProject(projectInformation);
 	}
@@ -250,7 +250,7 @@ public class StudyHandler {
 	 * @param permissionsOnly whether to only list those projects indicated by the permissions
 	 * @return A {@link Future} of the {@link JsonArray} containing the projects (id and name)
 	 */
-	public Future<JsonArray> getProjectList(JsonArray Permissions, boolean permissionsOnly)
+	public Future<JsonArray> getStudyList(JsonArray Permissions, boolean permissionsOnly)
 	{
 		return manager.getProjectInstanceStatus(Permissions, permissionsOnly);
 	}

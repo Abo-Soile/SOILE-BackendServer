@@ -8,7 +8,9 @@ import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
 import fi.abo.kogni.soile2.http_server.UserVerticleTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
+import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -417,16 +419,16 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		System.out.println("--------------------  Testing Participant Commands ----------------------");
 		Async testAsync = context.async();
 		//create a few users
-		JsonObject addToProject = new JsonObject().put("projectInstanceID", "projectID").put("participantID", "NewID").put("username", "NewUser");
-		JsonObject addTo2ndProject = new JsonObject().put("projectInstanceID", "projectID2").put("participantID", "NewID2").put("username", "NewUser");
-		JsonObject invalidProject = new JsonObject().put("projectInstanceID", "invalidProject").put("participantID", "NewID3").put("username", "NewUser");
+		JsonObject addToProject = new JsonObject().put("studyID", "projectID").put("participantID", "NewID").put("username", "NewUser");
+		JsonObject addTo2ndProject = new JsonObject().put("studyID", "projectID2").put("participantID", "NewID2").put("username", "NewUser");
+		JsonObject invalidProject = new JsonObject().put("studyID", "invalidProject").put("participantID", "NewID3").put("username", "NewUser");
 		createUser(vertx, "NewUser", "testPassword", "Fullname", "New@mail.fi", Roles.Participant )
 		.onSuccess(created -> {			
-			eb.request(getUsermanagerEventBusAddress("makeUserParticipantInProject"), addToProject)
-			.compose(Void -> eb.request(getUsermanagerEventBusAddress("makeUserParticipantInProject"), addTo2ndProject))
+			eb.request(getUsermanagerEventBusAddress("makeUserParticipantInStudy"), addToProject)
+			.compose(Void -> eb.request(getUsermanagerEventBusAddress("makeUserParticipantInStudy"), addTo2ndProject))
 			.onSuccess(added -> {
 				Async validAsync = context.async();
-				eb.request(getUsermanagerEventBusAddress("getParticipantForUserInProject"), addToProject)
+				eb.request(getUsermanagerEventBusAddress("getParticipantForUserInStudy"), addToProject)
 				.onSuccess(reply -> {
 					JsonObject response = (JsonObject) reply.body();
 					context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
@@ -435,7 +437,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				})
 				.onFailure(err -> context.fail(err));
 				Async invalidAsync = context.async();
-				eb.request(getUsermanagerEventBusAddress("getParticipantForUserInProject"), invalidProject)
+				eb.request(getUsermanagerEventBusAddress("getParticipantForUserInStudy"), invalidProject)
 				.onSuccess(reply -> {
 					JsonObject response = (JsonObject) reply.body();
 					context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
@@ -590,21 +592,21 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				.put("target", "inst2");
 		JsonObject taskPermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
+		     .put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.TASK.toString())
 				  										.put("permissionSettings", new JsonArray().add(taskPermission)));					
 
 		JsonObject projectPermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "PROJECT")
+		     .put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.PROJECT.toString())
 				  										.put("permissionSettings", new JsonArray().add(projPermission)));
 		
 		JsonObject experimentPermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "EXPERIMENT")
+		     .put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.EXPERIMENT.toString())
 				  										.put("permissionSettings", new JsonArray().add(expPermission)));
-		JsonObject instancePermissionChange = new JsonObject().put("username", "NewUser")
+		JsonObject studyPermissionChange = new JsonObject().put("username", "NewUser")
 				 .put("command", "add")
-		     .put("permissionsProperties", new JsonObject().put("elementType", "INSTANCE")
+		     .put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.STUDY.toString())
 				  										.put("permissionSettings", new JsonArray().add(instPermission).add(inst2Permission)));
 		
 		//create a few users
@@ -612,7 +614,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		.compose(Void -> eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), taskPermissionChange))
 		.compose(res -> eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), projectPermissionChange))
 		.compose(res -> eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), experimentPermissionChange))
-		.compose(res -> eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), instancePermissionChange))		
+		.compose(res -> eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), studyPermissionChange))		
 		.onSuccess(created -> {
 			eb.request(getUsermanagerEventBusAddress("getAccessRequest"), new JsonObject().put("username","NewUser") )
 			.onSuccess(reply -> {				

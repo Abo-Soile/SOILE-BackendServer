@@ -21,7 +21,7 @@ import io.vertx.ext.web.handler.HttpException;
 
 /**
  * Authorization handling for ID based auth. 
- * This is for any end-points with IDs (like tasks/experiments/projects/projectInstances) and allows handling those based on the appropriate 
+ * This is for any end-points with IDs (like tasks/experiments/projects/study) and allows handling those based on the appropriate 
  * Target collection to check authorizations against.
  * @author Thomas Pfau
  *

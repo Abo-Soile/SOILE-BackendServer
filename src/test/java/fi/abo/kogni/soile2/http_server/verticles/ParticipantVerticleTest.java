@@ -38,7 +38,7 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 		ObjectGenerator.createProject(mongo_client, vertx, "Testproject")
 		.onSuccess(projectData -> {
 			System.out.println("------------------------------------------------Project created");
-			projHandler.createProjectInstance(projectData.put("name", "NewProjectInstance").put("private", false))
+			projHandler.createStudy(projectData.put("name", "NewProjectInstance").put("private", false))
 			.onSuccess(proj -> {
 				proj.activate()
 				.onSuccess(activated -> {

@@ -251,15 +251,15 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		startDownload(projectID)
 		.onSuccess(startedDownload -> {
 			String dlID = startedDownload.dlID;
-			Study projectInstance = startedDownload.projInst;
+			Study study = startedDownload.projInst;
 			if( tasks.isEmpty())
 			{				
-				for(Object o : projectInstance.getTasksInstancesWithNames())
+				for(Object o : study.getTasksInstancesWithNames())
 				{
 					tasks.add(((JsonObject)o).getString("taskID"));
 				}
 			}
-			projectInstance.getParticipants()
+			study.getParticipants()
 			.onSuccess(participants -> {
 				// Collect the data  
 				@SuppressWarnings("rawtypes")
@@ -289,10 +289,10 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 					for(String task : taskResults.keySet())
 					{
 						LOGGER.debug("Current Task is: " + task);
-						LOGGER.debug("Project Instance is: " + projectInstance.toString());
+						LOGGER.debug("Project Instance is: " + study.toString());
 						JsonObject jsonData = new JsonObject();						
 						jsonData.put("taskID",task)
-						.put("taskName", projectInstance.getElement(task).getName());				
+						.put("taskName", study.getElement(task).getName());				
 						// this will be filled with the actual results for this task.
 						JsonArray currentTaskResults = new JsonArray();
 						// NOTE: this function heavily modifies the resulting resultData JsonArray					
@@ -325,8 +325,8 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 						{
 							jsonFile = new JsonObject()
 									.put("project", new JsonObject()
-											.put("id", projectInstance.getID())
-											.put("name", projectInstance.getName()))
+											.put("id", study.getID())
+											.put("name", study.getName()))
 									.put("taskResults", taskInfo);
 						}
 						LOGGER.debug(jsonFile.encodePrettily());
@@ -357,10 +357,10 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		startDownload(projectID)
 		.onSuccess(startedDownload -> {
 			String dlID = startedDownload.dlID;
-			Study projectInstance = startedDownload.projInst;
+			Study study = startedDownload.projInst;
 			LOGGER.debug("Obtaining data for: " + participants.encode());
 
-			partHandler.getParticipantData(projectInstance, participants)
+			partHandler.getParticipantData(study, participants)
 			.onSuccess( participantData -> {
 				LOGGER.debug("Participant Data Obtained");
 				// the format of this list is: 
@@ -412,8 +412,8 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 					{
 						jsonFile = new JsonObject()
 								.put("project", new JsonObject()
-										.put("id", projectInstance.getID())
-										.put("name", projectInstance.getName()))
+										.put("id", study.getID())
+										.put("name", study.getName()))
 								.put("participantResults", participantResults);
 					}
 					createJsonAndFinishDownload(dlID, projectID, jsonFile, resultFiles);					
@@ -441,11 +441,11 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		createDLID(projectID)
 		.onSuccess(dlID -> {
 			projHandler.loadUpToDateStudy(projectID)
-			.onSuccess(projectInstance ->
+			.onSuccess(study ->
 			{		
 				client.updateCollection(downloadCollection, new JsonObject().put("_id",dlID), statusUpdate(DownloadStatus.collecting))
 				.onSuccess(colStart -> {
-					collectionStartedPromise.complete(new Download(projectInstance,dlID));				
+					collectionStartedPromise.complete(new Download(study,dlID));				
 				}).onFailure(err -> collectionStartedPromise.fail(err));
 			})				
 			.onFailure(err -> collectionStartedPromise.fail(err));

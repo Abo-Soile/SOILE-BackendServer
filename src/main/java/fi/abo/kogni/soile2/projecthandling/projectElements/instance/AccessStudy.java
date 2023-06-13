@@ -8,16 +8,16 @@ import fi.abo.kogni.soile2.utils.SoileConfigLoader;
  * @author Thomas Pfau
  *
  */
-public class AccessProjectInstance implements AccessElement{
+public class AccessStudy implements AccessElement{
 
 	@Override
 	public TargetElementType getElementType() {
-		return TargetElementType.INSTANCE;
+		return TargetElementType.STUDY;
 	}
 
 	@Override
 	public String getTargetCollection() {
-		return SoileConfigLoader.getCollectionName("projectInstanceCollection");
+		return SoileConfigLoader.getCollectionName("studyCollection");
 	}
 
 

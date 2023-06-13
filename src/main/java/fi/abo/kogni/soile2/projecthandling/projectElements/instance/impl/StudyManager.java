@@ -54,7 +54,7 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 		this.client = client;
 		this.dbFactory = dbFactory;
 		this.createFactory = createFactory;		
-		instanceCollection = SoileConfigLoader.getdbProperty("projectInstanceCollection");
+		instanceCollection = SoileConfigLoader.getdbProperty("studyCollection");
 		projectPathes = new TimeStampedMap<String, String>(this::getProjectIDForPathIDfromDB, 1000*60*60);
 		studyTimes = new HashMap<>();
 	}

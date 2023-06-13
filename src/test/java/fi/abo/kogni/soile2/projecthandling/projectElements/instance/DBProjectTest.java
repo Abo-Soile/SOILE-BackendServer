@@ -40,7 +40,7 @@ public class DBProjectTest extends GitTest{
 			projManager.getElement(existingApiProject.getUUID())
 			.onSuccess(project -> {
 				Async projInstAsync = context.async();				
-				projInstHandler.createProjectInstance(ElementTester.getCreationJson(project, "StartedProject1","thisIsSomeShortcut"))
+				projInstHandler.createStudy(ElementTester.getCreationJson(project, "StartedProject1","thisIsSomeShortcut"))
 				.onSuccess(projectInstance -> {					
 					Async partListAsync = context.async();
 					projectInstance.getParticipants()
@@ -104,7 +104,7 @@ public class DBProjectTest extends GitTest{
 						// this works here, since no other version could be added in between.
 						.put("private", true)
 						.put("shortcut", "thisIsSomeShortcut");							
-				projInstHandler.createProjectInstance(creationJson)
+				projInstHandler.createStudy(creationJson)
 				.onSuccess(projectInstance -> {
 					projectInstance.activate()
 					.onSuccess(active -> {
@@ -177,7 +177,7 @@ public class DBProjectTest extends GitTest{
 					.put("version", apiProject.getVersion())
 					.put("private", false);
 			Async projAsync = context.async(); 
-			handler.createProjectInstance(projInstData)
+			handler.createStudy(projInstData)
 			.onSuccess(projInstance -> {
 				Async permAsync = context.async();
 				projInstance.createPermanentAccessToken()

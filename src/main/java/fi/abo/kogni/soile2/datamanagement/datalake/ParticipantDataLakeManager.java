@@ -44,7 +44,7 @@ public class ParticipantDataLakeManager{
 	/**
 	 * Write an element to into the dataLake. The actual location in the dataLake is defined by the task ID and the participant ID.
 	 * Data will be stored in the following scheme (to be able to quickly download all data for a project):  
-	 * projectInstanceID / participantID / step / taskID / filesForTask.format    
+	 * studyID / participantID / step / taskID / filesForTask.format    
 	 * This allows a quick removal of all data for a participant by deleting the respective participantID folder.
 	 * @param p the participant for which to store the data
 	 * @param step the step for the data 

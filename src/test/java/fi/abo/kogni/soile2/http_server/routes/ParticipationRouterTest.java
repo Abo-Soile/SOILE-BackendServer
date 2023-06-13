@@ -46,7 +46,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 				Async codeTypeAsync = context.async();
 				WebClientSession tempSession = createSession();
 				tempSession.addHeader("Authorization", authToken);
-				POST(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+				POST(tempSession, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 				.onSuccess(inforesponse -> {
 					JsonObject codeTypeInfo = inforesponse.bodyAsJsonObject();					
 					context.assertEquals("qmarkup", codeTypeInfo.getJsonObject("codeType", new JsonObject()).getString("language"));
@@ -75,7 +75,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 				Async codeTypeAsync = context.async();
 				WebClientSession tempSession = createSession();
 				tempSession.addHeader("Authorization", authToken);
-				POST(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+				POST(tempSession, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 				.onSuccess(inforesponse -> {
 					Async codeAsync = context.async();
 					JsonObject codeTypeInfo = inforesponse.bodyAsJsonObject();
@@ -115,12 +115,12 @@ public class ParticipationRouterTest extends SoileWebTest{
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)
 			.onSuccess(authToken -> {
-				POST(generatorSession, "/projectexec/" + instanceID + "/reset", null,null)
+				POST(generatorSession, "/study/" + instanceID + "/reset", null,null)
 				.onSuccess(resetted -> {
 					Async codeTypeAsync = context.async();
 					WebClientSession tempSession = createSession();
 					tempSession.addHeader("Authorization", authToken);
-					POST(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+					POST(tempSession, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 					.onSuccess(inforesponse -> {
 						context.fail("Should not be possible, since participant is no longer existing");						
 					})
@@ -150,12 +150,12 @@ public class ParticipationRouterTest extends SoileWebTest{
 		.onSuccess(instanceID -> {
 			createTokenAndSignupUser(generatorSession, instanceID)
 			.onSuccess(authToken -> {
-				POST(generatorSession, "/projectexec/" + instanceID + "/delete", null,null)
+				POST(generatorSession, "/study/" + instanceID + "/delete", null,null)
 				.onSuccess(resetted -> {
 					Async codeTypeAsync = context.async();
 					WebClientSession tempSession = createSession();
 					tempSession.addHeader("Authorization", authToken);
-					POST(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+					POST(tempSession, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 					.onSuccess(inforesponse -> {
 						context.fail("Should not be possible, since participant is no longer existing");						
 					})
@@ -263,10 +263,10 @@ public class ParticipationRouterTest extends SoileWebTest{
 					submitResult(tempSession, result, instanceID)
 					.onSuccess(done -> {
 						Async dlNotReadyAsync = context.async();
-						POST(generatorSession,"/projectexec/" + instanceID + "/data", null, "" )
+						POST(generatorSession,"/study/" + instanceID + "/data", null, "" )
 						.onSuccess(response -> {
 							String dlID = response.bodyAsJsonObject().getString("downloadID");
-							GET(generatorSession,"/projectexec/" + instanceID + "/download/" + dlID, null, null)
+							GET(generatorSession,"/study/" + instanceID + "/download/" + dlID, null, null)
 							.onSuccess(res -> {
 								// This is ok, the server was just really fast.
 								dlNotReadyAsync.complete();
@@ -277,7 +277,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 							});					 
 							awaitDownloadReady(generatorSession,instanceID,dlID, Promise.promise())
 							.onSuccess(dlReady -> {
-								GET(generatorSession,"/projectexec/" + instanceID + "/download/" + dlID, null, null)
+								GET(generatorSession,"/study/" + instanceID + "/download/" + dlID, null, null)
 								.onSuccess(download -> {
 									// This is ok, the server was just really fast.
 									String targetFileName = tmpDir + File.separator + "WebTestdownload.tar.gz";
@@ -323,7 +323,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 						})
 						.onFailure(err -> context.fail(err));
 						Async invalidRequestAsync = context.async();
-						POST(tempSession,"/projectexec/" + instanceID + "/data", null, "" )
+						POST(tempSession,"/study/" + instanceID + "/data", null, "" )
 						.onSuccess(fail -> {
 							context.fail("Invalid access should not be possible");
 						})
@@ -377,7 +377,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 				submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 				.onSuccess(submitted -> {
 					Async persistentAsync = context.async();
-					POST(tempSession,"/projectexec/" + instanceID + "/getpersistent", null, null)
+					POST(tempSession,"/study/" + instanceID + "/getpersistent", null, null)
 					.onSuccess( response -> {
 						JsonObject responsebody = response.bodyAsJsonObject();
 						context.assertTrue(responsebody.containsKey("smoker"));
@@ -387,7 +387,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 					.onFailure(err -> context.fail(err));
 					submitFilesAndResults(tempSession, fileUploads, result.copy().put("outputData",  new JsonArray().add(new JsonObject().put("name",  "clicktimes").put("value", 0.5))), instanceID)
 					.onSuccess(submitted2 -> {
-						POST(tempSession,"/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+						POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 						.onSuccess(inforesponse -> {
 							GET(tempSession, "/run/" + instanceID + "/" + inforesponse.bodyAsJsonObject().getString("id"), null, null)
 							.onSuccess(code -> {
@@ -398,7 +398,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 									.onSuccess(submitted4 -> {
 										submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 										.onSuccess(submitted5 -> {
-											POST(tempSession, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+											POST(tempSession, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 											.onSuccess(response -> {									
 												JsonObject finalresult = response.bodyAsJsonObject();
 												// now the project is done, we have passed filters and everything. 
@@ -460,7 +460,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 			.onSuccess(authToken -> {
 				WebClientSession tempSession = createSession();				
 				tempSession.addHeader("Authorization", authToken);
-				POST(tempSession,"/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+				POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 				.onSuccess(inforesponse -> {
 					GET(tempSession, "/run/" + instanceID + "/" + inforesponse.bodyAsJsonObject().getString("id") +  "/ImageData.jpg", null, null)
 					.onSuccess(failed -> {
@@ -470,7 +470,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 						context.assertEquals(404, ((HttpException)response).getStatusCode());
 						submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
 						.onSuccess(submitted -> {
-							POST(tempSession,"/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+							POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 							.onSuccess(inforesponse2 -> {
 								GET(tempSession, "/run/testProject" + "/" + inforesponse2.bodyAsJsonObject().getString("id") +"/ImageData.jpg", null, null)
 								.onSuccess(dataResponse ->  {
@@ -523,7 +523,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 			.onSuccess(authToken -> {
 				WebClientSession tempSession = createSession();				
 				tempSession.addHeader("Authorization", authToken);
-				POST(tempSession,"/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+				POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 				.onSuccess(inforesponse -> {
 					GET(tempSession, "/run/" + instanceID + "/" + inforesponse.bodyAsJsonObject().getString("id") + "/lib/testlib.js", null, null)
 					.onSuccess(response -> {
@@ -588,7 +588,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 			.onFailure(err -> done.fail(err));
 		}
 		CompositeFuture.all(submissionFutures).onSuccess(allSubmitted -> {
-			POST(client, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+			POST(client, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 			.onSuccess(response -> {
 				JsonArray fileResults = resultData.getJsonObject("resultData").getJsonArray("fileData");
 				for(JsonObject o : uploadObjects)
@@ -598,7 +598,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 
 				String taskInstanceID = response.bodyAsJsonObject().getString("id");				
 				resultData.put("taskID",taskInstanceID);
-				POST(client, "/projectexec/" + instanceID + "/submit", null, resultData)
+				POST(client, "/study/" + instanceID + "/submit", null, resultData)
 				.onSuccess(submitted -> {
 					submittedPromise.complete();								
 				})
@@ -664,7 +664,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 	
 	private Future<Void> awaitDownloadReady(WebClient client, String projectID, String dlID, Promise<Void> readyPromise)
 	{		
-		POST(client, "/projectexec/" + projectID + "/download/" + dlID + "/check", null, null).onSuccess(response -> 
+		POST(client, "/study/" + projectID + "/download/" + dlID + "/check", null, null).onSuccess(response -> 
 		{
 			JsonObject status = response.bodyAsJsonObject();
 			if(status.getString("status").equals(DownloadStatus.downloadReady.toString()))
@@ -731,11 +731,11 @@ public class ParticipationRouterTest extends SoileWebTest{
 	protected Future<Void> submitResult(WebClient client, JsonObject resultData, String instanceID)
 	{
 		Promise<Void> submittedPromise = Promise.promise();
-		POST(client, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+		POST(client, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 		.onSuccess(response -> {
 			String taskInstanceID = response.bodyAsJsonObject().getString("id");			
 			resultData.put("taskID",taskInstanceID);
-			POST(client, "/projectexec/" + instanceID + "/submit", null, resultData)
+			POST(client, "/study/" + instanceID + "/submit", null, resultData)
 			.onSuccess(submitted -> {
 				submittedPromise.complete();								
 			})

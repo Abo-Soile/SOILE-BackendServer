@@ -12,7 +12,7 @@ import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessProjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessStudy;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.mongo.MongoClient;
@@ -31,11 +31,11 @@ public class SoileRouter {
 	protected MongoAuthorization projectAuth;
 	protected MongoAuthorization experimentAuth;
 	protected MongoAuthorization taskAuth;
-	protected MongoAuthorization instanceAuth;
+	protected MongoAuthorization studyAuth;
 	protected SoileIDBasedAuthorizationHandler taskIDAccessHandler;
 	protected SoileIDBasedAuthorizationHandler projectIDAccessHandler;
 	protected SoileIDBasedAuthorizationHandler experimentIDAccessHandler;
-	protected SoileIDBasedAuthorizationHandler instanceIDAccessHandler;
+	protected SoileIDBasedAuthorizationHandler studyIDAccessHandler;
 	protected SoileAuthorization authorizationRertiever;
 	protected SoileRoleBasedAuthorizationHandler roleHandler;
 	
@@ -46,11 +46,11 @@ public class SoileRouter {
 		projectAuth = auth.getAuthorizationForOption(TargetElementType.PROJECT);
 		experimentAuth = auth.getAuthorizationForOption(TargetElementType.EXPERIMENT);
 		taskAuth = auth.getAuthorizationForOption(TargetElementType.TASK);
-		instanceAuth = auth.getAuthorizationForOption(TargetElementType.INSTANCE);		
+		studyAuth = auth.getAuthorizationForOption(TargetElementType.STUDY);		
 		taskIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Task().getTargetCollection(), client);
 		experimentIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Experiment().getTargetCollection(), client);
 		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Project().getTargetCollection(), client);
-		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client, true);
+		studyIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessStudy().getTargetCollection(), client, true);
 
 		roleHandler = new SoileRoleBasedAuthorizationHandler();
 	}
@@ -109,7 +109,7 @@ public class SoileRouter {
 			case PROJECT: return projectIDAccessHandler;
 			case EXPERIMENT: return experimentIDAccessHandler;
 			case TASK: return taskIDAccessHandler;
-			case INSTANCE: return instanceIDAccessHandler;
+			case STUDY: return studyIDAccessHandler;
 			default: return taskIDAccessHandler;
 		}
 		
@@ -127,7 +127,7 @@ public class SoileRouter {
 			case PROJECT: return projectAuth;
 			case EXPERIMENT: return experimentAuth;
 			case TASK: return taskAuth;
-			case INSTANCE: return instanceAuth;
+			case STUDY: return studyAuth;
 			default: return taskAuth;
 		}
 	}

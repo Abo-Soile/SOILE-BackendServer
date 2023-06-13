@@ -39,11 +39,6 @@ public class SoileConfigLoader {
 	public static final String Participant = "Participant";
 	public static final String Collaborator = "Collaborator";	
 	
-/*	public static final String EXPERIMENT = "experiment";
-	public static final String PROJECT = "project";
-	public static final String TASK = "task";
-	public static final String INSTANCE = "instance";*/	
-	
 	private static JsonObject dbCfg;
 	private static JsonObject userdbFields;
 	private static JsonObject sessionCfg;
@@ -442,11 +437,11 @@ public class SoileConfigLoader {
 		return res;
 	}
 	
-	public static MongoAuthorizationOptions getMongoInstanceAuthorizationOptions()
+	public static MongoAuthorizationOptions getMongoStudyAuthorizationOptions()
 	{
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
 		res.setCollectionName(dbCfg.getString("userCollection"));
-		res.setPermissionField(getUserdbField("instancePermissionsField"));
+		res.setPermissionField(getUserdbField("studyPermissionsField"));
 		res.setRoleField(getUserdbField("userRolesField"));
 		res.setUsernameField(getUserdbField("usernameField"));				
 		return res;
@@ -462,7 +457,7 @@ public class SoileConfigLoader {
 		case TASK: return dbCfg.getString("taskCollection");
 		case EXPERIMENT: return dbCfg.getString("experimentCollection");
 		case PROJECT: return dbCfg.getString("projectCollection");
-		case INSTANCE: return dbCfg.getString("projectInstanceCollection");
+		case STUDY: return dbCfg.getString("studyCollection");
 		default: return null;
 		}
 	}

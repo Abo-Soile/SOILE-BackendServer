@@ -18,11 +18,11 @@ public class AccessHandler{
 	SoileRoleBasedAuthorizationHandler roleHandler;
 	private static final Logger LOGGER = LogManager.getLogger(AccessHandler.class);
 
-	public AccessHandler(MongoAuthorization mongoAuth, SoileIDBasedAuthorizationHandler instanceIDAccessHandler,
+	public AccessHandler(MongoAuthorization mongoAuth, SoileIDBasedAuthorizationHandler studyIDAccessHandler,
 			SoileRoleBasedAuthorizationHandler roleHandler) {
 		super();
 		this.mongoAuth = mongoAuth;
-		this.idAccessHandler = instanceIDAccessHandler;
+		this.idAccessHandler = studyIDAccessHandler;
 		this.roleHandler = roleHandler;
 	}
 

@@ -162,7 +162,7 @@ public class SetupServer extends SoileServerVerticle {
 	{	
 		Promise<Void> projectInstanceSetupPromise = Promise.promise();
 		MongoClient testClient = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg());
-		testClient.findOne(SoileConfigLoader.getCollectionName("projectInstanceCollection"), new JsonObject().put("name", "Example Private Project"), null)
+		testClient.findOne(SoileConfigLoader.getCollectionName("studyCollection"), new JsonObject().put("name", "Example Private Project"), null)
 		.onSuccess(existing -> 
 		{
 			if(existing != null)
@@ -172,15 +172,15 @@ public class SetupServer extends SoileServerVerticle {
 			}
 
 			LOGGER.info("Starting private Project");
-			StudyHandler instanceHandler = new StudyHandler(MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg()), vertx);		
+			StudyHandler studyHandler = new StudyHandler(MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg()), vertx);		
 			JsonObject privateProject = new JsonObject().put("private", true).put("name", "Example Private Project").put("shortcut","newShortcut");
 			JsonObject projectData = new JsonObject().put("UUID", projectInformation.getValue("UUID")).put("version", projectInformation.getValue("version"));
-			instanceHandler.createProjectInstance(privateProject.put("sourceProject",projectData))
+			studyHandler.createStudy(privateProject.put("sourceProject",projectData))
 			.compose(instance -> instance.activate())
 			.onSuccess(active -> {
 				LOGGER.info("Starting public Project");
 				JsonObject publicProject = new JsonObject().put("private", false).put("name", "Example Public Project").put("shortcut","newPublicShortcut");			
-				instanceHandler.createProjectInstance(publicProject.mergeIn(projectData))
+				studyHandler.createStudy(publicProject.mergeIn(projectData))
 				.compose(cinstance -> cinstance.activate())
 				.onSuccess(active2 -> 
 				{

@@ -38,7 +38,7 @@ import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 
 /**
- * Router for ProjectInstance operations (i.e. project execution, and data retrieval).
+ * Router for Study operations (i.e. project execution, and data retrieval).
  * Documentation for public functions (aside from the constructor) can be obtained from the 
  * API document, with operationIDs mapping 1:1 to method names 
  * @author Thomas Pfau
@@ -46,8 +46,8 @@ import io.vertx.ext.web.validation.ValidationHandler;
  */
 public class StudyRouter extends SoileRouter {
 
-	StudyHandler instanceHandler;
-	AccessHandler instanceAccessHandler;
+	StudyHandler studyHandler;
+	AccessHandler studyAccessHandler;
 	AccessHandler projectAccessHandler;
 	ParticipantHandler partHandler;
 	ParticipantDataLakeManager dataLakeManager;
@@ -60,10 +60,10 @@ public class StudyRouter extends SoileRouter {
 		super(auth,client);
 		eb = vertx.eventBus();
 		this.vertx = vertx;		
-		instanceHandler = projHandler;
+		studyHandler = projHandler;
 		this.partHandler = partHandler;						
 		dataLakeManager = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
-		instanceAccessHandler = new AccessHandler(instanceAuth, instanceIDAccessHandler, roleHandler);
+		studyAccessHandler = new AccessHandler(studyAuth, studyIDAccessHandler, roleHandler);
 		projectAccessHandler = new AccessHandler(projectAuth, projectIDAccessHandler, roleHandler);
 	}
 
@@ -79,19 +79,19 @@ public class StudyRouter extends SoileRouter {
 		.onSuccess(Void -> {
 			projectIDAccessHandler.authorize(context.user(), id, false, PermissionType.READ)			
 			.onSuccess(canCreate -> {
-				instanceHandler.createProjectInstance(projectData)
-				.onSuccess(instance -> {
+				studyHandler.createStudy(projectData)
+				.onSuccess(study -> {
 					JsonObject permissionChange = new JsonObject().put("command", "add")
 							.put("username", context.user().principal().getString("username"))
-							.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.INSTANCE.toString())
+							.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.STUDY.toString())
 									.put("permissionSettings", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
-											.put("target", instance.getID()))));
+											.put("target", study.getID()))));
 					eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChange)
 					.onSuccess(success -> {
 						// instance was created, access was updated, everything worked fine. Now
 						context.response().setStatusCode(200)
 						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-						.end(new JsonObject().put("projectID",instance.getID()).encode());												
+						.end(new JsonObject().put("projectID",study.getID()).encode());												
 					})
 					.onFailure(err -> handleError(err, context));
 				})
@@ -118,15 +118,15 @@ public class StudyRouter extends SoileRouter {
 		Future<JsonArray> permissionsFuture;
 		switch(access)		
 		{
-			case "read": permissionsFuture = authorizationRertiever.getReadPermissions(context.user(), TargetElementType.INSTANCE); restrictToPermissions = true; break;
-			case "write": permissionsFuture = authorizationRertiever.getWritePermissions(context.user(), TargetElementType.INSTANCE); restrictToPermissions = true; break; 
-			case "full": permissionsFuture = authorizationRertiever.getFullPermissions(context.user(), TargetElementType.INSTANCE); restrictToPermissions = true; break;
-			default: permissionsFuture = authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.INSTANCE); break;
+			case "read": permissionsFuture = authorizationRertiever.getReadPermissions(context.user(), TargetElementType.STUDY); restrictToPermissions = true; break;
+			case "write": permissionsFuture = authorizationRertiever.getWritePermissions(context.user(), TargetElementType.STUDY); restrictToPermissions = true; break; 
+			case "full": permissionsFuture = authorizationRertiever.getFullPermissions(context.user(), TargetElementType.STUDY); restrictToPermissions = true; break;
+			default: permissionsFuture = authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.STUDY); break;
 		}			
 		Boolean onlyPermissions = restrictToPermissions;
 		permissionsFuture
 		.onSuccess( permissions -> {
-			instanceHandler.getProjectList(permissions, onlyPermissions)		
+			studyHandler.getStudyList(permissions, onlyPermissions)		
 			.onSuccess(elementList -> {	
 				// this list needs to be filtered by access
 
@@ -141,7 +141,7 @@ public class StudyRouter extends SoileRouter {
 		.onFailure(err -> {
 			if(err instanceof UserDoesNotExistException)
 			{
-				instanceHandler.getProjectList(new JsonArray(), false)
+				studyHandler.getStudyList(new JsonArray(), false)
 				.onSuccess(elementList -> {	
 					// this list needs to be filtered by access
 
@@ -165,10 +165,10 @@ public class StudyRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.deactivate(requestedInstanceID)
+			studyHandler.deactivate(requestedInstanceID)
 			.onSuccess(project -> {	
 					context.response()
 					.setStatusCode(200)						
@@ -185,10 +185,10 @@ public class StudyRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.activate(requestedInstanceID)
+			studyHandler.activate(requestedInstanceID)
 			.onSuccess(project -> {	
 				// this list needs to be filtered by access
 					context.response()
@@ -204,10 +204,10 @@ public class StudyRouter extends SoileRouter {
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.deleteStudy(requestedInstanceID)
+			studyHandler.deleteStudy(requestedInstanceID)
 			.onSuccess(deletedObject -> {
 				@SuppressWarnings("rawtypes")
 				List<Future> deletionFutures = new LinkedList<Future>();
@@ -237,10 +237,10 @@ public class StudyRouter extends SoileRouter {
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,true)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadPotentiallyOutdatedStudy(requestedInstanceID)
+			studyHandler.loadPotentiallyOutdatedStudy(requestedInstanceID)
 			.onSuccess(study -> {					
 				//
 				
@@ -273,9 +273,9 @@ public class StudyRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> {
-			instanceHandler.loadUpToDateStudy(requestedInstanceID)
+			studyHandler.loadUpToDateStudy(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -301,11 +301,11 @@ public class StudyRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		//TODO: not implemented properly yet
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ_WRITE,false)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ_WRITE,false)
 		.onSuccess(Void -> 
 		{			
 			LOGGER.debug("Access granted, updating Study");
-			instanceHandler.updateStudy(requestedInstanceID,context.body().asJsonObject())
+			studyHandler.updateStudy(requestedInstanceID,context.body().asJsonObject())
 			.onSuccess(studyUpdated -> {
 				context.response()
 				.setStatusCode(200)				
@@ -321,10 +321,10 @@ public class StudyRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		//TODO: not implemented properly yet
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{			
-			instanceHandler.loadUpToDateStudy(requestedInstanceID)			
+			studyHandler.loadUpToDateStudy(requestedInstanceID)			
 			.onSuccess(study -> {
 				study.isActive()
 				.onSuccess(active -> {
@@ -346,7 +346,7 @@ public class StudyRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		//TODO: not implemented properly yet
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{			
 			// this list needs to be filtered by access
@@ -390,7 +390,7 @@ public class StudyRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		String dlID = params.pathParameter("downloadid").getString();
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{
 			// this list needs to be filtered by access
@@ -413,7 +413,7 @@ public class StudyRouter extends SoileRouter {
 		String requestedInstanceID = params.pathParameter("id").getString();
 		String dlID = params.pathParameter("downloadid").getString();
 
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{
 			// this list needs to be filtered by access
@@ -472,10 +472,10 @@ public class StudyRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();
 		
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadPotentiallyOutdatedStudy(requestedInstanceID)
+			studyHandler.loadPotentiallyOutdatedStudy(requestedInstanceID)
 			.onSuccess(currentStudy -> {
 				currentStudy.getTokenInformation()
 				.onSuccess(tokenInformation -> {
@@ -499,10 +499,10 @@ public class StudyRouter extends SoileRouter {
 		boolean unique = params.queryParameter("unique") == null ? false : params.queryParameter("unique").getBoolean();
 		int count = params.queryParameter("count") == null ? 0 : params.queryParameter("count").getInteger();
 
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,false)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.FULL,false)
 		.onSuccess(Void -> 
 		{
-			instanceHandler.loadPotentiallyOutdatedStudy(requestedInstanceID)
+			studyHandler.loadPotentiallyOutdatedStudy(requestedInstanceID)
 			.onSuccess(instance -> {
 				if(unique)
 				{
@@ -545,7 +545,7 @@ public class StudyRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);						
 		String requestedInstanceID = params.pathParameter("id").getString();
 		
-		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void ->	{	
 			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"getCollaboratorsforStudy" ), new JsonObject().put("studyID",requestedInstanceID))
 			.onSuccess(res -> {

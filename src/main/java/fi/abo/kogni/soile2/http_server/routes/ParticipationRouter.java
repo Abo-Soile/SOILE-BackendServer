@@ -46,11 +46,11 @@ public class ParticipationRouter extends SoileRouter{
 
 	NonStaticHandler libraryHandler;
 	IDSpecificFileProvider resourceHandler;
-	StudyHandler instanceHandler;
+	StudyHandler studyHandler;
 	AccessHandler accessHandler;
 	SoileAuthorization authorizationRertiever;
 	ParticipantHandler partHandler;
-	TargetElementType instanceType = TargetElementType.INSTANCE;
+	TargetElementType studyType = TargetElementType.STUDY;
 	ParticipantDataLakeManager dataLakeManager;
 	EventBus eb;
 	Vertx vertx;
@@ -62,9 +62,9 @@ public class ParticipationRouter extends SoileRouter{
 		super(auth,client);
 		eb = vertx.eventBus();
 		this.vertx = vertx;			
-		instanceHandler = projHandler;
+		studyHandler = projHandler;
 		this.partHandler = partHandler;		
-		accessHandler = new AccessHandler(getAuthForType(instanceType), instanceIDAccessHandler, roleHandler);		 	
+		accessHandler = new AccessHandler(getAuthForType(studyType), studyIDAccessHandler, roleHandler);		 	
 		dataLakeManager = new ParticipantDataLakeManager(SoileConfigLoader.getServerProperty("soileResultDirectory"), vertx);
 		libraryHandler = new NonStaticHandler(FileSystemAccess.ROOT, SoileConfigLoader.getServerProperty("taskLibraryFolder"), "/lib/");		
 		this.resourceHandler = fileProvider;
@@ -265,7 +265,7 @@ public class ParticipationRouter extends SoileRouter{
 						// This has to be a DB user, as token users are not authenticated at this end-point
 						JsonArray permissionSettings = new JsonArray().add(new JsonObject().put("target", project.getID())
 																							.put("type", PermissionType.EXECUTE.toString()));
-						JsonObject permissionsProperties = new JsonObject().put("elementType", TargetElementType.INSTANCE.toString())
+						JsonObject permissionsProperties = new JsonObject().put("elementType", TargetElementType.STUDY.toString())
 																		   .put("permissionSettings", permissionSettings);
 						JsonObject userData = new JsonObject();
 						userData.put("username", context.user().principal().getString("username"));
@@ -275,9 +275,9 @@ public class ParticipationRouter extends SoileRouter{
 						.onSuccess( permissionAdded ->
 						{	
 							JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
-									.put("projectInstanceID", project.getID())
+									.put("studyID", project.getID())
 									.put("participantID", participant.getID());
-							eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInProject"),partData)
+							eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInStudy"),partData)
 							.onSuccess( participantAdded ->
 							{
 								project.startStudy(participant)
@@ -551,8 +551,8 @@ public class ParticipationRouter extends SoileRouter{
 		else
 		{
 			Promise<Participant> partPromise = Promise.promise();
-			JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("projectInstanceID", project.getID());
-			eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantForUserInProject"), request)
+			JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("studyID", project.getID());
+			eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantForUserInStudy"), request)
 			.onSuccess(response -> {
 				JsonObject responseObject = (JsonObject) response.body();
 				if(responseObject.getString("participantID") != null)
@@ -582,9 +582,9 @@ public class ParticipationRouter extends SoileRouter{
 		partHandler.create(project)
 		.onSuccess(particpant -> {
 			// update the user.
-			JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("projectInstanceID", project.getID());
+			JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("studyID", project.getID());
 			request.put("participantID", particpant.getID());
-			eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInProject"), request)
+			eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInStudy"), request)
 			.onSuccess( success -> {
 				partPromise.complete(particpant);
 			})
@@ -599,14 +599,14 @@ public class ParticipationRouter extends SoileRouter{
 	public void handleRequest(RoutingContext context, Handler<RoutingContext> method)
 	{
 		String projectID = context.pathParam("id");
-		instanceHandler.loadUpToDateStudy(projectID)
+		studyHandler.loadUpToDateStudy(projectID)
 		.onSuccess(exists -> {		
 			method.handle(context);
 		})
 		.onFailure( lookupError -> {
 			if(lookupError instanceof ObjectDoesNotExist)
 			{
-				instanceHandler.getProjectIDForPath(projectID)
+				studyHandler.getProjectIDForPath(projectID)
 				.onSuccess(newID -> {
 					LOGGER.debug("Rerouting from " +  context.normalizedPath() + " to : " + context.normalizedPath().replaceFirst("/"+Pattern.quote(projectID) + "(?=[/$])", "/" + newID ));
 					context.reroute(context.normalizedPath().replaceFirst("/"+Pattern.quote(projectID) + "(?=[/$])", "/" + newID ));
@@ -624,7 +624,7 @@ public class ParticipationRouter extends SoileRouter{
 	private Future<Study> loadProject(String id)
 	{
 		Promise<Study> projPromise = Promise.promise();
-		instanceHandler.loadUpToDateStudy(id).
+		studyHandler.loadUpToDateStudy(id).
 		onSuccess(project -> {
 			project.isActive()
 			.onSuccess(active -> {

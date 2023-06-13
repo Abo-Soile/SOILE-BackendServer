@@ -18,7 +18,7 @@ public class SoileAuthorization{
 		TASK,
 		EXPERIMENT,
 		PROJECT,
-		INSTANCE
+		STUDY
 	}
 	
 	public enum PermissionType
@@ -40,11 +40,11 @@ public class SoileAuthorization{
 	MongoAuthorization taskAuthorization;
 	MongoAuthorization projectAuthorization;
 	MongoAuthorization experimentAuthorization;
-	MongoAuthorization instanceAuthorization;	
+	MongoAuthorization studyAuthorization;	
 	MongoAuthorizationOptions taskOptions;
 	MongoAuthorizationOptions projectOptions;
 	MongoAuthorizationOptions experimentOptions;
-	MongoAuthorizationOptions instanceOptions;
+	MongoAuthorizationOptions studyOptions;
 	MongoClient client;
 
 	public SoileAuthorization(MongoClient client)
@@ -54,12 +54,12 @@ public class SoileAuthorization{
 		taskOptions = SoileConfigLoader.getMongoTaskAuthorizationOptions();
 		projectOptions = SoileConfigLoader.getMongoProjectAuthorizationOptions();
 		experimentOptions = SoileConfigLoader.getMongoExperimentAuthorizationOptions();
-		instanceOptions = SoileConfigLoader.getMongoInstanceAuthorizationOptions();
+		studyOptions = SoileConfigLoader.getMongoStudyAuthorizationOptions();
 		
 		taskAuthorization = MongoAuthorization.create("taskProvider", client, taskOptions);
 		experimentAuthorization = MongoAuthorization.create("experimentProvider", client, experimentOptions);
 		projectAuthorization = MongoAuthorization.create("projectProvider", client, projectOptions);
-		instanceAuthorization = MongoAuthorization.create("instanceProvider", client, instanceOptions);		
+		studyAuthorization = MongoAuthorization.create("studyProvider", client, studyOptions);		
 	}
 
 	/**
@@ -87,11 +87,11 @@ public class SoileAuthorization{
 	}
 
 	/**
-	 * Get a Authorization with a config for the ProjectInstance Database
+	 * Get a Authorization with a config for the Study Database
 	 * @return
 	 */
 	public MongoAuthorization getInstanceAuthorization() {
-		return instanceAuthorization;
+		return studyAuthorization;
 	}
 	
 	/**
@@ -236,7 +236,7 @@ public class SoileAuthorization{
 		case TASK: return taskAuthorization;
 		case EXPERIMENT: return experimentAuthorization;
 		case PROJECT: return projectAuthorization;
-		case INSTANCE: return instanceAuthorization;
+		case STUDY: return studyAuthorization;
 		default: return null;
 		}
 	}	
@@ -252,7 +252,7 @@ public class SoileAuthorization{
 		case TASK: return taskOptions;
 		case EXPERIMENT: return experimentOptions;
 		case PROJECT: return projectOptions;
-		case INSTANCE: return instanceOptions;
+		case STUDY: return studyOptions;
 		default: return null;
 		}
 	}			

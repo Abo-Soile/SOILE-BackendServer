@@ -33,8 +33,8 @@ public class TokenAuthProvider {
 	}
 	
 	/**
-	 * Authenticate the given token. The token must fit the instanceID requested in the RoutingContext.
-	 * If both match (i.e. the token is associated with a valid participant for the projectInstance, then the 
+	 * Authenticate the given token. The token must fit the studyID requested in the RoutingContext.
+	 * If both match (i.e. the token is associated with a valid participant for the study, then the 
 	 * Provider creates a user which does NOT have a username but only a token.
 	 * TODO: Need to ensure that this is compatible with all relevant endpoints (i.e. the endpoints for project execution)  
 	 * @param context
@@ -57,9 +57,9 @@ public class TokenAuthProvider {
 		LOGGER.debug("Trying to retrieve TokenParticipant for Token: " + token);
 		Promise<User> userPromise = Promise.promise();
 		getID(pathID)
-		.onSuccess(requestedInstanceID -> {
-			LOGGER.debug("Trying to retrieve participant for project: " + requestedInstanceID);
-			partHandler.getParticipantForToken(token, requestedInstanceID)
+		.onSuccess(requestedStudyID -> {
+			LOGGER.debug("Trying to retrieve participant for project: " + requestedStudyID);
+			partHandler.getParticipantForToken(token, requestedStudyID)
 			.onSuccess(participant -> {
 				LOGGER.debug("Got participant");
 				User currentUser = User.fromToken(token);
@@ -67,7 +67,7 @@ public class TokenAuthProvider {
 				currentUser.principal().put(SoileConfigLoader.getSessionProperty("userRoles"), new JsonArray().add(Roles.Participant));	    	
 				// we add 
 				currentUser.authorizations().add("TokenProvider", RoleBasedAuthorization.create(Roles.Participant.toString()));
-				currentUser.authorizations().add("TokenProvider", SoilePermissionProvider.buildPermission(requestedInstanceID, PermissionType.EXECUTE));
+				currentUser.authorizations().add("TokenProvider", SoilePermissionProvider.buildPermission(requestedStudyID, PermissionType.EXECUTE));
 				userPromise.complete(currentUser);
 			})
 			.onFailure(err -> userPromise.fail(err));
@@ -84,7 +84,7 @@ public class TokenAuthProvider {
 		JsonObject Query = new JsonObject().put("$or", new JsonArray().add(new JsonObject().put("shortcut",pathID))
 																	  .add(new JsonObject().put("_id", pathID))
 																	  );		
-		client.findOne(SoileConfigLoader.getCollectionName("projectInstanceCollection"),Query,new JsonObject().put("_id",1))
+		client.findOne(SoileConfigLoader.getCollectionName("studyCollection"),Query,new JsonObject().put("_id",1))
 		.onSuccess(project -> 
 		{
 			if(project == null)

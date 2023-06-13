@@ -56,7 +56,7 @@ public class ParticipantHandler {
 
 	/**
 	 * Create a participant in the database
-	 * @param p the ProjectInstance for which to create a participant
+	 * @param p the {@link Study} for which to create a participant
 	 */
 	public Future<Participant> create(Study p)
 	{
@@ -107,13 +107,14 @@ public class ParticipantHandler {
 	/**
 	 * Retrieve a participant from the database (or memory) and return the participant
 	 * based on the participants uID.
-	 * @param id the uid of the participant
-	 * @param handler the handler that requested the participant.
+	 * @param token the token to use for the {@link Participant}
+	 * @param studyID the ID of the {@link Study} to create a {@link Participant} in
+	 * @return a {@link Future} of the {@link Participant}
 	 */
-	public Future<Participant> getParticipantForToken(String token, String projectID)
+	public Future<Participant> getParticipantForToken(String token, String studyID)
 	{
 		Promise<Participant> partPromise = Promise.<Participant>promise();
-		manager.getParticipantIDForToken(token, projectID)
+		manager.getParticipantIDForToken(token, studyID)
 		.onSuccess(id -> {
 			getParticipant(id)
 			.onSuccess(participant -> {
@@ -126,16 +127,16 @@ public class ParticipantHandler {
 	}
 
 	/**
-	 * Create a participant for a project with a given instanceID. 
-	 * @param id the uid of the participant
-	 * @param handler the handler that requested the participant.
+	 * Create a new participant for a study with a given instanceID. 
+	 * @param studyID the uuid of the study to create a participant in
+	 * @return a {@link Future} of the {@link Participant}
 	 */
-	public Future<Participant> createParticipant(String projectInstanceID)
+	public Future<Participant> createParticipant(String studyID)
 	{
 		Promise<Participant> particpantPromise = Promise.promise();
-		studyHandler.loadUpToDateStudy(projectInstanceID)
-		.onSuccess( projectInstance -> {
-			manager.createParticipant(projectInstance)
+		studyHandler.loadUpToDateStudy(studyID)
+		.onSuccess( study -> {
+			manager.createParticipant(study)
 			.onSuccess(participant -> particpantPromise.complete(participant))
 			.onFailure(err -> particpantPromise.fail(err));
 		})

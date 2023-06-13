@@ -1259,7 +1259,7 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'       
-  /projectexec/{id}/data/list:
+  /study/{id}/data/list:
     post:
       security:
         - cookieAuth: []
@@ -1290,7 +1290,7 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
-  /project/{id}/{version}/start:
+  /project/{id}/{version}/init:
     post:
       security:
         - cookieAuth: []
@@ -1362,7 +1362,7 @@ paths:
                   type: string
                   description: a shortcut that can be used to more easily access the contents.
         description: This can be an empty body, then the whole data is requested.
-  /projectexec/list:
+  /study/list:
     post:
       security:
         - cookieAuth: []
@@ -1393,7 +1393,7 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
-  /projectexec/{id}/stop:
+  /study/{id}/stop:
     post:
       security:
         - cookieAuth: []
@@ -1423,7 +1423,7 @@ paths:
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
           
-  /projectexec/{id}/collaborators:
+  /study/{id}/collaborators:
     post:
       security:
         - cookieAuth: []
@@ -1465,7 +1465,7 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'           
-  /projectexec/{id}/restart:
+  /study/{id}/start:
     post:
       security:
         - cookieAuth: []
@@ -1493,7 +1493,7 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
-  /projectexec/{id}/delete:
+  /study/{id}/delete:
     post:
       security:
         - cookieAuth: []
@@ -1525,7 +1525,7 @@ paths:
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
           
-  /projectexec/{id}/reset:
+  /study/{id}/reset:
     post:
       security:
         - cookieAuth: []
@@ -1558,7 +1558,7 @@ paths:
           $ref: '#/components/responses/ResourceDoesNotExist' 
           
           
-  /projectexec/{id}/data:
+  /study/{id}/data:
     post:
       security:
         - cookieAuth: []
@@ -1598,7 +1598,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ObtainDataScheme'    
         description: This can be an empty body, then the whole data is requested.  
-  /projectexec/{id}/download/{downloadid}:  
+  /study/{id}/download/{downloadid}:  
     get:
       security:
         - cookieAuth: []
@@ -1637,7 +1637,7 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call                     
-  /projectexec/{id}/download/{downloadid}/check:  
+  /study/{id}/download/{downloadid}/check:  
     post:
       security:
         - cookieAuth: []
@@ -1688,7 +1688,7 @@ paths:
         '403':
           description: User has no authorization to make this call    
           
-  /projectexec/{id}/submit:  
+  /study/{id}/submit:  
     post:
       security:
         - cookieAuth: []
@@ -1723,7 +1723,7 @@ paths:
             schema:
               $ref: '#/components/schemas/TaskData'
               
-  /projectexec/{id}/getcurrenttaskinfo:  
+  /study/{id}/getcurrenttaskinfo:  
     post:
       security:
         - cookieAuth: []
@@ -1781,7 +1781,7 @@ paths:
         '403':
           description: User has no authorization to make this call
 
-  /projectexec/{id}/getpersistent:  
+  /study/{id}/getpersistent:  
     post:
       security:
         - cookieAuth: []
@@ -1814,7 +1814,7 @@ paths:
         '403':
           description: User has no authorization to make this call          
           
-  /projectexec/{id}/getcurrenttaskid:  
+  /study/{id}/getcurrenttaskid:  
     post:
       security:
         - cookieAuth: []
@@ -1975,7 +1975,7 @@ paths:
         '406':
           description: User is finished.
           
-  /projectexec/{id}/signup:  
+  /study/{id}/signup:  
     post:
       security:
         - cookieAuth: []
@@ -2019,7 +2019,7 @@ paths:
         '406':
           description: User is finished.
           
-  /projectexec/{id}/createtokens:
+  /study/{id}/createtokens:
     post:
       security:
         - cookieAuth: []
@@ -2068,7 +2068,7 @@ paths:
         '410':
           description: The project does (no longer) exist.
   
-  /projectexec/{id}/tokeninfo:
+  /study/{id}/tokeninfo:
     post:
       security:
         - cookieAuth: []
@@ -2116,7 +2116,7 @@ paths:
         '406':
           description: User is finished.
   
-  /projectexec/{id}/uploaddata:  
+  /study/{id}/uploaddata:  
     post:
       security:
         - cookieAuth: []
@@ -2160,7 +2160,7 @@ paths:
               format: binary
               description: the file to upload
               
-  /projectexec/{id}/update:  
+  /study/{id}/update:  
     post:
       security:
         - cookieAuth: []
@@ -2193,7 +2193,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ModifyiableStudyProperties'
-  /projectexec/{id}/get:  
+  /study/{id}/get:  
     post:
       security:
         - cookieAuth: []
@@ -3157,7 +3157,7 @@ components:
         active: 
           type: boolean
           description: whether the study is private or publicly visible
-    ProjectInstance:
+    Study:
       allOf: 
         - $ref: '#/components/schemas/ModifyiableStudyProperties'
         - type: object

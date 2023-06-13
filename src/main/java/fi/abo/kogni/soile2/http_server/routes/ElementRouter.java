@@ -264,14 +264,4 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	}
 
-	/*private String getTypeID(String typeID)
-	{
-		switch(typeID)
-		{
-		case "E": return SoileConfigLoader.EXPERIMENT;
-		case "P": return SoileConfigLoader.PROJECT;
-		case "T": return SoileConfigLoader.TASK;
-		default: return SoileConfigLoader.INSTANCE;			
-		}
-	}*/
 }

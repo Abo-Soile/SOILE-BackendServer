@@ -24,9 +24,9 @@ public class BasicWebTests extends SoileWebTest {
 
 		Async unAuthAsync = context.async();
 		System.out.println("------------------------Using an unauthed Session to retrieve information -----------------------------------");
-		POST(unAuthedSession, "/projectexec/list", null,null)
+		POST(unAuthedSession, "/study/list", null,null)
 		.onSuccess(listresponse -> {							
-			POST(unAuthedSession, "/projectexec/list", null,null)
+			POST(unAuthedSession, "/study/list", null,null)
 			.onSuccess(listresponse2 -> {
 				POST(unAuthedSession, "/test/auth", null,null)
 				.onSuccess(authResponse -> {

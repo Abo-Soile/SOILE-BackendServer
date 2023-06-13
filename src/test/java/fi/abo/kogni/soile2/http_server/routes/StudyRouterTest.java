@@ -46,11 +46,11 @@ public class StudyRouterTest extends SoileWebTest {
 					String projectVersion = projectData.getString("version");
 					Async startAsync = context.async();
 
-					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
+					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec )
 					.onSuccess(response -> {
 						Async listAsync = context.async();
 						String id = response.bodyAsJsonObject().getString("projectID");
-						POST(authedSession, "/projectexec/list", null,null)
+						POST(authedSession, "/study/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 							context.assertEquals(id, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
@@ -59,7 +59,7 @@ public class StudyRouterTest extends SoileWebTest {
 						.onFailure(err -> context.fail(err));
 						Async emptyListAsync = context.async();
 
-						POST(wrongSession, "/projectexec/list", null,null)
+						POST(wrongSession, "/study/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(0, listresponse.bodyAsJsonArray().size());
 							emptyListAsync.complete();
@@ -106,15 +106,15 @@ public class StudyRouterTest extends SoileWebTest {
 					String projectVersion = projectData.getString("version");
 					Async startAsync = context.async();
 
-					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec1 )
+					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec1 )
 					.onSuccess(response1 -> {
 						String id1 = response1.bodyAsJsonObject().getString("projectID");
 
-						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec2 )
+						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec2 )
 						.onSuccess(response2 -> {
 							String id2 = response2.bodyAsJsonObject().getString("projectID");
 							Async listAsync = context.async();
-							POST(authedSession, "/projectexec/list", null,null)
+							POST(authedSession, "/study/list", null,null)
 							.onSuccess(listresponse -> {
 								context.assertEquals(2, listresponse.bodyAsJsonArray().size());
 								List<String> uuids = new LinkedList<>();
@@ -128,7 +128,7 @@ public class StudyRouterTest extends SoileWebTest {
 							})
 							.onFailure(err -> context.fail(err));
 							Async readlistasync = context.async();
-							POST(authedSession, "/projectexec/list", new JsonObject().put("access",  "read"),null)
+							POST(authedSession, "/study/list", new JsonObject().put("access",  "read"),null)
 							.onSuccess(listresponse -> {
 								context.assertEquals(2, listresponse.bodyAsJsonArray().size());
 								List<String> uuids = new LinkedList<>();
@@ -143,7 +143,7 @@ public class StudyRouterTest extends SoileWebTest {
 							.onFailure(err -> context.fail(err));
 							Async emptyListAsync = context.async();
 
-							POST(wrongSession, "/projectexec/list", null,null)
+							POST(wrongSession, "/study/list", null,null)
 							.onSuccess(listresponse -> {
 								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
@@ -152,7 +152,7 @@ public class StudyRouterTest extends SoileWebTest {
 							.onFailure(err -> context.fail(err));
 
 							Async accessAsync = context.async();
-							POST(wrongSession, "/projectexec/list", new JsonObject().put("access",  "read"),null)
+							POST(wrongSession, "/study/list", new JsonObject().put("access",  "read"),null)
 							.onSuccess(listresponse -> {
 								context.assertEquals(0, listresponse.bodyAsJsonArray().size());							
 								accessAsync.complete();
@@ -160,7 +160,7 @@ public class StudyRouterTest extends SoileWebTest {
 							.onFailure(err -> context.fail(err));
 							Async unAuthAsync = context.async();
 
-							POST(unAuthedSession, "/projectexec/list", null,null)
+							POST(unAuthedSession, "/study/list", null,null)
 							.onSuccess(listresponse -> {
 								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
@@ -198,7 +198,7 @@ public class StudyRouterTest extends SoileWebTest {
 		JsonArray permissionSettings = new JsonArray();
 		JsonObject permissionChange = new JsonObject().put("username","Researcher2")
 				.put("command", PermissionChange.Update.toString().toLowerCase())
-				.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.INSTANCE.toString())
+				.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.STUDY.toString())
 						.put("permissionSettings", permissionSettings));
 
 		Async setupAsync = context.async();
@@ -209,7 +209,7 @@ public class StudyRouterTest extends SoileWebTest {
 				createAndStartProject(authedSession, false, "blubb", "Testproject")				
 				.onSuccess(id1 -> {						
 					Async workingList = context.async();
-					POST(authedSession, "/projectexec/" + id1 + "/collaborators", null,null )
+					POST(authedSession, "/study/" + id1 + "/collaborators", null,null )
 					.onSuccess(collabList -> {	
 						JsonArray collabs = collabList.bodyAsJsonArray();
 						context.assertEquals(1, collabs.size());
@@ -220,7 +220,7 @@ public class StudyRouterTest extends SoileWebTest {
 					})
 					.onFailure(err -> context.fail(err));
 					Async unauthed = context.async();
-					POST(wrongSession, "/projectexec/" + id1 + "/collaborators", null,null )
+					POST(wrongSession, "/study/" + id1 + "/collaborators", null,null )
 					.onSuccess(collabList -> {	
 						context.fail("Should not have access");														
 					})
@@ -237,15 +237,15 @@ public class StudyRouterTest extends SoileWebTest {
 							.onSuccess(dbEntries -> {	
 								Async permChange = context.async(); 
 								// exactly one access.
-								JsonArray permissions = dbEntries.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField"));
+								JsonArray permissions = dbEntries.getJsonArray(SoileConfigLoader.getUserdbField("studyPermissionsField"));
 								context.assertEquals(1, permissions.size());
 								context.assertEquals(SoilePermissionProvider.buildPermissionString(id1, PermissionType.EXECUTE), permissions.getString(0));
 								POST(authedSession, "/user/setpermissions",null,permissionChange)
 								.onSuccess(canRead -> {	
 									mongo_client.findOne(SoileConfigLoader.getdbProperty("userCollection"), new JsonObject().put("username", "Researcher2"), null)
 									.onSuccess(dbEntries2 -> {
-									System.out.println(dbEntries2.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField")).encodePrettily());
-									POST(wrongSession, "/projectexec/" + id1 + "/collaborators", null,null )
+									System.out.println(dbEntries2.getJsonArray(SoileConfigLoader.getUserdbField("studyPermissionsField")).encodePrettily());
+									POST(wrongSession, "/study/" + id1 + "/collaborators", null,null )
 									.onSuccess(collabList -> {	
 										JsonArray collabs = collabList.bodyAsJsonArray();
 										// and now we have a second user. 
@@ -298,24 +298,24 @@ public class StudyRouterTest extends SoileWebTest {
 					String projectVersion = projectData.getString("version");
 					Async startAsync = context.async();
 
-					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
+					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec )
 					.onSuccess(response -> {
 						Async listAsync = context.async();
 						Async emptyListAsync = context.async();
 						String id = response.bodyAsJsonObject().getString("projectID");
-						POST(authedSession, "/projectexec/list", null,null)
+						POST(authedSession, "/study/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 							context.assertEquals(id, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
-							POST(authedSession, "/projectexec/" + id + "/stop", null,null )
+							POST(authedSession, "/study/" + id + "/stop", null,null )
 							.onSuccess( stopped -> {
-								POST(authedSession, "/projectexec/" + id + "/signup", null,null)
+								POST(authedSession, "/study/" + id + "/signup", null,null)
 								.onSuccess(res -> context.fail("This should fail because the project is inactive"))
 								.onFailure(rejected -> {
 									context.assertEquals(410, ((HttpException)rejected).getStatusCode());
-									POST(authedSession, "/projectexec/" + id + "/restart", null,null )
+									POST(authedSession, "/study/" + id + "/start", null,null )
 									.onSuccess( restarted -> {
-										POST(authedSession, "/projectexec/" + id + "/signup", null,null)
+										POST(authedSession, "/study/" + id + "/signup", null,null)
 										.onSuccess(res -> {											
 											listAsync.complete();																		
 										})
@@ -331,7 +331,7 @@ public class StudyRouterTest extends SoileWebTest {
 						})
 						.onFailure(err -> context.fail(err));
 
-						POST(wrongSession, "/projectexec/list", null,null)
+						POST(wrongSession, "/study/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(0, listresponse.bodyAsJsonArray().size());
 							emptyListAsync.complete();
@@ -376,16 +376,16 @@ public class StudyRouterTest extends SoileWebTest {
 							String projectID2 = projectData2.getString("UUID");						
 							String projectVersion2 = projectData2.getString("version");
 							Async startAsync = context.async();
-							POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )					
+							POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec )					
 							.onSuccess(response -> {
 								// we have a project set up. lets try to get the information.
 								String studyId = response.bodyAsJsonObject().getString("projectID");					
 								Async getsetasync = context.async();
-								POST(authedSession, "/projectexec/" + studyId + "/restart", null, null)
+								POST(authedSession, "/study/" + studyId + "/start", null, null)
 								.onSuccess(active2 -> {
-									POST(authedSession, "/projectexec/" + studyId + "/get", null, null)
+									POST(authedSession, "/study/" + studyId + "/get", null, null)
 									.onSuccess(studyDataResponse -> {
-										POST(authedSession, "/projectexec/" + studyId + "/signup", null,null)
+										POST(authedSession, "/study/" + studyId + "/signup", null,null)
 										.onSuccess(res -> {
 											JsonObject studyData = studyDataResponse.bodyAsJsonObject();
 											JsonObject studyData2 = studyDataResponse.bodyAsJsonObject();
@@ -397,16 +397,16 @@ public class StudyRouterTest extends SoileWebTest {
 											studyData.put("sourceUUID", projectID2);
 											studyData.put("version", projectVersion2);
 											Async failAsync = context.async();
-											POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData)
+											POST(authedSession, "/study/" + studyId +"/update", null, studyData)
 											.onSuccess(updateResponse -> {
 												context.fail("This should not be possible");
 											})
 											.onFailure(err -> failAsync.complete());	
 											studyData2.put("private",false);
 											studyData2.put("shortDescription","Fancy");		
-											POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData2)
+											POST(authedSession, "/study/" + studyId +"/update", null, studyData2)
 											.onSuccess(updateResponse -> {
-												POST(authedSession, "/projectexec/" + studyId + "/get", null, null)
+												POST(authedSession, "/study/" + studyId + "/get", null, null)
 												.onSuccess(updatedstudyDataResponse -> {
 													JsonObject studyDatanew = updatedstudyDataResponse.bodyAsJsonObject();
 													context.assertEquals("Fancy", studyDatanew.getString("shortDescription"));
@@ -425,7 +425,7 @@ public class StudyRouterTest extends SoileWebTest {
 									})
 									.onFailure(err -> context.fail(err));
 									Async failedAsync = context.async();
-									POST(wrongSession, "/projectexec/" + studyId + "/get", null,null)
+									POST(wrongSession, "/study/" + studyId + "/get", null,null)
 									.onSuccess(listresponse -> {
 										context.fail("Does not have accesss");
 									})
@@ -472,12 +472,12 @@ public class StudyRouterTest extends SoileWebTest {
 						String projectID2 = projectData2.getString("UUID");
 						String projectVersion2 = projectData2.getString("version");
 						Async startAsync = context.async();
-						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )					
+						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec )					
 						.onSuccess(response -> {
 							// we have a project set up. lets try to get the information.
 							String studyId = response.bodyAsJsonObject().getString("projectID");					
 							Async getsetasync = context.async();
-							POST(authedSession, "/projectexec/" + studyId + "/get", null, null)
+							POST(authedSession, "/study/" + studyId + "/get", null, null)
 							.onSuccess(studyDataResponse -> {
 
 								JsonObject studyData = studyDataResponse.bodyAsJsonObject();
@@ -488,9 +488,9 @@ public class StudyRouterTest extends SoileWebTest {
 								studyData.put("private", false);
 								studyData.put("sourceUUID", projectID2);
 								studyData.put("version", projectVersion2);
-								POST(authedSession, "/projectexec/" + studyId +"/update", null, studyData)
+								POST(authedSession, "/study/" + studyId +"/update", null, studyData)
 								.onSuccess(updateResponse -> {
-									POST(authedSession, "/projectexec/" + studyId + "/get", null, null)
+									POST(authedSession, "/study/" + studyId + "/get", null, null)
 									.onSuccess(updatedstudyDataResponse -> {
 										JsonObject studyData2 = updatedstudyDataResponse.bodyAsJsonObject();
 										System.out.println(studyData2.encodePrettily());
@@ -508,7 +508,7 @@ public class StudyRouterTest extends SoileWebTest {
 							})
 							.onFailure(err -> context.fail(err));
 							Async failedAsync = context.async();
-							POST(wrongSession, "/projectexec/" + studyId + "/get", null,null)
+							POST(wrongSession, "/study/" + studyId + "/get", null,null)
 							.onSuccess(listresponse -> {
 								context.fail("Does not have accesss");
 							})
@@ -548,7 +548,7 @@ public class StudyRouterTest extends SoileWebTest {
 					.onSuccess(accessToken -> {
 						Async requestTokensAsync = context.async();
 						Async mongoAsync = context.async();
-						mongo_client.find(SoileConfigLoader.getdbProperty("projectInstanceCollection"), new JsonObject())
+						mongo_client.find(SoileConfigLoader.getdbProperty("studyCollection"), new JsonObject())
 						.onSuccess(results -> {
 							for(JsonObject o : results)
 							{
@@ -557,7 +557,7 @@ public class StudyRouterTest extends SoileWebTest {
 							mongoAsync.complete();
 						})
 						.onFailure(err -> context.fail(err));
-						POST(generatorSession, "/projectexec/" + projectID + "/tokeninfo", null, null)
+						POST(generatorSession, "/study/" + projectID + "/tokeninfo", null, null)
 						.onSuccess(Response -> {
 							JsonObject tokeninfo = Response.bodyAsJsonObject();
 							System.out.println(tokeninfo.encodePrettily());

@@ -153,7 +153,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 
 		JsonObject permissionChangeOther = new JsonObject().put("username","OtherUser")
 				.put("command", "add")
-				.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.INSTANCE.toString())
+				.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.STUDY.toString())
 						.put("permissionSettings", permissionSettings));
 		Async setupAsync = context.async();
 		createAndStartProject(false, "new", "Testproject")				
@@ -170,7 +170,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 							mongo_client.findOne(SoileConfigLoader.getdbProperty("userCollection"), new JsonObject().put("username", "OtherUser"), null)							
 							.onSuccess(dbEntries -> {								
 								// exactly one access.								
-								JsonArray permissions = dbEntries.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField"));
+								JsonArray permissions = dbEntries.getJsonArray(SoileConfigLoader.getUserdbField("studyPermissionsField"));
 								// execute and FULL
 								System.out.println(permissions.encodePrettily());
 								context.assertEquals(2, permissions.size());
@@ -184,7 +184,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 									mongo_client.findOne(SoileConfigLoader.getdbProperty("userCollection"), new JsonObject().put("username", "OtherUser"), null)							
 									.onSuccess(dbEntries2 -> {								
 										// exactly one access.
-										JsonArray permissions2 = dbEntries2.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField"));
+										JsonArray permissions2 = dbEntries2.getJsonArray(SoileConfigLoader.getUserdbField("studyPermissionsField"));
 										// execute and FULL
 										context.assertEquals(2, permissions2.size());
 										context.assertTrue(permissions2.contains(SoilePermissionProvider.buildPermissionString(studyID, PermissionType.EXECUTE)));
@@ -817,13 +817,13 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 					String projectID = projectData.getString("UUID");
 					String projectVersion = projectData.getString("version");				
 					Async startAsync = context.async();
-					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
+					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec )
 					.onSuccess(response -> {					
 						String id = response.bodyAsJsonObject().getString("projectID");
-						POST(authedSession,"/projectexec/" + id + "/restart", null, null)
+						POST(authedSession,"/study/" + id + "/start", null, null)
 						.onSuccess(active -> {
 							Async listAsync = context.async();
-							POST(authedSession, "/projectexec/" + id + "/signup", null,null)
+							POST(authedSession, "/study/" + id + "/signup", null,null)
 							.onSuccess(res -> {		
 								POST(authedSession, "/user/activeprojects", null, null)
 								.onSuccess(actives -> {
@@ -845,7 +845,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 								context.fail("This should be unauthenticated, and fail.");
 							}).onFailure(unauthed -> {
 								context.assertEquals(401, ((HttpException)unauthed).getStatusCode());
-								POST(nonAuthedSession, "/projectexec/" + id + "/signup", null,null)
+								POST(nonAuthedSession, "/study/" + id + "/signup", null,null)
 								.onSuccess(res -> {						
 									String token = res.bodyAsJsonObject().getString("token");
 									nonAuthedSession.addHeader("Authorization", token);

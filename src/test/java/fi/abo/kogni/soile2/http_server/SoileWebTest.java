@@ -88,9 +88,9 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 			.onSuccess(projectData -> {				
 				String projectID = projectData.getString("UUID");
 				String projectVersion = projectData.getString("version");
-				POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
+				POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec )
 				.onSuccess(response -> {
-					POST(authedSession, "/projectexec/" + response.bodyAsJsonObject().getString("projectID") + "/restart", null, null )
+					POST(authedSession, "/study/" + response.bodyAsJsonObject().getString("projectID") + "/start", null, null )
 					.onSuccess(activated -> {
 						projectInstancePromise.complete(response.bodyAsJsonObject().getString("projectID"));	
 					})
@@ -111,9 +111,9 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 			.onSuccess(projectData -> {				
 				String projectID = projectData.getString("UUID");
 				String projectVersion = projectData.getString("version");
-				POST(session, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
+				POST(session, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec )
 				.onSuccess(response -> {
-					POST(session, "/projectexec/" + response.bodyAsJsonObject().getString("projectID") + "/restart", null, null )
+					POST(session, "/study/" + response.bodyAsJsonObject().getString("projectID") + "/start", null, null )
 					.onSuccess(activated -> {
 						projectInstancePromise.complete(response.bodyAsJsonObject().getString("projectID"));	
 					})
@@ -149,7 +149,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	protected Future<Void> checkTaskIsCorrect(WebClientSession client, String instanceID, String taskID)
 	{
 		Promise<Void> correctTask = Promise.promise();
-		POST(client, "/projectexec/" + instanceID + "/getcurrenttaskinfo", null, null)
+		POST(client, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 		.onSuccess(nexttaskID -> {
 			if(nexttaskID.bodyAsJsonObject().getString("id").equals(taskID))
 			{
@@ -176,7 +176,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	protected Future<String> signUpToProjectWithToken(WebClientSession client,String Token, String projectID)
 	{
 		Promise<String> tokenPromise = Promise.promise();
-		POST(client,"/projectexec/" + projectID + "/signup", new JsonObject().put("token", Token), null)
+		POST(client,"/study/" + projectID + "/signup", new JsonObject().put("token", Token), null)
 		.onSuccess(response -> {
 			tokenPromise.complete(response.bodyAsJsonObject().getString("token"));
 		})
@@ -193,7 +193,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	protected Future<Void> signUpToProject(WebClient client, String projectID)
 	{
 		Promise<Void> tokenPromise = Promise.promise();
-		POST(client,"/projectexec/" + projectID + "/signup", null, null)
+		POST(client,"/study/" + projectID + "/signup", null, null)
 		.onSuccess(response -> {
 			tokenPromise.complete();
 		})
@@ -213,7 +213,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	protected Future<JsonArray> createTokens(WebClient client, String projectID, int count, boolean unique)
 	{
 		Promise<JsonArray> resultPromise = Promise.promise();
-		POST(client,"/projectexec/" + projectID + "/createtokens", new JsonObject().put("unique", unique).put("count", count), null )
+		POST(client,"/study/" + projectID + "/createtokens", new JsonObject().put("unique", unique).put("count", count), null )
 		.onSuccess(response -> {
 			if(unique)
 			{
@@ -418,7 +418,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	 */
 	public static Future<String> uploadResult(WebClient webClient, String instanceID, File target, String Filename, String mimeType)
 	{
-		String URL = "/projectexec/" + instanceID + "/uploaddata";
+		String URL = "/study/" + instanceID + "/uploaddata";
 		return upload(webClient, URL, Filename, target, mimeType, "id");		
 	}	
 	

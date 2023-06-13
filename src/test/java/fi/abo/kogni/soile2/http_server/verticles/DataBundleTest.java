@@ -52,7 +52,7 @@ public class DataBundleTest extends ElementTester {
 		ParticipantDataLakeManager dlm = new ParticipantDataLakeManager(resultDataLakeDir, vertx);
 		createProject(context).onSuccess(project ->
 		{
-			projHandler.createProjectInstance(getCreationJson(project, "TestProject", ""))
+			projHandler.createStudy(getCreationJson(project, "TestProject", ""))
 			.onSuccess(projInstance -> {
 				projInstance.activate()
 				.onSuccess(active -> {
