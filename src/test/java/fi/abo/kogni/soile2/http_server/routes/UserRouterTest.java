@@ -4,8 +4,12 @@ import org.junit.Test;
 
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.UserVerticleTest;
+import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
+import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -82,12 +86,12 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 		JsonArray permissionSettings = new JsonArray();
 		JsonObject permissionChange = new JsonObject().put("username","NonAdmin")
 				.put("command", "add")
-				.put("permissionsProperties", new JsonObject().put("elementType", "EXPERIMENT")
+				.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.EXPERIMENT.toString())
 						.put("permissionSettings", permissionSettings));
 
 		JsonObject permissionChangeOther = new JsonObject().put("username","OtherUser")
 				.put("command", "add")
-				.put("permissionsProperties", new JsonObject().put("elementType", "EXPERIMENT")
+				.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.EXPERIMENT.toString())
 						.put("permissionSettings", permissionSettings));
 		Async testAsync = context.async();
 		createUser(vertx, "OtherUser", "otherpw")
@@ -141,6 +145,69 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 
 	}
 
+	@Test
+	public void permissionModificationTest(TestContext context)
+	{
+		System.out.println("--------------------  Testing Web Role and Permission Changes  ----------------------");
+		JsonArray permissionSettings = new JsonArray();
+
+		JsonObject permissionChangeOther = new JsonObject().put("username","OtherUser")
+				.put("command", "add")
+				.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.INSTANCE.toString())
+						.put("permissionSettings", permissionSettings));
+		Async setupAsync = context.async();
+		createAndStartProject(false, "new", "Testproject")				
+			.onSuccess(studyID -> {
+				createUserAndAuthedSession("OtherUser", "testpw", Roles.Researcher)
+				.onSuccess(userSession -> {
+					signUpToProject(userSession, studyID)
+					.onSuccess(signedUp -> {
+						permissionSettings.add(new JsonObject().put("type", PermissionType.FULL.toString())
+								.put("target", studyID));
+						POST(generatorSession, "/user/setpermissions",null,permissionChangeOther)
+						.onSuccess(changed -> {
+							Async changes = context.async();
+							mongo_client.findOne(SoileConfigLoader.getdbProperty("userCollection"), new JsonObject().put("username", "OtherUser"), null)							
+							.onSuccess(dbEntries -> {								
+								// exactly one access.								
+								JsonArray permissions = dbEntries.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField"));
+								// execute and FULL
+								System.out.println(permissions.encodePrettily());
+								context.assertEquals(2, permissions.size());
+								context.assertTrue(permissions.contains(SoilePermissionProvider.buildPermissionString(studyID, PermissionType.EXECUTE)));
+								context.assertTrue(permissions.contains(SoilePermissionProvider.buildPermissionString(studyID, PermissionType.FULL)));
+								permissionSettings.set(0,new JsonObject().put("type", PermissionType.READ.toString())
+										.put("target", studyID));
+								permissionChangeOther.put("command", PermissionChange.Update.toString().toLowerCase());
+								POST(generatorSession, "/user/setpermissions",null,permissionChangeOther)
+								.onSuccess(changed2 -> {
+									mongo_client.findOne(SoileConfigLoader.getdbProperty("userCollection"), new JsonObject().put("username", "OtherUser"), null)							
+									.onSuccess(dbEntries2 -> {								
+										// exactly one access.
+										JsonArray permissions2 = dbEntries2.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField"));
+										// execute and FULL
+										context.assertEquals(2, permissions2.size());
+										context.assertTrue(permissions2.contains(SoilePermissionProvider.buildPermissionString(studyID, PermissionType.EXECUTE)));
+										context.assertTrue(permissions2.contains(SoilePermissionProvider.buildPermissionString(studyID, PermissionType.READ)));
+										changes.complete();
+									})
+									.onFailure(err -> context.fail(err));		
+								})
+								.onFailure(err -> context.fail(err));
+							})
+							.onFailure(err -> context.fail(err));
+
+							setupAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
+					})
+					.onFailure(err -> context.fail(err));
+				})
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
+	}
+	
 	@Test
 	public void listUsersTest(TestContext context)
 	{		

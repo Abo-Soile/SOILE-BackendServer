@@ -1422,6 +1422,49 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
+          
+  /projectexec/{id}/collaborators:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - study
+      summary: Get the people who have researcher access to this project (i.e. who have at least read access)
+      operationId: getCollaboratorsForStudy
+      description: Get the collaborators. 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project
+          schema:
+            type : string
+            
+      responses:
+        '200':
+          description: The list of collaborators along with their access levels, only usernames will be provided.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  type: object
+                  properties:
+                    user: 
+                      type: string
+                      description: The username
+                    access:
+                      type: string
+                      description: the access level to this study, either READ / READ_WRITE or FULL
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'           
   /projectexec/{id}/restart:
     post:
       security:
@@ -2631,6 +2674,7 @@ components:
         properties: 
           type: 
             type: string
+            example: "READ"
             description: "What type of permission, can be one of READ, READ_WRITE, FULL, READ access to instances allows executing the project but doesn't allow access to the data (except your own data)"
           target: 
             type: string

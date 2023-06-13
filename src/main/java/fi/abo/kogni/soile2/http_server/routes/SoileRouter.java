@@ -50,7 +50,7 @@ public class SoileRouter {
 		taskIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Task().getTargetCollection(), client);
 		experimentIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Experiment().getTargetCollection(), client);
 		projectIDAccessHandler = new SoileIDBasedAuthorizationHandler(new Project().getTargetCollection(), client);
-		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client);
+		instanceIDAccessHandler = new SoileIDBasedAuthorizationHandler(new AccessProjectInstance().getTargetCollection(), client, true);
 
 		roleHandler = new SoileRoleBasedAuthorizationHandler();
 	}
@@ -62,7 +62,7 @@ public class SoileRouter {
 	 */
 	public static void handleError(Throwable err, RoutingContext context)
 	{
-		LOGGER.error("Reporting error" , err);		
+		LOGGER.error("Reporting error" , err);
 		if(err instanceof ElementNameExistException)
 		{	
 			sendError(context, 409, err.getMessage());			

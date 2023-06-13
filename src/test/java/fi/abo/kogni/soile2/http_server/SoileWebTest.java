@@ -74,20 +74,13 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		return createAndStartProject(priv, shortcut, "Testproject");
 	}
 			
-	/**
-	 * Create and start the a project from the APIProjects with the given name 
-	 * @param priv
-	 * @param shortcut
-	 * @param ProjectName
-	 * @return
-	 */
-	protected Future<String> createAndStartProject(boolean priv, String shortcut, String ProjectName)
+	
+	protected Future<String> createAndStartProject(WebClientSession session, boolean priv, String shortcut, String ProjectName)
 	{
 		JsonObject projectExec = new JsonObject().put("private", priv).put("name", "New Project").put("shortcut",shortcut); 
 		Promise<String> projectInstancePromise = Promise.promise();
-		if(generatorSession == null)
-		{
-		
+		if(session == null)
+		{		
 		createUserAndAuthedSession("Researcher", "test", Roles.Researcher)
 		.onSuccess(authedSession -> {
 			generatorSession = authedSession;
@@ -114,13 +107,17 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		}
 		else
 		{
-			WebObjectCreator.createProject(generatorSession, ProjectName)
+			WebObjectCreator.createProject(session, ProjectName)
 			.onSuccess(projectData -> {				
 				String projectID = projectData.getString("UUID");
 				String projectVersion = projectData.getString("version");
-				POST(generatorSession, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
+				POST(session, "/project/" + projectID + "/" + projectVersion + "/start", null,projectExec )
 				.onSuccess(response -> {
-					projectInstancePromise.complete(response.bodyAsJsonObject().getString("projectID"));
+					POST(session, "/projectexec/" + response.bodyAsJsonObject().getString("projectID") + "/restart", null, null )
+					.onSuccess(activated -> {
+						projectInstancePromise.complete(response.bodyAsJsonObject().getString("projectID"));	
+					})
+					.onFailure(err -> projectInstancePromise.fail(err));
 				})
 				.onFailure(err -> projectInstancePromise.fail(err));
 
@@ -128,6 +125,18 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 			.onFailure(err -> projectInstancePromise.fail(err));
 		}
 		return projectInstancePromise.future();
+	}
+	
+	/**
+	 * Create and start the a project from the APIProjects with the given name 
+	 * @param priv
+	 * @param shortcut
+	 * @param ProjectName
+	 * @return
+	 */
+	protected Future<String> createAndStartProject(boolean priv, String shortcut, String ProjectName)
+	{
+		return createAndStartProject(generatorSession, priv, shortcut, ProjectName);
 	}
 
 	/**

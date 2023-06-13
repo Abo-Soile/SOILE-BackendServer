@@ -1,14 +1,20 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
+import java.lang.annotation.ElementType;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
+import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
+import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -178,6 +184,98 @@ public class StudyRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 
+	
+	/**
+	 * Testing getting a list of collaborators for a project. 
+	 * @param context
+	 */
+	@Test
+	public void testCollaboratorAccessToProject(TestContext context)
+	{
+		
+		System.out.println("--------------------  Running Collaboration Access test  ----------------------");    
+
+		JsonArray permissionSettings = new JsonArray();
+		JsonObject permissionChange = new JsonObject().put("username","Researcher2")
+				.put("command", PermissionChange.Update.toString().toLowerCase())
+				.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.INSTANCE.toString())
+						.put("permissionSettings", permissionSettings));
+
+		Async setupAsync = context.async();
+		createUserAndAuthedSession("Researcher", "pw", Roles.Researcher)
+		.onSuccess(authedSession -> {
+			createUserAndAuthedSession("Researcher2", "pw", Roles.Researcher)
+			.onSuccess(wrongSession -> {
+				createAndStartProject(authedSession, false, "blubb", "Testproject")				
+				.onSuccess(id1 -> {						
+					Async workingList = context.async();
+					POST(authedSession, "/projectexec/" + id1 + "/collaborators", null,null )
+					.onSuccess(collabList -> {	
+						JsonArray collabs = collabList.bodyAsJsonArray();
+						context.assertEquals(1, collabs.size());
+						context.assertTrue(collabs.getJsonObject(0).containsKey("user"));
+						context.assertEquals("Researcher", collabs.getJsonObject(0).getString("user"));
+						context.assertEquals("FULL", collabs.getJsonObject(0).getString("access"));
+						workingList.complete();
+					})
+					.onFailure(err -> context.fail(err));
+					Async unauthed = context.async();
+					POST(wrongSession, "/projectexec/" + id1 + "/collaborators", null,null )
+					.onSuccess(collabList -> {	
+						context.fail("Should not have access");														
+					})
+					.onFailure(cannotRead -> {
+						cannotRead.printStackTrace(System.out);
+						// Now, lets activate this user give them access to the Study.
+						permissionSettings.add(new JsonObject().put("type", PermissionType.READ.toString())
+								.put("target", id1));
+						// Still sign them up.
+						Async signUp = context.async();
+						signUpToProject(wrongSession, id1)
+						.onSuccess(signedUp -> {
+							mongo_client.findOne(SoileConfigLoader.getdbProperty("userCollection"), new JsonObject().put("username", "Researcher2"), null)
+							.onSuccess(dbEntries -> {	
+								Async permChange = context.async(); 
+								// exactly one access.
+								JsonArray permissions = dbEntries.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField"));
+								context.assertEquals(1, permissions.size());
+								context.assertEquals(SoilePermissionProvider.buildPermissionString(id1, PermissionType.EXECUTE), permissions.getString(0));
+								POST(authedSession, "/user/setpermissions",null,permissionChange)
+								.onSuccess(canRead -> {	
+									mongo_client.findOne(SoileConfigLoader.getdbProperty("userCollection"), new JsonObject().put("username", "Researcher2"), null)
+									.onSuccess(dbEntries2 -> {
+									System.out.println(dbEntries2.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField")).encodePrettily());
+									POST(wrongSession, "/projectexec/" + id1 + "/collaborators", null,null )
+									.onSuccess(collabList -> {	
+										JsonArray collabs = collabList.bodyAsJsonArray();
+										// and now we have a second user. 
+										context.assertEquals(2, collabs.size());
+
+										permChange.complete();
+									})								
+									.onFailure(err -> context.fail(err));
+									})								
+									.onFailure(err -> context.fail(err));
+								})
+								.onFailure(err -> context.fail(err));
+								signUp.complete();
+							})
+							.onFailure(err -> context.fail(err));
+						})
+						.onFailure(err -> context.fail(err));
+
+						unauthed.complete();
+					});
+					setupAsync.complete();						
+
+				})
+				.onFailure(err -> context.fail(err));
+
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
 
 	/**
 	 * This test tests both starting and getting the list of running projects.

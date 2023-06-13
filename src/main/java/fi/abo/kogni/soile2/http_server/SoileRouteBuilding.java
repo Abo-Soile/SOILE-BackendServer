@@ -381,6 +381,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("updateStudy").handler(router::updateStudy);
 		builder.operation("getStudyProperties").handler(router::getStudyProperties);
 		builder.operation("getTokenInformation").handler(router::getTokenInformation);
+		builder.operation("getCollaboratorsForStudy").handler(router::getCollaboratorsForStudy);		
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	

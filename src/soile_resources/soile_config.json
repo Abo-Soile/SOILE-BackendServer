@@ -127,7 +127,8 @@
 			"removeUser" : "removeUser",
 			"setUserInfo" : "setUserInfo",
 			"setPassword" : "setPassword",
-			"setUserFullNameAndEmail" :"setNameAndEmail"
+			"setUserFullNameAndEmail" :"setNameAndEmail",
+			"getCollaboratorsforStudy": "getStudyCollaborators"
 			}
 	},
 

@@ -20,6 +20,7 @@ import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExis
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
+import fi.abo.kogni.soile2.utils.MessageResponseHandler;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.CompositeFuture;
@@ -533,4 +534,37 @@ public class StudyRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}	
+	
+	
+	/**
+	 * Set the permissions of a specified user.
+	 * @param context
+	 */
+	public void getCollaboratorsForStudy(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);						
+		String requestedInstanceID = params.pathParameter("id").getString();
+		
+		instanceAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
+		.onSuccess(Void ->	{	
+			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"getCollaboratorsforStudy" ), new JsonObject().put("studyID",requestedInstanceID))
+			.onSuccess(res -> {
+				JsonObject result = (JsonObject)res.body();
+				if(result.getString(SoileCommUtils.RESULTFIELD).equals(SoileCommUtils.SUCCESS))
+				{
+					context.response()
+					.setStatusCode(200)
+					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+					.end(result.getJsonArray(SoileCommUtils.DATAFIELD).encode());
+				}
+				else
+				{
+					handleError(new Exception(result.getString(SoileCommUtils.REASONFIELD)), context);
+				}
+			})
+			.onFailure(err -> handleError(err,context));
+		})
+		.onFailure(err -> handleError(err,context));	
+	}
+	
 }

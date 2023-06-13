@@ -21,8 +21,10 @@ import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExis
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -101,6 +103,8 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getUserInfo"), this::getUserInfo));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getAccessRequest"), this::getUserAccessInfo));
 		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("setPassword"), this::setPassword));
+		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getCollaboratorsforStudy"), this::getCollaboratorsForStudy));
+
 	}
 
 
@@ -486,8 +490,23 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 					try
 					{
 
-						JsonArray alteredPermissions = convertPermissionsArray(permissions.getJsonArray("permissionSettings"));
-						userManager.changePermissions(userName, getOptionForType(permissions.getString("elementType")), alteredPermissions, getChange(changeType), res -> {
+																		
+						if(permissions.getJsonArray("permissionSettings").size() == 1)
+						{
+							JsonObject permissionChange = permissions.getJsonArray("permissionSettings").getJsonObject(0);
+							PermissionType permissionType = null;						
+							try
+							{
+								permissionType = PermissionType.valueOf(permissionChange.getString("type"));								
+							}
+							catch(IllegalArgumentException | NullPointerException e)
+							{
+								throw new HttpException(400, permissionChange.getString("type") + " is not a valid type for permissions");
+							}							
+							
+							//String username, MongoAuthorizationOptions options, String targetElement, PermissionType newType, PermissionChange alterationFlag, Handler<AsyncResult<JsonObject>> resultHandler
+							userManager.changePermissions(userName, getOptionForType(permissions.getString("elementType")), 
+														  permissionChange.getString("target"), permissionType, getChange(changeType), res -> {
 							if(res.succeeded())
 							{
 								msg.reply(SoileCommUtils.successObject());
@@ -498,6 +517,22 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 								handleError(res.cause(), msg);	
 							}	
 						});
+						}
+						else
+						{
+							JsonArray alteredPermissions = convertPermissionsArray(permissions.getJsonArray("permissionSettings"));
+							userManager.changePermissions(userName, getOptionForType(permissions.getString("elementType")), alteredPermissions, getChange(changeType), res -> {
+								if(res.succeeded())
+								{
+									msg.reply(SoileCommUtils.successObject());
+								}
+								else
+								{
+									LOGGER.error("Could not update permissions for request:\n" + command.encodePrettily() );
+									handleError(res.cause(), msg);	
+								}	
+							});	
+						}
 						return;
 					}
 					catch(HttpException e)
@@ -570,6 +605,30 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	}
 
 
+	/**
+	 * Get a list of Collaborators for a specified study
+	 * {
+	 *  "limit" : how many entries to return at most,
+	 *  "skip" : how many results to skip,
+	 *  "query" : a search string to use,
+	 *  }
+	 * @param msg
+	 */
+	void getCollaboratorsForStudy(Message<JsonObject> msg)
+	{		
+		//make sure we actually get the right thing			
+		JsonObject command = msg.body();		
+		userManager.getUserWithAccessToStudy(command.getString("studyID"))
+		.onSuccess(list -> {					
+			msg.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, list));					
+		})
+		.onFailure(err -> 
+		{
+			LOGGER.error(err,err);
+			msg.fail(400, "Error fetching Data");									
+		});		
+	}
+	
 	/**
 	 * Make a User participant in a project. The message must contain the username along with the projectInstanceID and the participantID. 
 	 * @param msg
@@ -714,11 +773,13 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		switch(change)
 		{
 		case "set": 
-			return PermissionChange.Replace;
+			return PermissionChange.Set;
 		case "add": 
 			return PermissionChange.Add;
 		case "remove":
 			return PermissionChange.Remove;
+		case "update":
+			return PermissionChange.Update;
 		default: 
 			throw new HttpException(400, "Invalid Permission change type");
 		}

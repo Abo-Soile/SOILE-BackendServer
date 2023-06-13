@@ -3,6 +3,7 @@ package fi.abo.kogni.soile2.http_server.userManagement;
 import static io.vertx.ext.auth.impl.Codec.base64Encode;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,7 +12,11 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
+import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
+import fi.abo.kogni.soile2.http_server.userManagement.exceptions.CannotUpdateMultipleException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.EmailAlreadyInUseException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidEmailAddress;
@@ -58,7 +63,8 @@ public class SoileUserManager implements MongoUserUtil{
 	public static enum PermissionChange{
 		Remove,
 		Add,
-		Replace
+		Set,
+		Update
 	}
 
 
@@ -72,7 +78,7 @@ public class SoileUserManager implements MongoUserUtil{
 		permissionMap = new HashMap<>();
 		permissionMap.put(PermissionChange.Remove, "$pull");
 		permissionMap.put(PermissionChange.Add, "$push");
-		permissionMap.put(PermissionChange.Replace, "$set");
+		permissionMap.put(PermissionChange.Set, "$set");
 	}
 
 	/**
@@ -214,38 +220,69 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param resultHandler - the handler for the results.	 
 	 * @return this
 	 */
-	public SoileUserManager changePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, PermissionChange alterationFlag, Handler<AsyncResult<JsonObject>> resultHandler)
+	public SoileUserManager changePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, PermissionChange alterationFlag, Handler<AsyncResult<Void>> resultHandler)
 	{
 
 		LOGGER.debug("Trying to update");
 		JsonObject queryObject = new JsonObject().put(options.getUsernameField(), username);		
-		JsonObject updateObject = new JsonObject().put(permissionMap.get(alterationFlag), 
-													new JsonObject().put(options.getPermissionField(), getPermissionChange(alterationFlag,permissions)));		
-		client.findOneAndUpdateWithOptions(options.getCollectionName(), queryObject, updateObject, new FindOptions(), new UpdateOptions().setUpsert(false))
-		.onComplete(res -> {
-			LOGGER.debug(res);
-			resultHandler.handle(res);
+		try {
+			JsonObject updateObject = SoilePermissionProvider.getPermissionUpdate(alterationFlag, permissions, options.getPermissionField());
+			client.findOneAndUpdateWithOptions(options.getCollectionName(), queryObject, updateObject, new FindOptions(), new UpdateOptions().setUpsert(false))
+			.onComplete(res -> {
+				LOGGER.debug(res);
+				resultHandler.handle(res.mapEmpty());
 
-		});		
+			});	
+		}
+		catch(CannotUpdateMultipleException e)
+		{
+			resultHandler.handle(Future.failedFuture(e));
+		}
 		return this;
 	}	
+
 	
 	/**
-	 * This function creates the correct Update object for the different settings.
-	 * Essentially, it will add an "$each" for pushing. 
-	 * @param flag
-	 * @param permissions
+	 * Change roles or permissions indicating the correct field of the database. 
+	 * @param username - the id to add the roles/permissions for.
+	 * @param options - the roles or permissions database field
+	 * @param permissions - the list of roles or permissions to change
+	 * @param alterationFlag - Whether to add, remove or replace the indicated permissions. 
+	 * @param resultHandler - the handler for the results.	 
+	 * @return this
 	 */
-	private Object getPermissionChange(PermissionChange flag, JsonArray permissions)
+	public SoileUserManager changePermissions(String username, MongoAuthorizationOptions options, String targetElement, PermissionType newType, PermissionChange alterationFlag, Handler<AsyncResult<Void>> resultHandler)
 	{
-		switch(flag)
+
+		LOGGER.debug("Trying to update");
+		JsonObject queryObject = new JsonObject().put(options.getUsernameField(), username);
+		JsonObject updateObject = SoilePermissionProvider.getPermissionUpdate(targetElement, alterationFlag, newType, options.getPermissionField());
+		if(!alterationFlag.equals(PermissionChange.Update))
 		{
-		case Add:	return new JsonObject().put("$each", permissions);
-		case Remove: return new JsonObject().put("$in", permissions);
-		default: return permissions;
-		}
-	}
+			// These are all atomic operations. 
+			client.findOneAndUpdateWithOptions(options.getCollectionName(), queryObject, updateObject, new FindOptions(), new UpdateOptions().setUpsert(false))
+			.onComplete(res -> {
+				LOGGER.debug(res);
+				resultHandler.handle(res.mapEmpty());
 	
+			});
+		}
+		else
+		{
+			// This is a two step operation. So we need to separate the updates.
+			JsonObject pullUpdate = new JsonObject().put("$pullAll", updateObject.remove("$pullAll"));
+			JsonObject pushUpdate = updateObject; // only push is left over.
+			List<BulkOperation> pullAndPut = new LinkedList<>();
+			BulkOperation pullOp = BulkOperation.createUpdate(queryObject, pullUpdate);
+			BulkOperation pushOp = BulkOperation.createUpdate(queryObject, pushUpdate);
+			pullAndPut.add(pullOp);
+			pullAndPut.add(pushOp);		
+			client.bulkWrite(authnOptions.getCollectionName(), pullAndPut).onComplete(result -> {
+				resultHandler.handle(result.mapEmpty());
+			});
+		}		
+		return this;
+	}		
 	
 	/**
 	 * Update the permissions for a given user, replacing the old ones by the new ones.
@@ -255,9 +292,9 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public SoileUserManager updatePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<JsonObject>> resultHandler)
+	public SoileUserManager updatePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<Void>> resultHandler)
 	{
-		return changePermissions(username, options, permissions,PermissionChange.Replace, resultHandler);		
+		return changePermissions(username, options, permissions,PermissionChange.Set, resultHandler);		
 	}		 
 
 
@@ -306,7 +343,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public SoileUserManager addPermission(String username, MongoAuthorizationOptions options, String permission, Handler<AsyncResult<JsonObject>> resultHandler)
+	public SoileUserManager addPermission(String username, MongoAuthorizationOptions options, String permission, Handler<AsyncResult<Void>> resultHandler)
 	{
 		addPermissions(username, options, new JsonArray().add(permission), resultHandler);
 		return this;
@@ -319,7 +356,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public SoileUserManager addPermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<JsonObject>> resultHandler)
+	public SoileUserManager addPermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<Void>> resultHandler)
 	{
 		return this.changePermissions(username, options, permissions, PermissionChange.Add, resultHandler);
 
@@ -332,7 +369,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public SoileUserManager removePermission(String username, MongoAuthorizationOptions options, String permission, Handler<AsyncResult<JsonObject>> resultHandler)
+	public SoileUserManager removePermission(String username, MongoAuthorizationOptions options, String permission, Handler<AsyncResult<Void>> resultHandler)
 	{
 		removePermissions(username,options, new JsonArray().add(permission), resultHandler);
 		return this;
@@ -345,7 +382,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param resultHandler - a result handler to handle the results.
 	 * @return
 	 */
-	public SoileUserManager removePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<JsonObject>> resultHandler)
+	public SoileUserManager removePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<Void>> resultHandler)
 	{
 		return this.changePermissions(username, options, permissions, PermissionChange.Remove, resultHandler);
 
@@ -922,6 +959,39 @@ public class SoileUserManager implements MongoUserUtil{
 											.put("_id", 0);
 		return client.findOne(authnOptions.getCollectionName(),query,fields);
 	}
+	
+	/**
+	 * Get users with access to a specific Study
+	 * @return A {@link JsonArray} of objects with "user" and "access" fields, where access is one of READ / READ_WRITE / FULL and user is a username  
+	 */
+	public Future<JsonArray> getUserWithAccessToStudy(String studyID) {
+		String permissionQuery = SoilePermissionProvider.buildPermissionQuery(studyID, PermissionType.READ);
+		JsonObject query = new JsonObject().put(SoileConfigLoader.getUserdbField("instancePermissionsField"),
+												new JsonObject().put("$elemMatch", 
+																	 new JsonObject().put("$regex", SoilePermissionProvider.buildPermissionQuery(studyID, PermissionType.READ))));
+		JsonObject fields = new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), 1)											
+											.put(SoileConfigLoader.getUserdbField("instancePermissionsField"), new JsonObject().put("$elemMatch", 
+													 new JsonObject().put("$regex", SoilePermissionProvider.buildPermissionQuery(studyID, PermissionType.READ))))																						
+											.put("_id", 0);
+		return client.findWithOptions(authnOptions.getCollectionName(),query,new FindOptions().setFields(fields)).map(targets -> {
+			JsonArray result = new JsonArray();
+			for(JsonObject res : targets)
+			{
+				JsonArray existingpermissions = res.getJsonArray(SoileConfigLoader.getUserdbField("instancePermissionsField"));
+				JsonObject user = new JsonObject().put("user", res.getString(SoileConfigLoader.getUserdbField("usernameField")));
+				List<PermissionType> permissions = new LinkedList<>();
+				for(int i = 0; i < existingpermissions.size(); i++)
+				{
+					permissions.add(PermissionType.valueOf(SoilePermissionProvider.getTypeFromPermission(existingpermissions.getString(i))));
+				}
+				user.put("access", SoilePermissionProvider.getMaxPermission(permissions));
+				result.add(user);
+			}
+			
+			return result;
+		});
+	}
+	
 	
 	private JsonObject getDefaultFields()
 	{

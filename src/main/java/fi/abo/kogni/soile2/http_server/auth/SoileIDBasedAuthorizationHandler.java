@@ -31,10 +31,18 @@ public class SoileIDBasedAuthorizationHandler{
 	static final Logger LOGGER = LogManager.getLogger(SoileIDBasedAuthorizationHandler.class);
 	MongoClient client;
 	String targetCollection;
+	boolean restrictive;
+	
 	public SoileIDBasedAuthorizationHandler(String targetCollection, MongoClient client)
+	{
+		this(targetCollection,client,false);		
+	}
+	
+	public SoileIDBasedAuthorizationHandler(String targetCollection, MongoClient client, boolean restrictive)
 	{
 		this.targetCollection = targetCollection;
 		this.client = client;
+		this.restrictive = restrictive;
 	}
 
 	/**
@@ -118,7 +126,7 @@ public class SoileIDBasedAuthorizationHandler{
 			{
 				// if it is private we need explicit access to it.
 				// and for any access point that needs full permissions, 
-				if(res.getBoolean("private") || requiredAccess == PermissionType.FULL)
+				if(res.getBoolean("private") || requiredAccess == PermissionType.FULL || this.restrictive)
 				{
 
 					Authorization auth;

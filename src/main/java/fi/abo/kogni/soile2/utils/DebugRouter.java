@@ -7,7 +7,7 @@ import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 
 /**
- * A Router for debugging puroposes Will log some information about received requests
+ * A Router for debugging puroposes Will log some debugrmation about received requests
  * @author Thomas Pfau
  *
  */
@@ -20,6 +20,10 @@ public class DebugRouter implements Handler<RoutingContext>{
 		LOGGER.debug("Request is ssl: " + event.request().isSSL());
 		LOGGER.debug("Request Method is : " + event.request().method());
 		LOGGER.debug("Current context user is: " + event.user());
+		if(event.user() != null)
+		{
+			LOGGER.debug("Current principal is: " + event.user().principal().encodePrettily());	
+		}
 		if(event.body().available())
 		{
 			try {
