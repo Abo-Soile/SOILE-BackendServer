@@ -29,7 +29,7 @@ public class ParticipantManagerTest extends GitTest{
 			JsonArray ResultTestData = new JsonArray(Files.readString(Paths.get(ParticipantManagerTest.class.getClassLoader().getResource("InstanceData/ResultTestData.json").getPath())));
 			ProjectFactoryImplForTesting.loadProject(ProjectBaseTest.getPos(0))
 			.onSuccess(project -> {
-				mgr.createParticipant(project)
+				mgr.createParticipant(project, "", false)
 				.onSuccess(participant -> {
 					JsonArray comparisonData = ResultTestData.getJsonObject(0).getJsonArray("dbData");
 					JsonArray comparisonData2 = ResultTestData.getJsonObject(1).getJsonArray("dbData");
@@ -118,7 +118,7 @@ public class ParticipantManagerTest extends GitTest{
 			CheckDirtyMap<String, Participant> partMap = new CheckDirtyMap<>(mgr, 3600*1000);
 			ProjectFactoryImplForTesting.loadProject(ProjectBaseTest.getPos(0))
 			.onSuccess(project -> {
-				mgr.createParticipant(project)
+				mgr.createParticipant(project, "", false)
 				.onSuccess(participant -> {
 					partMap.getData(participant.getID())
 					.onSuccess(participant2 -> {

@@ -33,7 +33,7 @@ import io.vertx.ext.web.client.WebClientSession;
 import io.vertx.ext.web.handler.HttpException;
 
 public class ParticipationRouterTest extends SoileWebTest{
-	
+
 	@Test
 	public void getTaskInformationTest(TestContext context)
 	{
@@ -62,7 +62,63 @@ public class ParticipationRouterTest extends SoileWebTest{
 		})
 		.onFailure(err -> context.fail(err));
 	}
-	
+
+	@Test
+	public void signUpTest(TestContext context)
+	{
+		System.out.println("--------------------  Testing SignUp  ----------------------");    
+		Async creationAsync = context.async();
+		createResearcher(vertx, "TestUserForSignup", "password")
+		.onSuccess(created -> {
+			createAuthedSession("TestUserForSignup", "password")
+			.onSuccess(authedSession -> {
+				createAndStartTestProject(false)
+				.onSuccess(instanceID -> {
+					createTokenAndSignupUser(generatorSession, instanceID)
+					.onSuccess(authToken -> {
+						Async participantAsync = context.async();
+						mongo_client.find(SoileConfigLoader.getdbProperty("studyCollection"), new JsonObject())
+						.onSuccess(newresults -> {
+						})
+						.onFailure(err -> context.fail(err));
+						mongo_client.find(SoileConfigLoader.getdbProperty("participantCollection"), new JsonObject())
+						.onSuccess(results -> {
+
+							context.assertEquals(1,results.size());
+							context.assertEquals(authToken, results.get(0).getString("token"));
+							String oldParticipantID = results.get(0).getString("_id"); 
+							signUpToProject(authedSession, instanceID)
+							.onSuccess(signedUp -> {
+								mongo_client.find(SoileConfigLoader.getdbProperty("participantCollection"), new JsonObject())
+								.onSuccess(newresults -> {
+									context.assertEquals(2,newresults.size());
+									for(JsonObject partData : newresults)
+									{
+										if(!oldParticipantID.equals(partData.getString("_id")))
+										{
+											// this has to be the new one.
+											context.assertFalse(partData.containsKey("token"));
+										}
+									}
+									participantAsync.complete();
+								})
+								.onFailure(err -> context.fail(err));						
+							})
+							.onFailure(err -> context.fail(err));	
+
+						})
+						.onFailure(err -> context.fail(err));							
+						creationAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));
+				})
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+
 	@Test
 	public void runTaskTest(TestContext context)
 	{
@@ -130,17 +186,17 @@ public class ParticipationRouterTest extends SoileWebTest{
 						context.assertEquals(401, e.getStatusCode());
 						codeTypeAsync.complete();
 					});
-					
+
 					creationAsync.complete();
 				})
 				.onFailure(err -> context.fail(err));
-				
+
 			})
 			.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
 	}
-	
+
 	@Test	
 	public void deleteStudyTest(TestContext context)
 	{
@@ -165,18 +221,18 @@ public class ParticipationRouterTest extends SoileWebTest{
 						context.assertEquals(401, e.getStatusCode());
 						codeTypeAsync.complete();
 					});
-					
+
 					creationAsync.complete();
 				})
 				.onFailure(err -> context.fail(err));
-				
+
 			})
 			.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
 	}	
-	
-	
+
+
 	@Test
 	public void submitTest(TestContext context)
 	{
@@ -557,7 +613,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 		.onFailure(err -> context.fail(err));
 	}
 
-	
+
 
 	/**
 	 * Submit files and results with the given webclient(session). 
@@ -611,7 +667,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 		return submittedPromise.future();
 	}
 
-	
+
 
 	protected Future<JsonObject> getParticipantInfoForUsername(String username, String projectID)
 	{
@@ -661,7 +717,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 	{			
 		return mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"), new JsonObject().put("token", token), null);		
 	}
-	
+
 	private Future<Void> awaitDownloadReady(WebClient client, String projectID, String dlID, Promise<Void> readyPromise)
 	{		
 		POST(client, "/study/" + projectID + "/download/" + dlID + "/check", null, null).onSuccess(response -> 

@@ -153,6 +153,7 @@ public class ParticipationRouter extends SoileRouter{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = context.pathParam("id");
 		String token = params.queryParameter("token") != null ? params.queryParameter("token").getString() : null;
+		LOGGER.info(context.user().principal());
 		// no token, so this is either an invalid call or a user signup.
 		if(token == null)
 		{ 
@@ -160,14 +161,13 @@ public class ParticipationRouter extends SoileRouter{
 			.onSuccess(priv -> {
 				if(priv)	
 				{
-
 					// if we don't have a token, an authed user can also sign up to a project (even though it's not needed)
 					accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 					.onSuccess(authed -> {				
 						loadProject(requestedInstanceID)
 						.onSuccess(project -> {
 							// this will connect the user with a new participant if they haven't already got one.
-							createTokenParticipant(project, "", context)
+							createParticipant(project, "", context)
 							.onSuccess(tokenForUser -> {
 								context.response()
 								.setStatusCode(200)						
@@ -186,7 +186,7 @@ public class ParticipationRouter extends SoileRouter{
 					loadProject(requestedInstanceID)
 					.onSuccess(project -> {
 						// this will connect the user with a new participant if they haven't already got one.
-						createTokenParticipant(project, "", context)
+						createParticipant(project, "", context)
 						.onSuccess(tokenForUser -> {
 							context.response()
 							.setStatusCode(200)						
@@ -208,7 +208,7 @@ public class ParticipationRouter extends SoileRouter{
 			.onSuccess(project -> {				
 				project.useToken(token)
 				.onSuccess( tokenUsed -> {
-					createTokenParticipant(project, token, context)
+					createParticipant(project, token, context)
 					.onSuccess(tokenUserToken ->
 					{
 						context.response()
@@ -227,15 +227,35 @@ public class ParticipationRouter extends SoileRouter{
 		}
 	}
 
-	
-	private Future<String> createTokenParticipant(Study project, String token, RoutingContext context)
+	/**
+	 * Create a participant based on whether the context has an actual (non-empty) authentication and whether a token was provided. 
+	 * @param study
+	 * @param token
+	 * @param user
+	 * @return
+	 */
+	Future<Participant> createParticipant(Study study, String token, User user)
 	{
-
+		
+		if(user != null  && !user.principal().isEmpty())
+		{						
+			return partHandler.createParticipant(study, token, false);
+		}
+		else
+		{
+			return partHandler.createParticipant(study, token, true);
+		}
+	}
+	
+	
+	private Future<String> createParticipant(Study project, String token, RoutingContext context)
+	{
+	
 		Promise<String> tokenPromise = Promise.<String>promise();
 		// if there is no user in the request, create a new token (and participant)
 		if(context.user()  == null || context.user().principal().isEmpty())
 		{		
-			partHandler.createTokenParticipant(project, token)
+			createParticipant(project, token, context.user())
 			.onSuccess(participant -> {
 				// if the principal is empty, that means we have not used authentication, but passed through 
 				// the auth-less route
@@ -259,7 +279,7 @@ public class ParticipationRouter extends SoileRouter{
 				if( noParticipant instanceof ObjectDoesNotExist)
 				{
 					// so the user is not empty AND there is no Participant for the current user. We have to create one.
-					partHandler.createTokenParticipant(project, token)
+					createParticipant(project, token, context.user())
 					.onSuccess(participant -> {
 						// we will add execute access to the current user.
 						// This has to be a DB user, as token users are not authenticated at this end-point

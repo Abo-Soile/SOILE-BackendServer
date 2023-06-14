@@ -54,7 +54,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		this.tokenfactory = new TokenParticipantFactory(this);
 		dirtyTimeStamps = new HashMap<>();
 	}
-	
+
 	@Override
 	public Future<Participant> getElement(String key) {
 		Promise<Participant> participantPromise = Promise.<Participant>promise();
@@ -113,7 +113,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			{
 				getElement(key).onSuccess(part ->
 				{
-							dirtyPromise.complete(part);
+					dirtyPromise.complete(part);
 				})
 				.onFailure(err -> dirtyPromise.fail(err));
 			}
@@ -127,15 +127,50 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		handler.handle(getElementIfDirty(key));		
 	}
 
-	
+
 	/**
 	 * Create a new Participant with empty information and retrieve a new ID from the 
 	 * database.
-	 * @param handler the handler to handle the created participant
+	 * @param study the study to create a participant in.
+	 * @param a signUpToken (optional, can be null or empty)
+	 * @param tokenParticipant whether the created Participant is a token participant
 	 */
-	public void createParticipant(Study p,  Handler<AsyncResult<Participant>> handler)
+	public Future<Participant> createParticipant(Study study, String signupToken, boolean tokenParticipant)
 	{
-		handler.handle(createParticipant(p));
+		Promise<Participant> participantPromise = Promise.<Participant>promise();
+		JsonObject defaultParticipant = getDefaultParticipantInfo(study.getID());
+		if(signupToken != null && !signupToken.equals(""))			
+		{
+			defaultParticipant.put("signupToken", signupToken);
+		}
+		client.save(participantCollection,defaultParticipant).onSuccess(res ->
+		{
+			defaultParticipant.put("_id", res);
+						
+			if(tokenParticipant)
+			{				
+				VertxContextPRNG rng = VertxContextPRNG.current();		
+				// the token contains the project ID, to retrieve it from the token, if needed.				
+				String Token = rng.nextString(35) + "$"+ study.getID();
+				defaultParticipant.put("token", res + Token );
+				createTokenParticipant(study, defaultParticipant)
+				.onSuccess(participant -> {
+					participantPromise.complete(participant);
+				})
+				.onFailure(err -> participantPromise.fail(err));
+			}
+			else {				
+				createParticipant(study, defaultParticipant)
+				.onSuccess(participant -> {
+					participantPromise.complete(participant);
+				})
+				.onFailure(err -> participantPromise.fail(err));
+			}
+
+		}).onFailure(err -> {
+			participantPromise.fail(err);
+		});
+		return participantPromise.future();
 	}
 
 	/**
@@ -143,64 +178,45 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 * database.
 	 * @param handler the handler to handle the created participant
 	 */
-	public Future<Participant> createParticipant(Study p)
+	private Future<Participant> createParticipant(Study currentstudy, JsonObject defaultParticipant)
 	{	
-		Promise<Participant> participantPromise = Promise.<Participant>promise();
-		JsonObject defaultParticipant = getDefaultParticipantInfo(p.getID()); 
-		client.save(participantCollection,defaultParticipant).onSuccess(res ->
+		Promise<Participant> participantPromise = Promise.<Participant>promise();		
+		Participant part = factory.createParticipant(defaultParticipant);
+		currentstudy.addParticipant(part).onSuccess( Void -> 
 		{
-			defaultParticipant.put("_id", res);
-			Participant part = factory.createParticipant(defaultParticipant);
-			p.addParticipant(part).onSuccess( Void -> 
-			{
-					participantPromise.complete(part);
-			})
-			.onFailure(err -> participantPromise.fail(err));
-			
-		}).onFailure(err -> {
-			participantPromise.fail(err);
-		});
+			participantPromise.complete(part);
+		})
+		.onFailure(err -> participantPromise.fail(err));				
 		return participantPromise.future();
 	}
-	
+
+
 	/**
 	 * Create a new Token Participant with empty information and retrieve a new ID from the 
 	 * database.
 	 * @param handler the handler to handle the created participant
 	 */
-	public Future<Participant> createTokenParticipant(Study p, String usedToken)
+	private Future<Participant> createTokenParticipant(Study currentStudy, JsonObject defaultParticipant)
 	{	
 		Promise<Participant> participantPromise = Promise.<Participant>promise();
-		JsonObject defaultParticipant = getDefaultParticipantInfo(p.getID());
-		VertxContextPRNG rng = VertxContextPRNG.current();		
-		// the token contains the project ID, to retrieve it from the token, if needed.
-		String Token = rng.nextString(35) + "$"+ p.getID();		
-		defaultParticipant.put("signupToken", usedToken);
-		client.save(participantCollection,defaultParticipant).onSuccess(res ->
-		{					
-			// this ensures, that the generated token is UNIQUE for the participant collection and still cannot be easily guessed. 
-			defaultParticipant.put("token", res + Token );
-			LOGGER.debug(defaultParticipant.encodePrettily());
-			client.findOneAndUpdate(participantCollection,new JsonObject().put("_id", res), new JsonObject().put("$set",defaultParticipant))
-			.onSuccess(stored ->
+		// only set a token, if a token was actually used.
+		// this ensures, that the generated token is UNIQUE for the participant collection and still cannot be easily guessed.			
+		client.findOneAndUpdate(participantCollection,new JsonObject().put("_id", defaultParticipant.getValue("_id")), new JsonObject().put("$set",defaultParticipant))
+		.onSuccess(stored ->
+		{										
+			Participant part = tokenfactory.createParticipant(defaultParticipant);
+			currentStudy.addParticipant(part).onSuccess( Void -> 
 			{
-				defaultParticipant.put("_id", res);
-				Participant part = tokenfactory.createParticipant(defaultParticipant);
-				p.addParticipant(part).onSuccess( Void -> 
-				{
-						participantPromise.complete(part);
-				})
-				.onFailure(err -> participantPromise.fail(err));	
+				participantPromise.complete(part);
 			})
-			.onFailure(err -> participantPromise.fail(err));						
-			
-		}).onFailure(err -> {
-			participantPromise.fail(err);
-		});
+			.onFailure(err -> participantPromise.fail(err));	
+		})
+		.onFailure(err -> participantPromise.fail(err));						
+
 		return participantPromise.future();
 	}
-	
-	
+
+
 	/**
 	 * Delete a participant and all associated data from the database
 	 * @param id
@@ -210,7 +226,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	{		
 		handler.handle(client.findOneAndDelete(participantCollection, new JsonObject().put("_id", id)));
 	}
-	
+
 	/**
 	 * Delete a participant from the participant database. 
 	 * This does NOT remove other data associated with the participant.
@@ -221,8 +237,8 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	{					
 		return client.findOneAndDelete(participantCollection, new JsonObject().put("_id", id)).map(res -> {return res.getString("project");});
 	}
-	
-	
+
+
 	/**
 	 * Get The files stored for a specific participant. 
 	 * @param resultJson a {@link JsonObject} that contains at least a "resultData" array from a participant along with the "_id" field.
@@ -230,7 +246,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 */
 	public Set<TaskFileResult> getFilesFromResults(JsonObject resultJson)
 	{
-		
+
 		Set<TaskFileResult> results = new HashSet<>();
 		JsonArray resultData = resultJson.getJsonArray("resultData", new JsonArray());
 		for(int i = 0; i < resultData.size(); i++)
@@ -242,16 +258,16 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			{
 				JsonObject fileResult = fileResults.getJsonObject(j);				
 				results.add(new TaskFileResult(fileResult.getString("targetid"),
-												fileResult.getString("filename"),											   
-											   fileResult.getString("fileformat"),
-											   step,
-											   taskResults.getString("task"), 
-											   resultJson.getString("_id")));
+						fileResult.getString("filename"),											   
+						fileResult.getString("fileformat"),
+						step,
+						taskResults.getString("task"), 
+						resultJson.getString("_id")));
 			}
 		}
 		return results;
 	}
-	
+
 	/**
 	 * Get a list of dbResults for the given participants. 
 	 * @param participantIDs
@@ -268,7 +284,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		options.setFields(new JsonObject().put("_id", 1).put("resultData", new JsonObject().put("task", 1).put("dbData", 1)));
 		return client.findWithOptions(participantCollection, matchObj,options);
 	}
-	
+
 	/**
 	 * Get the tasks from a result object that contain files
 	 * @param resultJson a {@link JsonObject} that contains at least a "resultData" array from a participant.  
@@ -276,7 +292,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 */
 	public Set<String> getTaskWithFilesFromResults(JsonObject resultJson)
 	{
-		
+
 		Set<String> results = new HashSet<>();
 		JsonArray resultData = resultJson.getJsonArray("resultData", new JsonArray());
 		for(int i = 0; i < resultData.size(); i++)
@@ -290,8 +306,8 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		}
 		return results;
 	}
-	
-	
+
+
 	/**
 	 * Get the results stored for a specific participant. 
 	 * @param id the ID of the participant.
@@ -301,8 +317,8 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	{		
 		return client.findOne(participantCollection, new JsonObject().put("_id", participantID), new JsonObject().put("resultData", 1).put("_id", 1));
 	}
-	
-	
+
+
 	/**
 	 * Default schema of a Participant.
 	 * @return an empty participant information {@link JsonObject}
@@ -310,14 +326,14 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	public static JsonObject getDefaultParticipantInfo(String projectID)
 	{
 		return new JsonObject().put("position","")
-							   .put("project",projectID)
-							   .put("finished", false)							   
-							   .put("outputData", new JsonArray())
-							   .put("modifiedStamp", System.currentTimeMillis())
-							   .put("resultData", new JsonArray());
-		
+				.put("project",projectID)
+				.put("finished", false)							   
+				.put("outputData", new JsonArray())
+				.put("modifiedStamp", System.currentTimeMillis())
+				.put("resultData", new JsonArray());
+
 	}
-	
+
 	/**
 	 * Save the given participant.
 	 * @param p the {@link Participant} to save
@@ -347,8 +363,8 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		.onFailure(err -> savePromise.fail(err));				
 		return savePromise.future();
 	}
-		
-	
+
+
 	/**
 	 * Update the results for the given task. 
 	 * @param taskID the Task to be updated
@@ -360,15 +376,15 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		// we will pull whatever data was set in the results for this element.
 		// and put in what we just got.
 		JsonObject pullUpdate = new JsonObject().put("$pull", new JsonObject()
-																  .put("resultData", new JsonObject()
-																		  				 .put("$and", new JsonArray()
-																		  						 		  .add( new JsonObject()
-																		  						 				  	.put("task", taskID)
-																		  						 				  	.put("step", step)))));
+				.put("resultData", new JsonObject()
+						.put("$and", new JsonArray()
+								.add( new JsonObject()
+										.put("task", taskID)
+										.put("step", step)))));
 		JsonObject pushUpdate = new JsonObject().put("$push", new JsonObject()
-				  .put("resultData", new JsonObject().put("task", taskID).put("step", step).mergeIn(results)));
+				.put("resultData", new JsonObject().put("task", taskID).put("step", step).mergeIn(results)));
 		JsonObject setUpdate = new JsonObject().put("$set", new JsonObject()
-				  .put("modifiedStamp", System.currentTimeMillis()));		
+				.put("modifiedStamp", System.currentTimeMillis()));		
 		JsonObject itemQuery = new JsonObject().put("_id", p.getID());
 		List<BulkOperation> pullAndPut = new LinkedList<>();
 		BulkOperation pullOp = BulkOperation.createUpdate(itemQuery, pullUpdate);
@@ -413,7 +429,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		.onFailure(err -> participantsPromise.fail(err));
 		return participantsPromise.future();
 	}
-	
+
 	/**
 	 * Reset the Participant based on the given participants data and empty results. 
 	 * @param studyHandler
@@ -424,21 +440,21 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		Promise<Void> participantsPromise = Promise.promise();
 		part.toJson()
 		.onSuccess(partJson -> {
-				
-				partJson.put("resultData", new JsonArray())
-						.put("outputData", new JsonArray())
-						.put("modifiedStamp", System.currentTimeMillis());
-				
-				client.save(participantCollection, partJson)
-				.onSuccess( id -> {
-					participantsPromise.complete();
+
+			partJson.put("resultData", new JsonArray())
+			.put("outputData", new JsonArray())
+			.put("modifiedStamp", System.currentTimeMillis());
+
+			client.save(participantCollection, partJson)
+			.onSuccess( id -> {
+				participantsPromise.complete();
 			})
 			.onFailure(err -> participantsPromise.fail(err));
 		})
 		.onFailure(err -> participantsPromise.fail(err));
 		return participantsPromise.future();
 	}
-	
+
 	/**
 	 * TODO: Check if the timestamp from the input data needs to be updated... 
 	 * Update the outputs of a participant for the given TaskID and Outputs array.
@@ -451,13 +467,13 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	{
 		// We will pull the outputs for this task.
 		JsonObject pullUpdate = new JsonObject().put("$pull", new JsonObject()
-																  .put("outputData", new JsonObject()
-																		  				 .put("task", taskID)));
-																		  						 				  	
+				.put("outputData", new JsonObject()
+						.put("task", taskID)));
+
 		JsonObject pushUpdate = new JsonObject().put("$push", new JsonObject()
-				  .put("outputData", new JsonObject().put("task", taskID).put("outputs",Outputs)));
+				.put("outputData", new JsonObject().put("task", taskID).put("outputs",Outputs)));
 		JsonObject setUpdate = new JsonObject().put("$set", new JsonObject()
-				  .put("modifiedStamp", System.currentTimeMillis()));		
+				.put("modifiedStamp", System.currentTimeMillis()));		
 		JsonObject itemQuery = new JsonObject().put("_id", p.getID());
 		List<BulkOperation> pullAndPut = new LinkedList<>();
 		BulkOperation pullOp = BulkOperation.createUpdate(itemQuery, pullUpdate);
@@ -469,9 +485,9 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		return client.bulkWrite(participantCollection, pullAndPut).onSuccess(res -> {
 			LOGGER.debug(res.toJson());
 		}).mapEmpty();
-		
+
 	}
-	
+
 	/**
 	 * TODO: Check if the timestamp from the input data needs to be updated... 
 	 * Update the outputs of a participant for the given TaskID and Outputs array.
@@ -484,13 +500,13 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	{
 		// We will pull the outputs for this task.
 		JsonObject pullUpdate = new JsonObject().put("$pull", new JsonObject()
-																  .put("persistentData", new JsonObject()
-																		  .put("name", new JsonObject().put("$in", outputNames))));
-																		  						 				  	
+				.put("persistentData", new JsonObject()
+						.put("name", new JsonObject().put("$in", outputNames))));
+
 		JsonObject pushUpdate = new JsonObject().put("$push", new JsonObject()
-				  .put("persistentData", new JsonObject().put("$each", Outputs)));
+				.put("persistentData", new JsonObject().put("$each", Outputs)));
 		JsonObject setUpdate = new JsonObject().put("$set", new JsonObject()
-				  .put("modifiedStamp", System.currentTimeMillis()));		
+				.put("modifiedStamp", System.currentTimeMillis()));		
 		JsonObject itemQuery = new JsonObject().put("_id", p.getID());
 		List<BulkOperation> pullAndPut = new LinkedList<>();
 		BulkOperation pullOp = BulkOperation.createUpdate(itemQuery, pullUpdate);
@@ -502,10 +518,10 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		return client.bulkWrite(participantCollection, pullAndPut).onSuccess(res -> {
 			LOGGER.debug(res.toJson());
 		}).mapEmpty();
-		
+
 	}
-	
-	
+
+
 	/**
 	 * Get the results for the participantIDs indicated in the provided {@link JsonArray}
 	 * @param participantIDs The participant IDs for which to obtain data.
@@ -517,7 +533,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	{
 		client.find(participantCollection,new JsonObject()).
 		onSuccess(list -> {
-			
+
 			LOGGER.debug("There are " + list.size() + " participants");
 			for(JsonObject o : list)
 			{
@@ -533,7 +549,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		}
 		return client.findWithOptions(participantCollection, query , new FindOptions().setFields(new JsonObject().put("_id", 1).put("steps", 1).put("resultData", 1).put("finished", 1)));		
 	}
-	
+
 	/**
 	 * Get the results for the participantIDs indicated in the provided {@link JsonArray}
 	 * @param participantIDs
@@ -541,10 +557,10 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 */
 	public Future<List<JsonObject>> getParticipantsResultsForTask(JsonArray participantIDs, String projectID, String TaskID)
 	{
-		
+
 		JsonObject query = new JsonObject().put("$and", new JsonArray().add(new JsonObject().put("_id", new JsonObject().put("$in", participantIDs)))
-																	   .add(new JsonObject().put("resultData.task", new JsonObject().put("$eq", TaskID)))
-											   );
+				.add(new JsonObject().put("resultData.task", new JsonObject().put("$eq", TaskID)))
+				);
 		// if we have a projectID, we need to restrict the query
 		if(projectID != null && !projectID.equals(""))
 		{
@@ -565,7 +581,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	public Future<String> getParticipantIDForToken(String token, String projectID)
 	{
 		Promise<String> IDPromise = Promise.promise();
-		
+
 		client.findOne(participantCollection, new JsonObject().put("token", token).put("project", projectID), null)
 		.onSuccess(res -> {
 			if(res == null)
@@ -580,6 +596,6 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		.onFailure(err -> IDPromise.fail(err));
 		return IDPromise.future();
 	}
-	
-	
+
+
 }

@@ -846,7 +846,8 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 							}).onFailure(unauthed -> {
 								context.assertEquals(401, ((HttpException)unauthed).getStatusCode());
 								POST(nonAuthedSession, "/study/" + id + "/signup", null,null)
-								.onSuccess(res -> {						
+								.onSuccess(res -> {
+									System.out.println(res.bodyAsJsonObject().encodePrettily());
 									String token = res.bodyAsJsonObject().getString("token");
 									nonAuthedSession.addHeader("Authorization", token);
 									POST(nonAuthedSession, "/user/activeprojects", null, null)

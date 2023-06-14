@@ -37,9 +37,9 @@ public class ParticipantHandlerTest extends GitTest{
 				projectInstance.activate()
 				.onSuccess(active -> {
 					LinkedList<Future> participantFutures = new LinkedList<Future>();
-					participantFutures.add(partHandler.createParticipant(projectInstance.getID()));
-					participantFutures.add(partHandler.createParticipant(projectInstance.getID()));
-					participantFutures.add(partHandler.createParticipant(projectInstance.getID()));
+					participantFutures.add(partHandler.create(projectInstance.getID()));
+					participantFutures.add(partHandler.create(projectInstance.getID()));
+					participantFutures.add(partHandler.create(projectInstance.getID()));
 					CompositeFuture.all(participantFutures).mapEmpty()
 					.onSuccess(res -> {
 						partHandler.getParticipantStatusForProject(projectInstance)
@@ -188,7 +188,7 @@ public class ParticipantHandlerTest extends GitTest{
 				.onSuccess(active -> {
 					projectManager.getGitJson(apiProject.getUUID(), apiProject.getVersion())
 					.onSuccess(gitJson -> {
-						partHandler.createParticipant(projectInstance.getID())				
+						partHandler.create(projectInstance.getID())				
 						.onSuccess( participant -> 
 						{				
 							projectInstance.startStudy(participant)

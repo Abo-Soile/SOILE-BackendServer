@@ -44,9 +44,10 @@ public class TokenAuthProvider {
 	{			
 		String pathID = context.pathParam("id");
 		String token = context.request().getHeader("Authorization");
-		LOGGER.debug(token);
+		LOGGER.debug("Token Auth Provider for: " + token);
 		if(token == null)
 		{
+			LOGGER.debug("No Token Auth!");
 			return Future.failedFuture("No Token");
 		}
 		String projectID = token.substring(token.indexOf("$")+1);

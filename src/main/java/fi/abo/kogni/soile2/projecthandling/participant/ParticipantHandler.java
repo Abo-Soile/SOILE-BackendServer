@@ -45,34 +45,39 @@ public class ParticipantHandler {
 		activeparticipants = new CheckDirtyMap<String, Participant>(manager, 2*3600); //Keep for two hours
 		dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
 	}
-	/**
-	 * Create a participant in the database, store that  and let the handler handle it
-	 * @param handler
-	 */
-	public void create(Study p, Handler<AsyncResult<Participant>> handler)
-	{
-		handler.handle(create(p));			
-	}
 
+	
 	/**
-	 * Create a participant in the database
-	 * @param p the {@link Study} for which to create a participant
+	 * Create a normal Participant in the given Study. 
+	 * @param study the {@link Study} to create a participant in
+	 * @return
 	 */
-	public Future<Participant> create(Study p)
+	public Future<Participant> create(Study study)
 	{
-		return manager.createParticipant(p);
+		return createParticipant(study, "", false);
 	}
-
+	
+	
+	/**
+	 * Create a normal Participant in the Study represented by the given ID. 
+	 * @param study
+	 * @return
+	 */
+	public Future<Participant> create(String studyID)
+	{
+		return studyHandler.loadUpToDateStudy(studyID)
+		.compose(study -> createParticipant(study, "", false));		
+	}
 	/**
 	 * Create a participant in the database
 	 * @param p the {@link Study} for which to create a participant
 	 * 
 	 */
-	public Future<Participant> createTokenParticipant(Study p, String usedToken)
+	public Future<Participant> createParticipant(Study p, String signuptoken, boolean TokenParticipant)
 	{
-		return manager.createTokenParticipant(p, usedToken);
+		return manager.createParticipant(p, signuptoken, TokenParticipant);
 	}
-
+	
 	/**
 	 * Clean up the data currently stored by this Participant handler. 
 	 * This is necessary to avoid excessive data in memory.
@@ -126,24 +131,7 @@ public class ParticipantHandler {
 		return partPromise.future();
 	}
 
-	/**
-	 * Create a new participant for a study with a given instanceID. 
-	 * @param studyID the uuid of the study to create a participant in
-	 * @return a {@link Future} of the {@link Participant}
-	 */
-	public Future<Participant> createParticipant(String studyID)
-	{
-		Promise<Participant> particpantPromise = Promise.promise();
-		studyHandler.loadUpToDateStudy(studyID)
-		.onSuccess( study -> {
-			manager.createParticipant(study)
-			.onSuccess(participant -> particpantPromise.complete(participant))
-			.onFailure(err -> particpantPromise.fail(err));
-		})
-		.onFailure(err -> particpantPromise.fail(err));
-		return particpantPromise.future();
 
-	}
 
 
 	/**

@@ -33,7 +33,7 @@ public class SoileAuthenticationBuilder {
 			JWTAuthOptions config = new JWTAuthOptions().addPubSecKey(new PubSecKeyOptions()
 				    .setAlgorithm("HS256")
 				    .setBuffer(SoileConfigLoader.getServerProperty("jwtStoreSecret")));
-			authProvider = JWTAuth.create(vertx, config);
+			authProvider = JWTAuth.create(vertx, config);			
 		}
 		return authProvider;
 	}
