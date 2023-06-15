@@ -62,6 +62,55 @@ public class ElementRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 
+	
+	@Test
+	public void testList(TestContext context)
+	{	
+		System.out.println("--------------------  Testing List Retrieval ----------------------");
+
+		Async setupAsync = context.async();
+		createUser(vertx, "TestUser", "testPassword", Roles.Admin)
+		.compose(userCreated -> createAuthedSession("TestUser", "testPassword"))
+		.onSuccess(adminSession -> {
+			createResearcher(vertx, "Researcher", "pw")
+			.compose(researcherCreated -> createAuthedSession("Researcher", "pw"))
+			.onSuccess(researcherSession -> {				
+				WebObjectCreator.createTask(researcherSession, "PrivateTask")
+				.onSuccess(taskData -> {
+					Async taskListAsync = context.async();
+					getElementList(adminSession, "task")
+					.onSuccess(taskList-> {
+						context.assertEquals(0, taskList.size());
+						taskListAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));
+					Async fullListAsync = context.async();
+					POST(adminSession, "/task/list",new JsonObject().put("full", true), null)
+					.onSuccess(response -> {
+						context.assertEquals(1, response.bodyAsJsonArray().size());
+						fullListAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));
+					
+					// now this needs to fail, as its not an admin call
+					Async fullListFailAsync = context.async();
+					POST(researcherSession, "/task/list",new JsonObject().put("full", true),null)
+					.onSuccess(res -> {
+						context.fail("Only admin should be allowed to use full");
+					})
+					.onFailure(err -> fullListFailAsync.complete());					
+						
+					setupAsync.complete();
+
+				})
+				.onFailure(err -> context.fail(err));			 
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+
+	
 	@Test
 	public void testTaskExists(TestContext context)
 	{	

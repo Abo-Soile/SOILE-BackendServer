@@ -505,6 +505,13 @@ paths:
       summary: Get a list of all tasks.
       operationId: getTaskList
       description: Get a list of all public tasks, a task could be private, in which case it is only shown, if the user has access.
+      parameters:
+        - name: full
+          in: query
+          required: false
+          description: Admin toggle that allows admins to list all available elements
+          schema:
+            type: boolean
       responses:
         '200':
           description: A List of tasks, with names and IDs
@@ -575,7 +582,6 @@ paths:
           description: UUID of the task for which versions are requested
           schema:
             type : string
-            
       responses:
         '200':
           description: A List of tasks versions, with Tags and Date information
@@ -1058,6 +1064,13 @@ paths:
         - JWTAuth: []
       tags:
         - project
+      parameters:
+        - name: full
+          in: query
+          required: false
+          description: Admin toggle that allows admins to list all available elements
+          schema:
+            type: boolean
       summary: Get a list of all projects.
       operationId: getProjectList
       description: Get a list of all projects which you have general access to.
@@ -1367,7 +1380,7 @@ paths:
                   type: string
                   description: a shortcut that can be used to more easily access the contents.
         description: This can be an empty body, then the whole data is requested.
-  /study/list:
+  /study/listrunning:
     post:
       security:
         - cookieAuth: []
@@ -1378,13 +1391,6 @@ paths:
       summary: Get a list of all projects.
       operationId: getRunningProjectList
       description: Get a list of all projects which are currently running and that you have access to.
-      parameters:
-        - name: access
-          in: query
-          required: false
-          description: What type of access the user should have to the project, default is any (i.e. execute is sufficient to list the project)
-          schema:
-            type: string
       responses:
         '200':
           description: A List of Projects, with names and IDs
@@ -1398,6 +1404,44 @@ paths:
           description: 'invalid input, object invalid'
         '403':
           description: User has no authorization to make this call 
+          
+  /study/list:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - study
+      summary: Get a list of all Studies you have access to.
+      operationId: getStudyList
+      description: Get a list of all studies that you have access to.
+      parameters:
+        - name: access
+          in: query
+          required: false
+          description: What type of access the user should have to the project, default is any (i.e. execute is sufficient to list the project)
+          schema:
+            type: string
+        - name: full
+          in: query
+          required: false
+          description: Admin toggle that allows admins to list all available elements
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: A List of Projects, with names and IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+          
   /study/{id}/stop:
     post:
       security:
@@ -2240,6 +2284,13 @@ paths:
       summary: Get a list of all experiments.
       operationId: getExperimentList
       description: Get a list of all experiments which you have general access to.
+      parameters:
+        - name: full
+          in: query
+          required: false
+          description: Admin toggle that allows admins to list all available elements
+          schema:
+            type: boolean
       responses:
         '200':
           description: A List of experiments, with names and IDs
@@ -2494,7 +2545,7 @@ components:
         role:
           type: string
           example: Participant
-          description: The role of the user. not necessarily available
+          description: The user Role, can only be changed by an admin. If supplied, it is necessary to be an admin, or the access will fail even if no change happened.
     RegistrationInformation:
       type: object
       required:
@@ -2529,9 +2580,6 @@ components:
               type: string
               example: 'me@domain.org'
               description: must be a valid email address
-            role:
-              type: string
-              description: The user Role, can only be changed by an admin. If supplied, it is necessary to be an admin, or the access will fail even if no change happened.
     dbData:
       type: array
       items:

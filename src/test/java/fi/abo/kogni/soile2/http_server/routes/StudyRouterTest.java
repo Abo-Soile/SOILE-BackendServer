@@ -87,9 +87,9 @@ public class StudyRouterTest extends SoileWebTest {
 	 * @param context
 	 */
 	@Test
-	public void testlistProjects(TestContext context)
+	public void testlistStudies(TestContext context)
 	{
-		System.out.println("--------------------  Running Start Project test  ----------------------");    
+		System.out.println("--------------------  Running Study listing test  ----------------------");    
 
 		JsonObject projectExec1 = new JsonObject().put("private", true).put("name", "New Project").put("shortcut","newShortcut");
 		JsonObject projectExec2 = new JsonObject().put("private", false).put("name", "New Project2").put("shortcut","newShortcut2");
@@ -143,7 +143,7 @@ public class StudyRouterTest extends SoileWebTest {
 							.onFailure(err -> context.fail(err));
 							Async emptyListAsync = context.async();
 
-							POST(wrongSession, "/study/list", null,null)
+							POST(wrongSession, "/study/listrunning", null,null)
 							.onSuccess(listresponse -> {
 								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
@@ -158,17 +158,34 @@ public class StudyRouterTest extends SoileWebTest {
 								accessAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));
+							
+							Async accessAsync2 = context.async();
+							POST(wrongSession, "/study/list", null,null)
+							.onSuccess(listresponse -> {
+								context.assertEquals(0, listresponse.bodyAsJsonArray().size());							
+								accessAsync2.complete();
+							})
+							.onFailure(err -> context.fail(err));
+							
 							Async unAuthAsync = context.async();
 
-							POST(unAuthedSession, "/study/list", null,null)
+							POST(unAuthedSession, "/study/listrunning", null,null)
 							.onSuccess(listresponse -> {
 								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
-
 								unAuthAsync.complete();
 							})
-							.onFailure(err -> context.fail(err));
+							.onFailure(err -> context.fail(err));							
+							Async illegalAccess = context.async();
+							POST(unAuthedSession, "/study/list", null,null)
+							.onSuccess(listresponse -> {
+								context.fail("Should be denied");
 
+							})
+							.onFailure(err -> {
+								context.assertEquals(401,((HttpException)err).getStatusCode());
+								illegalAccess.complete();
+							});
 							startAsync.complete();
 						})
 						.onFailure(err -> context.fail(err));	

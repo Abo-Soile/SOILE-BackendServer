@@ -199,8 +199,20 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 					  .add(new JsonObject().put("_id", new JsonObject().put("$in", projectInstanceIDs)))
 					  );
 		}
+		JsonObject fields = new JsonObject().put("_id",1).put("name", 1).put("description", 1).put("shortDescription", 1);
 		LOGGER.debug("Looking for Project matching:\n" + Query.encodePrettily());
-		client.findWithOptions(instanceCollection,Query,new FindOptions().setFields(new JsonObject().put("_id",1).put("name", 1).put("description", 1).put("shortDescription", 1)))
+		return getStudyData(Query, fields);
+	}
+	
+	/**
+	 * Get he list of studies available on this server
+	 * @return
+	 */
+	public Future<JsonArray> getStudyData(JsonObject Query, JsonObject Fields)
+	{				
+		Promise<JsonArray> listPromise = Promise.promise();		 				
+
+		client.findWithOptions(instanceCollection,Query,new FindOptions().setFields(Fields))
 		.onSuccess(items -> 
 				{
 					JsonArray result = new JsonArray();
@@ -216,6 +228,15 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 		.onFailure(err -> listPromise.fail(err));
 		
 		return listPromise.future();
+	}
+	
+	/**
+	 * Get Studies (names and uuids)
+	 * @return
+	 */
+	public Future<JsonArray> getStudies()
+	{
+		return getStudyData(new JsonObject(), new JsonObject().put("_id",1).put("name",1));
 	}
 	
 	public Future<String> getProjectIDForPathID(String pathID)

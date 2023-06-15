@@ -111,13 +111,13 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	public void getElementList(RoutingContext context)
 	{				
 		//TODO: Add skip + limit + query here.		
-		accessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
-		.onSuccess(Void -> 
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		Boolean full = params.queryParameter("full") == null ? false : params.queryParameter("full").getBoolean();
+		if(full)
 		{
-			authorizationRertiever.getGeneralPermissions(context.user(),elementManager.getElementSupplier().get().getElementType())
-			.onSuccess( permissions -> {
-				LOGGER.debug(permissions.encodePrettily());
-				elementManager.getElementList(permissions)
+			accessHandler.checkAccess(context.user(), null, Roles.Admin, null, true)
+			.onSuccess(allowed -> {
+				elementManager.getElementList(null)
 				.onSuccess(elementList -> {	
 					// this list needs to be filtered by access
 
@@ -128,9 +128,31 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 				})
 				.onFailure(err -> handleError(err, context));
 			})
-			.onFailure(err -> handleError(err, context));	
-		})
-		.onFailure(err -> handleError(err, context));
+			.onFailure(err -> handleError(err, context));
+		}
+		else
+		{
+			accessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
+			.onSuccess(Void -> 
+			{
+				authorizationRertiever.getGeneralPermissions(context.user(),elementManager.getElementSupplier().get().getElementType())
+				.onSuccess( permissions -> {
+					LOGGER.debug(permissions.encodePrettily());
+					elementManager.getElementList(permissions)
+					.onSuccess(elementList -> {	
+						// this list needs to be filtered by access
+	
+						context.response()
+						.setStatusCode(200)
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+						.end(elementList.encode());
+					})
+					.onFailure(err -> handleError(err, context));
+				})
+				.onFailure(err -> handleError(err, context));	
+			})
+			.onFailure(err -> handleError(err, context));
+		}
 	}
 
 	public void getTagForVersion(RoutingContext context)

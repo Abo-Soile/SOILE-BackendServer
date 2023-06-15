@@ -104,32 +104,76 @@ public class StudyRouter extends SoileRouter {
 		});		
 	}
 
-	public void getRunningProjectList(RoutingContext context)
+	public void getStudyList(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		RequestParameter accessParam = params.queryParameter("access");
-		String access = "general";
-		Boolean restrictToPermissions = false;
-		if(accessParam != null)
+		Boolean full = params.queryParameter("full") == null ? false : params.queryParameter("full").getBoolean();
+		if(full)
 		{
-			access = accessParam.getString();			
+			studyAccessHandler.checkAccess(context.user(),null, Roles.Admin,null,true)
+			.onSuccess(allowed -> {
+				studyHandler.getStudyList()		
+				.onSuccess(elementList -> {	
+					// this list needs to be filtered by access
+
+					context.response()
+					.setStatusCode(200)
+					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+					.end(elementList.encode());
+				})
+				// this is a re
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
 		}
-		
-		Future<JsonArray> permissionsFuture;
-		switch(access)		
+		else
 		{
-			case "read": permissionsFuture = authorizationRertiever.getReadPermissions(context.user(), TargetElementType.STUDY); restrictToPermissions = true; break;
-			case "write": permissionsFuture = authorizationRertiever.getWritePermissions(context.user(), TargetElementType.STUDY); restrictToPermissions = true; break; 
-			case "full": permissionsFuture = authorizationRertiever.getFullPermissions(context.user(), TargetElementType.STUDY); restrictToPermissions = true; break;
-			default: permissionsFuture = authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.STUDY); break;
-		}			
-		Boolean onlyPermissions = restrictToPermissions;
-		permissionsFuture
+			studyAccessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
+			.onSuccess(allowed -> {
+				String access = "general";				
+				if(accessParam != null)
+				{
+					access = accessParam.getString();			
+				}		
+				Future<JsonArray> permissionsFuture;
+				switch(access)		
+				{
+					case "read": permissionsFuture = authorizationRertiever.getReadPermissions(context.user(), TargetElementType.STUDY); break;
+					case "write": permissionsFuture = authorizationRertiever.getWritePermissions(context.user(), TargetElementType.STUDY); break; 
+					case "full": permissionsFuture = authorizationRertiever.getFullPermissions(context.user(), TargetElementType.STUDY); break;
+					default: permissionsFuture = authorizationRertiever.getReadPermissions(context.user(),TargetElementType.STUDY); break;
+				}							
+				permissionsFuture
+				.onSuccess( permissions -> {
+					studyHandler.getStudyList(permissions, true)		
+					.onSuccess(elementList -> {	
+						// this list needs to be filtered by access
+
+						context.response()
+						.setStatusCode(200)
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+						.end(elementList.encode());
+					})
+					// this is a re					
+					.onFailure(err -> handleError(err, context));	
+				})
+				// this is a re
+				.onFailure(err -> handleError(err, context));	
+			})
+			.onFailure(err -> handleError(err, context));
+		}
+	}
+	
+	public void getRunningProjectList(RoutingContext context)
+	{				
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		Boolean restrictToPermissions = false;									
+		authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.STUDY)
 		.onSuccess( permissions -> {
-			studyHandler.getStudyList(permissions, onlyPermissions)		
+			studyHandler.getStudyList(permissions, false)		
 			.onSuccess(elementList -> {	
 				// this list needs to be filtered by access
-
 				context.response()
 				.setStatusCode(200)
 				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")

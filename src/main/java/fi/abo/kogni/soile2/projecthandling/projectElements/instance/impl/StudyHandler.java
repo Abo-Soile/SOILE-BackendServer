@@ -255,6 +255,16 @@ public class StudyHandler {
 		return manager.getProjectInstanceStatus(Permissions, permissionsOnly);
 	}
 	
+	/**
+	 * Get the list of Studies
+	 * This will return all studies available on the server
+	 * @return A {@link Future} of the {@link JsonArray} containing the projects (id and name)
+	 */
+	public Future<JsonArray> getStudyList()
+	{
+		return manager.getStudies();
+	}
+	
 	
 	/**
 	 * Get the project ID for a given Path-ID (i.e. translate potential shortcuts).  

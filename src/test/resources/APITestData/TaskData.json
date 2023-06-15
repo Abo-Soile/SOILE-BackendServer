@@ -28,6 +28,14 @@
 		"codeType" : { "language" : "elang",
 					 "version" : "1.0"},
 		"codeFile": "FirstTask.elang"
+	},  
+	"PrivateTask": {		
+		"name": "Test2",
+		"resources": ["ImageData.jpg"],									
+		"codeType" : { "language" : "elang",
+					 "version" : "1.0"},
+		"codeFile": "FirstTask.elang",
+		"private" : true		
 	},  				
 	"Test3": {							
 		"name": "Test3",
