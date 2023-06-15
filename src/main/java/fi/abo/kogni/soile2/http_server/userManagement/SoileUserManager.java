@@ -143,10 +143,11 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param skip how many results to skip
 	 * @param limit how many results at most to return
 	 * @param query a search query to look up in the usernames
+	 * @param type
 	 * @param namesOnly only list the names
 	 * @return A List of JsonObjects with the results.
 	 */
-	public Future<JsonArray> getUserList(Integer skip, Integer limit, String query, boolean namesOnly)
+	public Future<JsonArray> getUserList(Integer skip, Integer limit, String query, String type, boolean namesOnly)
 	{
 		JsonObject fields = new JsonObject().put("_id", 0)
 				.put(authnOptions.getUsernameField(), 1);
@@ -158,7 +159,8 @@ public class SoileUserManager implements MongoUserUtil{
 			.put(authzOptions.getRoleField(), 1);
 		}
 		FindOptions options = new FindOptions();
-		JsonObject Query = new JsonObject();
+		JsonArray QueryElements = new JsonArray();
+		JsonObject DBQuery = new JsonObject();		
 		if(query != null)
 		{
 			JsonObject searchQuery = new JsonObject().put("$regex",  Pattern.quote(query)).put("$options", "i");
@@ -166,7 +168,31 @@ public class SoileUserManager implements MongoUserUtil{
 								.add(new JsonObject().put(SoileConfigLoader.getUserdbField("userFullNameField"), searchQuery))
 								.add(new JsonObject().put(SoileConfigLoader.getUserdbField("userEmailField"), searchQuery))
 								.add(new JsonObject().put(authnOptions.getUsernameField(), searchQuery));
-			Query.put("$or",orQuery);			
+			QueryElements.add(new JsonObject().put("$or",orQuery));			
+		}
+		if(type != null)
+		{
+			JsonObject typeRestriction = new JsonObject();
+			if(type.equals("User")) // special case
+			{
+				typeRestriction.put(authzOptions.getRoleField(), new JsonObject().put("$elemMatch", new JsonObject().put("$in", new JsonArray().add(Roles.Admin.toString()).add(Roles.Researcher.toString()))));
+			}
+			else
+			{
+				typeRestriction.put(authzOptions.getRoleField(), new JsonObject().put("$elemMatch", new JsonObject().put("$eq", type)));
+			}
+			QueryElements.add(typeRestriction);
+		}
+		if(QueryElements.size() > 0)
+		{
+			if(QueryElements.size() == 1)
+			{
+				DBQuery = QueryElements.getJsonObject(0);
+			}
+			else
+			{
+				DBQuery.put("$and", QueryElements);
+			}
 		}
 		if(limit != null)
 		{
@@ -179,8 +205,8 @@ public class SoileUserManager implements MongoUserUtil{
 		options.setFields(fields);
 		
 		Promise<JsonArray> resultsPromise = Promise.promise();
-		LOGGER.debug(Query.encodePrettily());
-		client.findWithOptions(authnOptions.getCollectionName(), Query, options)
+		LOGGER.debug(DBQuery.encodePrettily());
+		client.findWithOptions(authnOptions.getCollectionName(), DBQuery, options)
 		.onSuccess(result -> {
 			LOGGER.debug(result);
 			if(!namesOnly)
@@ -203,9 +229,9 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param query a search query to look up in the usernames
 	 * @return A List of JsonObjects with the results.
 	 */
-	public SoileUserManager getUserList(Integer skip, Integer limit, String query, boolean namesOnly, Handler<AsyncResult<JsonArray>> handler)
+	public SoileUserManager getUserList(Integer skip, Integer limit, String query, String type, boolean namesOnly, Handler<AsyncResult<JsonArray>> handler)
 	{
-		handler.handle(getUserList(skip, limit, query, namesOnly));
+		handler.handle(getUserList(skip, limit, query, type, namesOnly));
 		return this;
 	}
 

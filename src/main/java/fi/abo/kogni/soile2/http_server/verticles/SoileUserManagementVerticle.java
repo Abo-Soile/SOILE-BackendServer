@@ -594,12 +594,13 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	{		
 		//make sure we actually get the right thing			
 		JsonObject command = msg.body();		
-		userManager.getUserList(command.getInteger("skip"),command.getInteger("limit"), command.getString("query"), command.getBoolean("namesOnly", false))
+		userManager.getUserList(command.getInteger("skip"),command.getInteger("limit"), command.getString("query"), command.getString("type"), command.getBoolean("namesOnly", false))
 		.onSuccess(list -> {					
 			msg.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, list));					
 		})
 		.onFailure(err -> 
 		{
+			LOGGER.error(err,err);
 			msg.fail(400, "Error fetching Data");									
 		});		
 	}

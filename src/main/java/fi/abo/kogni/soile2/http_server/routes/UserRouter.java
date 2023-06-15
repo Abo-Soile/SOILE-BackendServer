@@ -55,12 +55,11 @@ public class UserRouter extends SoileRouter {
 		Integer skip = params.queryParameter("skip") == null ? null : params.queryParameter("skip").getInteger();
 		Integer limit = params.queryParameter("limit") == null ? null : params.queryParameter("limit").getInteger();
 		String query = params.queryParameter("searchString") == null ? null : params.queryParameter("searchString").getString();
+		String type = params.queryParameter("type") == null ? null : params.queryParameter("type").getString();
 		JsonObject body = new JsonObject();
-		body.put("skip", skip).put("limit", limit).put("query", query);
+		body.put("skip", skip).put("limit", limit).put("query", query).put("type", type);		
 		checkAccess(context.user(),Roles.Admin, experimentAuth)
-		.onSuccess(authed -> {
-				
-				
+		.onSuccess(authed -> {								
 				handleUserManagerCommand(context, "listUsers", body, MessageResponseHandler.createDefaultHandler(200));
 		})
 		.onFailure(err -> {
@@ -69,11 +68,8 @@ public class UserRouter extends SoileRouter {
 						body.put("namesOnly", true);
 						handleUserManagerCommand(context, "listUsers", body, MessageResponseHandler.createDefaultHandler(200));
 					})
-					.onFailure(err2 -> handleError(err2, context));
-					
-		});
-		
-		
+					.onFailure(err2 -> handleError(err2, context));					
+		});				
 	}
 	
 	/**

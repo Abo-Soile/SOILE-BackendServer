@@ -160,6 +160,12 @@ paths:
           schema:
             type: string
         - in: query
+          name: type
+          description: restrict to a specific type of user (PARTICIPANT / USER / RESEARCHER / ADMIN) 
+          required: false
+          schema:
+            type: string
+        - in: query
           name: skip
           required: false
           description: number of records to skip for pagination
@@ -175,7 +181,6 @@ paths:
             type: integer
             format: int32
             minimum: 0
-            maximum: 50
       responses:
         '200':
           description: search results matching criteria, content depends on the access level of the request.

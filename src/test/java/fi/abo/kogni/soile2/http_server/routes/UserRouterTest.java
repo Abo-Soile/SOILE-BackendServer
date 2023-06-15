@@ -243,14 +243,52 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 						}
 					}
 					defaultListAsync.complete();
-				});
+				})
+				.onFailure(err -> context.fail(err));
 				Async searchList = context.async();
 				POST(authedSession,"/user/list", new JsonObject().put("searchString", "User"), null)
 				.onSuccess(response -> {
 					JsonArray users = response.bodyAsJsonArray();
 					context.assertEquals(2, users.size());
 					searchList.complete();
-				});
+				})
+				.onFailure(err -> context.fail(err));
+				Async typeList = context.async();
+				POST(authedSession,"/user/list", new JsonObject().put("type", "Admin"), null)
+				.onSuccess(response -> {
+					JsonArray admin = response.bodyAsJsonArray();
+					context.assertEquals(1, admin.size());
+					typeList.complete();
+				})
+				.onFailure(err -> context.fail(err));
+				
+				Async typeList2 = context.async();
+				POST(authedSession,"/user/list", new JsonObject().put("type", "User"), null)
+				.onSuccess(response -> {
+					JsonArray admin = response.bodyAsJsonArray();
+					context.assertEquals(2, admin.size());
+					typeList2.complete();
+				})
+				.onFailure(err -> context.fail(err));
+				
+				Async typeList3 = context.async();
+				POST(authedSession,"/user/list", new JsonObject().put("type", "User").put("searchString", "User"), null)
+				.onSuccess(response -> {
+					JsonArray admin = response.bodyAsJsonArray();
+					context.assertEquals(1, admin.size());
+					typeList3.complete();
+				})
+				.onFailure(err -> context.fail(err));
+				
+				Async typeList4 = context.async();
+				POST(authedSession,"/user/list", new JsonObject().put("type", "Blubb").put("searchString", "User"), null)
+				.onSuccess(response -> {
+					JsonArray admin = response.bodyAsJsonArray();
+					context.assertEquals(0, admin.size());
+					typeList4.complete();
+				})
+				.onFailure(err -> context.fail(err));
+				
 				Async skipAndLimit = context.async();
 				POST(authedSession,"/user/list", new JsonObject().put("limit", 2), null)
 				.onSuccess(response -> {
@@ -294,14 +332,16 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 						}
 						context.assertEquals(0, expectedUsers.size());
 						defaultListAsync2.complete();
-					});
+					})
+					.onFailure(err -> context.fail(err));
 					Async searchList2 = context.async();
 					POST(nonAdminSession,"/user/list", new JsonObject().put("searchString", "User"), null)
 					.onSuccess(response -> {
 						JsonArray users = response.bodyAsJsonArray();
 						context.assertEquals(2, users.size());
 						searchList2.complete();
-					});
+					})
+					.onFailure(err -> context.fail(err));
 					Async skipAndLimit2 = context.async();
 					POST(nonAdminSession,"/user/list", new JsonObject().put("limit", 2), null)
 					.onSuccess(response -> {
