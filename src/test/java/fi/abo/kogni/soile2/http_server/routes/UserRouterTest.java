@@ -68,6 +68,13 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 						userCheck.complete();
 					})
 					.onFailure(err -> context.fail(err));
+					Async faileduserCheck = context.async();
+					POST(adminsession, "/user/getaccess",new JsonObject().put("username", "undefined"),null)
+					.onSuccess(response -> {
+						context.fail("This should return either 400 or 409");
+					})
+					.onFailure(err -> faileduserCheck.complete());
+
 					testAsync.complete();
 				})
 

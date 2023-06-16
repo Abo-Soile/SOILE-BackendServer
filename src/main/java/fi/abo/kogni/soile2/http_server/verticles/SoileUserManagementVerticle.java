@@ -19,6 +19,7 @@ import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidPermissi
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidRoleException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
+import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
@@ -565,6 +566,11 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		String username = (String) command.remove("username");
 		userManager.getUserAccessInfo(username)
 		.onSuccess(res -> {
+			if(res == null)
+			{
+				handleError(new ObjectDoesNotExist(username), msg);
+				return;
+			}
 			// in case, we translate to the actual json Object
 			// translate back into PermissionSettings
 			JsonObject response = new JsonObject();			
@@ -574,6 +580,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 					.put("tasks", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("taskPermissionsField"))))
 					.put("projects", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("projectPermissionsField"))))
 					.put("experiments", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("experimentPermissionsField"))))
+					// TODO: Refactor to studies
 					.put("instances", convertStringPermissions(res.getJsonArray(SoileConfigLoader.getUserdbField("studyPermissionsField"))))
 					);
 			msg.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, response));
