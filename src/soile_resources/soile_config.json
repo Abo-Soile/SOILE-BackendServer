@@ -115,7 +115,7 @@
 			"addUser" : "adduser",						
 			"checkUserSessionValid" : "isSessionValid",
 			"getAccessRequest" : "getAccessOfUser",			
-			"getParticipantForUserInStudy" : "getParticipantForUser",
+			"getParticipantForUserInStudy" : "getParticipantForUserInStudy",
 			"getParticipantsForUser" : "getParticipantsForUser",
 			"getUserInfo" : "getUserInfo",
 			"getUserData" : "getUserData",			

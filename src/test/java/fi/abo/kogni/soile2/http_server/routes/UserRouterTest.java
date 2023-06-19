@@ -454,15 +454,15 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 					.onSuccess(err -> {
 						context.fail("This should not be possible");
 					})
-					.onFailure(err -> {
+					.onFailure(err -> {						
 						context.assertEquals(403, ((HttpException)err).getStatusCode());
 						// test self deletion.
 						createAuthedSession("TestUser", "test")
 						.onSuccess(authedFitUser -> {
 							POST(authedFitUser,"/user/delete",null,deletionCommand)
 							.onSuccess(succ -> {
-								context.assertEquals(202,succ.statusCode());
-								POST(adminsession,"/user/delete",null,new JsonObject().put("username", "Admin"))
+								context.assertEquals(202,succ.statusCode());								
+								POST(adminsession,"/user/delete",null,new JsonObject().put("username", "Admin").put("deleteFiles", true))
 								.onSuccess(adminDel -> {
 									context.assertEquals(202,adminDel.statusCode());
 									POST(nonAdminsession,"/user/list",null,null)
