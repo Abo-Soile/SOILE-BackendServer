@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.http_server.verticles;
 
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -487,7 +488,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 				JsonObject fileUpdates = statusUpdate(DownloadStatus.downloadReady);
 				JsonObject setObject = fileUpdates.getJsonObject("$set");
 				setObject.put("jsonDataLocation", new JsonObject().put("nameInZip", "data.json")
-						.put("filename", fileName.replace(SoileConfigLoader.getServerProperty("soileResultDirectory"), "")) // the name IN the the folder.
+						.put("filename", Path.of(fileName).getFileName().toString())//.replace(SoileConfigLoader.getServerProperty("soileResultDirectory"), "")) // the name IN the the folder.
 						.put("mimeType", "application/json"))
 				.put("resultFiles",new JsonArray(resultFiles));
 				LOGGER.debug(new JsonArray(resultFiles).encodePrettily());

@@ -470,7 +470,11 @@ public class StudyRouter extends SoileRouter {
 					List<FileDescriptor> dLFiles = new LinkedList<>();
 					for(int i = 0; i < responseBody.getJsonArray("files").size(); i++)
 					{
-						dLFiles.add(new DataLakeFile(responseBody.getJsonArray("files").getJsonObject(i)));
+						DataLakeFile temp = new DataLakeFile(responseBody.getJsonArray("files").getJsonObject(i));
+						LOGGER.info(temp.getAbsolutePath());
+						LOGGER.info(temp.getOriginalFileName());
+						LOGGER.info(temp.toJson().encodePrettily());
+						dLFiles.add(temp);
 					}
 					try
 					{
@@ -478,17 +482,13 @@ public class StudyRouter extends SoileRouter {
 						// the response is a chunked zip file.
 						context.response().putHeader("content-type", "application/zip")
 						.putHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dlID + ".zip\"")
-						.setStatusCode(200)
-						.setChunked(true);
+						.setChunked(true);						
 						pump.pipeTo(context.response()).onSuccess(success -> {
-							LOGGER.debug("Download " + dlID + " successfullytransmitted");
+							LOGGER.debug("Download " + dlID + " successfullytransmitted");							
 						}).onFailure(err -> {
 							LOGGER.error("Download " + dlID + " failed");
 							LOGGER.error(err);
-							context.response()
-							.putHeader("content-type", "text/plain")
-							.setStatusCode(500)
-							.end("Failed because of: " + err.getMessage());
+							context.response().close();
 						});											
 					}
 					catch(IOException e)

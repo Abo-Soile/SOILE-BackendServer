@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.datamanagement.datalake;
 
+import java.nio.file.Path;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -54,6 +56,7 @@ public class ParticipantDataLakeManager{
 	 */
 	public Future<String> storeParticipantData(String participantID, int step, String taskID, FileUpload upload)
 	{
+		LOGGER.debug(datalakedirectory);
 		Promise<String> idPromise = Promise.promise();
 		LOGGER.debug("Trying to store data for: " + participantID + " / " + step + " / " + taskID );
 		TaskFileResult targetFile = new TaskFileResult("", "", "", step, taskID, participantID);
@@ -63,8 +66,11 @@ public class ParticipantDataLakeManager{
 			LOGGER.debug("Directories created, creating Temp File");
 			vertx.fileSystem().createTempFile(targetFile.getFolderPath(datalakedirectory), "result", ".out","rw-rw----")
 			.onSuccess(targetFileLocation -> {
+				// This is an absolute fileName ! So we need to just take the actual last bit of it.
 				LOGGER.debug("temp File created: " + targetFileLocation);
-				String fileName = targetFileLocation.replace(targetFile.getFolderPath(datalakedirectory),"");
+				LOGGER.debug("Folder is: " + targetFile.getFolderPath(datalakedirectory));				
+				String fileName = Path.of(targetFileLocation).getFileName().toString();
+				LOGGER.debug(fileName);
 				targetFile.setLocalFileName(fileName);
 				LOGGER.debug("Trying to move file : " + upload.uploadedFileName() + " to " + targetFile.getFilePath(datalakedirectory));
 				vertx.fileSystem().move(upload.uploadedFileName(), targetFile.getFilePath(datalakedirectory), new CopyOptions().setReplaceExisting(true))
