@@ -23,6 +23,8 @@ import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.FileSystemAccess;
 import io.vertx.ext.web.handler.HttpException;
+import io.vertx.ext.web.validation.RequestParameters;
+import io.vertx.ext.web.validation.ValidationHandler;
 
 /**
  * The Task Router (of the element Router needs a couple of additional routes like Resource Posting/retrieval). 
@@ -43,22 +45,24 @@ public class TaskRouter extends ElementRouter<Task> {
 	}		
 
 	
-	public void postResource(RoutingContext context)
+	public void putResource(RoutingContext context)
 	{				
-		LOGGER.debug("Trying to post a resource");
-		LOGGER.debug(context.pathParam("id") + "/" + context.pathParam("version") + "/" + context.pathParam("*") );				
+		LOGGER.info("Trying to post a resource");
+		LOGGER.info(context.pathParam("id") + "/" + context.pathParam("version") + "/" + context.pathParam("*") );				
 		String elementID = context.pathParam("id");
 		String version = context.pathParam("version");
-		String filename = context.pathParam("*");		
+		String filename = context.pathParam("*");
+		Boolean delete = context.queryParams().get("delete") != null ? Boolean.parseBoolean(context.queryParams().get("delete")) : false;	
 		if(filename.startsWith("lib/"))
 		{
 			handleError(new HttpException(400, "lib/ is a restricted path!"), context);
 			return;
 		}
+		
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{
-			if(context.is("application/json"))
+			if(delete)
 			{
 				elementManager.handleDeleteFile(elementID, version, filename)
 				.onSuccess(newversion -> {

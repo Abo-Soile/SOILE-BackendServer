@@ -437,11 +437,11 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		router.route(HttpMethod.GET, "/run/:id/:taskID/lib/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getLib);});
 		router.route(HttpMethod.GET, "/run/:id/:taskID/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getResourceForExecution);});
 		router.route(HttpMethod.GET, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::getResource);		
-		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::postResource);
+		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::putResource);
 		router.route(HttpMethod.GET, "/task/:id/:version/execute").handler(userAuth).handler(taskRouter::getCompiledTask);
 		router.route(HttpMethod.GET, "/task/:id/:version/execute/lib/*").handler(userAuth).handler(taskRouter::getLib);
 		router.route(HttpMethod.GET, "/task/:id/:version/execute/*").handler(userAuth).handler(taskRouter::getResourceForExecution);
-		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::postResource);
+		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::putResource);
 	}
 	
 	

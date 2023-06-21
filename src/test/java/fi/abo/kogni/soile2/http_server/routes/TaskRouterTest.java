@@ -392,7 +392,7 @@ public class TaskRouterTest extends SoileWebTest{
 					WebObjectCreator.createOrRetrieveTask(authedSession, "FileRead")
 					.onSuccess(taskData -> {									
 						Async correctSessionAsync  = context.async();
-						POST(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/resource/" + TaskDef.getJsonArray("resources").getString(0), null, new JsonObject().put("delete", true))
+						POST(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/resource/" + TaskDef.getJsonArray("resources").getString(0), new JsonObject().put("delete", true),null)
 						.onSuccess(versionResponse -> {		
 							// this is the version of the deleted file. 
 							GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + versionResponse.bodyAsJsonObject().getString("version") + "/filelist", null, null)

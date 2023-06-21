@@ -994,6 +994,12 @@ paths:
           description: version of the requested task, can be either a tag or a commit id
           schema:
             type : string
+        - name: delete
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Whether the current call is for the deletion of a existing file
       responses:
         '200':
           $ref: '#/components/responses/ObjectUpdated'
@@ -1412,7 +1418,7 @@ paths:
         - JWTAuth: []
       tags:
         - study
-      summary: Get a list of all Studies you have access to.
+      summary: Get a list of all Studies you have access to (i.e. more than executing them).
       operationId: getStudyList
       description: Get a list of all studies that you have access to.
       parameters:
@@ -1723,6 +1729,7 @@ paths:
                 properties:
                   status: 
                     type: string
+                    description: The status of the download. 
                   problems:
                     type: array
                     items: 
@@ -2500,6 +2507,8 @@ components:
       allOf:
         - $ref: '#/components/schemas/RestrictedUserInfo'
         - type: object
+          required:
+            - password
           properties:
             password:
               type: string
