@@ -479,7 +479,7 @@ public class SoileUserManager implements MongoUserUtil{
 			for(int i = 0; i < participantInfo.size(); i++)
 			{
 				// TODO: Use an aggregation to retrieve this (that's probably faster).
-				if(participantInfo.getJsonObject(i).getString("uuid").equals(project))
+				if(participantInfo.getJsonObject(i).getString("UUID").equals(project))
 				{
 					participantID = participantInfo.getJsonObject(i).getString("participantID");
 					break;
@@ -496,7 +496,7 @@ public class SoileUserManager implements MongoUserUtil{
 	/**
 	 * Get all project/participant ID combinations for the given user.
 	 * @param username The user for which data is requested.
-	 * @return A {@link Future} of a {@link JsonArray} containing objects  with { uuid: <studyID>, participantID : <IDofParticipantInStudy> }. 
+	 * @return A {@link Future} of a {@link JsonArray} containing objects  with { UUID: <studyID>, participantID : <IDofParticipantInStudy> }. 
 	 */
 	public Future<JsonArray> getParticipantInfoForUser(String username)
 	{
@@ -523,10 +523,10 @@ public class SoileUserManager implements MongoUserUtil{
 		JsonObject query = new JsonObject().put(authnOptions.getUsernameField(), username);
 		JsonObject pullUpdate = new JsonObject().put("$pull", new JsonObject()
 				.put(SoileConfigLoader.getUserdbField("participantField"), new JsonObject()
-						.put("uuid", new JsonObject()
+						.put("UUID", new JsonObject()
 								.put("$eq", studyID))));
 		JsonObject pushUpdate = new JsonObject().put("$push", new JsonObject()
-				.put(SoileConfigLoader.getUserdbField("participantField"), new JsonObject().put("uuid", studyID).put("participantID", participantID)));
+				.put(SoileConfigLoader.getUserdbField("participantField"), new JsonObject().put("UUID", studyID).put("participantID", participantID)));
 		List<BulkOperation> pullAndPut = new LinkedList<>();
 		BulkOperation pullOp = BulkOperation.createUpdate(query, pullUpdate);
 		BulkOperation pushOp = BulkOperation.createUpdate(query, pushUpdate);

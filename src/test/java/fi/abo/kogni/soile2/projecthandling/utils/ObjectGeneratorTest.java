@@ -67,7 +67,7 @@ public class ObjectGeneratorTest extends GitTest {
 						for(int j = 0; j <list2.size(); ++j)
 						{
 							Async taskDataAsync = context.async();
-							taskManager.getElement(list2.getJsonObject(j).getString("uuid"))
+							taskManager.getElement(list2.getJsonObject(j).getString("UUID"))
 							.onSuccess(currentTask -> {
 								switch(currentTask.getName())
 								{

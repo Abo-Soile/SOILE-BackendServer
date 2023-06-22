@@ -271,23 +271,23 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		// now, we need to get the Versions for the element and take the latest version.
 		SoileWebTest.getElementList(webClient, elementType)
 		.onSuccess(elementList -> {
-			String uuid = null;
+			String UUID = null;
 			for(int i = 0; i < elementList.size(); ++i)
 			{
 				if(elementList.getJsonObject(i).getString("name").equals(elementName))
 				{
-					uuid = elementList.getJsonObject(i).getString("uuid");
+					UUID = elementList.getJsonObject(i).getString("UUID");
 					break;
 				}
 			}
-			if(uuid == null)
+			if(UUID == null)
 			{
 				infoPromise.fail("Object supposedly exists but could not find an element in the list, possibly no access to the element");								
 				return;
 			}
 			else
 			{
-				String elementID = uuid;
+				String elementID = UUID;
 				SoileWebTest.getElementVersions(webClient, elementType, elementID)
 				.onSuccess( res -> {
 					// find the latest version.

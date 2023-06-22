@@ -88,9 +88,9 @@ public abstract class ElementBase implements Element {
 
 	@Override
 	@JsonProperty("UUID")
-	public void setUUID(String uuid)
+	public void setUUID(String UUID)
 	{
-		data.put("_id", uuid);
+		data.put("_id", UUID);
 	}
 		
 	/**

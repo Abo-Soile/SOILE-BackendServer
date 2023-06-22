@@ -27,7 +27,7 @@ public interface APIElement<T extends ElementBase> {
 	String getUUID();
 
 	@JsonProperty("UUID")
-	void setUUID(String uuid);
+	void setUUID(String UUID);
 
 	/**
 	 * A JsonArray of the form: 

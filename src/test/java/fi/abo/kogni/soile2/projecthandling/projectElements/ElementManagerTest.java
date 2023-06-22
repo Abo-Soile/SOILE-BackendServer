@@ -51,7 +51,7 @@ public class ElementManagerTest extends GitTest{
 						for(int i = 0; i < list.size(); i++)
 						{
 							JsonObject current = list.getJsonObject(i); 
-							if(current.getString("uuid").equals(p.getUUID()))
+							if(current.getString("UUID").equals(p.getUUID()))
 							{
 								context.assertEquals(p.getName(), current.getString("name"));
 								list.remove(i);
@@ -127,7 +127,7 @@ public class ElementManagerTest extends GitTest{
 			Async taskAsync = context.async();
 			taskManager.getElementList(new JsonArray())
 			.onSuccess(taskList -> {
-				String taskID = taskList.getJsonObject(0).getString("uuid");
+				String taskID = taskList.getJsonObject(0).getString("UUID");
 				taskManager.getElement(taskID)
 				.onSuccess(task -> {
 					taskManager.getAPIElementFromDB(task.getUUID(),task.getCurrentVersion())
@@ -146,7 +146,7 @@ public class ElementManagerTest extends GitTest{
 									boolean elementFound = false;
 									for(int i = 0; i < taskLists.size(); ++i)
 									{
-										if(taskLists.getJsonObject(i).getBinary("uuid").equals(ctask.getUUID()))
+										if(taskLists.getJsonObject(i).getBinary("UUID").equals(ctask.getUUID()))
 										{
 											elementFound = true;
 										}
@@ -170,7 +170,7 @@ public class ElementManagerTest extends GitTest{
 
 			expManager.getElementList(new JsonArray())
 			.onSuccess(expList -> {
-				String expID = expList.getJsonObject(0).getString("uuid");
+				String expID = expList.getJsonObject(0).getString("UUID");
 				expManager.getElement(expID)
 				.onSuccess(experiment -> {
 					expManager.getAPIElementFromDB(experiment.getUUID(),experiment.getCurrentVersion())

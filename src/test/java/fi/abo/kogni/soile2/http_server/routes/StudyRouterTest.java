@@ -53,7 +53,7 @@ public class StudyRouterTest extends SoileWebTest {
 						POST(authedSession, "/study/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
-							context.assertEquals(id, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
+							context.assertEquals(id, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
 							listAsync.complete();
 						})
 						.onFailure(err -> context.fail(err));
@@ -117,13 +117,13 @@ public class StudyRouterTest extends SoileWebTest {
 							POST(authedSession, "/study/list", null,null)
 							.onSuccess(listresponse -> {
 								context.assertEquals(2, listresponse.bodyAsJsonArray().size());
-								List<String> uuids = new LinkedList<>();
+								List<String> UUIDs = new LinkedList<>();
 								for(int i = 0 ; i < listresponse.bodyAsJsonArray().size(); i++)
 								{
-									uuids.add(listresponse.bodyAsJsonArray().getJsonObject(i).getString("uuid"));								
+									UUIDs.add(listresponse.bodyAsJsonArray().getJsonObject(i).getString("UUID"));								
 								}
-								context.assertTrue(uuids.contains(id1));
-								context.assertTrue(uuids.contains(id2));
+								context.assertTrue(UUIDs.contains(id1));
+								context.assertTrue(UUIDs.contains(id2));
 								listAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));
@@ -131,13 +131,13 @@ public class StudyRouterTest extends SoileWebTest {
 							POST(authedSession, "/study/list", new JsonObject().put("access",  "read"),null)
 							.onSuccess(listresponse -> {
 								context.assertEquals(2, listresponse.bodyAsJsonArray().size());
-								List<String> uuids = new LinkedList<>();
+								List<String> UUIDs = new LinkedList<>();
 								for(int i = 0 ; i < listresponse.bodyAsJsonArray().size(); i++)
 								{
-									uuids.add(listresponse.bodyAsJsonArray().getJsonObject(i).getString("uuid"));								
+									UUIDs.add(listresponse.bodyAsJsonArray().getJsonObject(i).getString("UUID"));								
 								}
-								context.assertTrue(uuids.contains(id1));
-								context.assertTrue(uuids.contains(id2));
+								context.assertTrue(UUIDs.contains(id1));
+								context.assertTrue(UUIDs.contains(id2));
 								readlistasync.complete();
 							})
 							.onFailure(err -> context.fail(err));
@@ -146,7 +146,7 @@ public class StudyRouterTest extends SoileWebTest {
 							POST(wrongSession, "/study/listrunning", null,null)
 							.onSuccess(listresponse -> {
 								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
-								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
+								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
 								emptyListAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));
@@ -172,7 +172,7 @@ public class StudyRouterTest extends SoileWebTest {
 							POST(unAuthedSession, "/study/listrunning", null,null)
 							.onSuccess(listresponse -> {
 								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
-								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
+								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
 								unAuthAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));							
@@ -323,7 +323,7 @@ public class StudyRouterTest extends SoileWebTest {
 						POST(authedSession, "/study/list", null,null)
 						.onSuccess(listresponse -> {
 							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
-							context.assertEquals(id, listresponse.bodyAsJsonArray().getJsonObject(0).getString("uuid"));
+							context.assertEquals(id, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
 							POST(authedSession, "/study/" + id + "/stop", null,null )
 							.onSuccess( stopped -> {
 								POST(authedSession, "/study/" + id + "/signup", null,null)

@@ -29,7 +29,7 @@ public interface ElementInstance {
 	 * @return
 	 */
 	@JsonProperty("UUID")
-	void setUUID(String uuid);
+	void setUUID(String UUID);
 
 	/**
 	 * Can be either be a commit ID or a Tag

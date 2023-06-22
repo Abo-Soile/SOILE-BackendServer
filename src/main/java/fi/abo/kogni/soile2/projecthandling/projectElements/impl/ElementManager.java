@@ -74,12 +74,12 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Get the ID of the repository for this type of Element.
-	 * @param uuid the uuid of the element
+	 * @param UUID the UUID of the element
 	 * @return the Supplemented ID of the element representing the repository ID
 	 */
-	public String getGitIDForUUID(String uuid)
+	public String getGitIDForUUID(String UUID)
 	{
-		return typeID + uuid;
+		return typeID + UUID;
 	}
 
 	/**
@@ -352,8 +352,8 @@ public class ElementManager<T extends ElementBase> {
 				}
 				if(addElement)
 				{
-					// rename the _id key to uuid.					
-					current.put("uuid",current.getString("_id")).remove("_id");
+					// rename the _id key to UUID.					
+					current.put("UUID",current.getString("_id")).remove("_id");
 					current.remove("private");
 					current.remove("visible");
 					result.add(current);
@@ -399,8 +399,8 @@ public class ElementManager<T extends ElementBase> {
 				}
 				if(addElement)
 				{
-					// rename the _id key to uuid.					
-					current.put("uuid",current.getString("_id")).remove("_id");
+					// rename the _id key to UUID.					
+					current.put("UUID",current.getString("_id")).remove("_id");
 					current.remove("private");
 					current.remove("visible");
 					result.add(current);
@@ -540,17 +540,17 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Get an API that can be returned based on the given UUID and version.
-	 * @param uuid the uuid of the element to be returned
+	 * @param UUID the UUID of the element to be returned
 	 * @param version the version of the element to be returned
 	 * @return an API object of the type appropriate for this Manager.
 	 */
-	public Future<APIElement<T>> getAPIElementFromDB(String uuid, String version)
+	public Future<APIElement<T>> getAPIElementFromDB(String UUID, String version)
 	{
 		Promise<APIElement<T>> elementPromise = Promise.<APIElement<T>>promise();
 		APIElement<T> apiElement = apisupplier.get();
-		GitFile currentVersion = new GitFile("Object.json", getGitIDForUUID(uuid), version);
+		GitFile currentVersion = new GitFile("Object.json", getGitIDForUUID(UUID), version);
 
-		factory.loadElement(client, uuid).
+		factory.loadElement(client, UUID).
 		onSuccess(element -> {
 			apiElement.loadFromDBElement(element);
 			// the version cannot be extracted from the db element, as the db element stores all versions, and this is a specific request. 

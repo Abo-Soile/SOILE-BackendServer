@@ -1640,7 +1640,7 @@ paths:
                 properties:
                   downloadID: 
                     type: string
-                    description: An id that can be used with the /project/{id}/download/{downloadid} endpoint. Has to have the form of a uuid
+                    description: An id that can be used with the /project/{id}/download/{downloadid} endpoint. Has to have the form of a UUID
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -2201,7 +2201,7 @@ paths:
                 properties:
                   id:
                     type: string
-                    description: the UUID of the uploaded file to be resupplied to /project/{id}/submit. Has to have the form of a uuid
+                    description: the UUID of the uploaded file to be resupplied to /project/{id}/submit. Has to have the form of a UUID
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -2526,7 +2526,7 @@ components:
           properties:
             id:
               type: string
-              description: The unique id of this user. Has to have the form of a uuid
+              description: The unique id of this user. Has to have the form of a UUID
               example: d290f1ee-6c54-4b01-90e6-d701748f0851
             password:
               type: string
@@ -2536,12 +2536,12 @@ components:
               items:
                 type: object
                 properties:
-                  uuid: 
+                  UUID: 
                     type: string
-                    description: the uuid of the project instance. Has to have the form of a uuid
+                    description: the UUID of the project instance. Has to have the form of a UUID
                   participantID:
                     type: string
-                    description: The users ID within a Project. Has to have the form of a uuid  
+                    description: The users ID within a Project. Has to have the form of a UUID  
     UserInfo:
       type: object
       required:
@@ -2741,7 +2741,7 @@ components:
           target: 
             type: string
             example: "d290f1ee-6c54-4b01-90e6-d701748f0851"
-            description: the uuid of the target item.   
+            description: the UUID of the target item.   
     Participant:
       description: An Entry in this database represents one participant in one project.
                    Data relevant for this project is stored in each document e.g. the position in the project, data from the project etc. 
@@ -2749,7 +2749,7 @@ components:
       properties:
         _id: 
           type: string
-          description: The UUID of this participant. Has to have the form of a uuid
+          description: The UUID of this participant. Has to have the form of a UUID
         token:
           type: string
           description: optional token. if a participant has a token, this token can be used to authenticate to run a specific project with a given 
@@ -2778,8 +2778,8 @@ components:
           description: "Time stamp for modification"
         position: 
           type: string
-          description: the uuid of the element in the project this user is currently at. Has to have the form of a uuid
-          default: the project uuid if the user just started.
+          description: the UUID of the element in the project this user is currently at. Has to have the form of a UUID
+          default: the project UUID if the user just started.
         finished: 
           type: boolean
           description: If the participant is finished with the project.
@@ -2790,12 +2790,12 @@ components:
             properties: 
               experimentID:
                 type: string
-                description: uuids of the experiment with finished tasks
+                description: UUIDs of the experiment with finished tasks
               tasks:
                 type: array
                 items:
                   type: string
-                  description: uuids of the experiment with finished tasks
+                  description: UUIDs of the experiment with finished tasks
         outputData: 
           type: array
           items:
@@ -2910,7 +2910,7 @@ components:
       properties:
         UUID:
           type: string
-          description: Has to have the form of a uuid (from a mongoDB ID)
+          description: Has to have the form of a UUID (from a mongoDB ID)
           example: 507f1f77bcf86cd799439011
         name:
           type: string
@@ -2962,9 +2962,9 @@ components:
       items:
         type: object
         properties:
-          uuid: 
+          UUID: 
             type: string
-            description: Has to have the form of a uuid
+            description: Has to have the form of a UUID
           name:
             type: string
     APIElement:
@@ -3460,7 +3460,7 @@ components:
                 type: string
                 example: 'Specified user does not exist'
     ResourceDoesNotExist:
-      description: Requested resource does not exist (invalid version or uuid)
+      description: Requested resource does not exist (invalid version or UUID)
       content:
         application/json:
           schema:

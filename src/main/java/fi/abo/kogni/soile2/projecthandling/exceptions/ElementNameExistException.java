@@ -9,18 +9,18 @@ public class ElementNameExistException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 	private String name;	
-	private String uuid = "";
+	private String UUID = "";
 	
-	public ElementNameExistException(String id, String uuid)
+	public ElementNameExistException(String id, String UUID)
 	{		
 		super("An element with name "+ id + " already exists");
 		this.name = id;
-		this.uuid = uuid;
+		this.UUID = UUID;
 	}
 	
 	public String getExistingElementUUID()
 	{
-		return uuid;
+		return UUID;
 	}
 	
 	public String getName()

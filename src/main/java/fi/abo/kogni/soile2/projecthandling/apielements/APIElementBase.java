@@ -77,9 +77,9 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 
 	@Override
 	@JsonProperty("UUID")
-	public void setUUID(String uuid)
+	public void setUUID(String UUID)
 	{
-		data.put("UUID", uuid);
+		data.put("UUID", UUID);
 	}
 		
 	/**

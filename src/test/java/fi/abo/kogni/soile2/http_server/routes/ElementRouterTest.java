@@ -47,7 +47,7 @@ public class ElementRouterTest extends SoileWebTest {
 					getElementList(currentSession, "task")
 					.onSuccess(taskList-> {
 						context.assertEquals(1, taskList.size());
-						context.assertEquals(taskID, taskList.getJsonObject(0).getValue("uuid"));
+						context.assertEquals(taskID, taskList.getJsonObject(0).getValue("UUID"));
 						context.assertEquals(taskData.getString("name"), taskList.getJsonObject(0).getValue("name"));
 						taskListAsync.complete();
 					})

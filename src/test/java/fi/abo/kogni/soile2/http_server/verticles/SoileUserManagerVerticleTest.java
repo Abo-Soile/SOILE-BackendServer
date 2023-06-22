@@ -458,17 +458,17 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 					{
 						if(participants.getJsonObject(i).getString("participantID").equals("NewID"))
 						{
-							context.assertEquals("projectID", participants.getJsonObject(i).getString("uuid"));
+							context.assertEquals("projectID", participants.getJsonObject(i).getString("UUID"));
 							id1 = true;
 						}
 						if(participants.getJsonObject(i).getString("participantID").equals("NewID2"))
 						{
-							context.assertEquals("projectID2", participants.getJsonObject(i).getString("uuid"));
+							context.assertEquals("projectID2", participants.getJsonObject(i).getString("UUID"));
 							id2 = true;
 						}
 						if(participants.getJsonObject(i).getString("participantID").equals("NewID3"))
 						{
-							context.assertEquals("invalidProject", participants.getJsonObject(i).getString("uuid"));
+							context.assertEquals("invalidProject", participants.getJsonObject(i).getString("UUID"));
 							id3 = true;
 						}						
 					}

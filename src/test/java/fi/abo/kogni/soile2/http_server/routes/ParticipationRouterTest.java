@@ -681,7 +681,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 			for(int i = 0; i < participantInfo.size(); i++)
 			{
 				// TODO: Use an aggregation to retrieve this (that's probably faster).
-				if(participantInfo.getJsonObject(i).getString("uuid").equals(projectID))
+				if(participantInfo.getJsonObject(i).getString("UUID").equals(projectID))
 				{
 					participantID = participantInfo.getJsonObject(i).getString("participantID");
 					break;

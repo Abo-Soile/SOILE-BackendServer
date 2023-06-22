@@ -23,7 +23,7 @@ public class ParticipantImplForTesting extends ParticipantImpl {
 
 	@Override
 	public Future<String> save() {
-				return Future.succeededFuture(this.uuid);
+				return Future.succeededFuture(this.UUID);
 	}
 
 	public static Future<Participant> getTestParticipant(TestContext context, int i, JsonObject id)

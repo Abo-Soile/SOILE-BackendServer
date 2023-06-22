@@ -302,7 +302,7 @@ public class UserRouter extends SoileRouter {
 							JsonArray data = responseData.getJsonArray("participantIDs", new JsonArray());
 							for(int i = 0; i < data.size(); ++i)
 							{
-								response.add(data.getJsonObject(i).getString("uuid"));
+								response.add(data.getJsonObject(i).getString("UUID"));
 							}
 								context.response()
 								.putHeader("content-type","application/json")

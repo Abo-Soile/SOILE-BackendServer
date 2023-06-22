@@ -25,7 +25,7 @@ public interface Element extends AccessElement {
 	String getUUID();
 
 	@JsonProperty("UUID")
-	void setUUID(String uuid);
+	void setUUID(String UUID);
 
 	/**
 	 * A JsonArray of the form: 

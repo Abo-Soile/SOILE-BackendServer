@@ -40,9 +40,9 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	}	
 
 	@Override
-	public void setUUID(String uuid)
+	public void setUUID(String UUID)
 	{
-		data.put("UUID", uuid);
+		data.put("UUID", UUID);
 	}
 
 

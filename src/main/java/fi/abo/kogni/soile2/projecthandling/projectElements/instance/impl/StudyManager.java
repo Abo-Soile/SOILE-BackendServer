@@ -180,7 +180,7 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	}
 	
 	/**
-	 * Get a list of uuid of project instances and their privacy status based on the permissions provided (those are essentially _ids)
+	 * Get a list of UUID of project instances and their privacy status based on the permissions provided (those are essentially _ids)
 	 * @param projectInstanceIDs A JsonArray with strings for each permission/projectID
 	 * @return
 	 */
@@ -218,7 +218,7 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 					JsonArray result = new JsonArray();
 					for(JsonObject o : items)
 					{
-						o.put("uuid", o.getString("_id")).remove("_id");
+						o.put("UUID", o.getString("_id")).remove("_id");
 						result.add(o);
 					}
 					LOGGER.debug("Result is: " + result.encodePrettily() );
@@ -231,7 +231,7 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	}
 	
 	/**
-	 * Get Studies (names and uuids)
+	 * Get Studies (names and UUIDs)
 	 * @return
 	 */
 	public Future<JsonArray> getStudies()

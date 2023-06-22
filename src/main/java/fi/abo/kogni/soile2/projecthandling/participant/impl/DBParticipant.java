@@ -21,14 +21,14 @@ import io.vertx.core.json.JsonObject;
       properties:
         _id: 
           type: string
-          description: The UUID of this participant. Has to have the form of a uuid
+          description: The UUID of this participant. Has to have the form of a UUID
         project:
           type: string
           description: The project this participant is in.
         position: 
           type: string
-          description: the uuid of the element in the project this user is currently at. Has to have the form of a uuid
-          default: the project uuid if the user just started.
+          description: the UUID of the element in the project this user is currently at. Has to have the form of a UUID
+          default: the project UUID if the user just started.
         finishedExperimentTasks: 
           type: array
           items:
@@ -36,12 +36,12 @@ import io.vertx.core.json.JsonObject;
             properties: 
               experimentID:
                 type: string
-                description: uuids of the experiment with finished tasks
+                description: UUIDs of the experiment with finished tasks
               tasks:
                 type: array
                 items:
                   type: string
-                  description: uuids of the experiment with finished tasks
+                  description: UUIDs of the experiment with finished tasks
         outputData: 
           type: array
           items:

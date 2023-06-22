@@ -35,7 +35,7 @@ public abstract class ParticipantImpl implements Participant{
 	/**
 	 * This is the _id field from the spec.
 	 */
-	protected String uuid;
+	protected String UUID;
 	//protected JsonArray finished;
 	protected String position;
 	//		protected JsonObject outputData;
@@ -76,7 +76,7 @@ public abstract class ParticipantImpl implements Participant{
 	protected void setupParticipant(JsonObject participantInfo)
 	{		
 		LOGGER.debug(participantInfo.encodePrettily());
-		uuid = participantInfo.getString("_id");
+		UUID = participantInfo.getString("_id");
 		position = participantInfo.getString("position","0");
 		currentStep = participantInfo.getInteger("currentStep",0);
 		steps = participantInfo.getJsonArray("steps",new JsonArray());
@@ -370,7 +370,7 @@ public abstract class ParticipantImpl implements Participant{
 	@Override
 	public String getID()
 	{
-		return this.uuid;
+		return this.UUID;
 	}	
 
 	/**
@@ -381,7 +381,7 @@ public abstract class ParticipantImpl implements Participant{
 	public Future<JsonObject> toJson()
 	{		
 		JsonObject current = new JsonObject();
-		current.put("_id", uuid)
+		current.put("_id", UUID)
 		.put("currentStep", currentStep)
 		.put("steps", steps)
 		.put("finished", finished)

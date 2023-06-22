@@ -69,7 +69,7 @@ public class ElementToDBStudy extends DBStudy{
 			{				
 				// no collisions exist, so lets save it.
 				// We will retrieve all necessary information from the input json.
-				// it needs to contain the version, source project uuid, privacy, shortcut and name.
+				// it needs to contain the version, source project UUID, privacy, shortcut and name.
 				// we add an empty participants array.
 				JsonObject dbJson = new JsonObject();
 				dbJson.put("participants", new JsonArray());
