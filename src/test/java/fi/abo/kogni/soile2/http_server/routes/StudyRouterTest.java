@@ -563,7 +563,6 @@ public class StudyRouterTest extends SoileWebTest {
 					signUpToProjectWithToken(unauthed, createdTokens.getString(0), projectID)
 					.onSuccess(accessToken -> {
 						Async requestTokensAsync = context.async();
-						Async mongoAsync = context.async();
 						POST(generatorSession, "/study/" + projectID + "/tokeninfo", null, null)
 						.onSuccess(Response -> {
 							JsonObject tokeninfo = Response.bodyAsJsonObject();							
