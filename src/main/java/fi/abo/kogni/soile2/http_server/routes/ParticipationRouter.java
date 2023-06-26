@@ -152,8 +152,7 @@ public class ParticipationRouter extends SoileRouter{
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = context.pathParam("id");
-		String token = params.queryParameter("token") != null ? params.queryParameter("token").getString() : null;
-		LOGGER.info(context.user().principal());
+		String token = params.queryParameter("token") != null ? params.queryParameter("token").getString() : null;		
 		// no token, so this is either an invalid call or a user signup.
 		if(token == null)
 		{ 

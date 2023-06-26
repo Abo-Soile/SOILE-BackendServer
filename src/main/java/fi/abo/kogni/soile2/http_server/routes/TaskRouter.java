@@ -47,8 +47,7 @@ public class TaskRouter extends ElementRouter<Task> {
 	
 	public void putResource(RoutingContext context)
 	{				
-		LOGGER.info("Trying to post a resource");
-		LOGGER.info(context.pathParam("id") + "/" + context.pathParam("version") + "/" + context.pathParam("*") );				
+		LOGGER.debug(context.pathParam("id") + "/" + context.pathParam("version") + "/" + context.pathParam("*") );				
 		String elementID = context.pathParam("id");
 		String version = context.pathParam("version");
 		String filename = context.pathParam("*");

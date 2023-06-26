@@ -541,8 +541,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 						handleError(e, msg);					
 						return;
 					}
-				}
-				LOGGER.info(msg.body().encodePrettily());
+				}				
 				handleError(new HttpException(400, "Need either Permissions or Roles to set"),msg);
 
 			}

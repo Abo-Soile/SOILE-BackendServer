@@ -1,17 +1,16 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
-import java.lang.annotation.ElementType;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
-import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
-import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
+import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.json.JsonArray;
@@ -565,19 +564,9 @@ public class StudyRouterTest extends SoileWebTest {
 					.onSuccess(accessToken -> {
 						Async requestTokensAsync = context.async();
 						Async mongoAsync = context.async();
-						mongo_client.find(SoileConfigLoader.getdbProperty("studyCollection"), new JsonObject())
-						.onSuccess(results -> {
-							for(JsonObject o : results)
-							{
-								System.out.println(o.encodePrettily());
-							}
-							mongoAsync.complete();
-						})
-						.onFailure(err -> context.fail(err));
 						POST(generatorSession, "/study/" + projectID + "/tokeninfo", null, null)
 						.onSuccess(Response -> {
-							JsonObject tokeninfo = Response.bodyAsJsonObject();
-							System.out.println(tokeninfo.encodePrettily());
+							JsonObject tokeninfo = Response.bodyAsJsonObject();							
 
 							context.assertEquals(1, tokeninfo.getJsonArray("usedTokens").size());
 							context.assertEquals(createdTokens.getString(0), tokeninfo.getJsonArray("usedTokens").getString(0));

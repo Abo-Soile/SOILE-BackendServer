@@ -507,6 +507,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	protected Future<WebClientSession> createUserAndAuthedSession(String username, String password, Roles role)
 	{
 		WebClientSession currentSession = createSession();
+		
 		return createUser(vertx, username, password, role)
 				.compose(userCreated -> { return authenticateSession(currentSession, username, password);})
 				.compose(authed -> {return Future.succeededFuture(currentSession);});

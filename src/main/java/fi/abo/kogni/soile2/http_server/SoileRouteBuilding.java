@@ -4,6 +4,7 @@ package fi.abo.kogni.soile2.http_server;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -226,7 +227,10 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	
 	Future<RouterBuilder> addHandlers(RouterBuilder builder)
 	{
-		builder.rootHandler(LoggerHandler.create());
+		if(LOGGER.getLevel() == Level.DEBUG)
+		{	// we add the router if debugging
+			builder.rootHandler(LoggerHandler.create());
+		}
 		builder.rootHandler(new SoileSessionHandler(LocalSessionStore.create(vertx)));
 		//TODO: Make flexible and set up for all front-end components
 		CorsHandler cors = CorsHandler.create()											

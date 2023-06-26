@@ -21,7 +21,7 @@ public class BasicWebTests extends SoileWebTest {
 		System.out.println("--------------------  Running Tests for sessions  ----------------------");    
 
 		WebClient unAuthedSession = createSession();
-
+		
 		Async unAuthAsync = context.async();
 		System.out.println("------------------------Using an unauthed Session to retrieve information -----------------------------------");
 		POST(unAuthedSession, "/study/listrunning", null,null)

@@ -471,9 +471,6 @@ public class StudyRouter extends SoileRouter {
 					for(int i = 0; i < responseBody.getJsonArray("files").size(); i++)
 					{
 						DataLakeFile temp = new DataLakeFile(responseBody.getJsonArray("files").getJsonObject(i));
-						LOGGER.info(temp.getAbsolutePath());
-						LOGGER.info(temp.getOriginalFileName());
-						LOGGER.info(temp.toJson().encodePrettily());
 						dLFiles.add(temp);
 					}
 					try
