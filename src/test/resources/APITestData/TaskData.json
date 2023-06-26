@@ -74,7 +74,8 @@
 	},
 	"JavascriptExample": {							
 		"name": "JSExp",		
-		"codeFile": "JSExample.js",
+		"codeFile": "JSExample.html",
+		"resources": ["config.json","videophase.js", "Video.mp4", "css/styles.css"],
 		"codeType" : { "language" : "javascript",
 					   "version" : "ES6"}
 	},

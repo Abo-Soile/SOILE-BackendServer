@@ -6,7 +6,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
@@ -15,6 +19,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
@@ -22,7 +27,7 @@ public class SetupServer extends SoileServerVerticle {
 
 	static final Logger LOGGER = LogManager.getLogger(SetupServer.class);
 	private String dataFolder;			
-
+	private String adminUser;
 	public SetupServer(String dataFolder) {
 		super();
 		this.dataFolder = dataFolder;
@@ -79,6 +84,7 @@ public class SetupServer extends SoileServerVerticle {
 		Promise<JsonObject> accountCreatedPromise = Promise.promise();
 		JsonObject AdduserCommand = new JsonObject().put("username", config.getString("adminuser"))
 				.put("password",config.getString("adminpassword"));
+		this.adminUser = config.getString("adminuser");
 		LOGGER.info("Setting up user");
 		vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"addUser"), AdduserCommand )
 		.onSuccess(done -> {
@@ -176,11 +182,13 @@ public class SetupServer extends SoileServerVerticle {
 			JsonObject privateProject = new JsonObject().put("private", true).put("name", "Example Private Project").put("shortcut","newShortcut");
 			JsonObject projectData = new JsonObject().put("UUID", projectInformation.getValue("UUID")).put("version", projectInformation.getValue("version"));
 			studyHandler.createStudy(privateProject.put("sourceProject",projectData))
-			.compose(instance -> instance.activate())
+			.compose(this::addAdminToPermissions)
+			.compose(instance -> instance.activate())			
 			.onSuccess(active -> {
 				LOGGER.info("Starting public Project");
 				JsonObject publicProject = new JsonObject().put("private", false).put("name", "Example Public Project").put("shortcut","newPublicShortcut");			
 				studyHandler.createStudy(publicProject.mergeIn(projectData))
+				.compose(this::addAdminToPermissions)
 				.compose(cinstance -> cinstance.activate())
 				.onSuccess(active2 -> 
 				{
@@ -196,7 +204,31 @@ public class SetupServer extends SoileServerVerticle {
 
 
 	}
-
+	Future<Study> addAdminToPermissions(Study studyToAddPermissions)
+	{
+		Promise<Study> successPromise = Promise.<Study>promise();
+		JsonObject permissionCommand = new JsonObject().put("username", this.adminUser)
+												   .put("command", PermissionChange.Update.toString().toLowerCase())
+												   .put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.STUDY)
+														   										 .put("permissionSettings", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
+														   												 														.put("target", studyToAddPermissions.getID()))));
+		
+		vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"permissionOrRoleChange"), permissionCommand)
+		.onSuccess(response -> {
+			JsonObject responseObject = (JsonObject)(response.body());
+			if(responseObject.getValue(SoileCommUtils.RESULTFIELD).equals(SoileCommUtils.SUCCESS))
+			{
+				successPromise.complete(studyToAddPermissions);
+			}
+			else
+			{
+				successPromise.fail(responseObject.getString(SoileCommUtils.REASONFIELD));
+			}
+		})
+		.onFailure(err -> successPromise.fail(err));
+		
+		return successPromise.future();
+	}
 
 	public static void main(String[] args)
 	{

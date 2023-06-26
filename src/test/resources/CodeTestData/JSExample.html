@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="user-scalable=no">
+    <title>VideoPhase</title>
+  </head>
+<body>
+<script src="https://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+
+<link
+  rel="stylesheet"
+  href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css"
+/>
+
+<div class="container main">
+  <div class="row">
+    <!-- <title>VideoPhase</title>
+    <h1>VideoPhase</h1> -->
+    <div class="content">
+      <div id="videomessage" style="display: none"></div>
+
+      <div class="col-md-12 text-center">
+        <h3 id="recording-text" style="display: none; color:crimson">Record</h3>
+        <video id="main-video" style="display: none">
+          <source src="Video.mp4 " type=video/mp4>
+        </video>
+        <h1 id="preview-title"></h1>
+        <h4 id="preview-instructions"></h4>
+        <video id="camera-preview" autoplay muted></video>
+        <h1 id="title" style="display: none"></h1>
+        <h4 id="text" style="display: none"></h4>
+        <br>
+        <button class="btn btn-lg btn-primary" id="start-button" style="display: none"></button>
+        <button class="btn btn-lg btn-primary" id="record-button" style="display: none"></button>
+      </div>
+    </div>
+
+    <!-- <script src="video.js"></script> -->
+
+  </div>
+</div>
+
+<script type="text/javascript" src="videophase.js"></script>
+
+<style>
+  #main-video {
+    /* max-width: 800px; */
+    height: 100%;
+    width: 100%;
+  }
+  
+  #camera-preview {
+    height: 100%;
+    width: 100%;
+    /* 
+    max-width: 800px;
+    position: absolute;
+    top: 450px;
+    left: 1100px;
+    left: 13000px; */
+  }
+
+  .content {
+    margin-left: 10%;
+    margin-right: 10%;
+    min-height: 400px;
+  }
+</style>
+<div id="footer">
+    <footer class="container">
+        <div class="row" id="foot">
+        <!-- <center> Footer stuff here </center> -->
+        </div>
+
+    </footer>
+</div>
+<link rel="stylesheet" type="text/css" href="css/styles.css">
+</body>
+
+</html>

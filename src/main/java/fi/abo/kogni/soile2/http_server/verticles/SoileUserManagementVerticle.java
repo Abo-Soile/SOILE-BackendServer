@@ -438,7 +438,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	 * 		 - command : "<addCommand>"/"<setCommand>"/"<removeCommand>"
 	 * 		   permissionsProperties
 	 * 			{
-	 * 			 elementType: "task"/"experiment"/"project"/"instance"
+	 * 			 elementType: "task"/"experiment"/"project"/"study"
 	 * 			 permissionSettings:
 	 * 				[
 	 * 					{
@@ -542,6 +542,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 						return;
 					}
 				}
+				LOGGER.info(msg.body().encodePrettily());
 				handleError(new HttpException(400, "Need either Permissions or Roles to set"),msg);
 
 			}
