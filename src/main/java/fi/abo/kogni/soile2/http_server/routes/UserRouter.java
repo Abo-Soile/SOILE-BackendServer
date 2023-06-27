@@ -275,7 +275,7 @@ public class UserRouter extends SoileRouter {
 		}
 		else
 		{
-			if(currentUser.principal().containsKey("access_token"))
+			if(isTokenUser(currentUser))
 			{				
 				
 				// token user, so lets look up the project

@@ -562,7 +562,7 @@ public class ParticipationRouter extends SoileRouter{
 	Future<Participant> getParticpantForUser(User user, Study project)
 	{
 
-		if(user.principal().getString("username") == null)
+		if(isTokenUser(user))
 		{
 			// This is a Token User!
 			return partHandler.getParticipantForToken(user.principal().getString("access_token"), project.getID());

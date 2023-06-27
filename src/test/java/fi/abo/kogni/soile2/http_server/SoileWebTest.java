@@ -75,7 +75,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	}
 			
 	
-	protected Future<String> createAndStartProject(WebClientSession session, boolean priv, String shortcut, String ProjectName)
+	protected Future<String> createAndStartStudy(WebClientSession session, boolean priv, String shortcut, String ProjectName)
 	{
 		JsonObject projectExec = new JsonObject().put("private", priv).put("name", "New Project").put("shortcut",shortcut); 
 		Promise<String> projectInstancePromise = Promise.promise();
@@ -136,7 +136,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	 */
 	protected Future<String> createAndStartProject(boolean priv, String shortcut, String ProjectName)
 	{
-		return createAndStartProject(generatorSession, priv, shortcut, ProjectName);
+		return createAndStartStudy(generatorSession, priv, shortcut, ProjectName);
 	}
 
 	/**

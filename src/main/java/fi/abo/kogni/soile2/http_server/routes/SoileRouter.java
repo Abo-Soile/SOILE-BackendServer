@@ -14,6 +14,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessStudy;
 import io.vertx.core.eventbus.ReplyException;
+import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
@@ -135,6 +136,11 @@ public class SoileRouter {
 	protected MongoAuthorization getAuthForType(String type)
 	{		
 		return getAuthForType(TargetElementType.valueOf(type));
+	}
+	
+	protected boolean isTokenUser(User user)
+	{
+		return user.principal().containsKey("access_token") && !user.principal().containsKey("username");
 	}
 	
 }

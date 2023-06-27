@@ -381,7 +381,30 @@ public class StudyRouter extends SoileRouter {
 			})
 			.onFailure(err -> handleError(err, context));										
 		})
-		.onFailure(err -> handleError(err, context));			
+		.onFailure(noAccess -> {
+			studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
+			.onSuccess( participantAccess -> {
+				studyHandler.loadUpToDateStudy(requestedInstanceID)			
+				.onSuccess(study -> {
+					study.isActive()
+					.onSuccess(active -> {
+						// we add the "Active" field, since it is a useful property.
+						JsonObject studyInfo = study.toAPIJson();
+						JsonObject responseObject = new JsonObject().put("UUID", study.getID())
+																	.put("name", study.getName())
+																	.put("shortDescription", studyInfo.getValue("shortDescription"))
+																	.put("description", studyInfo.getValue("description"));
+						context.response()
+						.setStatusCode(200)				
+						.end(responseObject.encode());
+					})
+					.onFailure(err -> handleError(err, context));	
+				})
+				.onFailure(err -> handleError(err, context));
+				
+			})
+			.onFailure(err -> handleError(err, context));			
+		});			
 	}
 	
 	
