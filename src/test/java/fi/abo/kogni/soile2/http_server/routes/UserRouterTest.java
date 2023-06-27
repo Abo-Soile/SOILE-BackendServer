@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
+import org.antlr.runtime.TokenSource;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
@@ -848,7 +849,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 	 * @param context
 	 */
 	@Test
-	public void testGetActiveProjectList(TestContext context)
+	public void getActiveProjectList(TestContext context)
 	{
 		System.out.println("--------------------  Testing active project list ----------------------");    
 
@@ -868,7 +869,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 					.onSuccess(response -> {					
 						String id = response.bodyAsJsonObject().getString("projectID");
 						POST(authedSession,"/study/" + id + "/start", null, null)
-						.onSuccess(active -> {
+						.onSuccess(active -> {							
 							Async listAsync = context.async();
 							POST(authedSession, "/study/" + id + "/signup", null,null)
 							.onSuccess(res -> {		
@@ -924,4 +925,87 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 		.onFailure(err -> context.fail(err));
 	}
 
+	
+	
+	/**
+	 * This test tests both starting and getting the list of running projects.
+	 * @param context
+	 */
+	@Test
+	public void getActiveProjectWithPriv(TestContext context)
+	{
+		System.out.println("--------------------  Testing active project list ----------------------");    
+
+		JsonObject projectExec = new JsonObject().put("private", true).put("name", "New Project").put("shortcut","newShortcut"); 
+		Async setupAsync = context.async();
+		WebClientSession nonAuthedSession = createSession(); 
+		createUserAndAuthedSession("Researcher", "pw", Roles.Researcher)
+		.onSuccess(authedSession -> {
+			createUserAndAuthedSession("Researcher2", "pw", Roles.Researcher)
+			.onSuccess(wrongSession -> {
+				WebObjectCreator.createProject(authedSession, "Testproject")			
+				.onSuccess(projectData -> {
+					String projectID = projectData.getString("UUID");
+					String projectVersion = projectData.getString("version");				
+					Async startAsync = context.async();
+					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec )
+					.onSuccess(response -> {					
+						String id = response.bodyAsJsonObject().getString("projectID");
+						POST(authedSession,"/study/" + id + "/start", null, null)
+						.onSuccess(active -> {							
+							Async listAsync = context.async();
+							POST(authedSession, "/study/" + id + "/signup", null,null)
+							.onSuccess(res -> {		
+								POST(authedSession, "/user/activeprojects", null, null)
+								.onSuccess(actives -> {
+									context.assertEquals(1,actives.bodyAsJsonArray().size());
+									listAsync.complete();
+								})
+								.onFailure(err -> context.fail(err));
+							})
+							.onFailure(err -> context.fail(err));
+							Async nonAuthedAsync = context.async();
+							POST(nonAuthedSession, "/user/activeprojects", null, null)
+							.onSuccess(err -> {
+								context.fail("This should be unauthenticated, and fail.");
+							}).onFailure(unauthed -> {								
+								context.assertEquals(401, ((HttpException)unauthed).getStatusCode());
+								createTokens(authedSession, id, 1, false)								
+								.compose(tokens -> signUpToProjectWithToken(nonAuthedSession, tokens.getString(0), id))
+								.onSuccess( token -> {																									
+									nonAuthedSession.addHeader("Authorization", token);
+									POST(nonAuthedSession, "/user/activeprojects", null, null)
+									.onSuccess(actives -> {
+										System.out.println(actives.bodyAsJsonArray().encodePrettily());
+										context.assertEquals(1,actives.bodyAsJsonArray().size());
+										context.assertEquals(id, actives.bodyAsJsonArray().getString(0));
+										POST(nonAuthedSession, "/study/listrunning", null, null)
+										.onSuccess(runnings -> {
+											System.out.println(runnings.bodyAsJsonArray().encodePrettily());
+											context.assertEquals(1,runnings.bodyAsJsonArray().size());
+											//context.assertEquals(id, runnings.bodyAsJsonArray().getString(0));
+										})
+										.onFailure(err -> context.fail(err));
+										nonAuthedAsync.complete();
+									})
+									.onFailure(err -> context.fail(err));
+								
+								})
+								.onFailure(err -> context.fail(err));
+							});
+							startAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
+					})
+					.onFailure(err -> context.fail(err));	
+
+					setupAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
 }

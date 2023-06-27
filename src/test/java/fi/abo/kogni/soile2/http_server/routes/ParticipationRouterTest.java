@@ -119,6 +119,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 		.onFailure(err -> context.fail(err));
 	}
 
+
 	@Test
 	public void runTaskTest(TestContext context)
 	{

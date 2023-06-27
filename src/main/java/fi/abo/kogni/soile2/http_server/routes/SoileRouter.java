@@ -138,7 +138,12 @@ public class SoileRouter {
 		return getAuthForType(TargetElementType.valueOf(type));
 	}
 	
-	protected boolean isTokenUser(User user)
+	/**
+	 * This is a function to test, whether the given user is a token user.
+	 * @param user
+	 * @return whether the user is a user based on a token, or not.
+	 */
+	public static boolean isTokenUser(User user)
 	{
 		return user.principal().containsKey("access_token") && !user.principal().containsKey("username");
 	}

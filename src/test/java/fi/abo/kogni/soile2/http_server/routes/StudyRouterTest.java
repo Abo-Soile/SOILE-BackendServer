@@ -177,6 +177,13 @@ public class StudyRouterTest extends SoileWebTest {
 								unAuthAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));							
+							Async authedList = context.async();
+							POST(authedSession, "/study/listrunning", null,null)
+							.onSuccess(listresponse -> {
+								context.assertEquals(2, listresponse.bodyAsJsonArray().size());
+								authedList.complete();
+							})
+							.onFailure(err -> context.fail(err));
 							Async illegalAccess = context.async();
 							POST(unAuthedSession, "/study/list", null,null)
 							.onSuccess(listresponse -> {

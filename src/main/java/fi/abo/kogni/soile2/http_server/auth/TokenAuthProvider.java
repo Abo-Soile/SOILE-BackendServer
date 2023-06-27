@@ -66,8 +66,9 @@ public class TokenAuthProvider {
 			.onSuccess(participant -> {
 				LOGGER.debug("Got participant");
 				User currentUser = User.fromToken(token);
-				// Token access is always participant access.
-				currentUser.principal().put(SoileConfigLoader.getSessionProperty("userRoles"), new JsonArray().add(Roles.Participant));	    	
+				// Token access is always participant access
+				currentUser.principal().put(SoileConfigLoader.getSessionProperty("userRoles"), new JsonArray().add(Roles.Participant));
+				currentUser.principal().put("tokenPermission", SoilePermissionProvider.buildPermissionString(requestedStudyID, PermissionType.EXECUTE));
 				// we add 
 				currentUser.authorizations().add("TokenProvider", RoleBasedAuthorization.create(Roles.Participant.toString()));
 				currentUser.authorizations().add("TokenProvider", SoilePermissionProvider.buildPermission(requestedStudyID, PermissionType.EXECUTE));

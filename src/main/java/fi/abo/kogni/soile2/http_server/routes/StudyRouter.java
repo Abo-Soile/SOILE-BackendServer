@@ -16,6 +16,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.http_server.auth.TokenAuthProvider;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
@@ -168,7 +169,6 @@ public class StudyRouter extends SoileRouter {
 	public void getRunningProjectList(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		Boolean restrictToPermissions = false;									
 		authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.STUDY)
 		.onSuccess( permissions -> {
 			studyHandler.getStudyList(permissions, false)		
@@ -185,7 +185,8 @@ public class StudyRouter extends SoileRouter {
 		.onFailure(err -> {
 			if(err instanceof UserDoesNotExistException)
 			{
-				studyHandler.getStudyList(new JsonArray(), false)
+				JsonArray permissions = new JsonArray();
+				studyHandler.getStudyList(permissions, false)
 				.onSuccess(elementList -> {	
 					// this list needs to be filtered by access
 

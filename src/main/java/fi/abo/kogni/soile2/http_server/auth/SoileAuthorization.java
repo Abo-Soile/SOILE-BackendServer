@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
+import fi.abo.kogni.soile2.http_server.routes.SoileRouter;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
@@ -104,6 +105,12 @@ public class SoileAuthorization{
 	{
 		Promise<JsonArray> permissionPromise = Promise.promise();
 		MongoAuthorizationOptions options = getAuthorizationOptionsForOption(permissionType);
+		if(SoileRouter.isTokenUser(user) &&  permissionType == TargetElementType.STUDY) // we only allow this to be used for studies. no other token users allowed.
+		{
+			permissionPromise.complete(new JsonArray().add(user.principal().getValue("tokenPermission")));
+		}
+		else
+		{
 		client.findOne(options.getCollectionName(), 
 					   new JsonObject().put(options.getUsernameField(), user.principal().getString("username")),
 					   new JsonObject().put(options.getPermissionField(), 1))
@@ -118,6 +125,7 @@ public class SoileAuthorization{
 			}
 		})
 		.onFailure(err -> permissionPromise.fail(err));
+		}
 		return permissionPromise.future();
 	}
 	
@@ -255,5 +263,6 @@ public class SoileAuthorization{
 		case STUDY: return studyOptions;
 		default: return null;
 		}
-	}			
+	}
+	
 }
