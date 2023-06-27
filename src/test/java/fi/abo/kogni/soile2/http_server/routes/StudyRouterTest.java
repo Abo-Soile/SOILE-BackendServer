@@ -528,7 +528,6 @@ public class StudyRouterTest extends SoileWebTest {
 								context.fail("Does not have accesss");
 							})
 							.onFailure(unAuthed -> {
-								Async participantGet = context.async();
 								System.out.println("Access denied");
 								context.assertEquals(403, ((HttpException)unAuthed).getStatusCode());																									
 								failedAsync.complete();
