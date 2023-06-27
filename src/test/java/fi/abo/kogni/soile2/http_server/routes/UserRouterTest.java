@@ -885,7 +885,8 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 							.onSuccess(res -> {
 								context.assertTrue(res.bodyAsJsonArray().isEmpty());
 								authedUserNoProjAsync.complete();
-							});
+							})
+							.onFailure(err -> context.fail(err));
 							Async nonAuthedAsync = context.async();
 							POST(nonAuthedSession, "/user/activeprojects", null, null)
 							.onSuccess(err -> {
@@ -900,6 +901,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 									POST(nonAuthedSession, "/user/activeprojects", null, null)
 									.onSuccess(actives -> {
 										context.assertEquals(1,actives.bodyAsJsonArray().size());
+										context.assertEquals(id, actives.bodyAsJsonArray().getString(0));
 										nonAuthedAsync.complete();
 									})
 									.onFailure(err -> context.fail(err));

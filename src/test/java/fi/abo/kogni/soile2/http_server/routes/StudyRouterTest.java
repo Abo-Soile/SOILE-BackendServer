@@ -146,6 +146,7 @@ public class StudyRouterTest extends SoileWebTest {
 							.onSuccess(listresponse -> {
 								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
+								context.assertFalse(listresponse.bodyAsJsonArray().getJsonObject(0).containsKey("active"));
 								emptyListAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));
@@ -172,6 +173,7 @@ public class StudyRouterTest extends SoileWebTest {
 							.onSuccess(listresponse -> {
 								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
+								context.assertFalse(listresponse.bodyAsJsonArray().getJsonObject(0).containsKey("active"));
 								unAuthAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));							
@@ -624,7 +626,7 @@ public class StudyRouterTest extends SoileWebTest {
 									// now has minimal access
 									JsonObject getresponse = reply.bodyAsJsonObject();
 									context.assertEquals(studyId, getresponse.getString("UUID"));
-									context.assertFalse(getresponse.containsKey("shortcut"));
+									context.assertFalse(getresponse.containsKey("active"));
 									participantGet.complete();
 								})
 								.onFailure(err -> context.fail(err));
