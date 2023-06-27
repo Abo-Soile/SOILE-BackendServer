@@ -58,6 +58,7 @@ import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.ChainAuthHandler;
 import io.vertx.ext.web.handler.CorsHandler;
+import io.vertx.ext.web.handler.ErrorHandler;
 import io.vertx.ext.web.handler.JWTAuthHandler;
 import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
@@ -119,6 +120,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 			setUpSpecialRoutes(soileRouter);			
 			// now, add the cleanup callBack for the different Routers, which will cache data.
 			consumers.add(vertx.eventBus().consumer("soile.tempData.Cleanup", this::cleanUP));
+			soileRouter.errorHandler(401, ErrorHandler.create(vertx));
+			soileRouter.errorHandler(403, ErrorHandler.create(vertx));
 			startPromise.complete();
 		})
 		.onFailure(fail ->
@@ -219,7 +222,6 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.securityHandler("cookieAuth",cookieAuth)
 			   .securityHandler("JWTAuth", JWTAuth)
 			   .securityHandler("tokenAuth", tokenAuth);
-		
 		anyAuth = ChainAuthHandler.any().add(JWTAuth).add(cookieAuth).add(tokenAuth);
 		userAuth = ChainAuthHandler.any().add(JWTAuth).add(cookieAuth);
 		return Future.<RouterBuilder>succeededFuture(builder);

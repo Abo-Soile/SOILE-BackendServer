@@ -199,7 +199,7 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 					  .add(new JsonObject().put("_id", new JsonObject().put("$in", projectInstanceIDs)))
 					  );
 		}
-		JsonObject fields = new JsonObject().put("_id",1).put("name", 1).put("description", 1).put("shortDescription", 1);
+		JsonObject fields = new JsonObject().put("_id",1).put("name", 1).put("description", 1).put("shortDescription", 1).put("shortcut", 1);
 		LOGGER.debug("Looking for Project matching:\n" + Query.encodePrettily());
 		return getStudyData(Query, fields);
 	}

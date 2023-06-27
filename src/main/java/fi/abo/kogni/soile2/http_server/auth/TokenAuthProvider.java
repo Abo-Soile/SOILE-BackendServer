@@ -8,6 +8,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
@@ -16,6 +17,7 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.HttpException;
 /**
  * Class that provides Authentication for token carrying requests. 
  * @author Thomas Pfau
@@ -48,7 +50,7 @@ public class TokenAuthProvider {
 		if(token == null)
 		{
 			LOGGER.debug("No Token Auth!");
-			return Future.failedFuture("No Token");
+			return Future.failedFuture(new HttpException(401,"No Token"));
 		}
 		String projectID = token.substring(token.indexOf("$")+1);
 		if(pathID == null)

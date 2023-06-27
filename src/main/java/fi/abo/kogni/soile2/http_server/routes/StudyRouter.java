@@ -393,7 +393,8 @@ public class StudyRouter extends SoileRouter {
 						JsonObject responseObject = new JsonObject().put("UUID", study.getID())
 																	.put("name", study.getName())
 																	.put("shortDescription", studyInfo.getValue("shortDescription"))
-																	.put("description", studyInfo.getValue("description"));
+																	.put("description", studyInfo.getValue("description"))
+																	.put("shortcut", study.getShortCut());
 						context.response()
 						.setStatusCode(200)				
 						.end(responseObject.encode());
