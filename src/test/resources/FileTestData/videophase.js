@@ -266,7 +266,7 @@ async function videophase() {
   }
   await sendMetaData();
 
-  await window.submitResults();
+  await window.submitResult();
 
   if(timer !== null){
     await timer;

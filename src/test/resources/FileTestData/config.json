@@ -2,5 +2,6 @@
   "recordAudioOnly": false,
   "showVideoPreview": true,
   "fullScreen": true,
-  "file": true
+  "file": true,
+  "recordingAfterVideo" : true
 }
