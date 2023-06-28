@@ -53,7 +53,7 @@
 	},
 	"PsychoPyExample": {							
 		"name": "PsychoPyEx",
-		"resources": ["minitest-legacy-browsers.js","minitest.js","images/apple.jpg","images/teddy.jpg","images/pear.jpg", "conditions.xlsx"],
+		"resources": ["minitest-legacy-browsers.js","minitest.js","images/apple.jpg","images/teddy.jpg","images/pear.jpg", "conditions.xlsx", "psychojscofnig.json"],
 		"codeFile": "psychopy.html",
 		"codeType" : { "language" : "psychopy",
 					   "version" : "2022.2.5"}

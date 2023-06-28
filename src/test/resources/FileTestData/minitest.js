@@ -21,7 +21,8 @@ let expInfo = {
 // Start code blocks for 'Before Experiment'
 // init psychoJS:
 const psychoJS = new PsychoJS({
-  debug: true
+  debug: true,
+  config: "psychojsconfig.json",
 });
 
 // open window:
@@ -33,7 +34,7 @@ psychoJS.openWindow({
 });
 // schedule the experiment:
 psychoJS.schedule(psychoJS.gui.DlgFromDict({
-  dictionary: expInfo,
+  dictionary: {}, // We remove the participant information here since it is irrelevant
   title: expName
 }));
 
