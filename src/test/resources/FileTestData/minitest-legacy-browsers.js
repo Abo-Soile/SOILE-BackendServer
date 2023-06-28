@@ -14,7 +14,7 @@ let expInfo = {
 // init psychoJS:
 const psychoJS = new PsychoJS({
   debug: true,
-  config: "psychojsconfig.json"
+  hosts: ["about:srcdoc"]
 });
 
 // open window:
@@ -49,6 +49,7 @@ dialogCancelScheduler.add(quitPsychoJS, '', false);
 psychoJS.start({
   expName: expName,
   expInfo: expInfo,
+  configURL: "psychojsconfig.json",
   resources: [
     {'name': 'conditions.xlsx', 'path': 'conditions.xlsx'},
     {'name': 'images/teddy.jpg', 'path': 'images/teddy.jpg'},
