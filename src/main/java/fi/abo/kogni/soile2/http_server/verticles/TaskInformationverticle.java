@@ -77,6 +77,26 @@ public class TaskInformationverticle extends AbstractVerticle{
 			request.fail(500, err.getMessage());
 		});
 	}
+	
+	/**
+	 * Get the API Element representing the requested task.
+	 * @param request
+	 */
+	public void getTaskAPIData(Message<JsonObject> request)
+	{
+		String taskID = request.body().getString("taskID");
+		String version = request.body().getString("version");
+		LOGGER.debug(request.body());
+		taskManager.getAPIElementFromDB(taskID, version)
+		.onSuccess(task -> {			
+			APITask currentTask = (APITask)task; 			
+			request.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, currentTask.getAPIJson()));
+		})
+		.onFailure(err -> {			
+			LOGGER.debug(err);
+			request.fail(500, err.getMessage());
+		});
+	}
 
 	
 	/**
