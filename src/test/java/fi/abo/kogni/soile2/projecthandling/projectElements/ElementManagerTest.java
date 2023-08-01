@@ -235,7 +235,7 @@ public class ElementManagerTest extends GitTest{
 	{
 		System.out.println("--------------------  Testing API Element Retrieval ----------------------");
 		Async testAsync = context.async();
-		ObjectGenerator.buildAPITask(taskManager, "FirstTask", mongo_client)
+		ObjectGenerator.buildAPITask(taskManager, "FirstTask")
 		.onSuccess(apiTask -> {
 			taskManager.getAPIElementFromDB(apiTask.getUUID(), apiTask.getVersion())
 			.onSuccess(secondAPITask -> {
@@ -258,7 +258,7 @@ public class ElementManagerTest extends GitTest{
 	{
 		System.out.println("--------------------  Testing No Name change ----------------------");
 		Async testAsync = context.async();
-		ObjectGenerator.buildAPITask(taskManager, "FirstTask", mongo_client)
+		ObjectGenerator.buildAPITask(taskManager, "FirstTask")
 		.onSuccess(apiTask -> {
 			String currentName = apiTask.getName();
 			apiTask.setName("NewName");
@@ -288,12 +288,15 @@ public class ElementManagerTest extends GitTest{
 	{
 		System.out.println("--------------------  Testing Version List Retrieval ----------------------");
 		Async testAsync = context.async();
-		ObjectGenerator.buildAPITask(taskManager, "FirstTask", mongo_client)
+		ObjectGenerator.buildAPITask(taskManager, "FirstTask")
 		.onSuccess(apiTask -> {
+			System.out.println(apiTask.getAPIJson().encodePrettily());
+			System.out.println(apiTask.getGitJson().encodePrettily());
 			taskManager.getVersionListForElement(apiTask.getUUID())
 			.onSuccess(VersionList -> {
-				// The is the creation (i.e. empty) + The Addition of the file + the data from the task).
-				context.assertEquals(3, VersionList.size());				
+				// The is the creation (i.e. empty) + the data from the task and files).
+				
+				context.assertEquals(2, VersionList.size());				
 				testAsync.complete();
 			})
 			.onFailure(err -> context.fail(err));
@@ -310,7 +313,7 @@ public class ElementManagerTest extends GitTest{
 	{
 		System.out.println("--------------------  Testing Version List Retrieval ----------------------");
 		Async testAsync = context.async();
-		ObjectGenerator.buildAPITask(taskManager, "FirstTask", mongo_client)
+		ObjectGenerator.buildAPITask(taskManager, "FirstTask")
 		.onSuccess(apiTask -> {
 			taskManager.getTagListForElement(apiTask.getUUID())
 			.onSuccess(VersionList -> {

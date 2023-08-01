@@ -1,16 +1,24 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.aalto.scicomp.zipper.Zipper;
+import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
 import fi.abo.kogni.soile2.http_server.requestHandling.NonStaticHandler;
+import fi.abo.kogni.soile2.http_server.requestHandling.SOILEUpload;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
+import fi.abo.kogni.soile2.projecthandling.projectElements.TaskBundler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
@@ -33,15 +41,18 @@ import io.vertx.ext.web.validation.ValidationHandler;
  */
 public class TaskRouter extends ElementRouter<Task> {
 
-	private static final Logger LOGGER = LogManager.getLogger(ElementRouter.class);
+	private static final Logger LOGGER = LogManager.getLogger(TaskRouter.class);
 	NonStaticHandler libraryHandler;
 	IDSpecificFileProvider resourceHandler;
-	
+	TaskBundler bundler;
+	Vertx vertx;
 	public TaskRouter(MongoClient client, IDSpecificFileProvider resManager, Vertx vertx, SoileAuthorization auth)
 	{
 		super(ElementManager.getTaskManager(client,vertx),auth, vertx.eventBus(), client);
 		libraryHandler = new NonStaticHandler(FileSystemAccess.ROOT, SoileConfigLoader.getServerProperty("taskLibraryFolder"), "/lib/");
 		resourceHandler = resManager;
+		bundler = new TaskBundler(new DataLakeResourceManager(vertx), eb, vertx, elementManager);
+		this.vertx = vertx;
 	}		
 
 	
@@ -79,7 +90,7 @@ public class TaskRouter extends ElementRouter<Task> {
 					return;
 				}
 				
-				elementManager.handlePostFile(elementID,version,filename,context.fileUploads().get(0))
+				elementManager.handlePostFile(elementID,version,filename,SOILEUpload.create(context.fileUploads().get(0)))
 				.onSuccess(newversion -> {
 					context.response().setStatusCode(200)
 					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
@@ -99,7 +110,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
 		.onSuccess(Void -> 
 		{									
-			eb.request("soile.task.getVersionInfo", new JsonObject().put("taskID", elementID).put("version", version))
+			eb.request("soile.task.getVersionInfo", new JsonObject().put("UUID", elementID).put("version", version))
 			.onSuccess(response -> {								
 				JsonObject responseBody = ((JsonObject) response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
 				context.response()
@@ -157,7 +168,7 @@ public class TaskRouter extends ElementRouter<Task> {
 			element -> {		
 				APITask currentTask = (APITask) element;				
 				eb.request(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"),
-						new JsonObject().put("taskID", element.getUUID())
+						new JsonObject().put("UUID", element.getUUID())
 						.put("type", currentTask.getCodeType())
 						.put("version", element.getVersion()))
 				.onSuccess(response -> {
@@ -220,8 +231,8 @@ public class TaskRouter extends ElementRouter<Task> {
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void -> {
 			eb.request("soile.git.getResourceList", new JsonObject().put("repoID", elementManager.getGitIDForUUID(elementID)).put("version", version))
-			.onSuccess(response -> {
-				JsonArray responseBody = (JsonArray) response.body();
+			.onSuccess(response -> {				
+				JsonArray responseBody = (JsonArray)response.body();
 				context.response()
 				.setStatusCode(200)
 				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -241,6 +252,101 @@ public class TaskRouter extends ElementRouter<Task> {
 			resourceHandler.handleContext(context, elementManager.getElementSupplier().get());			
 		})
 		.onFailure(err -> handleError(err, context));		
+	}
+
+	public void downloadTask(RoutingContext context)
+	{		
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String elementID = params.pathParameter("id").getString();
+		String version = params.pathParameter("version").getString();
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		.onSuccess(Void -> {
+			bundler.buildTaskFileList(elementID, version)
+			.onSuccess(fileList -> {
+				try {
+					Zipper pump = new Zipper(vertx, fileList.iterator());
+					// the response is a chunked zip file.
+					context.response().putHeader("content-type", "application/zip")
+					.putHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + elementID + ".zip\"")
+					.setChunked(true);						
+					pump.pipeTo(context.response()).onSuccess(success -> {
+					}).onFailure(err -> {
+						context.response().close();
+					});											
+				}
+				catch(IOException e)
+				{
+					handleError(e, context);
+				}			
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+	
+	
+	public void uploadTask(RoutingContext context)
+	{		
+		LOGGER.debug("Received a request for creation");
+		accessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
+		.onSuccess(Void -> 
+		{
+			LOGGER.debug("Request Access granted");
+			List<String> nameParam = context.queryParam("name");
+			List<String> tagParam = context.queryParam("tag");
+			String newTaskName = null;
+			if(nameParam.size() > 1) {
+				LOGGER.debug("Invalid name parameter");
+				handleError(new HttpException(400, "Must have provide a name"), context);
+				return;
+			}			
+			else
+			{
+				if(nameParam.size() == 1)
+				{
+					newTaskName = nameParam.get(0);
+				}
+			}
+			if(tagParam.size() != 1) {
+				LOGGER.debug("Invalid tag parameter");
+				handleError(new HttpException(400, "Must provide exactly one tag to use for the version created."), context);
+				return;
+			}	
+			if(context.fileUploads().size() != 1)
+			{
+				handleError(new HttpException(400, "Missing or invalid file data, exactly one File expected"), context);
+				return;
+			}
+			
+			LOGGER.debug("Trying to upload Task");
+			bundler.createTaskFromFile(new File(context.fileUploads().get(0).uploadedFileName()), tagParam.get(0), newTaskName)
+			.onSuccess(element -> {	
+				LOGGER.debug("Element Created");
+				JsonObject permissionChangeRequest = new JsonObject()
+						.put("username", context.user().principal().getString("username"))
+						.put("command", "add")
+						.put("permissionsProperties", new JsonObject().put("elementType", element.getElementType().toString())
+																	  .put("permissionSettings",new JsonArray().add(new JsonObject().put("target", element.getUUID())
+																			  														.put("type", PermissionType.FULL.toString()))
+																		  )
+							);	
+				LOGGER.debug("Requesting permission change");
+				eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChangeRequest)
+				.onSuccess( reply -> {
+					LOGGER.debug("Permissions added to user for "+ nameParam + "/" + element.getUUID());
+					elementManager.getAPIElementFromDB(element.getUUID(), element.getCurrentVersion())
+					.onSuccess(apiElement -> {
+						LOGGER.debug("Api element created");
+						context.response()
+						.setStatusCode(200)
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+						.end(apiElement.getAPIJson().encode());			
+					}).onFailure(err -> handleError(err, context));	
+				})
+				.onFailure(err -> handleError(err, context));						
+			}).onFailure(err -> handleError(err, context));		
+		})
+		.onFailure(err -> handleError(err, context));
 	}
 	
 	public void cleanup()

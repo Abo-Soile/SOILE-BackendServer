@@ -637,6 +637,94 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'           
+  /task/{id}/{version}/download:  
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Download the Task.
+      operationId: downloadTask
+      description: "This request will return a zipped version of the task, with all resources in a resoue folder and a config and code file."
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task to download
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: version of the tas to download
+          schema:
+            type : string
+                        
+      responses:
+        '200':
+          description: A tar file containing the requested task
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call   
+  /task/upload:  
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Build a Task based on an uploaded zip file
+      operationId: uploadTask
+      description: "This end point requires the provision of a zip file containing the data for a task. The Zip file needs to contain all Files required for the task along with a config.cfg and a source.code file which contain the properties and the code of the task respectively. The configuration MUST contain the language and version of the task."
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: Name of the task
+          schema:
+            type : string
+        - name: tag
+          in: query
+          required: true
+          description: Tag to be used for this version.
+          schema:
+            type : string
+                        
+      responses:
+        '200':
+          description: A tar file containing the requested task
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uuid: 
+                    type: string
+                    description: the UUID of the created task
+                  version: 
+                    type: string
+                    description: The version of the created task.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call         
+      requestBody:
+        content:
+          application/zip:
+              schema:
+                type: string
+                format: binary
   /task/create:
     post:
       security:
@@ -1682,7 +1770,7 @@ paths:
         '200':
           description: A tar file containing the requested data
           content:
-            application/tar:
+            application/zip:
               schema:
                 type: string
                 format: binary
@@ -3216,7 +3304,7 @@ components:
         shortcut:
           type: string
           description: "a shortcut string tht can be used for access via /e/shortcut"
-        active: 
+        vert: 
           type: boolean
           description: whether the study is private or publicly visible
     Study:

@@ -15,6 +15,7 @@ import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.ObjectManager;
+import fi.abo.kogni.soile2.http_server.requestHandling.SOILEUpload;
 import fi.abo.kogni.soile2.projecthandling.utils.SimpleFileUpload;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
@@ -83,7 +84,7 @@ public class GitInteractionTest extends GitTest{
 				return;
 			}
 			final String testData = origData;
-			SimpleFileUpload upload = new SimpleFileUpload(dataLakePath.getFileName().toString(), dataPath.getFileName().toString(), MimeMapping.getMimeTypeForFilename(dataPath.getFileName().toString()));
+			SOILEUpload upload = SOILEUpload.create(dataLakePath.getFileName().toString(), dataPath.getFileName().toString(), MimeMapping.getMimeTypeForFilename(dataPath.getFileName().toString()));
 			
 			Async writeAsync = context.async();
 			rm.writeUploadToGit(new GitFile("NewFile.txt", targetElement, initialVersion), upload).onSuccess(newVersion -> 

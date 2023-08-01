@@ -42,7 +42,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 		vertx.eventBus().consumer("soile.task.getVersionInfo", this::getTaskVersionInfo);
 		vertx.eventBus().consumer("soile.task.getResource", this::getResource);
 		vertx.eventBus().consumer("soile.task.getResourceList", this::getResourceList);
-		
+		vertx.eventBus().consumer("soile.task.getAPIData", this::getTaskAPIData);
 	}
 					
 
@@ -68,12 +68,32 @@ public class TaskInformationverticle extends AbstractVerticle{
 	 */
 	public void getTaskInfo(Message<JsonObject> request)
 	{
-		String taskID = request.body().getString("taskID");
+		String taskID = request.body().getString("UUID");
 		taskManager.getElement(taskID)
 		.onSuccess(task -> {			
 			request.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, task.toJson()));
 		})
 		.onFailure(err -> {			
+			request.fail(500, err.getMessage());
+		});
+	}
+	
+	/**
+	 * Get the API Element representing the requested task.
+	 * @param request
+	 */
+	public void getTaskAPIData(Message<JsonObject> request)
+	{
+		String taskID = request.body().getString("UUID");
+		String version = request.body().getString("version");
+		LOGGER.debug(request.body());
+		taskManager.getAPIElementFromDB(taskID, version)
+		.onSuccess(task -> {			
+			APITask currentTask = (APITask)task; 			
+			request.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, currentTask.getAPIJson()));
+		})
+		.onFailure(err -> {			
+			LOGGER.debug(err);
 			request.fail(500, err.getMessage());
 		});
 	}
@@ -85,7 +105,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 	 */
 	public void getTaskVersionInfo(Message<JsonObject> request)
 	{
-		String taskID = request.body().getString("taskID");
+		String taskID = request.body().getString("UUID");
 		String version = request.body().getString("version");
 		LOGGER.debug(request.body());
 		taskManager.getAPIElementFromDB(taskID, version)
@@ -127,7 +147,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 		GitElement target = new GitElement(Task.typeID + request.body().getString("UUID"), request.body().getString("version"));		
 		vertx.eventBus().request("soile.git.getResourceList", target.toJson())
 		.onSuccess(taskResourceList -> {
-			request.reply(taskResourceList.body());
+			request.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, taskResourceList.body()));			
 		})
 		.onFailure(err -> {			
 			request.fail(500, err.getMessage());

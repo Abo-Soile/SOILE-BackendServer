@@ -484,6 +484,84 @@ public class ParticipationRouterTest extends SoileWebTest{
 		.onFailure(err -> context.fail(err));
 	}
 
+	
+	@Test
+	public void testPersistentData(TestContext context)
+	{
+		System.out.println("--------------------  Running Web Project Prohgression Test  ----------------------");    
+
+		Async creationAsync = context.async();
+		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
+				.put("value", 1)
+				.put("timestamp", System.currentTimeMillis()));
+		JsonArray fileData = new JsonArray();
+		JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
+				.put("value", 1)
+				.put("timestamp", System.currentTimeMillis())
+				)
+				.add(new JsonObject().put("name", "smoker2")
+						.put("value", "something")
+						.put("timestamp", System.currentTimeMillis())
+						)
+				)
+				.put("fileData", fileData);
+
+		JsonObject result = new JsonObject().put("outputData", OutputData).put("persistentData",OutputData).put("resultData", resultData);		
+		String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
+		File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
+		List<File> fileUploads = new LinkedList<>();
+		fileUploads.add(upload);
+		createAndStartTestProject(true)
+		.onSuccess(instanceID -> {
+			createTokenAndSignupUser(generatorSession, instanceID)			
+			.onSuccess(authToken -> {
+				Async submitAsync = context.async();
+				WebClientSession tempSession = createSession();				
+				tempSession.addHeader("Authorization", authToken);
+				POST(tempSession,"/study/" + instanceID + "/getpersistent", null, null)
+				.onSuccess( persistentDataresponse -> {
+					context.assertTrue(persistentDataresponse.bodyAsJsonObject().isEmpty());
+
+					submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
+					.onSuccess(submitted -> {
+						Async persistentAsync = context.async();
+						POST(tempSession,"/study/" + instanceID + "/getpersistent", null, null)
+						.onSuccess( response -> {
+							JsonObject responsebody = response.bodyAsJsonObject();
+							context.assertTrue(responsebody.containsKey("smoker"));
+							context.assertEquals(1, responsebody.getNumber("smoker"));
+							persistentAsync.complete();						
+						})				
+						.onFailure(err -> context.fail(err));
+						JsonObject newResults = result.copy().put("outputData",  new JsonArray().add(new JsonObject().put("name",  "clicktimes").put("value", 0.5)));
+						newResults.put("persistentData", new JsonArray().add(new JsonObject().put("name", "smoker")
+								.put("value", 0)
+								.put("timestamp", System.currentTimeMillis())));
+						submitFilesAndResults(tempSession, fileUploads, newResults , instanceID)
+						.onSuccess(submitted2 -> {
+							
+							POST(tempSession,"/study/" + instanceID + "/getpersistent", null, null)
+							.onSuccess( response -> {
+								JsonObject responsebody = response.bodyAsJsonObject();
+								context.assertTrue(responsebody.containsKey("smoker"));
+								context.assertEquals(0, responsebody.getNumber("smoker"));
+								submitAsync.complete();
+							})				
+							.onFailure(err -> context.fail(err));
+													
+						})
+						.onFailure(err -> context.fail(err));
+					})
+					.onFailure(err -> context.fail(err));
+				})
+				.onFailure(err -> context.fail(err));
+				creationAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+	
 	@Test
 	public void testRunResources(TestContext context)
 	{

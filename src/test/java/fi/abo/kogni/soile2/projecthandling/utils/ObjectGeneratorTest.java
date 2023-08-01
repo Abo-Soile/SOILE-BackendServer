@@ -290,7 +290,7 @@ public class ObjectGeneratorTest extends GitTest {
 		System.out.println("--------------------  Testing Project Generation ----------------------");
 		Async projAsync = context.async();
 		ElementFactory<Task> TaskFactory = new ElementFactory<Task>(Task::new);
-		ObjectGenerator.buildAPITask(taskManager, "Test2", mongo_client)
+		ObjectGenerator.buildAPITask(taskManager, "Test2")
 		.onSuccess(apiTask -> {
 			Async tlistAsync = context.async();		
 			
@@ -320,7 +320,7 @@ public class ObjectGeneratorTest extends GitTest {
 			taskManager.getVersionListForElement(apiTask.getUUID()).onSuccess(list2 -> {
 				boolean init_version_found = false;
 				// This has 3. One creation one adding the resources and the final version
-				context.assertEquals(3,list2.size());
+				context.assertEquals(2,list2.size());
 				for(int i = 0; i < list2.size(); ++i)
 				{
 					if(list2.getJsonObject(i).containsKey("tag"))

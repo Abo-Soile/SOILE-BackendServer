@@ -343,7 +343,7 @@ public class ParticipationRouter extends SoileRouter{
 					{
 						try {
 							TaskObjectInstance currentTask = (TaskObjectInstance)project.getElement(participant.getProjectPosition());							
-							eb.request("soile.task.getVersionInfo", new JsonObject().put("taskID", currentTask.getUUID()).put("version", currentTask.getVersion()))
+							eb.request("soile.task.getVersionInfo", new JsonObject().put("UUID", currentTask.getUUID()).put("version", currentTask.getVersion()))
 							.onSuccess(response -> {								
 								JsonObject responseBody = ((JsonObject) response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
 								context.response()
@@ -418,7 +418,7 @@ public class ParticipationRouter extends SoileRouter{
 						// Try catch block.
 						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
 						eb.request(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"),
-								new JsonObject().put("taskID", currentTask.getUUID())
+								new JsonObject().put("UUID", currentTask.getUUID())
 								.put("type", currentTask.getCodeType())
 								.put("version", currentTask.getVersion()))
 						.onSuccess(response -> {

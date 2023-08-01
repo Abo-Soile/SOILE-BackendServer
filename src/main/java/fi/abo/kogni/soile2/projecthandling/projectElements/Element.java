@@ -146,12 +146,12 @@ public interface Element extends AccessElement {
 	public void addVersion(String version);
 	
 	/**
-	 * Set the version to be used for this project
+	 * Set the version to be used for this element
 	 * @param current the version to be used as currentVersion
 	 */	
 	public void setCurrentVersion(String current);
 	/**
-	 * Get the version to be used for this project
+	 * Get the version to be used for this element
 	 * @param current the version to be used as currentVersion
 	 */	
 	public String getCurrentVersion();
