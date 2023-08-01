@@ -217,7 +217,7 @@ public abstract class ParticipantImpl implements Participant{
 	@Override
 	public JsonObject getPersistentData() {
 		// TODO Auto-generated method stub
-		return persistentMap;
+		return persistentMap == null ? new JsonObject() : persistentMap;
 	}
 	
 	/**

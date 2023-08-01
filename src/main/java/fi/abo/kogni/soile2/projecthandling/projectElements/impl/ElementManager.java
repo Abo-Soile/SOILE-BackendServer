@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.function.Supplier;
@@ -12,6 +14,7 @@ import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.http_server.requestHandling.SOILEUpload;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIElement;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
@@ -597,11 +600,25 @@ public class ElementManager<T extends ElementBase> {
 	 * @param upload the upload to associate with the file.
 	 * @return A Future with the NEw Version of the repository for this element with the data added.
 	 */
-	public Future<String> handlePostFile(String elementID, String elementVersion, String filename, FileUpload upload)
+	public Future<String> handlePostFile(String elementID, String elementVersion, String filename, SOILEUpload upload)
 	{
 		return dataHandler.handlePostFile(elementID, elementVersion, filename, upload);
 	}
 
+	
+	/**
+	 * Write a given Stream to a File with a given name and return the new git version with this file written. 
+	 * @param elementID the id of the element
+	 * @param elementVersion the version of the element to add the file to
+	 * @param filename the name of the file
+	 * @param is the {@link InputStream} thats being written to the target file.
+	 * @return A Future with the NEw Version of the repository for this element with the data added.
+	 */
+	public Future<String> handleWriteFileToObject(String elementID, String elementVersion, String filename, InputStream is)
+	{
+		return dataHandler.handleWritefile(elementID, elementVersion, filename, is);
+	}
+	
 	/**
 	 * Delete a given file from the given Version returning a new version without the element.   
 	 * @param elementID the id of the element

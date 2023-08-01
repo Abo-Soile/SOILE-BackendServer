@@ -16,6 +16,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.http_server.requestHandling.SOILEUpload;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
@@ -42,13 +43,13 @@ public class ObjectGenerator {
 	private static final Logger LOGGER = LogManager.getLogger(ObjectGenerator.class);
 
 
-	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID, MongoClient client)
+	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID)
 	{
-		return buildAPITask(manager, elementID, client, null);
+		return buildAPITask(manager, elementID, null);
 	}
 
 	@SuppressWarnings("rawtypes")
-	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID, MongoClient client, String datapath)
+	public static Future<APITask> buildAPITaskOld(ElementManager<Task> manager, String elementID, MongoClient client, String datapath)
 	{
 		Promise<APITask> taskPromise = Promise.promise();
 		try
@@ -84,7 +85,7 @@ public class ObjectGenerator {
 				chain.add(versionFuture);
 				for(int i = 0; i < resources.size(); ++i)
 				{
-					SimpleFileUpload upload = new SimpleFileUpload(Path.of(dataDir, resources.getString(i)).toString(), resources.getString(i), MimeMapping.getMimeTypeForFilename(resources.getString(i)));
+					SOILEUpload upload = SOILEUpload.create(Path.of(dataDir, resources.getString(i)).toString(), resources.getString(i), MimeMapping.getMimeTypeForFilename(resources.getString(i)));
 					// create all in a compose chain...
 					String resourceName = resources.getString(i);
 					chain.add(chain.getLast().compose(newVersion -> {
@@ -180,7 +181,7 @@ public class ObjectGenerator {
 					if(current.getString("type").equals("task"))
 					{
 						partFutures.add(
-								buildAPITask(taskManager, current.getString("name"), client, datapath).onSuccess(task -> {
+								buildAPITask(taskManager, current.getString("name"), datapath).onSuccess(task -> {
 									experiment.addElement(task.getUUID());
 									JsonObject taskInstance = new JsonObject();
 									taskInstance.put("instanceID", current.getString("instanceID"))
@@ -302,7 +303,7 @@ public class ObjectGenerator {
 				{
 					JsonObject current = (JsonObject) item;
 					taskFutures.add(
-							buildAPITask(taskManager, current.getString("name"), client, datapath)
+							buildAPITask(taskManager, current.getString("name"), datapath)
 							.onSuccess(task -> {
 								project.addElement(task.getUUID());
 								JsonObject taskInstance = new JsonObject();
@@ -440,5 +441,94 @@ public class ObjectGenerator {
 			}
 		}
 	}
+	
+	@SuppressWarnings("rawtypes")
+	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID, String datapath)
+	{
+		Promise<APITask> taskPromise = Promise.promise();
+		try
+		{
+			JsonObject TaskDef;			
+			String TaskCode;
+			String TestDataFolder;
+
+			if(datapath == null)
+			{
+				TaskDef = new JsonObject(Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(elementID);			
+				LOGGER.debug(elementID + ":");
+				LOGGER.debug(TaskDef.encodePrettily());
+				TaskCode = Files.readString(Paths.get(ObjectGenerator.class.getClassLoader().getResource("CodeTestData/" + TaskDef.getString("codeFile")).getPath()));
+				TestDataFolder = ObjectGenerator.class.getClassLoader().getResource("FileTestData").getPath();
+			}
+			else
+			{
+				TaskDef = new JsonObject(Files.readString(Paths.get(datapath, "APITestData/TaskData.json"))).getJsonObject(elementID);			
+				TaskCode = Files.readString(Paths.get(datapath, "CodeTestData", TaskDef.getString("codeFile")));
+				TestDataFolder = Paths.get(datapath, "FileTestData").toString();				
+			}
+			String dataDir = Files.createTempDirectory("TaskDataFolder").toAbsolutePath().toString();
+			FileUtils.copyDirectory(new File(TestDataFolder), new File(dataDir));
+			manager.createOrLoadElement(TaskDef.getString("name"),TaskDef.getString("codeType"),TaskDef.getString("codeVersion"))
+			.onSuccess(task -> {
+				LOGGER.debug("Task object created");
+				JsonArray resources = TaskDef.getJsonArray("resources", new JsonArray());
+				Promise<String> versionPromise = Promise.promise();
+				Future<String> versionFuture = versionPromise.future();
+				List<Future> composite = new LinkedList<>();
+				LinkedList<Future<String>> chain = new LinkedList<>();
+				chain.add(versionFuture);
+				for(int i = 0; i < resources.size(); ++i)
+				{
+					SOILEUpload upload = SOILEUpload.create(Path.of(dataDir, resources.getString(i)).toString(), resources.getString(i), MimeMapping.getMimeTypeForFilename(resources.getString(i)));
+					// create all in a compose chain...
+					String resourceName = resources.getString(i);
+					chain.add(chain.getLast().compose(newVersion -> {
+						LOGGER.debug("Adding File " + resourceName + " to Version " + newVersion);
+						return manager.handlePostFile(task.getUUID(), newVersion, resourceName, upload);					
+					}));
+					composite.add(chain.getLast());
+				}
+				versionPromise.complete(task.getCurrentVersion());
+				CompositeFuture.all(composite)
+				.onSuccess(done -> {
+					LOGGER.debug("File(s) added");
+					chain.getLast().onSuccess(latestVersion ->
+					{
+					APITask apiTask = new APITask(TaskDef);				
+					apiTask.loadGitJson(TaskDef);
+					apiTask.setCode(TaskCode);
+					apiTask.setVersion(latestVersion);
+					apiTask.setUUID(task.getUUID());						
+					task.setPrivate(apiTask.getPrivate());									
+						manager.updateElement(apiTask,"Initial_Version")
+						.onSuccess(newVersion -> {
+							LOGGER.debug("Api Task Updated");
+							apiTask.setVersion(newVersion);
+							try {
+								FileUtils.deleteDirectory(new File(dataDir));
+							}
+							catch(IOException e)
+							{
+								
+							}
+							taskPromise.complete(apiTask);							
+						})
+						.onFailure(err -> taskPromise.fail(err));
+
+					})
+					.onFailure(err -> taskPromise.fail(err));
+				})
+				.onFailure(err -> taskPromise.fail(err));
+				
+			})
+			.onFailure(fail -> taskPromise.fail(fail));
+		}
+		catch(IOException e)
+		{
+			taskPromise.fail(e);
+		}
+		return taskPromise.future();
+	}
+	
 	
 }

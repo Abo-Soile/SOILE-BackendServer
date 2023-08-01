@@ -60,8 +60,8 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 									//now, build the result data
 									nonSmokerQuestionaireOutput.put("resultData", new JsonObject().put("fileData", fileData)
 											.put("jsonData", new JsonArray().add(new JsonObject().put("name", "something")
-													.put("value", "more"))))
-									.put("taskID", taskID);
+											.put("value", "more"))))
+											.put("taskID", taskID);
 									proj.finishStep(participant1, nonSmokerQuestionaireOutput)
 									.onSuccess(res -> {
 										System.out.println("------------------------------------------------Step finished");

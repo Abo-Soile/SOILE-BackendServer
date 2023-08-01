@@ -2,7 +2,11 @@ package fi.abo.kogni.soile2.http_server;
 
 import java.io.File;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.projecthandling.projectElements.TaskBundler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.Future;
@@ -26,6 +30,7 @@ import io.vertx.ext.web.multipart.MultipartForm;
 public abstract class SoileWebTest extends SoileVerticleTest implements UserVerticleTest{
 
 	protected WebClientSession generatorSession;
+	private static final Logger LOGGER = LogManager.getLogger(SoileWebTest.class);
 
 	/**
 	 * Create a Master Token for the given project using the given client 
@@ -421,17 +426,23 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		String URL = "/study/" + instanceID + "/uploaddata";
 		return upload(webClient, URL, Filename, target, mimeType, "id");		
 	}	
-	
+	/**
+	 * Upload without query parameters
+	 * @param client Client to use, 
+	 * @param URL target URL
+	 * @param fileName filename of the uploaded file
+	 * @param uploadFile the uploaded File
+	 * @param mimeType mimetype of the file
+	 * @param idField 
+	 * @return
+	 */
 	public static Future<String> upload(WebClient client, String URL, String fileName, File uploadFile, String mimeType, String idField)
-	{
+	{			
 		Promise<String> idPromise = Promise.promise();
-		HttpRequest<Buffer> request = client.post(URL);				
-		MultipartForm submissionForm = MultipartForm.create()
-				.binaryFileUpload(fileName, fileName, uploadFile.getAbsolutePath(), mimeType);		
-		request.sendMultipartForm(submissionForm)
+		upload(client, URL, null, fileName, uploadFile, mimeType)
 		.onSuccess(response -> {
 			try {
-				idPromise.complete(response.bodyAsJsonObject().getString(idField));
+				idPromise.complete(response.getString(idField));
 			}
 			catch(Exception e)
 			{
@@ -441,7 +452,38 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		.onFailure(err -> idPromise.fail(err));		
 		return idPromise.future();
 	}
-
+	
+	public static Future<JsonObject> upload(WebClient client, String URL, JsonObject queryParameters,
+											String fileName, File uploadFile, String mimeType)
+	{
+		HttpRequest<Buffer> request = client.post(URL);
+		if(queryParameters != null)
+		{
+			for(String fieldname : queryParameters.fieldNames())
+			{
+				request.addQueryParam(fieldname, queryParameters.getString(fieldname));
+			}
+		}
+		MultipartForm submissionForm = MultipartForm.create()
+				.binaryFileUpload(fileName, fileName, uploadFile.getAbsolutePath(), mimeType);		
+		return request.sendMultipartForm(submissionForm).compose(response -> 
+		{
+			if(response.statusCode() >= 400)
+			{
+				return Future.failedFuture(new HttpException(response.statusCode(), response.bodyAsString()));
+			}
+			try {
+				return Future.<JsonObject>succeededFuture(response.bodyAsJsonObject());
+			}
+			catch(Exception e)
+			{
+				LOGGER.info(response.body());
+				LOGGER.error(e, e);
+				return Future.failedFuture(e);
+			}			
+		});	
+	}
+	
 	public Future<Void> authenticateSession(WebClientSession session, String username, String password)
 	{
 		MultiMap map = createFormFromJson(new JsonObject().put("username", username).put("password", password).put("remember", "1"));

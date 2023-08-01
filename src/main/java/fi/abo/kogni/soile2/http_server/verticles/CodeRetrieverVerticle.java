@@ -90,7 +90,7 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 	private void compileGitCode(Message<JsonObject> codeLocation)
 	{
 		JsonObject type = codeLocation.body().getJsonObject("type");
-		String id = codeLocation.body().getString("taskID");
+		String id = codeLocation.body().getString("UUID");
 		String version = codeLocation.body().getString("version");
 		LOGGER.debug(codeLocation.body().encodePrettily());
 		CodeProvider provider = getProviderForType(type.getString("language"));

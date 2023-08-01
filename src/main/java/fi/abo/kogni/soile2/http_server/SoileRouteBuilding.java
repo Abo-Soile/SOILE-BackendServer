@@ -326,6 +326,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("compileCode").handler(taskRouter::compileCode);
 		builder.operation("getExecution").handler(taskRouter::getCompiledTask);
 		builder.operation("getTagForTaskVersion").handler(taskRouter::getTagForVersion);
+		builder.operation("downloadTask").handler(taskRouter::downloadTask);
+		builder.operation("uploadTask").handler(taskRouter::uploadTask);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 	
