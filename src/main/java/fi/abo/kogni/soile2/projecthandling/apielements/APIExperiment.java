@@ -38,21 +38,20 @@ public class APIExperiment extends APIElementBase<Experiment> {
 	}
 	
 	
+	@SuppressWarnings("unchecked")
 	private void createFunctionCheckers()
 	{
 		this.elementCheckers = new Function[] { (x) -> {return x;}, 												 
-												(x) -> this.reduceElementsToSpec((JsonArray) x)}; 
+												(x) -> reduceElementsToSpec((JsonArray) x)}; 
 	}
 	
 	
 	private static JsonArray reduceElementsToSpec(JsonArray sourceArray)
-	{
-		LOGGER.debug("Trying to convert source Array: "  + sourceArray.encodePrettily());
+	{		
 		for(int i = 0; i < sourceArray.size(); i++)
 		{
 			JsonObject currentElement = sourceArray.getJsonObject(i);
 			String currentElementType = currentElement.getString("elementType");
-			LOGGER.debug("Current data element: " + currentElement.getJsonObject("data").encodePrettily()); 
 			switch(currentElementType)
 			{
 			case "task":
@@ -106,14 +105,11 @@ public class APIExperiment extends APIElementBase<Experiment> {
 
 	@Override
 	public void loadGitJson(JsonObject json) {
-		LOGGER.debug("Input json: " + json.encodePrettily());
-		LOGGER.debug("Original json: " + data.encodePrettily());
 		for(int i = 0; i < gitFields.length ; ++i)
 		{
 			
 			this.data.put(gitFields[i],elementCheckers[i].apply(json.getValue(gitFields[i], gitDefaults[i])));	
 		}
-		LOGGER.debug("Updated json: " + data.encodePrettily());
 	}
 	
 	public Function<Object,Object> getFieldFilter(String fieldName)

@@ -1,10 +1,12 @@
 package fi.abo.kogni.soile2.http_server;
 
 import java.io.File;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.aalto.scicomp.zipper.FileDescriptor;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.projecthandling.projectElements.TaskBundler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -13,6 +15,7 @@ import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.MimeMapping;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpRequest;
@@ -457,6 +460,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 											String fileName, File uploadFile, String mimeType)
 	{
 		HttpRequest<Buffer> request = client.post(URL);
+		String currentMime = mimeType == null ? MimeMapping.getMimeTypeForFilename(fileName) : mimeType;  
 		if(queryParameters != null)
 		{
 			for(String fieldname : queryParameters.fieldNames())
@@ -465,7 +469,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 			}
 		}
 		MultipartForm submissionForm = MultipartForm.create()
-				.binaryFileUpload(fileName, fileName, uploadFile.getAbsolutePath(), mimeType);		
+				.binaryFileUpload(fileName, fileName, uploadFile.getAbsolutePath(), currentMime);		
 		return request.sendMultipartForm(submissionForm).compose(response -> 
 		{
 			if(response.statusCode() >= 400)
@@ -483,6 +487,47 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 			}			
 		});	
 	}
+	
+	public static Future<JsonObject> upload(WebClient client, String URL, JsonObject queryParameters,
+			String fileName, File uploadFile)
+	{
+		return upload(client, URL, queryParameters, fileName, uploadFile, null);
+	}
+	
+	public static Future<JsonObject> upload(WebClient client, String URL, JsonObject queryParameters, List<FileDescriptor> files)
+	{
+		HttpRequest<Buffer> request = client.post(URL);
+		if(queryParameters != null)
+		{
+			for(String fieldname : queryParameters.fieldNames())
+			{
+				request.addQueryParam(fieldname, queryParameters.getString(fieldname));
+			}
+		}
+		MultipartForm submissionForm = MultipartForm.create();
+		for(FileDescriptor f : files)
+		{			
+				submissionForm.binaryFileUpload("files", f.getFileName(), f.getFilePath(), MimeMapping.getMimeTypeForFilename(f.getFileName()));
+		}
+		return request.sendMultipartForm(submissionForm).compose(response -> 
+		{
+			if(response.statusCode() >= 400)
+			{
+				return Future.failedFuture(new HttpException(response.statusCode(), response.bodyAsString()));
+			}
+			try {
+				return Future.<JsonObject>succeededFuture(response.bodyAsJsonObject());
+			}
+			catch(Exception e)
+			{
+				LOGGER.info(response.body());
+				LOGGER.error(e, e);
+				return Future.failedFuture(e);
+			}			
+		});					
+	}
+	
+	
 	
 	public Future<Void> authenticateSession(WebClientSession session, String username, String password)
 	{

@@ -7,12 +7,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
+import fi.aalto.scicomp.zipper.FileDescriptor;
+import fi.aalto.scicomp.zipper.FileDescriptorImpl;
 import fi.abo.kogni.soile2.datamanagement.DataLakeManagerTest;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
@@ -547,6 +551,76 @@ public class TaskRouterTest extends SoileWebTest{
 		}
 	}
 	
+	
+	@Test
+	public void testUploadMultipleFiles(TestContext context)
+	{
+		Async runTestAsync = context.async();
+		String usedTask ="FileRead";
+		try
+		{
+			JsonObject TaskDef = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath()))).getJsonObject(usedTask);			
+			String ResourceFolder = Paths.get(WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath()).toString();
+
+			System.out.println("--------------------  Running Tests for /task/{id}/{version}/resource ----------------------");    
+			createUserAndAuthedSession("TestUser", "testpw", Roles.Researcher)
+			.onSuccess(authedSession -> {											
+				WebObjectCreator.createOrRetrieveTask(authedSession, "FileRead")
+				.onSuccess(taskData -> {
+					List<FileDescriptor> uploadedFiles = new LinkedList<>();
+					uploadedFiles.add(new FileDescriptorImpl(ResourceFolder + File.separator + "images" + File.separator + "apple.jpg" , "File1.jpg"));
+					uploadedFiles.add(new FileDescriptorImpl(ResourceFolder + File.separator + "images" + File.separator + "teddy.jpg" , "subFolder/File1.jpg"));
+					Async multiUpload1Async = context.async();
+					upload(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/resource/", null, uploadedFiles)
+					.onSuccess(versionResponse -> {
+						
+						GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + versionResponse.getString("version") + "/filelist", null, null)
+						.onSuccess(response -> {										
+							JsonArray fileList = response.bodyAsJsonArray();
+							context.assertEquals(7, fileList.size());	
+							JsonArray resources = TaskDef.getJsonArray("resources").copy();
+							resources.add("subFolder/File1.jpg");
+							resources.add("File1.jpg");
+							checkAndClear(resources, fileList, "", context);
+							// now all expected resources should be cleared
+							context.assertEquals(0, resources.size());
+							multiUpload1Async.complete();
+						})
+						.onFailure(err -> context.fail(err));
+					})
+					.onFailure(err -> context.fail(err));
+					// test upload into a subfolder
+					Async multiUpload2Async = context.async();
+					upload(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/resource/subfolder1/", null, uploadedFiles)
+					.onSuccess(versionResponse -> {
+						
+						GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + versionResponse.getString("version") + "/filelist", null, null)
+						.onSuccess(response -> {										
+							JsonArray fileList = response.bodyAsJsonArray();
+							context.assertEquals(6, fileList.size());	
+							JsonArray resources = TaskDef.getJsonArray("resources").copy();
+							resources.add("subfolder1/subFolder/File1.jpg");
+							resources.add("subfolder1/File1.jpg");
+							checkAndClear(resources, fileList, "", context);
+							// now all expected resources should be cleared
+							context.assertEquals(0, resources.size());
+							multiUpload2Async.complete();
+						})
+						.onFailure(err -> context.fail(err));
+					})
+					.onFailure(err -> context.fail(err));				
+					
+					runTestAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
+		}
+		catch(Exception e)
+		{
+			context.fail(e);
+		}
+	}
 	
 	void checkAndClear(JsonArray expected, JsonArray presentFiles, String baseFolder, TestContext context)
 	{

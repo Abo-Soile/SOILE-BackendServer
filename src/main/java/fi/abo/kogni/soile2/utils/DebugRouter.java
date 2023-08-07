@@ -31,7 +31,7 @@ public class DebugRouter implements Handler<RoutingContext>{
 			}
 			catch(Exception e)
 			{
-				LOGGER.debug(event.body().asString().substring(0, Math.min(event.body().asString().length()-1,200)));
+				LOGGER.debug(event.body().asString().substring(0, Math.min(event.body().asString().length(),200)));
 			}
 		}
 		event.next();

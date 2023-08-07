@@ -79,6 +79,7 @@ public class ElementDataHandler<T extends Element>{
 		LOGGER.debug("Trying to post file: " + filename);
 		Promise<String> successPromise = Promise.promise();
 		String repoID = this.typeID + taskID;
+		LOGGER.info("Creating git file with name : " + filename);
 		GitFile f = new GitFile(filename, repoID, taskVersion);
 		resourceManager.writeUploadToGit(f, upload)			
 		.onSuccess(version -> {

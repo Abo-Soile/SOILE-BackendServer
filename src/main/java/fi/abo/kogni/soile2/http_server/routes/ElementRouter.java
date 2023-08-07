@@ -216,6 +216,26 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	}
 
+	public void removeTagsFromElement(RoutingContext context)
+	{		
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String elementID = params.pathParameter("id").getString();	
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.FULL,false)
+		.onSuccess(Void -> 
+		{			
+			LOGGER.debug("Handling tag removal");
+			elementManager.removeTagsFromElement(elementID, context.body().asJsonArray())
+			.onSuccess(removed -> {			
+				context.response()
+				.setStatusCode(200)				
+				.end();	
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));
+
+	}
+	
 	public void create(RoutingContext context)
 	{		
 		LOGGER.debug("Received a request for creation");

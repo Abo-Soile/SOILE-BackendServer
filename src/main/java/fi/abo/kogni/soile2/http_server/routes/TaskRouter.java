@@ -84,19 +84,22 @@ public class TaskRouter extends ElementRouter<Task> {
 			}
 			else
 			{
-				if(context.fileUploads().size() != 1)
+				if(context.fileUploads().size() >= 1)
+				{
+					elementManager.handlePostFiles(elementID, version, filename, context.fileUploads())
+					.onSuccess(newversion -> {
+						context.response().setStatusCode(200)
+						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
+						.end(new JsonObject().put("version", newversion).encode());
+					})
+					.onFailure(err -> handleError(err, context));
+				}					
+				else
 				{
 					handleError(new HttpException(400, "Missing or invalid file data, exactly one File expected"), context);
 					return;
-				}
-				
-				elementManager.handlePostFile(elementID,version,filename,SOILEUpload.create(context.fileUploads().get(0)))
-				.onSuccess(newversion -> {
-					context.response().setStatusCode(200)
-					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
-					.end(new JsonObject().put("version", newversion).encode());
-				})
-				.onFailure(err -> handleError(err, context));
+				}					
+
 			}
 		})
 		.onFailure(err -> handleError(err, context));

@@ -225,7 +225,6 @@ public class ElementRouterTest extends SoileWebTest {
 			.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
-
 	}
 
 	@Test
@@ -320,6 +319,65 @@ public class ElementRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 
+	@Test
+	public void testRemoveTags(TestContext context)
+	{	
+		System.out.println("--------------------  Testing Experiment generation ----------------------");
+
+		Async setupAsync = context.async();
+		createUserAndAuthedSession("TestAdmin", "testPassword", Roles.Researcher)
+		.onSuccess(currentSession -> {
+			createUserAndAuthedSession("Reasearcher2", "testPassword", Roles.Researcher)
+			.onSuccess(wrongSession -> {
+				WebObjectCreator.createExperiment(currentSession, "TestExperiment1")
+				.onSuccess(experimentObject -> {
+					String expVersion = experimentObject.getString("version");
+					String expUUID = experimentObject.getString("UUID");
+					System.out.println(experimentObject.encodePrettily());
+					Async testRemoveAsync = context.async();
+					GET(currentSession, "/experiment/" + expUUID +"/" +expVersion + "/gettag", null, null)
+					.onSuccess(response -> {
+						
+						context.assertEquals("Initial_Version", response.bodyAsJsonObject().getValue("tag"));
+						// we only have the one.context
+						Async failedAccess = context.async();
+						// only allowed for READ_WRITE / FULL access. 
+						POST(wrongSession, "/experiment/" + expUUID +"/removetags", null, new JsonArray().add("Initial_Version"))
+						.onSuccess(res -> context.fail("Should not be allowed"))
+						.onFailure(fail -> failedAccess.complete());
+						
+						POST(currentSession, "/experiment/" + expUUID +"/removetags", null, new JsonArray().add("Initial_Version"))
+						.onSuccess(res -> 
+						{
+							GET(currentSession, "/experiment/" + expUUID +"/" +expVersion + "/gettag", null, null)
+							.onSuccess(tagResponse -> context.fail("There should be no tag and thus the request should fail."))
+							.onFailure(err -> {
+								HttpException e = (HttpException) err;
+								context.assertEquals(404, e.getStatusCode());
+								// lets try to reinstate the version. 
+								experimentObject.put("tag", "Initial_Version");
+								Async remakeTagAsync = context.async();
+								POST(currentSession, "/experiment/" + expUUID +"/" +expVersion + "/post",null,experimentObject)
+								.onSuccess(versionResponse -> {
+									System.out.println(versionResponse.bodyAsString());
+									remakeTagAsync.complete();
+								})
+								.onFailure(newerr -> context.fail(newerr));
+								testRemoveAsync.complete();
+							});	
+						})
+						.onFailure(err -> context.fail(err));
+						
+					}).onFailure(err -> context.fail(err));
+					setupAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+	
 	@Test
 	public void testProjectsParseOK(TestContext context)
 	{		

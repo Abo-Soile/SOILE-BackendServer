@@ -598,6 +598,43 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist' 
+  /task/{id}/removetags:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: remove tags for a specific task (does not delete the versions)
+      operationId: removeTagsForTask
+      description: Removes the specified tags from the task, so that the corrsponding versions are no longer associated with the tag. 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task for which versions are requested
+          schema:
+            type : string
+      responses:
+        '200':
+          description: "success"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'    
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                description: the tags to remove
+                example: "Initial Version"          
   /task/{id}/{version}/filelist:
     get:
       security:
@@ -1068,7 +1105,7 @@ paths:
         - task
       summary: Put a resource to a task at a specific version
       operationId: putResource
-      description: Update or add a file to the specified task
+      description: Update or add a file to the specified task if a folder is being used, the file from the upload is being placed in the corresponding folder. The * path parameter can either be a folder (ending with /) or a file. If a file is used only one upload file is allowed and the upload will automatically be assigned to the file name (in the folder) specified. If it is a folder, multiple files can be uploaded and will be placed in the folder with their respective names and pathes.
       parameters:
         - name: id
           in: path
@@ -1105,9 +1142,12 @@ paths:
             schema:
               type: object
               properties:
-                file: 
-                  type: string
-                  format: binary
+                files:
+                  description: The file(s) to be uploaded.
+                  type: array
+                  items:
+                    type: string
+                    format: binary
 
   /project/testfilter:
     post:
@@ -1215,7 +1255,44 @@ paths:
         '403':
           description: User has no authorization to make this call 
         '410':
-          $ref: '#/components/responses/ResourceDoesNotExist'  
+          $ref: '#/components/responses/ResourceDoesNotExist'
+  /project/{id}/removetags:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: remove tags for a specific project (does not delete the versions)
+      operationId: removeTagsForProject
+      description: Removes the specified tags from the project, so that the corrsponding versions are no longer associated with the tag. 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task for which versions are requested
+          schema:
+            type : string
+      responses:
+        '200':
+          description: "success"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'    
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                description: the tags to remove
+                example: "Initial Version"
   /project/create:
     post:
       security:
@@ -2474,6 +2551,43 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'
+  /experiment/{id}/removetags:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - experiment
+      summary: remove tags for a specific experiment (does not delete the versions)
+      operationId: removeTagsForExperiment
+      description: Removes the specified tags from the experiment, so that the corrsponding versions are no longer associated with the tag. 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task for which versions are requested
+          schema:
+            type : string
+      responses:
+        '200':
+          description: "success"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'    
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                description: the tags to remove
+                example: "Initial Version"             
   /experiment/create:
     post:
       security:

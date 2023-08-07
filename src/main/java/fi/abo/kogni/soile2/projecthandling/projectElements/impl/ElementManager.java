@@ -1,9 +1,12 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.Supplier;
 
 import org.apache.logging.log4j.LogManager;
@@ -26,6 +29,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.Element;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementDataHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -35,6 +39,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.FileUpload;
+import io.vertx.ext.web.handler.HttpException;
 
 /**
  * The element Manager handles DB elements and their link to the git Repositories.
@@ -459,20 +464,33 @@ public class ElementManager<T extends ElementBase> {
 		Promise<String> tagPromise = Promise.<String>promise();		
 
 		Element e = supplier.get();				
-		client.findOne(e.getTargetCollection(), new JsonObject().put("_id", id), new JsonObject().put("tags", 1))
-		.onSuccess(res -> {			
-			JsonArray tagArray = res.getJsonArray("tags");			
-			String tag = null;
-			for( int i = 0; i < tagArray.size(); i++ )
+		client.findOne(e.getTargetCollection(), new JsonObject().put("_id", id).put("versions", new JsonObject().put("$elemMatch", new JsonObject().put("version", version))), new JsonObject().put("tags", 1).put("versions", 1))
+		.onSuccess(res -> {		
+			if(res != null)
 			{
-				if(tagArray.getJsonObject(i).getString("version").equals(version))
+				JsonArray tagArray = res.getJsonArray("tags");			
+				String tag = null;
+				for( int i = 0; i < tagArray.size(); i++ )
 				{
-					tag = tagArray.getJsonObject(i).getString("tag");
-					break;
-				}				
+					if(tagArray.getJsonObject(i).getString("version").equals(version))
+					{
+						tag = tagArray.getJsonObject(i).getString("tag");
+						break;
+					}				
+				}
+				if(tag != null)
+				{
+					tagPromise.complete(tag);
+				}
+				else
+				{
+					tagPromise.fail(new HttpException(404, "No Tag Found for this version"));
+				}
 			}
-			
-			tagPromise.complete(tag);
+			else
+			{
+				tagPromise.fail(new ObjectDoesNotExist(version));
+			}
 		})
 		.onFailure(err -> {
 			tagPromise.fail(err);
@@ -480,6 +498,29 @@ public class ElementManager<T extends ElementBase> {
 		return tagPromise.future();		
 	}
 	
+	/**
+	 * Remove the tags (not the versions just the tag associations) from the element.
+	 * @param elementID the elementID for which to remove versions
+	 * @param tagsToRemove the tags to remove from the element.
+	 * @return A successful {@link Future} if the tags were removed.
+	 */
+	public Future<Void> removeTagsFromElement(String elementID, JsonArray tagsToRemove)
+	{
+		Promise<Void> tagPromise = Promise.<Void>promise();		
+		Element e = supplier.get();
+		JsonObject update = new JsonObject().put("$pull",
+									new JsonObject().put("tags",
+										new JsonObject().put("tag", 
+												new JsonObject().put("$in", tagsToRemove))));
+		client.updateCollection(e.getTargetCollection(), new JsonObject().put("_id", elementID), update)
+		.onSuccess(res -> {						
+			tagPromise.complete();
+		})
+		.onFailure(err -> {
+			tagPromise.fail(err);
+		});
+		return tagPromise.future();	
+	}
 	
 	/**
 	 * Get the list of all versions for the given element.  
@@ -562,8 +603,7 @@ public class ElementManager<T extends ElementBase> {
 			.onSuccess(Void -> {
 				eb.request("soile.git.getGitFileContentsAsJson",currentVersion.toJson())
 				.onSuccess(jsonReply-> {
-					JsonObject gitJson = (JsonObject) jsonReply.body();
-					LOGGER.debug("Git returned: " + gitJson.encodePrettily());
+					JsonObject gitJson = (JsonObject) jsonReply.body();					
 					apiElement.loadGitJson(gitJson);
 					elementPromise.complete(apiElement);
 				})
@@ -605,6 +645,41 @@ public class ElementManager<T extends ElementBase> {
 		return dataHandler.handlePostFile(elementID, elementVersion, filename, upload);
 	}
 
+	
+	/**
+	 * Post a given upload to the given task at the given version. Return the new version of the element with the file added.  
+	 * @param elementID the id of the element
+	 * @param elementVersion the version of the element to add the file to
+	 * @param the name of the directory all the files are to be extracted to.
+	 * @param uploads the files to be uploaded
+	 * @return A Future with the NEw Version of the repository for this element with the data added.
+	 */
+	public Future<String> handlePostFiles(String elementID, String elementVersion, String dirName, List<FileUpload> uploads)
+	{
+		Promise<String> filesUploadedPromise = Promise.promise();
+		List<Future> filesUploaded = new LinkedList<Future>();
+		LinkedList<Future<String>> chain = new LinkedList<>();		
+		chain.add(Future.succeededFuture(elementVersion));
+		for(FileUpload up : uploads)
+		{
+			// if we are uploading to a folder, or to the base directory, we need to add the individual file names. Otherwise the indicated path is the file name
+			String currentFileName = (dirName.endsWith("/") || dirName.equals("")) ? dirName + up.fileName() : dirName ;			
+			LOGGER.info("Filename for created file is: " + currentFileName + " while request file name was " + dirName);
+			chain.add(chain.getLast().compose(version -> dataHandler.handlePostFile(elementID, version, currentFileName, SOILEUpload.create(up))));
+			filesUploaded.add(chain.getLast());
+			
+		}
+		CompositeFuture.all(filesUploaded)		
+		.onSuccess(finished -> {
+			// this is done when the Composite is done.
+			filesUploadedPromise.complete(chain.getLast().result());
+		})
+		.onFailure(err -> filesUploadedPromise.fail(err));
+		
+		return filesUploadedPromise.future();
+	}
+
+	
 	
 	/**
 	 * Write a given Stream to a File with a given name and return the new git version with this file written. 
