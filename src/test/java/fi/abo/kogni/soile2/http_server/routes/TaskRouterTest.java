@@ -608,7 +608,41 @@ public class TaskRouterTest extends SoileWebTest{
 						})
 						.onFailure(err -> context.fail(err));
 					})
-					.onFailure(err -> context.fail(err));				
+					.onFailure(err -> context.fail(err));	
+					
+					Async singleUploadAsync = context.async();
+					List<FileDescriptor> singleFile = new LinkedList<>();					
+					singleFile.add(new FileDescriptorImpl(ResourceFolder + File.separator + "images" + File.separator + "teddy.jpg" , "subFolder/File1.jpg"));
+					upload(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/resource/subfolder1/File2.jpg", null, singleFile)
+					.onSuccess(versionResponse -> {						
+						GET(authedSession, "/task/" + taskData.getString("UUID") + "/" + versionResponse.getString("version") + "/filelist", null, null)
+						.onSuccess(response -> {										
+							JsonArray fileList = response.bodyAsJsonArray();
+							context.assertEquals(6, fileList.size());	
+							JsonArray resources = TaskDef.getJsonArray("resources").copy();
+							resources.add("subfolder1/File2.jpg");							
+							checkAndClear(resources, fileList, "", context);
+							// now all expected resources should be cleared
+							context.assertEquals(0, resources.size());
+							singleUploadAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
+					})
+					.onFailure(err -> context.fail(err));
+					
+					Async invalidUploadAsync = context.async();					
+					upload(authedSession, "/task/" + taskData.getString("UUID") + "/" + taskData.getString("version") + "/resource/subfolder1/File2.jpg", null, uploadedFiles)
+					.onSuccess(versionResponse -> {						
+						context.fail("Should not be possible");
+					})
+					.onFailure(err -> {
+						HttpException e = (HttpException) err;
+						context.assertEquals(400,e.getStatusCode());					
+						context.assertTrue(e.getPayload().contains("Cannot upload multiple files"));
+						invalidUploadAsync.complete();	
+					});
+					
+					
 					
 					runTestAsync.complete();
 				})

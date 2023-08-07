@@ -513,6 +513,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		{
 			if(response.statusCode() >= 400)
 			{
+				LOGGER.info(response.bodyAsString());
 				return Future.failedFuture(new HttpException(response.statusCode(), response.bodyAsString()));
 			}
 			try {

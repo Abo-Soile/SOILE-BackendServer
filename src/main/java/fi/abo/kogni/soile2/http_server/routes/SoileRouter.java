@@ -77,7 +77,7 @@ public class SoileRouter {
 		if(err instanceof HttpException)
 		{
 			HttpException e = (HttpException) err;
-			sendError(context, e.getStatusCode(), err.getMessage());						
+			sendError(context, e.getStatusCode(), e.getPayload() != null ? e.getPayload() : e.getMessage());						
 			return;
 		}
 		if(err.getCause() instanceof ReplyException)
