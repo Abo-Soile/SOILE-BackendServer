@@ -524,7 +524,44 @@ paths:
         '400':
           description: 'invalid input, object invalid'
         '403':
-          description: User has no authorization to make this call 
+          description: User has no authorization to make this call
+  /task/codeoptions:
+    get:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Get a list of all supported Code types and versions.
+      operationId: getCodeOptions
+      description: Retrieve the list of available code types supported by the backend. Includes the versions of those types along with the mimetypes 
+      responses:
+        '200':
+          description: A List of tasks, with names and IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name: 
+                      type: string
+                      description: name of the option
+                    versions:
+                      type: array
+                      items: 
+                        type: string
+                        description: version strings
+                    mimetype: 
+                      type: string
+                      description: mimetype of the returned code.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call         
   /task/{id}/{version}/gettag:
     get:
       security:
@@ -1202,7 +1239,7 @@ paths:
         - name: full
           in: query
           required: false
-          description: Admin toggle that allows admins to list all available elements
+          description: toggle that allows admins to list all available elements
           schema:
             type: boolean
       summary: Get a list of all projects.

@@ -129,6 +129,19 @@ public class TaskRouter extends ElementRouter<Task> {
 		.onFailure(err -> handleError(err, context));
 	}
 	
+	public void getCodeOptions(RoutingContext context)
+	{
+		accessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
+		.onSuccess(Void -> 
+		{
+			context.response()
+			.setStatusCode(200)
+			.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+			.end(SoileConfigLoader.getAvailableTaskOptions().encode());			
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+	
 	public void getResource(RoutingContext context)
 	{
 		String elementID = context.pathParam("id");

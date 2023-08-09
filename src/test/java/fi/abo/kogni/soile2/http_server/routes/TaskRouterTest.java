@@ -23,6 +23,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.verticles.CodeRetrieverVerticle;
 import fi.abo.kogni.soile2.http_server.verticles.CodeRetrieverVerticleTest;
 import fi.abo.kogni.soile2.projecthandling.projectElements.TaskBundler;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
@@ -385,6 +386,42 @@ public class TaskRouterTest extends SoileWebTest{
 		{
 			context.fail(e);
 		}
+	}
+	
+	@Test
+	public void testCodeoptions(TestContext context)
+	{
+		System.out.println("--------------------  Testing obtaining code options ----------------------");
+			Async sessionAsync = context.async();
+			createUserAndAuthedSession("TestUser", "testpw", Roles.Researcher).
+			onSuccess(authedSession -> {
+				Async codeOptionResponse = context.async();
+				GET(authedSession, "/task/codeoptions", null, null)
+				.onSuccess(response -> {
+					JsonArray responseArray = response.bodyAsJsonArray();
+					System.out.println(responseArray.encodePrettily());
+					for(int i = 0; i < responseArray.size(); ++i)
+					{
+						String currentOption = responseArray.getJsonObject(i).getString("name");
+						JsonArray versions = responseArray.getJsonObject(i).getJsonArray("versions");
+						
+						boolean hasVersions = false;
+						for(int j = 0; j < versions.size(); ++j)
+						{
+							context.assertTrue(SoileConfigLoader.isValidTaskType(currentOption, versions.getString(j)));
+							hasVersions = true;
+						}
+						context.assertTrue(hasVersions);
+						
+					}
+					codeOptionResponse.complete();
+					
+				})
+				.onFailure(err -> context.fail(err));
+				sessionAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));			
+
 	}
 	
 	@Test

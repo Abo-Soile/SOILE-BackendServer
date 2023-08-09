@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2.datamanagement.datalake;
 
-import java.awt.datatransfer.MimeTypeParseException;
-import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,7 +8,6 @@ import java.nio.file.Path;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.jgit.errors.ObjectWritingException;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitDataRetriever;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
@@ -20,13 +17,9 @@ import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.CopyOptions;
-import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.impl.MimeMapping;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.streams.Pipe;
-import io.vertx.core.streams.ReadStream;
 import io.vertx.ext.web.FileUpload;
 
 /**
@@ -102,9 +95,10 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 			LOGGER.debug("File moved to target folder");
 			String gitFileName = targetGitFile.getFileName() == null ? fileUpload.fileName() : targetGitFile.getFileName();
 			String targetFileName = dataFile.getFileInDataLake();		
+			String fileType = MimeMapping.getMimeTypeForFilename(gitFileName) == null ? fileUpload.contentType() : MimeMapping.getMimeTypeForFilename(gitFileName);    
 			JsonObject fileContents = new JsonObject().put("filename", gitFileName)
 					.put("targetFile", targetFileName)
-					.put("format", fileUpload.contentType());
+					.put("format", fileType);
 			eb.request("soile.git.writeGitResourceFile", targetGitFile.toJson().put("data", fileContents))
 			.onSuccess(reply -> {
 						LOGGER.debug("Git File written");
@@ -115,6 +109,7 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 				deleteFile(dataFile)
 				.onFailure(err2 -> {
 					// TODO: Log the error in deleting this file.
+					LOGGER.error(err2, err2);
 				});
 				versionUpdatePromise.fail(err);
 			});

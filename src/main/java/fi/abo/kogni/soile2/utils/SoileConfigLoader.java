@@ -286,9 +286,16 @@ public class SoileConfigLoader {
 	 * Get all available code types supported. 
 	 * @return the available code types
 	 */
-	public static Set<String> getAvailableTaskTypes()
+	public static JsonArray getAvailableTaskOptions()
 	{
-		return taskCfg.getJsonObject("availableVersions").fieldNames();
+		JsonArray result = new JsonArray();
+		for(String option : taskCfg.getJsonObject("availableVersions").fieldNames())
+		{
+			result.add(new JsonObject().put("name", option)
+									   .put("mimetype", getMimeTypeForTaskLanugage(option))
+									   .put("versions", taskCfg.getJsonObject("availableVersions").getJsonObject(option).getJsonArray("versions")));
+		}
+		return result;
 	}
 	
 	/**

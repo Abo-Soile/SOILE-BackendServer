@@ -115,7 +115,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		Boolean full = params.queryParameter("full") == null ? false : params.queryParameter("full").getBoolean();
 		if(full)
 		{
-			accessHandler.checkAccess(context.user(), null, Roles.Admin, null, true)
+			accessHandler.checkAccess(context.user(), null, Roles.Researcher, null, true)
 			.onSuccess(allowed -> {
 				elementManager.getElementList(null)
 				.onSuccess(elementList -> {	

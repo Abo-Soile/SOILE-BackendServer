@@ -62,46 +62,58 @@ public class ElementRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 
-	
+
 	@Test
 	public void testList(TestContext context)
 	{	
 		System.out.println("--------------------  Testing List Retrieval ----------------------");
 
-		Async setupAsync = context.async();
+		Async setupAsync = context.async();				
 		createUser(vertx, "TestUser", "testPassword", Roles.Admin)
 		.compose(userCreated -> createAuthedSession("TestUser", "testPassword"))
 		.onSuccess(adminSession -> {
 			createResearcher(vertx, "Researcher", "pw")
 			.compose(researcherCreated -> createAuthedSession("Researcher", "pw"))
-			.onSuccess(researcherSession -> {				
-				WebObjectCreator.createTask(researcherSession, "PrivateTask")
-				.onSuccess(taskData -> {
-					Async taskListAsync = context.async();
-					getElementList(adminSession, "task")
-					.onSuccess(taskList-> {
-						context.assertEquals(0, taskList.size());
-						taskListAsync.complete();
-					})
-					.onFailure(err -> context.fail(err));
-					Async fullListAsync = context.async();
-					POST(adminSession, "/task/list",new JsonObject().put("full", true), null)
-					.onSuccess(response -> {
-						context.assertEquals(1, response.bodyAsJsonArray().size());
-						fullListAsync.complete();
-					})
-					.onFailure(err -> context.fail(err));
-					
-					// now this needs to fail, as its not an admin call
-					Async fullListFailAsync = context.async();
-					POST(researcherSession, "/task/list",new JsonObject().put("full", true),null)
-					.onSuccess(res -> {
-						context.fail("Only admin should be allowed to use full");
-					})
-					.onFailure(err -> fullListFailAsync.complete());					
-						
-					setupAsync.complete();
+			.onSuccess(researcherSession -> {
+				createUser(vertx, "TestParticipant", "testPassword", Roles.Participant)
+				.compose(userCreated -> createAuthedSession("TestParticipant", "testPassword"))
+				.onSuccess(participantSession -> {
+					WebObjectCreator.createTask(researcherSession, "PrivateTask")
+					.onSuccess(taskData -> {
+						Async taskListAsync = context.async();
+						getElementList(adminSession, "task")
+						.onSuccess(taskList-> {
+							context.assertEquals(0, taskList.size());
+							taskListAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
+						Async fullListAsync = context.async();
+						POST(adminSession, "/task/list",new JsonObject().put("full", true), null)
+						.onSuccess(response -> {
+							context.assertEquals(1, response.bodyAsJsonArray().size());
+							fullListAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
 
+						Async fullListesearcherAsync = context.async();
+						POST(researcherSession, "/task/list",new JsonObject().put("full", true), null)
+						.onSuccess(response -> {
+							context.assertEquals(1, response.bodyAsJsonArray().size());
+							fullListesearcherAsync .complete();
+						})
+						.onFailure(err -> context.fail(err));
+						
+						// now this needs to fail, as its not an admin or researcher call
+						Async fullListFailAsync = context.async();
+						POST(participantSession, "/task/list",new JsonObject().put("full", true),null)
+						.onSuccess(res -> {
+							context.fail("Only admin should be allowed to use full");
+						})
+						.onFailure(err -> fullListFailAsync.complete());					
+
+						setupAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));	
 				})
 				.onFailure(err -> context.fail(err));			 
 			})
@@ -110,7 +122,7 @@ public class ElementRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 
-	
+
 	@Test
 	public void testTaskExists(TestContext context)
 	{	
@@ -337,7 +349,7 @@ public class ElementRouterTest extends SoileWebTest {
 					Async testRemoveAsync = context.async();
 					GET(currentSession, "/experiment/" + expUUID +"/" +expVersion + "/gettag", null, null)
 					.onSuccess(response -> {
-						
+
 						context.assertEquals("Initial_Version", response.bodyAsJsonObject().getValue("tag"));
 						// we only have the one.context
 						Async failedAccess = context.async();
@@ -345,7 +357,7 @@ public class ElementRouterTest extends SoileWebTest {
 						POST(wrongSession, "/experiment/" + expUUID +"/removetags", null, new JsonArray().add("Initial_Version"))
 						.onSuccess(res -> context.fail("Should not be allowed"))
 						.onFailure(fail -> failedAccess.complete());
-						
+
 						POST(currentSession, "/experiment/" + expUUID +"/removetags", null, new JsonArray().add("Initial_Version"))
 						.onSuccess(res -> 
 						{
@@ -367,7 +379,7 @@ public class ElementRouterTest extends SoileWebTest {
 							});	
 						})
 						.onFailure(err -> context.fail(err));
-						
+
 					}).onFailure(err -> context.fail(err));
 					setupAsync.complete();
 				})
@@ -377,7 +389,7 @@ public class ElementRouterTest extends SoileWebTest {
 		})
 		.onFailure(err -> context.fail(err));
 	}
-	
+
 	@Test
 	public void testProjectsParseOK(TestContext context)
 	{		
