@@ -695,12 +695,6 @@ paths:
           description: version of the task
           schema:
             type : string
-        - name: name
-          in: query
-          required: true
-          description: The name of the tag added
-          schema:
-            type: string            
       responses:
         '200':
           description: Tag was added
@@ -714,6 +708,16 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'                        
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The new Tag
+                  example: "Initial Version"
   /task/{id}/{version}/filelist:
     get:
       security:
@@ -1395,12 +1399,6 @@ paths:
           description: version of the project
           schema:
             type : string
-        - name: name
-          in: query
-          required: true
-          description: The name of the tag added
-          schema:
-            type: string            
       responses:
         '200':
           description: Tag was added
@@ -1414,6 +1412,16 @@ paths:
           description: User has no authorization to make this call 
         '410':
           $ref: '#/components/responses/ResourceDoesNotExist'                  
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The new Tag
+                  example: "Initial Version"
   /project/create:
     post:
       security:
@@ -2733,12 +2741,6 @@ paths:
           description: version of the experiment
           schema:
             type : string
-        - name: name
-          in: query
-          required: true
-          description: The name of the tag added
-          schema:
-            type: string            
       responses:
         '200':
           description: Tag was added
@@ -2751,7 +2753,17 @@ paths:
         '403':
           description: User has no authorization to make this call 
         '410':
-          $ref: '#/components/responses/ResourceDoesNotExist'                         
+          $ref: '#/components/responses/ResourceDoesNotExist'   
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The new Tag
+                  example: "Initial Version"
   /experiment/create:
     post:
       security:

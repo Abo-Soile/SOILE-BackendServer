@@ -240,8 +240,8 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String elementID = params.pathParameter("id").getString();
-		String elementversion = params.pathParameter("version").getString();
-		String newTag = params.queryParameter("name").getString();
+		String elementversion = params.pathParameter("version").getString();		
+		String newTag = context.body().asJsonObject().getString("name");
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{			

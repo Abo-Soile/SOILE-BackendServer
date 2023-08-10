@@ -112,7 +112,7 @@ public class ElementRouterTest extends SoileWebTest {
 								}
 							}
 							context.assertFalse(hasTag);
-							POST(currentSession, "/task/" + taskData.getString("UUID") + "/"+ versionToRemove.getString("version") +"/addtag?name="+ versionToRemove.getString("tag"), null, null)
+							POST(currentSession, "/task/" + taskData.getString("UUID") + "/"+ versionToRemove.getString("version") +"/addtag", null, new JsonObject().put("name", versionToRemove.getString("tag")))
 							.compose(Void -> {
 								return POST(currentSession, "/task/" + taskData.getString("UUID") + "/list", null, null);
 							})
@@ -133,7 +133,7 @@ public class ElementRouterTest extends SoileWebTest {
 								context.assertTrue(hasTagAgain);
 								Async testInvalidCall1 = context.async();
 								// now check, that we can't have duplicate tags, and no two tags for the same version.
-								POST(currentSession, "/task/" + taskData.getString("UUID") + "/"+ otherVersion.getString("version") +"/addtag?name="+ versionToRemove.getString("tag"), null, null)
+								POST(currentSession, "/task/" + taskData.getString("UUID") + "/"+ otherVersion.getString("version") +"/addtag", null, new JsonObject().put("name", versionToRemove.getString("tag")))
 								.onSuccess(res -> context.fail("This Tag should not be allowed"))
 								.onFailure(err -> {
 									HttpException e = (HttpException) err;
@@ -142,7 +142,7 @@ public class ElementRouterTest extends SoileWebTest {
 								});
 								Async testInvalidCall2 = context.async();
 								// now check, that we can't have duplicate tags, and no two tags for the same version.
-								POST(currentSession, "/task/" + taskData.getString("UUID") + "/"+ versionToRemove.getString("version") +"/addtag?name=Yay", null, null)
+								POST(currentSession, "/task/" + taskData.getString("UUID") + "/"+ versionToRemove.getString("version") +"/addtag", null,  new JsonObject().put("name", "YaY"))
 								.onSuccess(res -> context.fail("This Tag should not be allowed"))
 								.onFailure(err -> {
 									HttpException e = (HttpException) err;
