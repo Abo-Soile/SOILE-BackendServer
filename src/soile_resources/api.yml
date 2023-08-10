@@ -671,7 +671,49 @@ paths:
               items:
                 type: string
                 description: the tags to remove
-                example: "Initial Version"          
+                example: "Initial Version"
+  /task/{id}/{version}/addtag:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Add a tag to a version that doesn't have a tag yet.
+      operationId: addTagToTaskVersion
+      description: Add a tag to a version that doesn't have one yet.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task for which versions are requested
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: version of the task
+          schema:
+            type : string
+        - name: name
+          in: query
+          required: true
+          description: The name of the tag added
+          schema:
+            type: string            
+      responses:
+        '200':
+          description: Tag was added
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '409':
+          description: "Name already exists" 
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'                        
   /task/{id}/{version}/filelist:
     get:
       security:
@@ -710,7 +752,7 @@ paths:
         '403':
           description: User has no authorization to make this call 
         '410':
-          $ref: '#/components/responses/ResourceDoesNotExist'           
+          $ref: '#/components/responses/ResourceDoesNotExist'
   /task/{id}/{version}/download:  
     get:
       security:
@@ -1330,6 +1372,48 @@ paths:
                 type: string
                 description: the tags to remove
                 example: "Initial Version"
+  /project/{id}/{version}/addtag:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Add a tag to a version that doesn't have a tag yet.
+      operationId: addTagToProjectVersion
+      description: Add a tag to a version that doesn't have one yet.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the project for which versions are requested
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: version of the project
+          schema:
+            type : string
+        - name: name
+          in: query
+          required: true
+          description: The name of the tag added
+          schema:
+            type: string            
+      responses:
+        '200':
+          description: Tag was added
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '409':
+          description: "Name already exists" 
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'                  
   /project/create:
     post:
       security:
@@ -2624,7 +2708,50 @@ paths:
               items:
                 type: string
                 description: the tags to remove
-                example: "Initial Version"             
+                example: "Initial Version"  
+
+  /experiment/{id}/{version}/addtag:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - experiment
+      summary: Add a tag to a version that doesn't have a tag yet.
+      operationId: addTagToExperimentVersion
+      description: Add a tag to a version that doesn't have one yet.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the experiment for which versions are requested
+          schema:
+            type : string
+        - name: version
+          in: path
+          required: true
+          description: version of the experiment
+          schema:
+            type : string
+        - name: name
+          in: query
+          required: true
+          description: The name of the tag added
+          schema:
+            type: string            
+      responses:
+        '200':
+          description: Tag was added
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '409':
+          description: "Name already exists" 
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'                         
   /experiment/create:
     post:
       security:

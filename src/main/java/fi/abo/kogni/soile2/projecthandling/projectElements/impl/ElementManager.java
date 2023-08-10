@@ -335,7 +335,7 @@ public class ElementManager<T extends ElementBase> {
 		return deletionPromise.future();			
 	}
 
-	
+
 	/**
 	 * Get the List of all elements of the specified type. 
 	 * Returns a list of 
@@ -374,7 +374,7 @@ public class ElementManager<T extends ElementBase> {
 		});
 		return listPromise.future();		
 	}
-	
+
 	/**
 	 * Get the List of all elements of the specified type. 
 	 * Returns a list of 
@@ -497,7 +497,7 @@ public class ElementManager<T extends ElementBase> {
 		});
 		return tagPromise.future();		
 	}
-	
+
 	/**
 	 * Remove the tags (not the versions just the tag associations) from the element.
 	 * @param elementID the elementID for which to remove versions
@@ -509,11 +509,12 @@ public class ElementManager<T extends ElementBase> {
 		Promise<Void> tagPromise = Promise.<Void>promise();		
 		Element e = supplier.get();
 		JsonObject update = new JsonObject().put("$pull",
-									new JsonObject().put("tags",
-										new JsonObject().put("tag", 
-												new JsonObject().put("$in", tagsToRemove))));
+				new JsonObject().put("tags",
+						new JsonObject().put("tag", 
+								new JsonObject().put("$in", tagsToRemove))));
 		client.updateCollection(e.getTargetCollection(), new JsonObject().put("_id", elementID), update)
-		.onSuccess(res -> {						
+		.onSuccess(res -> {					
+			LOGGER.debug("Successfully removed " + tagsToRemove.encodePrettily());
 			tagPromise.complete();
 		})
 		.onFailure(err -> {
@@ -521,7 +522,70 @@ public class ElementManager<T extends ElementBase> {
 		});
 		return tagPromise.future();	
 	}
-	
+
+	/**
+	 * Add Tag to a specific version of the element
+	 * @param elementID the elementID for which to remove versions
+	 * @param version the version to add the tag to.
+	 * @param tagsToRemove the tags to remove from the element.
+	 * @return A successful {@link Future} if the tags were removed.
+	 */
+	public Future<Void> addTagToVersion(String elementID, String version, String tag)
+	{
+		Promise<Void> tagPromise = Promise.<Void>promise();		
+		Element e = supplier.get();
+		client.findOne(e.getTargetCollection(), new JsonObject().put("_id", elementID), new JsonObject().put("tags", 1).put("versions", 1))
+		.onSuccess(element -> {
+			JsonArray versionArray = element.getJsonArray("versions");
+			// We need to check, whether the version exists
+			boolean versionFound = false; 
+			for(int i = 0; i < versionArray.size(); i++)
+			{
+				if(versionArray.getJsonObject(i).getString("version").equals(version))
+				{
+					versionFound = true;
+				}
+			}
+			if(!versionFound)
+			{
+				tagPromise.fail(new ObjectDoesNotExist(elementID +  " at version " + version));
+				return;
+			}
+			// check that the version doesn't already have a tag
+			JsonArray tagArray = element.getJsonArray("tags");
+			for(int i = 0; i < tagArray.size(); i++)
+			{
+				if(tagArray.getJsonObject(i).getString("version").equals(version))
+				{
+					tagPromise.fail(new HttpException(409,"A Tag for this version already exists: " + tagArray.getJsonObject(i).getString("tag")));
+					return;
+				}
+				if(tagArray.getJsonObject(i).getString("tag").equals(tag))
+				{
+					tagPromise.fail(new HttpException(409,"Tag already exists for version: " + tagArray.getJsonObject(i).getString("version")));
+					return;
+				}
+			}
+			// ok, no tag exists, and the version exists so we will no put in a tag for this version into the db.
+			JsonObject update = new JsonObject().put("$push",
+					new JsonObject().put("tags",
+							new JsonObject().put("tag",tag).put("version", version))); 									
+			client.updateCollection(e.getTargetCollection(), new JsonObject().put("_id", elementID), update)
+			.onSuccess(res -> {						
+				tagPromise.complete();
+			})
+			.onFailure(err -> {
+				tagPromise.fail(err);
+			});
+		})
+		.onFailure(err -> {
+			tagPromise.fail(err);
+		});
+
+		return tagPromise.future();	
+	}
+
+
 	/**
 	 * Get the list of all versions for the given element.  
 	 * Returns a list of all versions of the element with the given ID
@@ -645,7 +709,7 @@ public class ElementManager<T extends ElementBase> {
 		return dataHandler.handlePostFile(elementID, elementVersion, filename, upload);
 	}
 
-	
+
 	/**
 	 * Post a given upload to the given task at the given version. Return the new version of the element with the file added.  
 	 * @param elementID the id of the element
@@ -667,7 +731,7 @@ public class ElementManager<T extends ElementBase> {
 			LOGGER.info("Filename for created file is: " + currentFileName + " while request file name was " + dirName);
 			chain.add(chain.getLast().compose(version -> dataHandler.handlePostFile(elementID, version, currentFileName, SOILEUpload.create(up))));
 			filesUploaded.add(chain.getLast());
-			
+
 		}
 		CompositeFuture.all(filesUploaded)		
 		.onSuccess(finished -> {
@@ -675,12 +739,12 @@ public class ElementManager<T extends ElementBase> {
 			filesUploadedPromise.complete(chain.getLast().result());
 		})
 		.onFailure(err -> filesUploadedPromise.fail(err));
-		
+
 		return filesUploadedPromise.future();
 	}
 
-	
-	
+
+
 	/**
 	 * Write a given Stream to a File with a given name and return the new git version with this file written. 
 	 * @param elementID the id of the element
@@ -693,7 +757,7 @@ public class ElementManager<T extends ElementBase> {
 	{
 		return dataHandler.handleWritefile(elementID, elementVersion, filename, is);
 	}
-	
+
 	/**
 	 * Delete a given file from the given Version returning a new version without the element.   
 	 * @param elementID the id of the element
@@ -705,7 +769,7 @@ public class ElementManager<T extends ElementBase> {
 	{
 		return dataHandler.handleDeleteFile(elementID, elementVersion, filename);
 	}
-	
+
 	/**
 	 * Get the supplier for the ElementType represented by this Manager
 	 * @return

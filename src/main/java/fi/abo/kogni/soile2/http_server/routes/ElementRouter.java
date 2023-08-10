@@ -236,6 +236,28 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	}
 	
+	public void addTagToVersion(RoutingContext context)
+	{		
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String elementID = params.pathParameter("id").getString();
+		String elementversion = params.pathParameter("version").getString();
+		String newTag = params.queryParameter("name").getString();
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
+		.onSuccess(Void -> 
+		{			
+			LOGGER.debug("Handling tag addition");
+			elementManager.addTagToVersion(elementID, elementversion, newTag)
+			.onSuccess(added -> {			
+				context.response()
+				.setStatusCode(200)				
+				.end();	
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));
+
+	}
+	
 	public void create(RoutingContext context)
 	{		
 		LOGGER.debug("Received a request for creation");

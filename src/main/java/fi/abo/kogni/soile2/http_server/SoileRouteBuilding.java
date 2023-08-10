@@ -329,6 +329,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("downloadTask").handler(taskRouter::downloadTask);
 		builder.operation("uploadTask").handler(taskRouter::uploadTask);
 		builder.operation("removeTagsForTask").handler(taskRouter::removeTagsFromElement);
+		builder.operation("addTagToTaskVersion").handler(taskRouter::addTagToVersion);
 		builder.operation("getCodeOptions").handler(taskRouter::getCodeOptions);		
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
@@ -348,6 +349,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("updateExperiment").handler(router::writeElement);
 		builder.operation("getTagForExperimentVersion").handler(router::getTagForVersion);
 		builder.operation("removeTagsForExperiment").handler(router::removeTagsFromElement);
+		builder.operation("addTagToExperimentVersion").handler(taskRouter::addTagToVersion);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 
@@ -367,6 +369,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("getTagForProjectVersion").handler(router::getTagForVersion);
 		builder.operation("isFilterValid").handler(router::isFilterValid);
 		builder.operation("removeTagsForProject").handler(router::removeTagsFromElement);
+		builder.operation("addTagToProjectVersion").handler(taskRouter::addTagToVersion);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 		

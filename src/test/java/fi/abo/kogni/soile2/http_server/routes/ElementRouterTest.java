@@ -62,6 +62,110 @@ public class ElementRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 
+	
+	@Test
+	public void testTagManagement(TestContext context)
+	{	
+		System.out.println("--------------------  Testing Task generation ----------------------");
+
+		Async setupAsync = context.async();
+		WebClientSession currentSession = createSession();
+		createUser(vertx, "TestUser", "testPassword", Roles.Admin)
+		.onSuccess(userCreated -> {
+			authenticateSession(currentSession, "TestUser", "testPassword")
+			.onSuccess(authed -> {
+				WebObjectCreator.createTask(currentSession, "Test2")
+				.onSuccess(taskData -> {
+					System.out.println(taskData.encodePrettily());
+					POST(currentSession, "/task/" + taskData.getString("UUID") + "/list", null, null)
+					.onSuccess(versionList -> {
+						System.out.println(versionList.bodyAsJsonArray().encodePrettily());
+						JsonObject possibleVersion = null;
+						JsonObject otherVersion = new JsonObject();
+						for(int i = 0; i < versionList.bodyAsJsonArray().size(); i++)
+						{
+							if(versionList.bodyAsJsonArray().getJsonObject(i).containsKey("tag"))
+							{
+								possibleVersion = versionList.bodyAsJsonArray().getJsonObject(i);								
+							}
+							else
+							{
+								otherVersion.put("version", versionList.bodyAsJsonArray().getJsonObject(i).getString("version"));
+							}
+						}
+						context.assertNotNull(possibleVersion);
+						context.assertTrue(otherVersion.containsKey("version"));
+						JsonObject versionToRemove = possibleVersion;
+						Async removeAndAddAsync = context.async();
+						POST(currentSession, "/task/" + taskData.getString("UUID") + "/removetags", null, new JsonArray().add(versionToRemove.getString("tag")))
+						.compose(Void -> {
+							return POST(currentSession, "/task/" + taskData.getString("UUID") + "/list", null, null);
+						})
+						.onSuccess(newversionList -> {
+							boolean hasTag= false;
+							for(int i = 0; i < newversionList.bodyAsJsonArray().size(); i++)
+							{
+								if(newversionList.bodyAsJsonArray().getJsonObject(i).containsKey("tag"))
+								{
+									hasTag = true;
+									break;
+								}
+							}
+							context.assertFalse(hasTag);
+							POST(currentSession, "/task/" + taskData.getString("UUID") + "/"+ versionToRemove.getString("version") +"/addtag?name="+ versionToRemove.getString("tag"), null, null)
+							.compose(Void -> {
+								return POST(currentSession, "/task/" + taskData.getString("UUID") + "/list", null, null);
+							})
+							.onSuccess(reAddedversionList -> {								
+								boolean hasTagAgain = false;
+								
+								for(int i = 0; i < reAddedversionList.bodyAsJsonArray().size(); i++)
+								{
+									if(reAddedversionList.bodyAsJsonArray().getJsonObject(i).containsKey("tag"))
+									{
+										if(reAddedversionList.bodyAsJsonArray().getJsonObject(i).getString("tag").equals(versionToRemove.getString("tag")))
+										{
+											hasTagAgain = true;
+											break;
+										}
+									}
+								}
+								context.assertTrue(hasTagAgain);
+								Async testInvalidCall1 = context.async();
+								// now check, that we can't have duplicate tags, and no two tags for the same version.
+								POST(currentSession, "/task/" + taskData.getString("UUID") + "/"+ otherVersion.getString("version") +"/addtag?name="+ versionToRemove.getString("tag"), null, null)
+								.onSuccess(res -> context.fail("This Tag should not be allowed"))
+								.onFailure(err -> {
+									HttpException e = (HttpException) err;
+									context.assertEquals(409, e.getStatusCode());									
+									testInvalidCall1.complete();
+								});
+								Async testInvalidCall2 = context.async();
+								// now check, that we can't have duplicate tags, and no two tags for the same version.
+								POST(currentSession, "/task/" + taskData.getString("UUID") + "/"+ versionToRemove.getString("version") +"/addtag?name=Yay", null, null)
+								.onSuccess(res -> context.fail("This Tag should not be allowed"))
+								.onFailure(err -> {
+									HttpException e = (HttpException) err;
+									context.assertEquals(409, e.getStatusCode());																	
+									testInvalidCall2.complete();
+								});
+								
+								removeAndAddAsync.complete();
+								
+							})
+							.onFailure(err -> context.fail(err));
+						})
+						.onFailure(err -> context.fail(err));
+						setupAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));						
+				})
+				.onFailure(err -> context.fail(err));			 
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
 
 	@Test
 	public void testList(TestContext context)
