@@ -242,6 +242,11 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		String elementID = params.pathParameter("id").getString();
 		String elementversion = params.pathParameter("version").getString();		
 		String newTag = context.body().asJsonObject().getString("name");
+		if(newTag == null)
+		{
+			handleError(new HttpException(400, "Invalid Tag value"),context);
+			return;
+		}
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
 		.onSuccess(Void -> 
 		{			
