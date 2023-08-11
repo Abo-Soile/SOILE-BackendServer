@@ -314,6 +314,9 @@ public class TaskBundler {
 					taskCreatedPromise.fail(e);		
 				}	
 
+			})
+			.onFailure(err -> {
+				taskCreatedPromise.fail(err);					
 			});
 		}
 		else

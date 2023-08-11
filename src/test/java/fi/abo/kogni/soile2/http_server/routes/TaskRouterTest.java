@@ -469,7 +469,14 @@ public class TaskRouterTest extends SoileWebTest{
 							catch(Exception e)
 							{
 								context.fail(e);
-							}				
+							}
+							Async invalidAsync = context.async();
+							JsonObject invalidParams = new JsonObject().put("tag", "Initial Version").put("name", "Test3");
+							upload(authedSession, "/task/upload", invalidParams, "NewTask.zip", new File(targetFileName), "application/zip")
+							.onSuccess(response -> context.fail("Task with this name already exists!"))
+							.onFailure(err -> {								
+								invalidAsync.complete();
+							});
 							JsonObject queryParams = new JsonObject().put("tag", "Initial Version").put("name", "NewTask");							
 							upload(authedSession, "/task/upload", queryParams, "NewTask.zip", new File(targetFileName), "application/zip")
 							.onSuccess(response -> {
