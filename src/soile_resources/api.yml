@@ -1685,6 +1685,7 @@ paths:
       security:
         - cookieAuth: []
         - JWTAuth: []
+        - tokenAuth: []
         - {} # Security on this endpoint is optional. Allows listing of active, public projects by anyone (and thus signing up to those projects).
       tags:
         - study
