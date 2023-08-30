@@ -445,7 +445,9 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		upload(client, URL, null, fileName, uploadFile, mimeType)
 		.onSuccess(response -> {
 			try {
+				LOGGER.debug("Completing promise");
 				idPromise.complete(response.getString(idField));
+				LOGGER.debug("File uploaded");
 			}
 			catch(Exception e)
 			{
@@ -469,7 +471,8 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 			}
 		}
 		MultipartForm submissionForm = MultipartForm.create()
-				.binaryFileUpload(fileName, fileName, uploadFile.getAbsolutePath(), currentMime);		
+				.binaryFileUpload(fileName, fileName, uploadFile.getAbsolutePath(), currentMime);	
+		LOGGER.debug("Submitting to " + URL);
 		return request.sendMultipartForm(submissionForm).compose(response -> 
 		{
 			if(response.statusCode() >= 400)

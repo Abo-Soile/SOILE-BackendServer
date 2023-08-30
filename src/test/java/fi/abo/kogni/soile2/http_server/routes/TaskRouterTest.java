@@ -108,6 +108,37 @@ public class TaskRouterTest extends SoileWebTest{
 		.onFailure(err -> context.fail(err));
 	}
 
+	
+	@Test
+	public void testInvalidVersion(TestContext context)
+	{		 
+		System.out.println("--------------------  Testing Invalid Version request ----------------------");
+
+		Async testAsync = context.async();
+		createUserAndAuthedSession("TestUser", "testpw", Roles.Researcher)
+		.onSuccess(authedSession -> {
+			createUserAndAuthedSession("TestUser2", "testpw", Roles.Researcher)
+			.onSuccess(wrongSession -> {				 
+				WebObjectCreator.createOrRetrieveTask(authedSession, "FirstTask")
+				.onSuccess(taskData -> {
+					Async testResource = context.async();
+					String resourceAddress = "/task/" + taskData.getString("UUID") + "/null/resource/ImageData.jpg";
+					GET(authedSession,resourceAddress,null,null )
+					.onSuccess(result -> {
+						context.fail("This should not be possible, since it should fail with a 404");
+					})
+					.onFailure(err -> testResource.complete());					
+
+					testAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+
+			})
+			.onFailure(err -> context.fail(err));
+
+		})
+		.onFailure(err -> context.fail(err));
+	}
 
 	@Test
 	public void testRunResources(TestContext context)

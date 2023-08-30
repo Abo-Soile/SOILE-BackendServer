@@ -14,6 +14,8 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -44,8 +46,8 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		T tempElement = manager.getElementSupplier().get();		
 		elementManager = manager;
 		accessHandler = new AccessHandler(getAuthForType(tempElement.getElementType()),
-										  getHandlerForType(tempElement.getElementType()),
-										  roleHandler);
+				getHandlerForType(tempElement.getElementType()),
+				roleHandler);
 		this.eb = eb;
 	}
 
@@ -78,9 +80,10 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		String elementID = params.pathParameter("id").getString();
 		String elementVersion = params.pathParameter("version").getString();
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
+		.compose(allowed -> { return checkVersionAndID(elementID, elementVersion); })
 		.onSuccess(Void -> 
 		{
-			
+
 			elementManager.getAPIElementFromDB(elementID,elementVersion)
 			.onSuccess(apiElement -> {
 				JsonObject requestElement = params.body().getJsonObject();
@@ -141,7 +144,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 					elementManager.getElementList(permissions)
 					.onSuccess(elementList -> {	
 						// this list needs to be filtered by access
-	
+
 						context.response()
 						.setStatusCode(200)
 						.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -159,11 +162,12 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String elementID = params.pathParameter("id").getString();
-		String elementversion = params.pathParameter("version").getString();
+		String elementVersion = params.pathParameter("version").getString();
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		.compose(allowed -> { return checkVersionAndID(elementID, elementVersion); })
 		.onSuccess(Void -> 
 		{
-			elementManager.getTagForElementVersion(elementID, elementversion)
+			elementManager.getTagForElementVersion(elementID, elementVersion)
 			.onSuccess(tag -> {			
 				context.response()
 				.setStatusCode(200)
@@ -175,7 +179,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 
 	}
-	
+
 	public void getVersionList(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -235,12 +239,12 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 
 	}
-	
+
 	public void addTagToVersion(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String elementID = params.pathParameter("id").getString();
-		String elementversion = params.pathParameter("version").getString();		
+		String elementVersion = params.pathParameter("version").getString();		
 		String newTag = context.body().asJsonObject().getString("name");
 		if(newTag == null)
 		{
@@ -248,10 +252,11 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 			return;
 		}
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
+		.compose(allowed -> { return checkVersionAndID(elementID, elementVersion); })
 		.onSuccess(Void -> 
 		{			
 			LOGGER.debug("Handling tag addition");
-			elementManager.addTagToVersion(elementID, elementversion, newTag)
+			elementManager.addTagToVersion(elementID, elementVersion, newTag)
 			.onSuccess(added -> {			
 				context.response()
 				.setStatusCode(200)				
@@ -262,7 +267,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 
 	}
-	
+
 	public void create(RoutingContext context)
 	{		
 		LOGGER.debug("Received a request for creation");
@@ -279,14 +284,14 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 				LOGGER.debug("Invalid name parameter");
 				handleError(new HttpException(400, "Must have exactly one codetype, codeVersion and name parameter"), context);
 				return;
-				}
+			}
 			if( elementManager.getElementSupplier().get().getElementType() == TargetElementType.TASK  && (typeParam.size() != 1 || versionParam.size() != 1))
 			{
 				LOGGER.debug("Invalid CodeType/Version");
 				handleError(new HttpException(400, "Must have exactly one codetype and codeVersion parameter"), context);
 			}						
 			else{
-				
+
 				if(elementManager.getElementSupplier().get().getElementType() == TargetElementType.TASK )
 				{
 					LOGGER.debug("Setting up Task data");
@@ -309,10 +314,10 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 						.put("username", context.user().principal().getString("username"))
 						.put("command", "add")
 						.put("permissionsProperties", new JsonObject().put("elementType", element.getElementType().toString())
-																	  .put("permissionSettings",new JsonArray().add(new JsonObject().put("target", element.getUUID())
-																			  														.put("type", PermissionType.FULL.toString()))
-																		  )
-							);	
+								.put("permissionSettings",new JsonArray().add(new JsonObject().put("target", element.getUUID())
+										.put("type", PermissionType.FULL.toString()))
+										)
+								);	
 				LOGGER.debug("Requesting permission change");
 				eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChangeRequest)
 				.onSuccess( reply -> {
@@ -331,6 +336,27 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));
 
+	}
+
+	Future<Void> checkVersionAndID(String id, String version)
+	{
+		Promise<Void> existPromise = Promise.promise();
+		elementManager.doesRepoAtVersionExist(id, version)
+		.onSuccess(exists -> {
+			if(exists)
+			{
+				LOGGER.debug("Version existed");
+				existPromise.complete();
+			}
+			else
+			{
+				LOGGER.debug("Version did not exist");
+				existPromise.fail(new HttpException(404));
+			}
+		})
+		.onFailure(err -> existPromise.fail(err));
+		
+		return existPromise.future();
 	}
 
 }

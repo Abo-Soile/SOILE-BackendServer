@@ -39,6 +39,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 	TimeStampedMap<GitFile, JsonObject> fileJsonContents;
 	TimeStampedMap<GitFile, String> fileStringContents;
 	TimeStampedMap<GitElement, JsonArray> resourceLists;
+	TimeStampedMap<GitElement, JsonArray> historyLists;
 	
 	private List<MessageConsumer> consumers;
 	private static final Logger LOGGER = LogManager.getLogger(GitManagerVerticle.class);
@@ -54,13 +55,18 @@ public class GitManagerVerticle extends AbstractVerticle{
 		fileJsonContents = new TimeStampedMap<GitFile,JsonObject>(new DataRetrieverImpl<GitFile,JsonObject>(gitManager::getGitFileContentsAsJson), 3600*2);
 		fileStringContents = new TimeStampedMap<GitFile,String>(new DataRetrieverImpl<GitFile,String>(gitManager::getGitFileContents), 3600*2);
 		resourceLists = new TimeStampedMap<GitElement,JsonArray>(new DataRetrieverImpl<GitElement,JsonArray>(gitManager::getResourceList), 3600*2);
+		historyLists = new TimeStampedMap<GitElement,JsonArray>(new DataRetrieverImpl<GitElement,JsonArray>(gitManager::getHistory), 3600*2);
+		
+		
 		consumers.add(eb.consumer("soile.git.doesRepoExist",this::doesRepoExist));
+		consumers.add(eb.consumer("soile.git.doesRepoAndVersionExist",this::doesRepoAndVersionExist));
 		consumers.add(eb.consumer("soile.git.initRepo",this::initRepo));
 		consumers.add(eb.consumer("soile.git.getGitFileContents",this::getGitFileContents));
 		consumers.add(eb.consumer("soile.git.getGitResourceContents",this::getGitResourceContents));
 		consumers.add(eb.consumer("soile.git.getGitResourceContentsAsJson",this::getGitResourceContentsAsJson));
 		consumers.add(eb.consumer("soile.git.getGitFileContentsAsJson",this::getGitFileContentsAsJson));
 		consumers.add(eb.consumer("soile.git.getResourceList",this::getResourceList));
+		consumers.add(eb.consumer("soile.git.getHistory",this::getHistory));
 		consumers.add(eb.consumer("soile.git.writeGitFile",this::writeGitFile));
 		consumers.add(eb.consumer("soile.git.writeGitResourceFile",this::writeGitResourceFile));
 		consumers.add(eb.consumer("soile.git.deleteGitResourceFile",this::deleteGitResourceFile));
@@ -103,6 +109,19 @@ public class GitManagerVerticle extends AbstractVerticle{
 	 * Test whether a repo element exists asynchronosly
 	 * @param message the message with the "elementID" to check
 	 */
+	public void doesRepoAndVersionExist(Message<JsonObject> message)
+	{
+		gitManager.doesRepoAndVersionExist(new GitElement(message.body()))
+		.onSuccess(exist -> {			
+			message.reply(exist);
+		})
+		.onFailure(err -> message.fail(500, err.getMessage()));
+	}
+
+	/**
+	 * Test whether a repo element exists asynchronosly
+	 * @param message the message with the "elementID" to check
+	 */
 	public void doesRepoExist(Message<String> message)
 	{
 		gitManager.doesRepoExist(message.body())
@@ -111,7 +130,6 @@ public class GitManagerVerticle extends AbstractVerticle{
 		})
 		.onFailure(err -> message.fail(500, err.getMessage()));
 	}
-
 
 	/**
 	 * Initialize a repository
@@ -182,7 +200,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 	}
 	/**
 	 * Get the resource files available for a specific git Version of an Object as a JsonArray  
-	 * @return A {@link JsonObject} of the contents of the git file.
+	 * @return A {@link JsonArray} representing the file structure of the version.
 	 */
 	public void getResourceList(Message<JsonObject> request)
 	{
@@ -193,7 +211,19 @@ public class GitManagerVerticle extends AbstractVerticle{
 		})
 		.onFailure(err -> handleFail(request,err));
 	}
-
+	/**
+	 * Get the history (i.e. all previous commits) for a given git version.  
+	 * @return A {@link JsonArray} of the commit ids of upstream commits (including this commit). 
+	 */
+	public void getHistory(Message<JsonObject> request)
+	{
+		LOGGER.debug("Querying resource list from gitManager");
+		historyLists.getData(new GitElement(request.body()))
+		.onSuccess(historyList -> {
+			request.reply(historyList);
+		})
+		.onFailure(err -> handleFail(request,err));
+	}
 	/**
 	 * Write data to a file specified by the {@link GitFile}, reply with the new version of the respective repo. 
 	 * a request with gitFile fields and a data field for the data to write.

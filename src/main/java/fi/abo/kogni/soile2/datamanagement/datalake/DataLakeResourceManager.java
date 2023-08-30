@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.datamanagement.datalake;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.datamanagement.git.GitDataRetriever;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.http_server.requestHandling.SOILEUpload;
-import fi.abo.kogni.soile2.projecthandling.projectElements.impl.TaskResourceFile;
+import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -151,7 +152,7 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 	public DataLakeFile createElement(Object elementData, GitFile key) {
 
 		JsonObject json = (JsonObject) elementData;
-		TaskResourceFile representedElement = new TaskResourceFile(key.getRepoID(), json.getString("targetFile"), json.getString("filename"), json.getString("format"));								
+		GitDataLakeFile representedElement = new GitDataLakeFile(key.getRepoID(), json.getString("targetFile"), json.getString("filename"), json.getString("format"));								
 		return representedElement.getDataLakeFile();
 	}
 	
@@ -159,11 +160,11 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 	 * Move a File from a {@link FileUpload} to a a folder in the datalake that is associated with the repository indicated by the provided {@link GitFile} 
 	 * @param targetGitFile the target {@link GitFile} the upload data will be associated with 
 	 * @param upload the Upload from which to extract the actual file.
-	 * @return a {@link Future} of the {@link TaskResourceFile} that contains all information about the datalake file created. 
+	 * @return a {@link Future} of the {@link GitDataLakeFile} that contains all information about the datalake file created. 
 	 */
-	public Future<TaskResourceFile> moveUploadToDataLake(GitFile targetGitFile, SOILEUpload upload)
+	public Future<GitDataLakeFile> moveUploadToDataLake(GitFile targetGitFile, SOILEUpload upload)
 	{
-		Promise<TaskResourceFile> dataLakeFilePromise = Promise.promise();
+		Promise<GitDataLakeFile> dataLakeFilePromise = Promise.promise();
 		String targetFolder = Path.of(dataLakeDirectory, targetGitFile.getRepoID()).toAbsolutePath().toString();		
 		vertx.fileSystem().mkdirs(targetFolder)
 		.onSuccess(folderCreated -> {			
@@ -171,7 +172,7 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 			.onSuccess(tempFileName -> {	
 				vertx.fileSystem().move(upload.uploadedFileName(), tempFileName, new CopyOptions().setReplaceExisting(true))
 				.onSuccess(moved -> {
-					TaskResourceFile result = new TaskResourceFile(targetGitFile.getRepoID(), tempFileName.replace(targetFolder, ""), upload.fileName(), upload.contentType());
+					GitDataLakeFile result = new GitDataLakeFile(targetGitFile.getRepoID(), tempFileName.replace(targetFolder, ""), upload.fileName(), upload.contentType());
 					dataLakeFilePromise.complete(result);
 				})
 				.onFailure(err -> dataLakeFilePromise.fail(err));
@@ -185,11 +186,11 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 	 * Write the data from an {@link OutputStream} to the datalake, creating a new file 
 	 * @param targetGitFile the target {@link GitFile} the upload data will be associated with 
 	 * @param os the {@link OutputStream} containing the data for the actual file.
-	 * @return a {@link Future} of the {@link TaskResourceFile} that contains all information about the datalake file created. 
+	 * @return a {@link Future} of the {@link GitDataLakeFile} that contains all information about the datalake file created. 
 	 */
-	public Future<TaskResourceFile> writeStreamToDataLake(GitFile targetGitFile, InputStream is)
+	public Future<GitDataLakeFile> writeStreamToDataLake(GitFile targetGitFile, InputStream is)
 	{
-		Promise<TaskResourceFile> dataLakeFilePromise = Promise.promise();
+		Promise<GitDataLakeFile> dataLakeFilePromise = Promise.promise();
 		String targetFolder = Path.of(dataLakeDirectory, targetGitFile.getRepoID()).toAbsolutePath().toString();		
 		vertx.fileSystem().mkdirs(targetFolder)
 		.onSuccess(folderCreated -> {			
@@ -212,7 +213,7 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 					}
 					writing.complete();
 				}).onSuccess(done -> {
-					TaskResourceFile trf = new TaskResourceFile(targetGitFile.getRepoID(), tempFileName.replace(targetFolder, ""), targetGitFile.getFileName(), MimeMapping.getMimeTypeForFilename(targetGitFile.getFileName()));
+					GitDataLakeFile trf = new GitDataLakeFile(targetGitFile.getRepoID(), tempFileName.replace(targetFolder, ""), targetGitFile.getFileName(), MimeMapping.getMimeTypeForFilename(targetGitFile.getFileName()));
 					dataLakeFilePromise.complete(trf);
 				})
 				.onFailure(err -> dataLakeFilePromise.fail(err));
@@ -225,9 +226,26 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 	}	
 
 
-	public Future<Void> deleteFile(TaskResourceFile toDelete)
+	public Future<Void> deleteFile(GitDataLakeFile toDelete)
 	{
 		return vertx.fileSystem().delete(toDelete.getDataLakeFile().getAbsolutePath());
+	}
+	
+	public Future<Void> deleteDataLakeFile(String taskID, String dataLakeFileName)
+	{
+		File toDelete = getTaskDataLakeFile(taskID, dataLakeFileName);		
+		return vertx.fileSystem().delete(toDelete.getAbsolutePath());		
+	}
+	
+	/**
+	 * Get the {@link File} specified by the taskID and the filename in the resource datalake.
+	 * @param taskID - the task for which to retrieve the file
+	 * @param dataLakeFileName the name of the datalake file.
+	 * @return
+	 */
+	public File getTaskDataLakeFile(String taskID, String dataLakeFileName)
+	{	
+		return new File(dataLakeDirectory + File.separator + Task.typeID + taskID + File.separator + dataLakeFileName);
 	}
 	
 }

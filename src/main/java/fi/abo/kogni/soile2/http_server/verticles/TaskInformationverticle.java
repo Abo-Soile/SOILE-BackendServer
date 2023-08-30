@@ -42,6 +42,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 		vertx.eventBus().consumer("soile.task.getVersionInfo", this::getTaskVersionInfo);
 		vertx.eventBus().consumer("soile.task.getResource", this::getResource);
 		vertx.eventBus().consumer("soile.task.getResourceList", this::getResourceList);
+		vertx.eventBus().consumer("soile.task.getHistory", this::getHistory);
 		vertx.eventBus().consumer("soile.task.getAPIData", this::getTaskAPIData);
 	}
 					
@@ -146,6 +147,22 @@ public class TaskInformationverticle extends AbstractVerticle{
 	{		
 		GitElement target = new GitElement(Task.typeID + request.body().getString("UUID"), request.body().getString("version"));		
 		vertx.eventBus().request("soile.git.getResourceList", target.toJson())
+		.onSuccess(taskResourceList -> {
+			request.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, taskResourceList.body()));			
+		})
+		.onFailure(err -> {			
+			request.fail(500, err.getMessage());
+		});
+	}
+	/**
+	 * Get the History of a specific version of a task 
+	 * Request for a Json that contains UUID and version
+	 * @param request
+	 */
+	public void getHistory(Message<JsonObject> request)
+	{		
+		GitElement target = new GitElement(Task.typeID + request.body().getString("UUID"), request.body().getString("version"));		
+		vertx.eventBus().request("soile.git.getHistory", target.toJson())
 		.onSuccess(taskResourceList -> {
 			request.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, taskResourceList.body()));			
 		})

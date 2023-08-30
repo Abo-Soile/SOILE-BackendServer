@@ -11,6 +11,7 @@ import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -50,11 +51,48 @@ public class GitManager{
 		})
 		.onFailure(fail ->
 		{
-			existPromise.fail(fail);
+			if(fail instanceof ReplyException)
+			{
+				ReplyException ex = (ReplyException) fail;
+				if(ex.failureCode() == gitProviderVerticle.REPO_DOES_NOT_EXIST)
+				{
+					existPromise.complete(false);
+				}
+				else
+				{
+					existPromise.fail(fail);
+				}
+			}
+			else
+			{
+				existPromise.fail(fail);
+			}
 		});
 		return existPromise.future();
 	}
 	
+	
+	/**
+	 * Test whether a repo exists and the given version is in the repo asynchronosly
+	 * @param elementID the ID (Project, Task or ExperimentID)
+	 * @param version The version of that should be checked.
+	 * @return a Future that on success indicates whether the element exists or not. Failure means either the request was inconsistent, or something went wrong 
+	 * 		   in the process, and should not be taken as non existence indication. 
+	 */
+	public Future<Boolean> doesRepoAndVersionExist(GitElement element)
+	{
+		Promise<Boolean> existPromise = Promise.<Boolean>promise();
+		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitProviderVerticle.createCommandForRepoAtVersion(element.getRepoID(), element.getRepoVersion()).put(gitProviderVerticle.COMMANDFIELD, gitProviderVerticle.VERSION_EXISTS_COMMAND))
+		.onSuccess( reply ->
+		{
+			existPromise.complete(((JsonObject)reply.body()).getBoolean(gitProviderVerticle.DATAFIELD));							
+		})
+		.onFailure(fail ->
+		{
+			existPromise.fail(fail);
+		});
+		return existPromise.future();
+	}
 	
 	/**
 	 * Initialize a repository
@@ -219,6 +257,30 @@ public class GitManager{
 			}
 			// we didn't find the resource folder so we return an empty array.
 			dataPromise.complete(new JsonArray());
+		}).onFailure(fail -> 
+		{
+			dataPromise.fail(fail);
+		});	
+		return dataPromise.future();			
+	}
+	
+	
+	/**
+	 * Get the resource files available for a specific git Version of an Object  
+	 * @return A {@link JsonObject} of the contents of the git file.
+	 */
+	public Future<JsonArray> getHistory(GitElement repoVersion)
+	{
+		if(!repoVersion.isValid())
+		{
+			return Future.failedFuture("Supplied Repo was invalid: " + repoVersion.toString());
+		}
+		Promise<JsonArray> dataPromise = Promise.promise();
+		JsonObject getHistoryCommand = gitProviderVerticle.createCommandForRepoAtVersion(repoVersion.getRepoID(), repoVersion.getRepoVersion())
+									 .put(gitProviderVerticle.COMMANDFIELD, gitProviderVerticle.GET_HISTORY_COMMAND);
+		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), getHistoryCommand).onSuccess(fileData ->{			
+			JsonArray result = ((JsonObject)fileData.body()).getJsonArray(gitProviderVerticle.DATAFIELD); 
+			dataPromise.complete(result);
 		}).onFailure(fail -> 
 		{
 			dataPromise.fail(fail);

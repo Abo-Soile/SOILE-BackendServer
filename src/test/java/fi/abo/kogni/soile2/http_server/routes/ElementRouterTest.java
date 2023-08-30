@@ -62,7 +62,7 @@ public class ElementRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 
-	
+
 	@Test
 	public void testTagManagement(TestContext context)
 	{	
@@ -118,7 +118,7 @@ public class ElementRouterTest extends SoileWebTest {
 							})
 							.onSuccess(reAddedversionList -> {								
 								boolean hasTagAgain = false;
-								
+
 								for(int i = 0; i < reAddedversionList.bodyAsJsonArray().size(); i++)
 								{
 									if(reAddedversionList.bodyAsJsonArray().getJsonObject(i).containsKey("tag"))
@@ -149,9 +149,9 @@ public class ElementRouterTest extends SoileWebTest {
 									context.assertEquals(409, e.getStatusCode());																	
 									testInvalidCall2.complete();
 								});
-								
+
 								removeAndAddAsync.complete();
-								
+
 							})
 							.onFailure(err -> context.fail(err));
 						})
@@ -206,7 +206,7 @@ public class ElementRouterTest extends SoileWebTest {
 							fullListesearcherAsync .complete();
 						})
 						.onFailure(err -> context.fail(err));
-						
+
 						// now this needs to fail, as its not an admin or researcher call
 						Async fullListFailAsync = context.async();
 						POST(participantSession, "/task/list",new JsonObject().put("full", true),null)
@@ -295,6 +295,7 @@ public class ElementRouterTest extends SoileWebTest {
 								context.assertEquals("Initial_Version", versions.getJsonObject(i).getString("tag"));
 								init_version_found = true;
 							}
+
 						}
 						context.assertTrue(init_version_found);
 						listVersionsAsync.complete();
@@ -449,7 +450,6 @@ public class ElementRouterTest extends SoileWebTest {
 				.onSuccess(experimentObject -> {
 					String expVersion = experimentObject.getString("version");
 					String expUUID = experimentObject.getString("UUID");
-					System.out.println(experimentObject.encodePrettily());
 					Async testRemoveAsync = context.async();
 					GET(currentSession, "/experiment/" + expUUID +"/" +expVersion + "/gettag", null, null)
 					.onSuccess(response -> {
@@ -465,22 +465,37 @@ public class ElementRouterTest extends SoileWebTest {
 						POST(currentSession, "/experiment/" + expUUID +"/removetags", null, new JsonArray().add("Initial_Version"))
 						.onSuccess(res -> 
 						{
-							GET(currentSession, "/experiment/" + expUUID +"/" +expVersion + "/gettag", null, null)
-							.onSuccess(tagResponse -> context.fail("There should be no tag and thus the request should fail."))
-							.onFailure(err -> {
-								HttpException e = (HttpException) err;
-								context.assertEquals(404, e.getStatusCode());
-								// lets try to reinstate the version. 
-								experimentObject.put("tag", "Initial_Version");
-								Async remakeTagAsync = context.async();
-								POST(currentSession, "/experiment/" + expUUID +"/" +expVersion + "/post",null,experimentObject)
-								.onSuccess(versionResponse -> {
-									System.out.println(versionResponse.bodyAsString());
-									remakeTagAsync.complete();
-								})
-								.onFailure(newerr -> context.fail(newerr));
-								testRemoveAsync.complete();
-							});	
+							POST(currentSession, "/experiment/" + expUUID + "/list", null, null)
+							.onSuccess(listrespsone -> {
+								// this should list the removed Version as canbetagged.
+								JsonArray versionList = listrespsone.bodyAsJsonArray();
+								boolean taggingFound = false;
+								for(int i = 0; i < versionList.size(); i++)
+								{									
+									if(versionList.getJsonObject(i).getString("version").equals(expVersion))
+									{
+										context.assertTrue(versionList.getJsonObject(i).getBoolean("canbetagged"));
+										taggingFound = true;
+									}
+								}
+								context.assertTrue(taggingFound);
+								GET(currentSession, "/experiment/" + expUUID +"/" +expVersion + "/gettag", null, null)
+								.onSuccess(tagResponse -> context.fail("There should be no tag and thus the request should fail."))
+								.onFailure(err -> {
+									HttpException e = (HttpException) err;
+									context.assertEquals(404, e.getStatusCode());
+									// lets try to reinstate the version. 
+									experimentObject.put("tag", "Initial_Version");
+									Async remakeTagAsync = context.async();
+									POST(currentSession, "/experiment/" + expUUID +"/" +expVersion + "/post",null,experimentObject)
+									.onSuccess(versionResponse -> {
+										remakeTagAsync.complete();
+									})
+									.onFailure(newerr -> context.fail(newerr));
+									testRemoveAsync.complete();
+								});	
+							})
+							.onFailure(err -> context.fail(err));
 						})
 						.onFailure(err -> context.fail(err));
 

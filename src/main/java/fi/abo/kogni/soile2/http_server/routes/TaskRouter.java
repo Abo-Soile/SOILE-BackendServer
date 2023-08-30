@@ -70,6 +70,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		}
 		
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
+.compose(allowed -> { return checkVersionAndID(elementID, version); })
 		.onSuccess(Void -> 
 		{
 			if(delete)
@@ -114,6 +115,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		String elementID = context.pathParam("id");
 		String version = context.pathParam("version");	
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		.compose(allowed -> { return checkVersionAndID(elementID, version); })
 		.onSuccess(Void -> 
 		{									
 			eb.request("soile.task.getVersionInfo", new JsonObject().put("UUID", elementID).put("version", version))
@@ -148,6 +150,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		String version = context.pathParam("version");
 		String filename = context.pathParam("*"); 	
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		.compose(allowed -> { return checkVersionAndID(elementID, version); })
 		.onSuccess(Void -> 
 		{
 			// Potentially update with fileProvider.
@@ -181,6 +184,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		String elementID = context.pathParam("id");
 		String version = context.pathParam("version");		 
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		.compose(allowed -> { return checkVersionAndID(elementID, version); })
 		.onSuccess(Void -> 
 		{
 			elementManager.getAPIElementFromDB(elementID, version).onSuccess(
@@ -248,6 +252,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		String version = context.pathParam("version");		 
 
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,false)
+		.compose(allowed -> { return checkVersionAndID(elementID, version); })
 		.onSuccess(Void -> {
 			eb.request("soile.git.getResourceList", new JsonObject().put("repoID", elementManager.getGitIDForUUID(elementID)).put("version", version))
 			.onSuccess(response -> {				
@@ -279,6 +284,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		String elementID = params.pathParameter("id").getString();
 		String version = params.pathParameter("version").getString();
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		.compose(allowed -> { return checkVersionAndID(elementID, version); })
 		.onSuccess(Void -> {
 			bundler.buildTaskFileList(elementID, version)
 			.onSuccess(fileList -> {

@@ -9,11 +9,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.apache.commons.lang3.function.Failable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
+import fi.abo.kogni.soile2.datamanagement.git.GitElement;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
@@ -38,6 +41,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.UpdateOptions;
 import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.handler.HttpException;
 
@@ -507,19 +511,45 @@ public class ElementManager<T extends ElementBase> {
 	public Future<Void> removeTagsFromElement(String elementID, JsonArray tagsToRemove)
 	{
 		Promise<Void> tagPromise = Promise.<Void>promise();		
-		Element e = supplier.get();
-		JsonObject update = new JsonObject().put("$pull",
-				new JsonObject().put("tags",
-						new JsonObject().put("tag", 
-								new JsonObject().put("$in", tagsToRemove))));
-		client.updateCollection(e.getTargetCollection(), new JsonObject().put("_id", elementID), update)
+		Element e = supplier.get();				
+		client.findOne(e.getTargetCollection(), new JsonObject().put("_id", elementID),new JsonObject().put("tags", 1))		
+		.onSuccess(res -> {
+			JsonArray versionList = new JsonArray();
+			JsonArray tags = res.getJsonArray("tags");
+			for(int i = 0; i < tags.size(); ++i)
+			{
+				if(tagsToRemove.contains(tags.getJsonObject(i).getString("tag")))
+				{
+					versionList.add(tags.getJsonObject(i).getString("version"));
+				}
+			}
+			JsonObject update = new JsonObject().put("$pull",
+					new JsonObject().put("tags",
+							new JsonObject().put("tag", 
+									new JsonObject().put("$in", tagsToRemove))));
+			update.put("$set", new JsonObject().put("versions.$[elem].canbetagged", true));
+			UpdateOptions opts = new UpdateOptions().setArrayFilters(new JsonArray().add(new JsonObject().put("elem.version", new JsonObject().put("$in", versionList))));
+			client.updateCollectionWithOptions(e.getTargetCollection(), new JsonObject().put("_id", elementID), update, opts)
+			.onSuccess(res2 -> {					
+				LOGGER.debug("Successfully removed " + tagsToRemove.encodePrettily());
+				tagPromise.complete();
+			})
+			.onFailure(err -> {
+				tagPromise.fail(err);
+			});
+			
+		}).onFailure(err -> {
+			tagPromise.fail(err);
+		});
+				
+		/*client.updateCollection(e.getTargetCollection(), new JsonObject().put("_id", elementID), update)
 		.onSuccess(res -> {					
 			LOGGER.debug("Successfully removed " + tagsToRemove.encodePrettily());
 			tagPromise.complete();
 		})
 		.onFailure(err -> {
 			tagPromise.fail(err);
-		});
+		});*/
 		return tagPromise.future();	
 	}
 
@@ -619,6 +649,10 @@ public class ElementManager<T extends ElementBase> {
 				JsonObject currentVersionObject = new JsonObject()
 						.put("version", currentVersion.getString("version"))						
 						.put("date", currentVersion.getLong("timestamp"));
+				if(currentVersion.containsKey("canbetagged"))
+				{
+					currentVersionObject.put("canbetagged", currentVersion.getBoolean("canbetagged"));
+				}				
 				String tagString = tagMap.get(currentVersion.getString("version"));
 				if(tagString != null)
 				{
@@ -706,7 +740,10 @@ public class ElementManager<T extends ElementBase> {
 	 */
 	public Future<String> handlePostFile(String elementID, String elementVersion, String filename, SOILEUpload upload)
 	{
-		return dataHandler.handlePostFile(elementID, elementVersion, filename, upload);
+		Future<String> fileProcessedFuture = dataHandler.handlePostFile(elementID, elementVersion, filename, upload).compose(newVersion -> {
+			return updateItemWithVersion(elementID, newVersion);
+		});
+		return fileProcessedFuture; 
 	}
 
 
@@ -728,23 +765,33 @@ public class ElementManager<T extends ElementBase> {
 		{
 			// if we are uploading to a folder, or to the base directory, we need to add the individual file names. Otherwise the indicated path is the file name
 			String currentFileName = (dirName.endsWith("/") || dirName.equals("")) ? dirName + up.fileName() : dirName ;			
-			LOGGER.info("Filename for created file is: " + currentFileName + " while request file name was " + dirName);
+			LOGGER.debug("Filename for created file is: " + currentFileName + " while request file name was " + dirName);
 			chain.add(chain.getLast().compose(version -> dataHandler.handlePostFile(elementID, version, currentFileName, SOILEUpload.create(up))));
 			filesUploaded.add(chain.getLast());
-
+			
 		}
 		CompositeFuture.all(filesUploaded)		
 		.onSuccess(finished -> {
 			// this is done when the Composite is done.
-			filesUploadedPromise.complete(chain.getLast().result());
+			// We need to update the versions to be able to keep track of added files, and to see whether they might be unnecessary.  
+			updateItemWithVersion(elementID, chain.getLast().result())
+			.onSuccess(newVersion -> 
+			{
+				filesUploadedPromise.complete(newVersion);	
+			})
+			.onFailure(err -> filesUploadedPromise.fail(err));								
 		})
 		.onFailure(err -> filesUploadedPromise.fail(err));
 
 		return filesUploadedPromise.future();
 	}
 
-
-
+	public Future<Boolean> doesRepoAtVersionExist(String UUID, String version)
+	{
+		return eb.request("soile.git.doesRepoAndVersionExist", new GitElement(getGitIDForUUID(UUID), version).toJson())
+				.map(message -> ((Boolean)message.body()));		
+	}
+	
 	/**
 	 * Write a given Stream to a File with a given name and return the new git version with this file written. 
 	 * @param elementID the id of the element
@@ -755,7 +802,10 @@ public class ElementManager<T extends ElementBase> {
 	 */
 	public Future<String> handleWriteFileToObject(String elementID, String elementVersion, String filename, InputStream is)
 	{
-		return dataHandler.handleWritefile(elementID, elementVersion, filename, is);
+		Future<String> fileProcessedFuture = dataHandler.handleWritefile(elementID, elementVersion, filename, is).compose(newVersion -> {
+			return updateItemWithVersion(elementID, newVersion);
+		});
+		return fileProcessedFuture;
 	}
 
 	/**
@@ -767,6 +817,7 @@ public class ElementManager<T extends ElementBase> {
 	 */
 	public Future<String> handleDeleteFile(String elementID, String elementVersion, String filename)
 	{
+		// we don't need to update the versions here, as the history DOES contain this element, and if this history is reachable it needs to persist.
 		return dataHandler.handleDeleteFile(elementID, elementVersion, filename);
 	}
 
@@ -792,6 +843,20 @@ public class ElementManager<T extends ElementBase> {
 		return elementPromise.future();			
 	}
 
+	
+	/**
+	 * Update an item adding a specific version. This is likely an element which has some files being added.
+	 * @param elementID
+	 * @param newVersion
+	 * @return
+	 */
+	private Future<String> updateItemWithVersion(String elementID, String newVersion)
+	{		
+		return getElement(elementID).compose(element -> {
+			element.addVersion(newVersion);
+			return element.save(client).map(newVersion);
+		});
+	}
 	/**
 	 * Static method to create a Project Manager
 	 * @param client
@@ -823,5 +888,7 @@ public class ElementManager<T extends ElementBase> {
 	public static ElementManager<Task> getTaskManager(MongoClient client, Vertx vertx)
 	{
 		return new ElementManager<Task>(Task::new,APITask::new, client, vertx);
-	}	
+	}
+	
+	
 }

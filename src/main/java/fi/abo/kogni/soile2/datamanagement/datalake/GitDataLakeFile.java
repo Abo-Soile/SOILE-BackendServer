@@ -1,8 +1,7 @@
-package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
+package fi.abo.kogni.soile2.datamanagement.datalake;
 
 import java.io.File;
 
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 
 /**
@@ -11,7 +10,7 @@ import fi.abo.kogni.soile2.utils.SoileConfigLoader;
  * @author Thomas Pfau
  *
  */
-public class TaskResourceFile {
+public class GitDataLakeFile {
 
 	String dataLakeFolder;
 	String mimeFormat;
@@ -19,13 +18,13 @@ public class TaskResourceFile {
 	String originalFileName;
 	String elementID;
 	
-	public TaskResourceFile(String elementID, String TargetName, String OriginalFileName, String mimeFormat)
+	public GitDataLakeFile(String repoID, String TargetName, String OriginalFileName, String mimeFormat)
 	{
 		this.targetName = TargetName;
 		this.originalFileName = OriginalFileName;
 		this.mimeFormat = mimeFormat;
 		this.dataLakeFolder = SoileConfigLoader.getServerProperty("soileGitDataLakeFolder");
-		this.elementID = elementID;
+		this.elementID = repoID;
 	}	
 	
 	/**
