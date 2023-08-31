@@ -1,11 +1,9 @@
-package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
+package fi.abo.kogni.soile2.datamanagement.datalake;
 
 import java.nio.file.Path;
 
-import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
-
 /**
- * A Task File Result maps a large file that was a result of a task from the name the file was given in the task 
+ * A Participant File Result maps a large file that was a result of a task from the name the file was given in the task 
  * to the local file where it was stored. The result needs to have a "step" info, as a task might be visited twice
  * a TaskFileResult further needs a particpantID for which it is a result along with the task of which it is a result.
  * The Folder in which the File will be stored is:
@@ -15,15 +13,14 @@ import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
  * @author Thomas Pfau
  *
  */
-public class TaskFileResult {
+public class ParticipantFileResult extends ParticipantFileResults{
 
 	public String resultFileName;
 	public String fileFormat;
 	public String storageFileName;
 	private int step;
 	private String taskID;
-	private String participantID;
-
+		
 	/**
 	 * Generate a new Fileresult for a given task. 
 	 * @param originalFileName the original ID of the file as supplied by the project generation
@@ -32,14 +29,14 @@ public class TaskFileResult {
 	 * @param taskID the id of the task this file belongs to.
 	 * @param participantID the id of the participant this file belongs to.
 	 */
-	public TaskFileResult(String storageFilename, String originalFileName, String fileFormat, int step, String taskID, String participantID) {
+	public ParticipantFileResult(String storageFilename, String originalFileName, String fileFormat, int step, String taskID, String participantID) {
+		super(participantID);
 		this.resultFileName = originalFileName;		
 		this.fileFormat = fileFormat;
-		this.step = step;
-		this.participantID = participantID;
+		this.step = step;		
 		this.taskID = taskID;
 		this.storageFileName = storageFilename;
-	}
+	}	
 
 	/**
 	 * Get the filename that was originally set for this result.
@@ -80,9 +77,8 @@ public class TaskFileResult {
 		return Path.of(dataLakeDirectory, getFilePathInDataLake()).toString();
 	}
 
-
 	/**
-	 * Get the Path to the file represented by this {@link TaskFileResult} based on the folder of the datalake it is stored in.
+	 * Get the Path to the file represented by this {@link ParticipantFileResult} based on the folder of the datalake it is stored in.
 	 * @param dataLakeFolder the datalake folder.
 	 * @return the absolute path of the file
 	 */
@@ -102,7 +98,7 @@ public class TaskFileResult {
 	
 	private String getRelativeFolderPath()
 	{
-		return Path.of(participantID,Integer.toString(step),taskID).toString();
+		return Path.of(getParticipantFolder(),Integer.toString(step),taskID).toString();
 	}
 	
 	private String getFilePath()
@@ -113,6 +109,5 @@ public class TaskFileResult {
 	public String toString()
 	{
 		return getFilePath();
-	}
-	
+	}	
 }

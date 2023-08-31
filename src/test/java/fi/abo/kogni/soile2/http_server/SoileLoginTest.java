@@ -32,7 +32,7 @@ public class SoileLoginTest extends SoileVerticleTest {
 					.put("fullname","Test User")
 					.put("remember","1");
 			WebClientSession session = WebClientSession.create(webclient, new DebugCookieStore());			
-			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"addUser"), 
+			vertx.eventBus().request("soile.umanager.addUser", 
 					userObject,res -> {
 						if(res.succeeded())
 						{
@@ -95,7 +95,7 @@ public class SoileLoginTest extends SoileVerticleTest {
 					.put("fullname","Test User")
 					.put("remember","1");
 			WebClientSession session = WebClientSession.create(webclient, new DebugCookieStore());			
-			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"addUser"), 
+			vertx.eventBus().request("soile.umanager.addUser", 
 					userObject,res -> {
 						if(res.succeeded())
 						{
@@ -159,7 +159,7 @@ public class SoileLoginTest extends SoileVerticleTest {
 					.put("fullname","Test User")
 					.put("remember","1");
 			WebClientSession session = WebClientSession.create(webclient, new DebugCookieStore());			
-			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"addUser"), 
+			vertx.eventBus().request("soile.umanager.addUser", 
 					userObject,res -> {
 						if(res.succeeded())
 						{
@@ -224,7 +224,7 @@ public class SoileLoginTest extends SoileVerticleTest {
 					.put("type", "participant")
 					.put("fullname","Test User")
 					.put("remember","1");					
-			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"addUser"), 
+			vertx.eventBus().request("soile.umanager.addUser", 
 					userObject,res -> {
 						if(res.succeeded())
 						{

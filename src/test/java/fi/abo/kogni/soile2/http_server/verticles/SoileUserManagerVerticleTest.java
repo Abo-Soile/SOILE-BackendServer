@@ -121,7 +121,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 					context.assertEquals(username, userDetails.getValue(SoileConfigLoader.getUserdbField("usernameField")));
 					HashingStrategy strategy = new SoileHashing(SoileConfigLoader.getUserProperty("serverSalt"));
 					context.assertTrue(strategy.verify(userDetails.getString(SoileConfigLoader.getUserdbField("passwordField")),"testPassword"));
-					vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "removeUser"), 
+					vertx.eventBus().request("soile.umanager.removeUser", 
 											 new JsonObject().put("username", username))
 					.onSuccess( deleted -> {
 						Async lookupOrigUser = context.async();
@@ -163,7 +163,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		createUser(vertx, blockedUser, "testPassword", "Fullname", blockedEmail, Roles.Participant )
 		.onSuccess(created -> {
 			Async nameNotWorking = context.async();
-			eb.request(getUsermanagerEventBusAddress("addUserWithEmail"), NameNotWorkingTestUser)
+			eb.request("soile.umanager.addUserWithEmail", NameNotWorkingTestUser)
 			.onSuccess(err -> {
 				context.fail("Should fail due to duplicate Name");
 			})
@@ -171,7 +171,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				nameNotWorking.complete();
 			});
 			Async emailNotWorking = context.async();
-			eb.request(getUsermanagerEventBusAddress("addUserWithEmail"), EmailNotWorkingTestUser)
+			eb.request("soile.umanager.addUserWithEmail", EmailNotWorkingTestUser)
 			.onSuccess(err -> {
 				context.fail("Should fail due to duplicate email");
 			})
@@ -184,7 +184,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				.onFailure(err -> context.fail(err));				
 			});
 			Async additionWorking = context.async();
-			eb.request(getUsermanagerEventBusAddress("addUserWithEmail"), WorkingTestUser)
+			eb.request("soile.umanager.addUserWithEmail", WorkingTestUser)
 			.onSuccess(reply -> {
 				JsonObject response = (JsonObject) reply.body();
 				context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
@@ -228,7 +228,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		.onSuccess(created -> {
 			JsonObject RoleChange = new JsonObject().put("username", "NewUser").put("role", Roles.Researcher);
 			Async roleChangeAsync = context.async();
-			eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), RoleChange)
+			eb.request("soile.umanager.permissionOrRoleChange", RoleChange)
 			.onSuccess(res -> {
 				context.assertEquals(res.body().getClass(), JsonObject.class);
 				getUserDetailsFromDB(mongo_client, "NewUser")
@@ -245,7 +245,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 					  										 .put("command", "add")
 														     .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
 																  										.put("permissionSettings", new JsonArray().add(aPermission).add(bPermission).add(a2Permission)));					
-			eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), addPermissionChange)
+			eb.request("soile.umanager.permissionOrRoleChange", addPermissionChange)
 			.onSuccess(add -> {
 				 context.assertEquals(SoileCommUtils.SUCCESS, ((JsonObject)add.body()).getValue(SoileCommUtils.RESULTFIELD));
 				getUserDetailsFromDB(mongo_client, "NewUser")
@@ -258,7 +258,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 																		.put("command", "remove")
 																	    .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
 																			  										.put("permissionSettings", new JsonArray().add(aPermission)));					
-					eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), removePermissionChange)
+					eb.request("soile.umanager.permissionOrRoleChange", removePermissionChange)
 					.onSuccess(removed -> {
 						context.assertEquals(SoileCommUtils.SUCCESS, ((JsonObject)removed.body()).getValue(SoileCommUtils.RESULTFIELD));
 						getUserDetailsFromDB(mongo_client, "NewUser")
@@ -270,7 +270,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 									.put("command", "set")
 								    .put("permissionsProperties", new JsonObject().put("elementType", "TASK")
 										  										.put("permissionSettings", new JsonArray().add(aPermission)));
-							eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), setPermissionChange)
+							eb.request("soile.umanager.permissionOrRoleChange", setPermissionChange)
 							.onSuccess(set -> {
 								context.assertEquals(SoileCommUtils.SUCCESS, ((JsonObject)set.body()).getValue(SoileCommUtils.RESULTFIELD));
 								getUserDetailsFromDB(mongo_client, "NewUser")
@@ -301,7 +301,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 						.put("permissionSettings", new JsonArray().add(aPermission)));
 			Async failRequestForDuplicate = context.async();  
 			// Fail dual request
-			eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), failObject)
+			eb.request("soile.umanager.permissionOrRoleChange", failObject)
 			.onSuccess(add -> {
 				context.fail("Should fail due to because of both role and permissions");				
 			})
@@ -332,7 +332,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		createUser(vertx, "NewUser", "testPassword", "Fullname", "New@mail.fi", Roles.Participant )
 		.onSuccess(created -> {						 
 			// Fail dual request
-			eb.request(getUsermanagerEventBusAddress("addSession"), new JsonObject().put("sessionID", "NewSession").put("username", "NewUser"))
+			eb.request("soile.umanager.addSession", new JsonObject().put("sessionID", "NewSession").put("username", "NewUser"))
 			.onSuccess(added -> {
 				getUserDetailsFromDB(mongo_client, "NewUser")
 				.onSuccess(data -> {
@@ -340,12 +340,12 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 					String sessionHash = strategy.hash(SoileConfigLoader.getUserProperty("hashingAlgorithm"), null, SoileConfigLoader.getServerProperty("sessionStoreSecret"), "NewSession");
 					context.assertTrue(data.getJsonObject(SoileConfigLoader.getUserdbField("storedSessions")).containsKey(sessionHash));
 					Async removeSession = context.async();
-					eb.request(getUsermanagerEventBusAddress("removeSession"), new JsonObject().put("sessionID", "OldSession").put("username", "NewUser"))
+					eb.request("soile.umanager.removeSession", new JsonObject().put("sessionID", "OldSession").put("username", "NewUser"))
 					.onSuccess(nothing -> {
 						getUserDetailsFromDB(mongo_client, "NewUser")
 						.onSuccess(data2 -> {
 							context.assertTrue(data2.getJsonObject(SoileConfigLoader.getUserdbField("storedSessions")).containsKey(sessionHash));
-							eb.request(getUsermanagerEventBusAddress("removeSession"), new JsonObject().put("sessionID", "NewSession").put("username", "NewUser"))
+							eb.request("soile.umanager.removeSession", new JsonObject().put("sessionID", "NewSession").put("username", "NewUser"))
 							.onSuccess(nothing2 -> {
 								getUserDetailsFromDB(mongo_client, "NewUser")
 								.onSuccess(data3 -> {
@@ -379,10 +379,10 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		JsonObject userNotFoundSession = new JsonObject().put("sessionID", "OldSession").put("username", "NewUser");
 		createUser(vertx, "NewUser", "testPassword", "Fullname", "New@mail.fi", Roles.Participant )
 		.onSuccess(created -> {			
-			eb.request(getUsermanagerEventBusAddress("addSession"), userSession)
+			eb.request("soile.umanager.addSession", userSession)
 			.onSuccess(added -> {
 				Async validAsync = context.async();
-				eb.request(getUsermanagerEventBusAddress("checkUserSessionValid"), userSession)
+				eb.request("soile.umanager.checkUserSessionValid", userSession)
 				.onSuccess(reply -> {
 					JsonObject response = (JsonObject) reply.body();
 					context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
@@ -391,7 +391,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				.onFailure(err -> context.fail(err));
 				Async invalidAsync = context.async();
 
-				eb.request(getUsermanagerEventBusAddress("checkUserSessionValid"), invalidSession)
+				eb.request("soile.umanager.checkUserSessionValid", invalidSession)
 				.onSuccess(reply -> {
 					context.fail("This should have failed");
 				})
@@ -399,7 +399,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 					invalidAsync.complete();
 				});	
 				Async invalidUserAsync = context.async();
-				eb.request(getUsermanagerEventBusAddress("checkUserSessionValid"), userNotFoundSession)
+				eb.request("soile.umanager.checkUserSessionValid", userNotFoundSession)
 				.onSuccess(reply -> {
 					context.fail("This should have failed");
 				})
@@ -424,11 +424,11 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		JsonObject invalidProject = new JsonObject().put("studyID", "invalidProject").put("participantID", "NewID3").put("username", "NewUser");
 		createUser(vertx, "NewUser", "testPassword", "Fullname", "New@mail.fi", Roles.Participant )
 		.onSuccess(created -> {			
-			eb.request(getUsermanagerEventBusAddress("makeUserParticipantInStudy"), addToProject)
-			.compose(Void -> eb.request(getUsermanagerEventBusAddress("makeUserParticipantInStudy"), addTo2ndProject))
+			eb.request("soile.umanager.makeUserParticipantInStudy", addToProject)
+			.compose(Void -> eb.request("soile.umanager.makeUserParticipantInStudy", addTo2ndProject))
 			.onSuccess(added -> {
 				Async validAsync = context.async();
-				eb.request(getUsermanagerEventBusAddress("getParticipantForUserInStudy"), addToProject)
+				eb.request("soile.umanager.getParticipantForUserInStudy", addToProject)
 				.onSuccess(reply -> {
 					JsonObject response = (JsonObject) reply.body();
 					context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
@@ -437,7 +437,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				})
 				.onFailure(err -> context.fail(err));
 				Async invalidAsync = context.async();
-				eb.request(getUsermanagerEventBusAddress("getParticipantForUserInStudy"), invalidProject)
+				eb.request("soile.umanager.getParticipantForUserInStudy", invalidProject)
 				.onSuccess(reply -> {
 					JsonObject response = (JsonObject) reply.body();
 					context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
@@ -446,7 +446,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				})
 				.onFailure(err -> context.fail(err));
 				Async participantListAsync = context.async();
-				eb.request(getUsermanagerEventBusAddress("getParticipantsForUser"), addToProject)
+				eb.request("soile.umanager.getParticipantsForUser", addToProject)
 				.onSuccess(reply -> {
 					JsonObject response = (JsonObject) reply.body();
 					context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
@@ -493,7 +493,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		.compose(Void -> createUser(vertx, "NewUser2", "testPassword2"))
 		.onSuccess(created -> {			
 			Async user1Async = context.async(); 
-			eb.request(getUsermanagerEventBusAddress("getUserInfo"), new JsonObject().put("username","NewUser"))
+			eb.request("soile.umanager.getUserInfo", new JsonObject().put("username","NewUser"))
 			.onSuccess(reply -> {
 				JsonObject response = (JsonObject) reply.body();
 				context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
@@ -507,7 +507,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				.onFailure(err -> context.fail(err));
 			Async user2Async = context.async(); 
 
-			eb.request(getUsermanagerEventBusAddress("getUserInfo"), new JsonObject().put("username","NewUser2"))
+			eb.request("soile.umanager.getUserInfo", new JsonObject().put("username","NewUser2"))
 			.onSuccess(reply -> {
 				JsonObject response = (JsonObject) reply.body();
 				context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
@@ -521,7 +521,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 			})
 			.onFailure(err -> context.fail(err));
 			Async failAsync = context.async();
-			eb.request(getUsermanagerEventBusAddress("getUserInfo"), new JsonObject().put("username","NewUser3"))
+			eb.request("soile.umanager.getUserInfo", new JsonObject().put("username","NewUser3"))
 			.onSuccess(reply -> {
 				context.fail("Should fail, since user does nto exist");
 			})
@@ -546,7 +546,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		.compose(Void -> createUser(vertx, "NewUser3", "testPassword3"))
 		.onSuccess(created -> {			
 			Async list1Async = context.async(); 
-			eb.request(getUsermanagerEventBusAddress("listUsers"), new JsonObject().put("namesOnly",true))
+			eb.request("soile.umanager.listUsers", new JsonObject().put("namesOnly",true))
 			.onSuccess(reply -> {
 				JsonObject response = (JsonObject) reply.body();
 				context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
@@ -557,7 +557,7 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 				})
 				.onFailure(err -> context.fail(err));
 			Async list2Async = context.async(); 
-			eb.request(getUsermanagerEventBusAddress("listUsers"), new JsonObject().put("namesOnly",false))
+			eb.request("soile.umanager.listUsers", new JsonObject().put("namesOnly",false))
 			.onSuccess(reply -> {
 				JsonObject response = (JsonObject) reply.body();
 				context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));
@@ -611,12 +611,12 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 		
 		//create a few users
 		createUser(vertx, "NewUser", "testPassword", "Fullname", "New@mail.fi", Roles.Researcher )
-		.compose(Void -> eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), taskPermissionChange))
-		.compose(res -> eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), projectPermissionChange))
-		.compose(res -> eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), experimentPermissionChange))
-		.compose(res -> eb.request(getUsermanagerEventBusAddress("permissionOrRoleChange"), studyPermissionChange))		
+		.compose(Void -> eb.request("soile.umanager.permissionOrRoleChange", taskPermissionChange))
+		.compose(res -> eb.request("soile.umanager.permissionOrRoleChange", projectPermissionChange))
+		.compose(res -> eb.request("soile.umanager.permissionOrRoleChange", experimentPermissionChange))
+		.compose(res -> eb.request("soile.umanager.permissionOrRoleChange", studyPermissionChange))		
 		.onSuccess(created -> {
-			eb.request(getUsermanagerEventBusAddress("getAccessRequest"), new JsonObject().put("username","NewUser") )
+			eb.request("soile.umanager.getAccessRequest", new JsonObject().put("username","NewUser") )
 			.onSuccess(reply -> {				
 				JsonObject response = (JsonObject) reply.body();
 				context.assertEquals(SoileCommUtils.SUCCESS,  response.getString(SoileCommUtils.RESULTFIELD));

@@ -122,7 +122,7 @@ public abstract class SoileVerticleTest extends MongoTest {
 	
 	protected String getUsermanagerEventBusAddress(String command)
 	{
-		return SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, command);
+		return "soile.umanager." + command;
 	}
 	
 	protected String getEventBusAddress(String address)

@@ -533,8 +533,27 @@ public class SoileUserManager implements MongoUserUtil{
 		pullAndPut.add(pullOp);
 		pullAndPut.add(pushOp);		
 		return client.bulkWrite(authnOptions.getCollectionName(), pullAndPut).mapEmpty();
-
 	}
+	
+	/**
+	 * REmove a user as participant in a specified study.
+	 * @param username The username to change
+	 * @param studyID the study ID to remove from
+	 * @param participantID the participantID to delete
+	 * @return
+	 */
+	public Future<Void> removeUserAsParticipant(String username, String studyID, String participantID)
+	{
+		JsonObject query = new JsonObject().put(authnOptions.getUsernameField(), username);
+		JsonObject pullUpdate = new JsonObject().put("$pull", new JsonObject()
+				.put(SoileConfigLoader.getUserdbField("participantField"), new JsonObject()
+						.put("participantID", new JsonObject()
+								.put("$eq", participantID))
+						.put("UUID", new JsonObject()
+								.put("$eq", studyID))));
+		return client.findOneAndUpdate(authnOptions.getCollectionName(), query, pullUpdate).mapEmpty();
+	}
+	
 
 	public SoileUserManager createHashedUser(String username, String hash, Handler<AsyncResult<String>> resultHandler) {
 		if (username == null || hash == null) {

@@ -17,7 +17,7 @@ public interface UserVerticleTest {
 		JsonObject userData = new JsonObject().put("username", username)
 											  .put("password", password);
 
-		vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "addUser"), userData)
+		vertx.eventBus().request("soile.umanager.addUser", userData)
 		.onSuccess(res -> 
 		{
 			boolean updateDetails = false;
@@ -38,12 +38,12 @@ public interface UserVerticleTest {
 			}
 			if(updateDetails)
 			{				
-				vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "setUserInfo"), userData)
+				vertx.eventBus().request("soile.umanager.setUserInfo", userData)
 				.onSuccess(done -> {
 					userCreatedPromise.complete();
 				})
 				.onFailure(err -> {
-					vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "removeUser"), userData)
+					vertx.eventBus().request("soile.umanager.removeUser", userData)
 					.onSuccess(done -> {
 						userCreatedPromise.fail(err);
 					})

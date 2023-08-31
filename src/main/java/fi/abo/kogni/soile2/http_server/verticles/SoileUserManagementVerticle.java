@@ -84,27 +84,27 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	void setupChannels()
 	{				
 		LOGGER.debug("Setting up channels");
-		LOGGER.debug("Adding channel: " + getEventbusCommandString("addUser"));
 
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("addUser"), this::addUser));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("addUserWithEmail"), this::addUserWithEmail));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("removeUser"), this::removeUser));		
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("permissionOrRoleChange"), this::permissionOrRoleChange));		
-		//consumers.add(vertx.eventBus().consumer(getEventbusCommandString("setUserFullNameAndEmail"), this::setUserFullNameAndEmail));
-		//consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getUserData"), this::getUserData));
-		//LOGGER.debug("Reistering eventbus consumer for:" + getEventbusCommandString("checkUserSessionValid")); 
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("checkUserSessionValid"), this::isSessionValid));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("addSession"), this::addValidSession));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("removeSession"), this::invalidateSession));		
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("makeUserParticipantInStudy"), this::makeUserParticipantInStudy));		
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getParticipantForUserInStudy"), this::getParticipantForUser));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getParticipantsForUser"), this::getParticipantsForUser));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("listUsers"), this::listUsers));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("setUserInfo"), this::setUserInfo));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getUserInfo"), this::getUserInfo));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getAccessRequest"), this::getUserAccessInfo));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("setPassword"), this::setPassword));
-		consumers.add(vertx.eventBus().consumer(getEventbusCommandString("getCollaboratorsforStudy"), this::getCollaboratorsForStudy));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.addUser", this::addUser));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.addUserWithEmail", this::addUserWithEmail));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.removeUser", this::removeUser));		
+		consumers.add(vertx.eventBus().consumer("soile.umanager.permissionOrRoleChange", this::permissionOrRoleChange));		
+		//consumers.add(vertx.eventBus().consumer("soile.umanager.setUserFullNameAndEmail", this::setUserFullNameAndEmail));
+		//consumers.add(vertx.eventBus().consumer("soile.umanager.getUserData", this::getUserData));
+		//LOGGER.debug("Reistering eventbus consumer for:" + "soile.umanager.checkUserSessionValid"); 
+		consumers.add(vertx.eventBus().consumer("soile.umanager.checkUserSessionValid", this::isSessionValid));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.addSession", this::addValidSession));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.removeSession", this::invalidateSession));		
+		consumers.add(vertx.eventBus().consumer("soile.umanager.makeUserParticipantInStudy", this::makeUserParticipantInStudy));		
+		consumers.add(vertx.eventBus().consumer("soile.umanager.removeParticipantFromStudy", this::removeUserFromStudy));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.getParticipantForUserInStudy", this::getParticipantForUser));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.getParticipantsForUser", this::getParticipantsForUser));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.listUsers", this::listUsers));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.setUserInfo", this::setUserInfo));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.getUserInfo", this::getUserInfo));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.getAccessRequest", this::getUserAccessInfo));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.setPassword", this::setPassword));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.getCollaboratorsforStudy", this::getCollaboratorsForStudy));
 
 	}
 
@@ -647,6 +647,24 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		JsonObject command = msg.body();			
 
 		userManager.makeUserParticipantInStudy(command.getString(getDBField("usernameField")), command.getString("studyID"), command.getString("participantID"))
+		.onSuccess(res -> {
+			msg.reply(SoileCommUtils.successObject());
+		})
+		.onFailure(err -> handleError(err, msg));						    							
+
+	}
+	
+	
+	/**
+	 * Remove a User as participant from a study. The message must contain the username along with the studyID and the participantID. 
+	 * @param msg
+	 */
+	void removeUserFromStudy(Message<JsonObject> msg)
+	{
+		//make sure we actually get the right thing
+		JsonObject command = msg.body();			
+
+		userManager.removeUserAsParticipant(command.getString(getDBField("usernameField")), command.getString("studyID"), command.getString("participantID"))
 		.onSuccess(res -> {
 			msg.reply(SoileCommUtils.successObject());
 		})

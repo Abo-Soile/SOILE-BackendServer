@@ -1,5 +1,8 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import fi.abo.kogni.soile2.http_server.routes.SoileRouter;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -14,6 +17,10 @@ import io.vertx.ext.mongo.MongoClient;
 
 public class SoileAuthorization{
 
+	
+	static final Logger LOGGER = LogManager.getLogger(SoileAuthorization.class);	
+
+	
 	public enum TargetElementType
 	{
 		TASK,
@@ -111,18 +118,21 @@ public class SoileAuthorization{
 		}
 		else
 		{
-		client.findOne(options.getCollectionName(), 
-					   new JsonObject().put(options.getUsernameField(), user.principal().getString("username")),
-					   new JsonObject().put(options.getPermissionField(), 1))
-		.onSuccess(result -> {
-			if(result == null)
-			{
-				permissionPromise.fail(new UserDoesNotExistException(user.principal().getString("username")));
-			}
-			else
-			{
-				permissionPromise.complete(result.getJsonArray(options.getPermissionField(), new JsonArray()));
-			}
+			LOGGER.info(options.getCollectionName() + " // " + new JsonObject().put(options.getUsernameField(), user.principal().getString("username")).encodePrettily());
+			LOGGER.info(options.getPermissionField());
+		
+			client.findOne(options.getCollectionName(), 
+						   new JsonObject().put(options.getUsernameField(), user.principal().getString("username")),
+						   new JsonObject().put(options.getPermissionField(), 1))
+			.onSuccess(result -> {
+				if(result == null)
+				{
+					permissionPromise.fail(new UserDoesNotExistException(user.principal().getString("username")));
+				}
+				else
+				{	
+					permissionPromise.complete(result.getJsonArray(options.getPermissionField(), new JsonArray()));										
+				}
 		})
 		.onFailure(err -> permissionPromise.fail(err));
 		}
@@ -147,6 +157,7 @@ public class SoileAuthorization{
 				
 				result.add(SoilePermissionProvider.getTargetFromPermission(permissions.getString(i)));				
 			}
+			LOGGER.info("Finishing Permission retrieval");
 			permissionPromise.complete(result);
 		})
 		.onFailure(err -> permissionPromise.fail(err));

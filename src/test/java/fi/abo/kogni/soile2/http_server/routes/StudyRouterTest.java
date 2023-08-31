@@ -86,6 +86,109 @@ public class StudyRouterTest extends SoileWebTest {
 	 * @param context
 	 */
 	@Test
+	public void testlistRunning(TestContext context)
+	{
+		System.out.println("--------------------  Running Study listing test  ----------------------");    
+
+		JsonObject projectExec1 = new JsonObject().put("private", true).put("name", "New Project").put("shortcut","newShortcut");
+		JsonObject projectExec2 = new JsonObject().put("private", false).put("name", "New Project2").put("shortcut","newShortcut2");
+		Async setupAsync = context.async();
+		createUserAndAuthedSession("Researcher", "pw", Roles.Researcher)
+		.onSuccess(authedSession -> {
+			createUserAndAuthedSession("Researcher2", "pw", Roles.Researcher)
+			.onSuccess(wrongSession -> {
+				WebClient unAuthedSession = createSession();
+
+				WebObjectCreator.createProject(authedSession, "Testproject")
+				.onSuccess(projectData -> {
+					String projectID = projectData.getString("UUID");
+					String projectVersion = projectData.getString("version");
+					Async startAsync = context.async();
+
+					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec1 )
+					.onSuccess(response1 -> {
+						String id1 = response1.bodyAsJsonObject().getString("projectID");
+
+						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec2 )
+						.onSuccess(response2 -> {
+							String id2 = response2.bodyAsJsonObject().getString("projectID");
+
+							Async authedList = context.async();
+							POST(authedSession, "/study/listrunning", null,null)
+							.compose(listresponse -> {
+								context.assertEquals(0, listresponse.bodyAsJsonArray().size());								
+								return POST(wrongSession, "/study/listrunning", null,null);
+							})
+							.compose(listresponse -> {
+								context.assertEquals(0, listresponse.bodyAsJsonArray().size());
+								return POST(unAuthedSession, "/study/listrunning", null,null);
+							})
+							.compose(listresponse -> {
+								context.assertEquals(0, listresponse.bodyAsJsonArray().size());
+								return POST(authedSession, "/study/" + id1 + "/start", null,null);
+							})
+							.onSuccess(started -> {
+								Async unauthedGetsSome = context.async();
+								POST(authedSession, "/study/listrunning", null,null)
+								.compose(listresponse -> {
+									context.assertEquals(1, listresponse.bodyAsJsonArray().size());
+									context.assertEquals(id1, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
+									return POST(wrongSession, "/study/listrunning", null,null);
+								})
+								.compose(listresponse -> {
+									context.assertEquals(0, listresponse.bodyAsJsonArray().size());
+									return POST(unAuthedSession, "/study/listrunning", null,null);
+								})
+								.compose(listresponse -> {
+									context.assertEquals(0, listresponse.bodyAsJsonArray().size());
+									return POST(authedSession, "/study/" + id2 + "/start", null,null);
+								})
+								.onSuccess(secondStarted -> {
+
+									POST(authedSession, "/study/listrunning", null,null)
+									.compose(listresponse -> {
+										context.assertEquals(2, listresponse.bodyAsJsonArray().size());								
+										return POST(wrongSession, "/study/listrunning", null,null);
+									})
+									.compose(listresponse -> {
+										context.assertEquals(1, listresponse.bodyAsJsonArray().size());
+										context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
+										context.assertFalse(listresponse.bodyAsJsonArray().getJsonObject(0).containsKey("active"));										
+										return POST(unAuthedSession, "/study/listrunning", null,null);
+									})
+									.onSuccess(listresponse -> {
+										context.assertEquals(1, listresponse.bodyAsJsonArray().size());
+										context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
+										context.assertFalse(listresponse.bodyAsJsonArray().getJsonObject(0).containsKey("active"));
+										unauthedGetsSome.complete();
+									})
+									.onFailure(err -> context.fail(err));									
+								})
+								.onFailure(err -> context.fail(err));							
+								authedList.complete();														
+
+							})
+							.onFailure(err -> context.fail(err));							
+							startAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));	
+					})
+					.onFailure(err -> context.fail(err));	
+					setupAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+
+	/**
+	 * This test tests both starting and getting the list of running projects.
+	 * @param context
+	 */
+	@Test
 	public void testlistStudies(TestContext context)
 	{
 		System.out.println("--------------------  Running Study listing test  ----------------------");    
@@ -144,9 +247,7 @@ public class StudyRouterTest extends SoileWebTest {
 
 							POST(wrongSession, "/study/listrunning", null,null)
 							.onSuccess(listresponse -> {
-								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
-								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
-								context.assertFalse(listresponse.bodyAsJsonArray().getJsonObject(0).containsKey("active"));
+								context.assertEquals(0, listresponse.bodyAsJsonArray().size());
 								emptyListAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));
@@ -171,16 +272,14 @@ public class StudyRouterTest extends SoileWebTest {
 
 							POST(unAuthedSession, "/study/listrunning", null,null)
 							.onSuccess(listresponse -> {
-								context.assertEquals(1, listresponse.bodyAsJsonArray().size());
-								context.assertEquals(id2, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
-								context.assertFalse(listresponse.bodyAsJsonArray().getJsonObject(0).containsKey("active"));
+								context.assertEquals(0, listresponse.bodyAsJsonArray().size());
 								unAuthAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));							
 							Async authedList = context.async();
 							POST(authedSession, "/study/listrunning", null,null)
 							.onSuccess(listresponse -> {
-								context.assertEquals(2, listresponse.bodyAsJsonArray().size());
+								context.assertEquals(0, listresponse.bodyAsJsonArray().size());
 								authedList.complete();
 							})
 							.onFailure(err -> context.fail(err));

@@ -11,11 +11,11 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResult;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
@@ -589,7 +589,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		for(int fileEntry = 0; fileEntry < fileData.size(); fileEntry++)
 		{
 			JsonObject fileResult = fileData.getJsonObject(fileEntry);
-			TaskFileResult res = new TaskFileResult(fileResult.getString("targetid"),
+			ParticipantFileResult res = new ParticipantFileResult(fileResult.getString("targetid"),
 					fileResult.getString("filename"),
 					fileResult.getString("fileformat"),
 					step,

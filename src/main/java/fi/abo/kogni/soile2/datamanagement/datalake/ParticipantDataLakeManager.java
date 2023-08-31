@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
+import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -48,7 +48,7 @@ public class ParticipantDataLakeManager{
 	 * Data will be stored in the following scheme (to be able to quickly download all data for a project):  
 	 * studyID / participantID / step / taskID / filesForTask.format    
 	 * This allows a quick removal of all data for a participant by deleting the respective participantID folder.
-	 * @param p the participant for which to store the data
+	 * @param participantID the participant for which to store the data
 	 * @param step the step for the data 
 	 * @param taskId the task for which data is stored.
 	 * @param upload
@@ -59,7 +59,7 @@ public class ParticipantDataLakeManager{
 		LOGGER.debug(datalakedirectory);
 		Promise<String> idPromise = Promise.promise();
 		LOGGER.debug("Trying to store data for: " + participantID + " / " + step + " / " + taskID );
-		TaskFileResult targetFile = new TaskFileResult("", "", "", step, taskID, participantID);
+		ParticipantFileResult targetFile = new ParticipantFileResult("", "", "", step, taskID, participantID);
 		LOGGER.debug("Creating directories for file: " + targetFile.toString());		
 		vertx.fileSystem().mkdirs(targetFile.getFolderPath(datalakedirectory))		
 		.onSuccess( folderCreated -> {
@@ -89,11 +89,21 @@ public class ParticipantDataLakeManager{
 	}
 
 	/**
+	 * Delete a participant from a study. This will remove the participant data from the project.
+	 * @param p the participant for which to store the data
+	 * @return
+	 */
+	public Future<Void> deleteParticipantData(Participant p)
+	{
+		ParticipantFileResults resultFolder = new ParticipantFileResults(p.getID()); 
+		return vertx.fileSystem().deleteRecursive(resultFolder.getParticipantFolderPath(datalakedirectory), true);
+	}
+	/**
 	 * Get a File from a TaskFileResult
 	 * @param result the result for which to obtain the file location in the datalake
 	 * @return
 	 */
-	public DataLakeFile getFile(TaskFileResult result)
+	public DataLakeFile getFile(ParticipantFileResult result)
 	{
 		LOGGER.debug("Requesting file for directory" + datalakedirectory);
 		LOGGER.debug(result.toString());

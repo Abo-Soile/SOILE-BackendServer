@@ -13,8 +13,8 @@ import org.junit.Test;
 
 import fi.abo.kogni.soile2.SoileBaseTest;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResult;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ProjectTest;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
 import fi.abo.kogni.soile2.utils.DataProvider;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.ext.unit.Async;
@@ -67,7 +67,7 @@ public class DataLakeManagerTest extends SoileBaseTest{
 		FileUpload tempUpload = DataProvider.getFileUploadForTarget(Path.of(tempDataDir,"ImageData.jpg").toString(), "TestImage.jpg", "image/jpg");		
 		dlm.storeParticipantData(partID, step, taskID, tempUpload)
 		.onSuccess(TargetFileName -> {			
-			TaskFileResult res = new TaskFileResult(TargetFileName, "TestImage.jpg", "image/jpg", step, taskID, partID);
+			ParticipantFileResult res = new ParticipantFileResult(TargetFileName, "TestImage.jpg", "image/jpg", step, taskID, partID);
 			context.assertTrue(vertx.fileSystem().existsBlocking(dlm.getFile(res).getAbsolutePath()));
 			try
 			{

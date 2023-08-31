@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResult;
 import fi.abo.kogni.soile2.datamanagement.utils.CheckDirtyMap;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
@@ -110,10 +111,10 @@ public class StudyHandler {
 	 * @param p the {@link DBParticipant} for which to retrieve the file results.
 	 * @return
 	 */
-	public Set<DataLakeFile> getFilesinProject(Set<TaskFileResult> fileResults)
+	public Set<DataLakeFile> getFilesinProject(Set<ParticipantFileResult> fileResults)
 	{
 		HashSet<DataLakeFile> fileSet = new HashSet<DataLakeFile>();
-		for(TaskFileResult res : fileResults)
+		for(ParticipantFileResult res : fileResults)
 		{
 			fileSet.add(res.getFile(dataLakeFolder));
 		}
@@ -252,7 +253,19 @@ public class StudyHandler {
 	 */
 	public Future<JsonArray> getStudyList(JsonArray Permissions, boolean permissionsOnly)
 	{
-		return manager.getProjectInstanceStatus(Permissions, permissionsOnly);
+		return manager.getProjectInstanceStatus(Permissions, permissionsOnly, false);
+	}
+	
+	/**
+	 * Get a list of all active project instances. based on the given Permissions
+	 * This will return non-private projects and all projects listed in the permissions.
+	 * @param Permissions  the permissions for the projects 
+	 * @param permissionsOnly whether to only list those projects indicated by the permissions
+	 * @return A {@link Future} of the {@link JsonArray} containing the projects (id and name)
+	 */
+	public Future<JsonArray> getRunningStudyList(JsonArray Permissions, boolean permissionsOnly)
+	{
+		return manager.getProjectInstanceStatus(Permissions, permissionsOnly, true);
 	}
 	
 	/**

@@ -72,10 +72,9 @@ public class SoileCookieAuth {
 					JsonObject command = new JsonObject().put("username", username)
 							.put("sessionID", token);
 
-					LOGGER.debug("Trying to validate token:\n" + command.encodePrettily());
-					LOGGER.debug("Requesting: " + SoileCommUtils.getUserEventBusCommand("checkUserSessionValid") + " from eventbus");
+					LOGGER.debug("Trying to validate token:\n" + command.encodePrettily());					
 					vertx.eventBus()
-					.request(SoileCommUtils.getUserEventBusCommand("checkUserSessionValid"),command,
+					.request("soile.umanager.checkUserSessionValid",command,
 							res ->
 					{									
 						if(res.succeeded())

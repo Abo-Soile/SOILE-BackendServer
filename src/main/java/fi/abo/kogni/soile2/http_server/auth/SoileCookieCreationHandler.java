@@ -90,7 +90,7 @@ public class SoileCookieCreationHandler {
 		{
 			String token = SoileCookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
 			String username = SoileCookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());		
-			return eb.request(SoileCommUtils.getUserEventBusCommand("removeSession")
+			return eb.request("soile.umanager.removeSession"
 				   ,new JsonObject().put("sessionID",token)
 					 				.put("username",username)).mapEmpty();
 		}
@@ -110,7 +110,7 @@ public class SoileCookieCreationHandler {
 	    // we don't need any reply here.
 	    JsonObject cuser = user.principal();
 	    // pause this request until we are sure, that the session is stored. Otherwise we could return before the session is processed, which can lead to unauthorized requests.	    
-	    eb.request(SoileCommUtils.getUserEventBusCommand("addSession")
+	    eb.request("soile.umanager.addSession"
 				   ,new JsonObject().put("sessionID",token)
 					 				.put("username",cuser.getString(SoileConfigLoader.getUserdbField("usernameField"))))
 	    		.onComplete(reply ->

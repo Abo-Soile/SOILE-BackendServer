@@ -36,7 +36,7 @@ public class SoileauthCheckTest extends SoileVerticleTest{
 					.put("fullname","Test User")
 					.put("remember","1");
 			WebClientSession session = createSession();			
-			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"addUser"), 
+			vertx.eventBus().request("soile.umanager.addUser", 
 					userObject,res -> {
 						if(res.succeeded())
 						{

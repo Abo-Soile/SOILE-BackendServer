@@ -1,6 +1,5 @@
 package fi.abo.kogni.soile2.http_server.verticles;
 
-import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
 
@@ -23,18 +22,7 @@ public class SoileBaseVerticle extends AbstractVerticle {
 	{
 		mainField = field;		
 	}
-	
-	/**
-	 * Get the command to be issued via the eventbus.
-	 * @param command The command entry in the config for which to extract the command.
-	 * @return The command string to be handled via the eventbus, or null if the command does not exist
-	 */
-	public String getEventbusCommandString(String command)
-	{		
-		return SoileCommUtils.getEventBusCommand(mainField, command);
-	}
-	
-	
+		
 	/**
 	 * Get the DB Field for this string
 	 * @param entry The element to extract

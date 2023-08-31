@@ -319,7 +319,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 										)
 								);	
 				LOGGER.debug("Requesting permission change");
-				eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChangeRequest)
+				eb.request("soile.umanager.permissionOrRoleChange", permissionChangeRequest)
 				.onSuccess( reply -> {
 					LOGGER.debug("Permissions added to user for "+ nameParam + "/" + element.getUUID());
 					elementManager.getAPIElementFromDB(element.getUUID(), element.getCurrentVersion())

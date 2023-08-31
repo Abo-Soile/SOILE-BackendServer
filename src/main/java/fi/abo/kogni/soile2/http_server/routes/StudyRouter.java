@@ -87,7 +87,7 @@ public class StudyRouter extends SoileRouter {
 							.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.STUDY.toString())
 									.put("permissionSettings", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
 											.put("target", study.getID()))));
-					eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"), permissionChange)
+					eb.request("soile.umanager.permissionOrRoleChange", permissionChange)
 					.onSuccess(success -> {
 						// instance was created, access was updated, everything worked fine. Now
 						context.response().setStatusCode(200)
@@ -171,7 +171,8 @@ public class StudyRouter extends SoileRouter {
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.STUDY)
 		.onSuccess( permissions -> {
-			studyHandler.getStudyList(permissions, false)		
+			LOGGER.debug("Permissions retrieved");
+			studyHandler.getRunningStudyList(permissions, false)		
 			.onSuccess(elementList -> {	
 				// this list needs to be filtered by access
 				context.response()
@@ -186,7 +187,7 @@ public class StudyRouter extends SoileRouter {
 			if(err instanceof UserDoesNotExistException)
 			{
 				JsonArray permissions = new JsonArray();
-				studyHandler.getStudyList(permissions, false)
+				studyHandler.getRunningStudyList(permissions, false)
 				.onSuccess(elementList -> {	
 					// this list needs to be filtered by access
 
@@ -613,7 +614,7 @@ public class StudyRouter extends SoileRouter {
 		
 		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void ->	{	
-			vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"getCollaboratorsforStudy" ), new JsonObject().put("studyID",requestedInstanceID))
+			vertx.eventBus().request("soile.umanager.getCollaboratorsforStudy", new JsonObject().put("studyID",requestedInstanceID))
 			.onSuccess(res -> {
 				JsonObject result = (JsonObject)res.body();
 				if(result.getString(SoileCommUtils.RESULTFIELD).equals(SoileCommUtils.SUCCESS))

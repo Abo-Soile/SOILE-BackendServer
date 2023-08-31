@@ -99,7 +99,7 @@ public class UserRouter extends SoileRouter {
 		.onSuccess(allowed -> {
 			if(deleteFiles)
 			{
-				eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantsForUser"),new JsonObject().put("username", username))
+				eb.request("soile.umanager.getParticipantsForUser",new JsonObject().put("username", username))
 				.onSuccess(response -> {
 					JsonObject reply = (JsonObject) response.body();
 					eb.request("soile.participant.delete", reply.getJsonArray("participantIDs"))
@@ -329,7 +329,7 @@ public class UserRouter extends SoileRouter {
 	void handleUserManagerCommand(RoutingContext routingContext, String command, JsonObject commandContent, MessageResponseHandler messageHandler)
 	{		
 		LOGGER.debug("Command: " + command + " Request: \n " + commandContent.encodePrettily());		
-		eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, command),commandContent)
+		eb.request("soile.umanager." + command,commandContent)
 		.onSuccess( response ->
 		{
 			LOGGER.debug("Got a reply");

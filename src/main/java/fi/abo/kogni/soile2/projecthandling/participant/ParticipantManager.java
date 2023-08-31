@@ -10,13 +10,13 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResult;
 import fi.abo.kogni.soile2.datamanagement.utils.DirtyDataRetriever;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.DBParticipantFactory;
 import fi.abo.kogni.soile2.projecthandling.participant.impl.TokenParticipantFactory;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
-import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskFileResult;
 import fi.abo.kogni.soile2.utils.MongoAggregationHandler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
@@ -244,10 +244,10 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 * @param resultJson a {@link JsonObject} that contains at least a "resultData" array from a participant along with the "_id" field.
 	 * @return 
 	 */
-	public Set<TaskFileResult> getFilesFromResults(JsonObject resultJson)
+	public Set<ParticipantFileResult> getFilesFromResults(JsonObject resultJson)
 	{
 
-		Set<TaskFileResult> results = new HashSet<>();
+		Set<ParticipantFileResult> results = new HashSet<>();
 		JsonArray resultData = resultJson.getJsonArray("resultData", new JsonArray());
 		for(int i = 0; i < resultData.size(); i++)
 		{
@@ -257,7 +257,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			for(int j = 0; i < fileResults.size(); j++)
 			{
 				JsonObject fileResult = fileResults.getJsonObject(j);				
-				results.add(new TaskFileResult(fileResult.getString("targetid"),
+				results.add(new ParticipantFileResult(fileResult.getString("targetid"),
 						fileResult.getString("filename"),											   
 						fileResult.getString("fileformat"),
 						step,

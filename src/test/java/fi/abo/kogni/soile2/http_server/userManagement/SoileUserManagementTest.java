@@ -78,19 +78,19 @@ public class SoileUserManagementTest extends SoileVerticleTest{
 					.put("email", "This@that.com")
 					.put("type", "participant")
 					.put("fullname","Test User");
-			vertx.eventBus().request("umanager.adduser", 
+			vertx.eventBus().request("soile.umanager.addUser", 
 					userObject).onComplete(res -> {
 						if (res.succeeded())
 						{
 							JsonObject obj = (JsonObject)res.result().body();					
 							context.assertEquals("Success",obj.getValue("Result"));
-							vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "removeUser"), userObject, remres ->
+							vertx.eventBus().request("soile.umanager.removeUser", userObject, remres ->
 							{
 								if(remres.succeeded())
 								{
 									Async iasync = context.async();
 									//lets try to remove it again;
-									vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "removeUser"), userObject, rrres ->
+									vertx.eventBus().request("soile.umanager.removeUser", userObject, rrres ->
 									{
 										if(rrres.succeeded())
 										{
@@ -147,7 +147,7 @@ public class SoileUserManagementTest extends SoileVerticleTest{
 				.put("email", "This@that.com")
 				.put("type", "participant")
 				.put("fullname","Test User");
-		return vertx.eventBus().request("umanager.adduser", 
+		return vertx.eventBus().request("soile.umanager.addUser", 
 				userObject).onComplete(res -> {
 					handler.handle(res);					
 				});

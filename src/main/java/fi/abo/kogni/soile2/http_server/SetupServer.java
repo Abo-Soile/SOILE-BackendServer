@@ -86,7 +86,7 @@ public class SetupServer extends SoileServerVerticle {
 				.put("password",config.getString("adminpassword"));
 		this.adminUser = config.getString("adminuser");
 		LOGGER.info("Setting up user");
-		vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"addUser"), AdduserCommand )
+		vertx.eventBus().request("soile.umanager.addUser", AdduserCommand )
 		.onSuccess(done -> {
 			accountCreatedPromise.complete(config);
 		})
@@ -96,7 +96,7 @@ public class SetupServer extends SoileServerVerticle {
 				if(((ReplyException)err).failureCode() == HttpURLConnection.HTTP_CONFLICT)
 				{
 					LOGGER.info("User existed. Resetting password to selected password.");
-					vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"setPassword"), AdduserCommand )
+					vertx.eventBus().request("soile.umanager.setPassword", AdduserCommand )
 					.onSuccess(done -> {
 						accountCreatedPromise.complete(config);
 					})		
@@ -124,7 +124,7 @@ public class SetupServer extends SoileServerVerticle {
 				.put("command", "setCommand");
 
 		LOGGER.info("Making user Admin");
-		return vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"permissionOrRoleChange"), makeUserAdminCommand )
+		return vertx.eventBus().request("soile.umanager.permissionOrRoleChange", makeUserAdminCommand )
 				.map(config);
 	}
 
@@ -213,7 +213,7 @@ public class SetupServer extends SoileServerVerticle {
 														   										 .put("permissionSettings", new JsonArray().add(new JsonObject().put("type", PermissionType.FULL.toString())
 														   												 														.put("target", studyToAddPermissions.getID()))));
 		
-		vertx.eventBus().request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG,"permissionOrRoleChange"), permissionCommand)
+		vertx.eventBus().request("soile.umanager.permissionOrRoleChange", permissionCommand)
 		.onSuccess(response -> {
 			JsonObject responseObject = (JsonObject)(response.body());
 			if(responseObject.getValue(SoileCommUtils.RESULTFIELD).equals(SoileCommUtils.SUCCESS))

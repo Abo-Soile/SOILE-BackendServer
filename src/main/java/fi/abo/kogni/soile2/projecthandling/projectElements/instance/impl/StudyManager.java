@@ -184,7 +184,7 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	 * @param projectInstanceIDs A JsonArray with strings for each permission/projectID
 	 * @return
 	 */
-	public Future<JsonArray> getProjectInstanceStatus(JsonArray projectInstanceIDs, Boolean idsOnly)
+	public Future<JsonArray> getProjectInstanceStatus(JsonArray projectInstanceIDs, Boolean idsOnly, Boolean activeOnly)
 	{
 		Promise<JsonArray> listPromise = Promise.promise();		 				
 		
@@ -198,6 +198,10 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 			Query.put("$or", new JsonArray().add(new JsonObject().put("private",false))
 					  .add(new JsonObject().put("_id", new JsonObject().put("$in", projectInstanceIDs)))
 					  );
+		}
+		if(activeOnly)
+		{
+			Query = new JsonObject().put("$and", new JsonArray().add(new JsonObject().put("active", true)).add(Query));
 		}
 		JsonObject fields = new JsonObject().put("_id",1).put("name", 1).put("description", 1).put("shortDescription", 1).put("shortcut", 1);
 		LOGGER.debug("Looking for Project matching:\n" + Query.encodePrettily());

@@ -104,7 +104,7 @@ public class ParticipationRouter extends SoileRouter{
 	 */
 	public void uploadData(RoutingContext context)
 	{
-		
+
 		String requestedInstanceID = context.pathParam("id");;
 
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,true)
@@ -140,6 +140,60 @@ public class ParticipationRouter extends SoileRouter{
 
 					})
 					.onFailure(err -> handleError(err, context));
+				})
+				.onFailure(err -> handleError(err, context));
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+
+	public void withdrawFromStudy(RoutingContext context)
+	{
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String requestedInstanceID = context.pathParam("id");					
+
+		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,true)
+		.onSuccess(Void -> 
+		{			
+			loadProject(requestedInstanceID)
+			.onSuccess(study -> {				
+				//JsonArray taskData = project.getTasksWithNames();
+				// this list needs to be filtered by access
+				LOGGER.debug("Retrieving Participant for project " + study.getID());
+				getParticpantForUser(context.user(), study)
+				.onSuccess(participant -> {					
+					study.deleteParticipant(participant).
+					onSuccess(partDeleted -> {
+						dataLakeManager.deleteParticipantData(participant)
+						.onSuccess(dataDeleted -> {
+							if(!isTokenUser(context.user()))
+							{
+								JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
+										.put("studyID", study.getID())
+										.put("participantID", participant.getID());
+								// we also need to remove the participant from the current user.
+								eb.request("soile.umanager.removeParticipantFromStudy", partData)
+								.onSuccess( success -> {
+									context.response()
+									.setStatusCode(200)														
+									.end();
+								})
+								.onFailure(err -> handleError(err, context));
+							}
+							else
+							{
+								context.response()
+								.setStatusCode(200)														
+								.end();
+							}
+						})
+						.onFailure(err -> handleError(err, context));
+					})
+					.onFailure(err -> handleError(err, context));
+					
+					
+					
 				})
 				.onFailure(err -> handleError(err, context));
 			})
@@ -235,7 +289,7 @@ public class ParticipationRouter extends SoileRouter{
 	 */
 	Future<Participant> createParticipant(Study study, String token, User user)
 	{
-		
+
 		if(user != null  && !user.principal().isEmpty())
 		{						
 			return partHandler.createParticipant(study, token, false);
@@ -245,21 +299,21 @@ public class ParticipationRouter extends SoileRouter{
 			return partHandler.createParticipant(study, token, true);
 		}
 	}
-	
-	
-	private Future<String> createParticipant(Study project, String token, RoutingContext context)
+
+
+	private Future<String> createParticipant(Study study, String token, RoutingContext context)
 	{
-	
+
 		Promise<String> tokenPromise = Promise.<String>promise();
 		// if there is no user in the request, create a new token (and participant)
 		if(context.user()  == null || context.user().principal().isEmpty())
 		{		
-			createParticipant(project, token, context.user())
+			createParticipant(study, token, context.user())
 			.onSuccess(participant -> {
 				// if the principal is empty, that means we have not used authentication, but passed through 
 				// the auth-less route
 				// we don't have a user, so we just respond with the token after we started the project for this participant. 
-				project.startStudy(participant)
+				study.startStudy(participant)
 				.onSuccess(position -> {
 					tokenPromise.complete(participant.getToken());					
 				})
@@ -269,7 +323,7 @@ public class ParticipationRouter extends SoileRouter{
 		}
 		else
 		{
-			getParticpantForUser(context.user(), project)
+			getParticpantForUser(context.user(), study)
 			.onSuccess(oops -> 
 			{
 				tokenPromise.fail(new HttpException(400, "Participant already exists for user"));
@@ -278,28 +332,28 @@ public class ParticipationRouter extends SoileRouter{
 				if( noParticipant instanceof ObjectDoesNotExist)
 				{
 					// so the user is not empty AND there is no Participant for the current user. We have to create one.
-					createParticipant(project, token, context.user())
+					createParticipant(study, token, context.user())
 					.onSuccess(participant -> {
 						// we will add execute access to the current user.
 						// This has to be a DB user, as token users are not authenticated at this end-point
-						JsonArray permissionSettings = new JsonArray().add(new JsonObject().put("target", project.getID())
-																							.put("type", PermissionType.EXECUTE.toString()));
+						JsonArray permissionSettings = new JsonArray().add(new JsonObject().put("target", study.getID())
+								.put("type", PermissionType.EXECUTE.toString()));
 						JsonObject permissionsProperties = new JsonObject().put("elementType", TargetElementType.STUDY.toString())
-																		   .put("permissionSettings", permissionSettings);
+								.put("permissionSettings", permissionSettings);
 						JsonObject userData = new JsonObject();
 						userData.put("username", context.user().principal().getString("username"));
 						userData.put("command", "add");
 						userData.put("permissionsProperties", permissionsProperties);
-						eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "permissionOrRoleChange"),userData)
+						eb.request("soile.umanager.permissionOrRoleChange",userData)
 						.onSuccess( permissionAdded ->
 						{	
 							JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
-									.put("studyID", project.getID())
+									.put("studyID", study.getID())
 									.put("participantID", participant.getID());
-							eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInStudy"),partData)
+							eb.request("soile.umanager.makeUserParticipantInStudy",partData)
 							.onSuccess( participantAdded ->
 							{
-								project.startStudy(participant)
+								study.startStudy(participant)
 								.onSuccess(position -> {
 									tokenPromise.complete(participant.getToken());								
 								})
@@ -320,7 +374,7 @@ public class ParticipationRouter extends SoileRouter{
 		}
 		return tokenPromise.future();
 	}
-	
+
 	public void getTaskInfo(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");;
@@ -386,7 +440,7 @@ public class ParticipationRouter extends SoileRouter{
 					.setStatusCode(200)	
 					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
 					.end(participant.getPersistentData().encode());
-					
+
 				})
 				.onFailure(err -> handleError(err, context));
 			})
@@ -438,7 +492,7 @@ public class ParticipationRouter extends SoileRouter{
 		.onFailure(err -> handleError(err, context));		
 	}			
 
-	
+
 	public void getID(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");
@@ -473,7 +527,7 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));		
 	}
-	
+
 	public void getLib(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");
@@ -551,7 +605,7 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));		
 	}	
-	
+
 	/**
 	 * Get the participant for the current user. 
 	 * @param user the authenticated {@link User} from a routing context
@@ -571,16 +625,16 @@ public class ParticipationRouter extends SoileRouter{
 		{
 			Promise<Participant> partPromise = Promise.promise();
 			JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("studyID", project.getID());
-			eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "getParticipantForUserInStudy"), request)
+			eb.request("soile.umanager.getParticipantForUserInStudy", request)
 			.onSuccess(response -> {
 				JsonObject responseObject = (JsonObject) response.body();
 				if(responseObject.getString("participantID") != null)
 				{					
-						partHandler.getParticipant(responseObject.getString("participantID"))
-						.onSuccess(particpant -> {
-							partPromise.complete(particpant);
-						})
-						.onFailure(err -> partPromise.fail(err));					
+					partHandler.getParticipant(responseObject.getString("participantID"))
+					.onSuccess(particpant -> {
+						partPromise.complete(particpant);
+					})
+					.onFailure(err -> partPromise.fail(err));					
 				}
 				// doesn't have one in this project yet, so we create one.
 				else
@@ -594,7 +648,7 @@ public class ParticipationRouter extends SoileRouter{
 
 	}		
 
-	
+
 	public Future<Participant> createParticipantForUser(User user, Study project)
 	{			
 		Promise<Participant> partPromise = Promise.promise();
@@ -603,18 +657,18 @@ public class ParticipationRouter extends SoileRouter{
 			// update the user.
 			JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("studyID", project.getID());
 			request.put("participantID", particpant.getID());
-			eb.request(SoileCommUtils.getEventBusCommand(SoileConfigLoader.USERMGR_CFG, "makeUserParticipantInStudy"), request)
+			eb.request("soile.umanager.makeUserParticipantInStudy", request)
 			.onSuccess( success -> {
 				partPromise.complete(particpant);
 			})
 			.onFailure(err -> partPromise.fail(err));
 		})
 		.onFailure(err -> partPromise.fail(err));
-		
+
 		return partPromise.future();
-		
+
 	}
-	
+
 	public void handleRequest(RoutingContext context, Handler<RoutingContext> method)
 	{
 		String projectID = context.pathParam("id");
@@ -638,8 +692,8 @@ public class ParticipationRouter extends SoileRouter{
 			}
 		});
 	}
-	
-	
+
+
 	private Future<Study> loadProject(String id)
 	{
 		Promise<Study> projPromise = Promise.promise();
@@ -660,6 +714,6 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> projPromise.fail(err));
 		return projPromise.future();
-		
+
 	}
 }
