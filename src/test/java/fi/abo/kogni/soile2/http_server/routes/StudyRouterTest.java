@@ -701,7 +701,6 @@ public class StudyRouterTest extends SoileWebTest {
 
 	}
 
-
 	@Test
 	public void testGetForParticipants(TestContext context)
 	{

@@ -2337,7 +2337,7 @@ paths:
       summary: signUp for a project with a one-time signUp Code. 
       operationId: signUpForProject
       description: >-
-                   Sign up to a project with a one time SignUp Code
+                   Sign up to a study
       parameters:
         - name: id
           in: path
@@ -2361,6 +2361,37 @@ paths:
                   accessToken:
                     type: string
                     description: a token that needs to be used for further authentication against participation end points to   associate results and data with a specific user.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: Code invalid
+        '406':
+          description: User is finished.
+
+  /study/{id}/withdraw:  
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+        - tokenAuth: []
+      tags:
+        - participation
+      summary: withdraw from a study
+      operationId: withdrawFromStudy
+      description: >-
+                   Withdraw from a study
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the Project instance
+          schema:
+            type : string
+      responses:
+        '200':
+          description: The user had been withdrawn from the study and all data has been deleted.
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':

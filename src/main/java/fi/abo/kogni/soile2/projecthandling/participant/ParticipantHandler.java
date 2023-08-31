@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResults;
 import fi.abo.kogni.soile2.datamanagement.utils.CheckDirtyMap;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
@@ -144,13 +145,13 @@ public class ParticipantHandler {
 		// all Files for a participant are stored in the folder: datalake/PARTICIPANTID
 		getParticipant(id)
 		.onSuccess( participant -> {
-
-			vertx.fileSystem().exists(Path.of(dataLakeFolder, id).toString())
+			ParticipantFileResults results = new ParticipantFileResults(id);			
+			vertx.fileSystem().exists(results.getParticipantFolderPath(dataLakeFolder))
 			.onSuccess(deleteFiles -> {
 
 				if(deleteFiles)
 				{
-					vertx.fileSystem().deleteRecursive(Path.of(dataLakeFolder, id).toString(), true)
+					vertx.fileSystem().deleteRecursive(results.getParticipantFolderPath(dataLakeFolder), true)
 					.onSuccess(filesDeleted -> 			
 					{
 						//TODO: Need to change this, so that it is FIRST removed from the projectInstance and THEN deleted from the participant db.... 
@@ -158,7 +159,7 @@ public class ParticipantHandler {
 						.onSuccess(done -> deletionPromise.complete())
 						.onFailure(err -> deletionPromise.fail(err));
 						// now, all files and folders have been removed. So we will delete the participant ID.
-
+						// TODO: Do we need to handle user participants, probably?
 					})
 					.onFailure(
 					err -> {						
