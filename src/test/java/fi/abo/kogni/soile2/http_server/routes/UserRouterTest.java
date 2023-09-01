@@ -164,7 +164,7 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 				.put("permissionsProperties", new JsonObject().put("elementType", TargetElementType.STUDY.toString())
 						.put("permissionSettings", permissionSettings));
 		Async setupAsync = context.async();
-		createAndStartProject(false, "new", "Testproject")				
+		createAndStartStudy(false, "new", "Testproject")				
 			.onSuccess(studyID -> {
 				createUserAndAuthedSession("OtherUser", "testpw", Roles.Researcher)
 				.onSuccess(userSession -> {

@@ -13,10 +13,8 @@ import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
-import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.requestHandling.IDSpecificFileProvider;
 import fi.abo.kogni.soile2.http_server.requestHandling.NonStaticHandler;
-import fi.abo.kogni.soile2.http_server.requestHandling.SOILEUpload;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.projectElements.TaskBundler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
@@ -61,7 +59,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		LOGGER.debug(context.pathParam("id") + "/" + context.pathParam("version") + "/" + context.pathParam("*") );				
 		String elementID = context.pathParam("id");
 		String version = context.pathParam("version");
-		String filename = context.pathParam("*");
+		String filename = normalizePath(context.pathParam("*"));
 		Boolean delete = context.queryParams().get("delete") != null ? Boolean.parseBoolean(context.queryParams().get("delete")) : false;	
 		if(filename.startsWith("lib/"))
 		{
@@ -109,6 +107,39 @@ public class TaskRouter extends ElementRouter<Task> {
 		.onFailure(err -> handleError(err, context));
 	}
 	
+	public void getResource(RoutingContext context)
+	{
+		String elementID = context.pathParam("id");
+		String version = context.pathParam("version");
+		String filename = normalizePath(context.pathParam("*")); 	
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
+		.compose(allowed -> { return checkVersionAndID(elementID, version); })
+		.onSuccess(Void -> 
+		{
+			// Potentially update with fileProvider.
+			elementManager.handleGetFile(elementID, version, filename )
+			.onSuccess( file -> {
+				String contentType = file.getFormat();
+				if (contentType.startsWith("text")) {
+					context.response().putHeader(HttpHeaders.CONTENT_TYPE, contentType + ";charset=" + Charset.defaultCharset().name());
+				} else {
+					context.response().putHeader(HttpHeaders.CONTENT_TYPE, contentType);
+				}
+				context.response().sendFile(file.getPath(), res2 -> {
+					if (res2.failed()) {
+						if (!context.request().isEnded()) {
+							context.request().resume();
+						}
+						context.fail(res2.cause());
+					}
+				});				
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));
+	}
+	
+	
 	//TODO: Add to API.
 	public void getTaskInformation(RoutingContext context)
 	{
@@ -144,39 +175,6 @@ public class TaskRouter extends ElementRouter<Task> {
 		.onFailure(err -> handleError(err, context));
 	}
 	
-	public void getResource(RoutingContext context)
-	{
-		String elementID = context.pathParam("id");
-		String version = context.pathParam("version");
-		String filename = context.pathParam("*"); 	
-		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
-		.compose(allowed -> { return checkVersionAndID(elementID, version); })
-		.onSuccess(Void -> 
-		{
-			// Potentially update with fileProvider.
-			elementManager.handleGetFile(elementID, version, filename )
-			.onSuccess( file -> {
-				String contentType = file.getFormat();
-				if (contentType.startsWith("text")) {
-					context.response().putHeader(HttpHeaders.CONTENT_TYPE, contentType + ";charset=" + Charset.defaultCharset().name());
-				} else {
-					context.response().putHeader(HttpHeaders.CONTENT_TYPE, contentType);
-				}
-				context.response().sendFile(file.getPath(), res2 -> {
-					if (res2.failed()) {
-						if (!context.request().isEnded()) {
-							context.request().resume();
-						}
-						context.fail(res2.cause());
-					}
-				});				
-			})
-			.onFailure(err -> handleError(err, context));
-		})
-		.onFailure(err -> handleError(err, context));
-	}
-	
-	//TODO: Implement Run methods.
 	
 	
 	public void getCompiledTask(RoutingContext context)

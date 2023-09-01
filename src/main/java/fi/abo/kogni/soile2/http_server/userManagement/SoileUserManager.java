@@ -3,7 +3,6 @@ package fi.abo.kogni.soile2.http_server.userManagement;
 import static io.vertx.ext.auth.impl.Codec.base64Encode;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,7 +14,6 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
-import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.CannotUpdateMultipleException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.EmailAlreadyInUseException;
@@ -1010,7 +1008,6 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @return A {@link JsonArray} of objects with "user" and "access" fields, where access is one of READ / READ_WRITE / FULL and user is a username  
 	 */
 	public Future<JsonArray> getUserWithAccessToStudy(String studyID) {
-		String permissionQuery = SoilePermissionProvider.buildPermissionQuery(studyID, PermissionType.READ);
 		JsonObject query = new JsonObject().put(SoileConfigLoader.getUserdbField("studyPermissionsField"),
 												new JsonObject().put("$elemMatch", 
 																	 new JsonObject().put("$regex", SoilePermissionProvider.buildPermissionQuery(studyID, PermissionType.READ))));

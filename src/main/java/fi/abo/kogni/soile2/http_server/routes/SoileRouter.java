@@ -14,6 +14,8 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.AccessStudy;
 import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.net.impl.URIDecoder;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.mongo.MongoAuthorization;
 import io.vertx.ext.mongo.MongoClient;
@@ -147,5 +149,21 @@ public class SoileRouter {
 	{
 		return user.principal().containsKey("access_token") && !user.principal().containsKey("username");
 	}
-	
+
+	/**
+	 *  Function to normalize a path and return it in a normalized way.
+	 *  @param inputPath The path to be normalized
+	 *  @return the normalized path; 
+	 */
+	public static String normalizePath(String inputPath)
+	{
+		String uriDecodedPath = URIDecoder.decodeURIComponent(inputPath, false);
+		// if the normalized path is null it cannot be resolved
+		if (uriDecodedPath == null) {			
+			return null;
+		}
+		// will normalize and handle all paths as UNIX paths
+		String treatedPath = HttpUtils.removeDots(uriDecodedPath.replace('\\', '/'));
+		return treatedPath;
+	}
 }

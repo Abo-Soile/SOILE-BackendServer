@@ -86,8 +86,15 @@
 		"codeType" : { "language" : "psychopy",
 					 "version" : "2022.2.5"},		
 		"codeFile": "psychopy.html"
-	}
-	
+	},
+	"Task With Spaces": {							
+		"name": "Test3",
+		"private" : false,
+		"resources": ["minitest-legacy-browsers.js","minitest.js","other/Circle 1.png","images/apple.jpg","images/teddy.jpg","images/pear.jpg", "conditions.xlsx"],
+		"codeType" : { "language" : "psychopy",
+					 "version" : "2022.2.5"},		
+		"codeFile": "psychopy.html"
+	}	
 	
 }
 	

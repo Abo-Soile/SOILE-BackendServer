@@ -7,14 +7,11 @@ import java.nio.file.Files;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 
-import fi.abo.kogni.soile2.GitTest;
 import fi.abo.kogni.soile2.MongoTest;
-import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -85,7 +82,7 @@ public abstract class SoileVerticleTest extends MongoTest {
 		{
 			FileUtils.deleteDirectory(new File(gitDataLakeDir));
 			FileUtils.deleteDirectory(new File(resultDataLakeDir));
-			FileUtils.deleteDirectory(new File(gitDir));
+			//FileUtils.deleteDirectory(new File(gitDir));
 		}
 		catch(Exception e)
 		{

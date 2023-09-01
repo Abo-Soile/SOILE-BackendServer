@@ -118,8 +118,8 @@ public class SoileAuthorization{
 		}
 		else
 		{
-			LOGGER.info(options.getCollectionName() + " // " + new JsonObject().put(options.getUsernameField(), user.principal().getString("username")).encodePrettily());
-			LOGGER.info(options.getPermissionField());
+			LOGGER.debug(options.getCollectionName() + " // " + new JsonObject().put(options.getUsernameField(), user.principal().getString("username")).encodePrettily());
+			LOGGER.debug(options.getPermissionField());
 		
 			client.findOne(options.getCollectionName(), 
 						   new JsonObject().put(options.getUsernameField(), user.principal().getString("username")),
@@ -157,7 +157,7 @@ public class SoileAuthorization{
 				
 				result.add(SoilePermissionProvider.getTargetFromPermission(permissions.getString(i)));				
 			}
-			LOGGER.info("Finishing Permission retrieval");
+			LOGGER.debug("Finishing Permission retrieval");
 			permissionPromise.complete(result);
 		})
 		.onFailure(err -> permissionPromise.fail(err));

@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.http_server.routes.SoileRouter;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -50,10 +51,8 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.MimeMapping;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.net.impl.URIDecoder;
 import io.vertx.ext.web.Http2PushMapping;
 import io.vertx.ext.web.MIMEHeader;
 import io.vertx.ext.web.RoutingContext;
@@ -173,16 +172,13 @@ public class NonStaticHandler implements StaticHandler {
       if (!request.isEnded()) {
         request.pause();
       }
-      // decode URL path
-      String uriDecodedPath = URIDecoder.decodeURIComponent(context.normalizedPath(), false);
-      // if the normalized path is null it cannot be resolved
-      if (uriDecodedPath == null) {
+      // decode URL path      
+      String treatedPath = SoileRouter.normalizePath(context.normalizedPath());
+      if (treatedPath == null) {
         LOGGER.debug("Invalid path: " + context.request().path());
         context.next();
         return;
-      }
-      // will normalize and handle all paths as UNIX paths
-      String treatedPath = HttpUtils.removeDots(uriDecodedPath.replace('\\', '/'));
+      }     
       String path = treatedPath.substring(treatedPath.indexOf(relevantSubPath)+relevantSubPath.length());
 
       // Access fileSystem once here to be safe

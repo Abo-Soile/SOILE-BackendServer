@@ -207,7 +207,7 @@ public class WebObjectCreator {
 									JsonObject experimentInstance = new JsonObject();
 									experimentInstance.put("instanceID", current.getString("instanceID"))
 									.put("position", current.getValue("position"))
-									.put("next", current.getString("next", null))
+									.put("next", current.getString("next", "end"))
 									.put("UUID", subexperiment.getString("UUID"))
 									.put("version", subexperiment.getString("version"))
 									.put("randomize", current.getBoolean("randomize",false))
@@ -290,7 +290,7 @@ public class WebObjectCreator {
 							.onSuccess(task -> {
 								JsonObject newTask = new JsonObject();
 								newTask.put("instanceID", current.getString("instanceID"));
-								newTask.put("next", current.getString("next"));
+								newTask.put("next", current.getString("next", "end"));
 								newTask.put("outputs", current.getJsonArray("outputs", new JsonArray()));
 								newTask.put("position", current.getValue("position"));
 								newTask.put("UUID", task.getString("UUID"));

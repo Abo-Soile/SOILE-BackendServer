@@ -28,10 +28,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.URIDecoder;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.FileUpload;
@@ -580,14 +578,11 @@ public class ParticipationRouter extends SoileRouter{
 					{
 						// Ok, this is a request for resources for a file referenced from git. 
 						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
-						String uriDecodedPath = URIDecoder.decodeURIComponent(context.normalizedPath(), false);
-						// if the normalized path is null it cannot be resolved
-						if (uriDecodedPath == null) {
+						String treatedPath = normalizePath(context.normalizedPath());
+						if (treatedPath == null) {
 							context.next();
 							return;
 						}
-						// will normalize and handle all paths as UNIX paths
-						String treatedPath = HttpUtils.removeDots(uriDecodedPath.replace('\\', '/'));
 						// +1 because we need to ignore the first / 
 						String path = treatedPath.substring(treatedPath.indexOf(pathPrefix)+pathPrefix.length()+1);
 						LOGGER.debug("Requested path is: " + path);
@@ -601,8 +596,8 @@ public class ParticipationRouter extends SoileRouter{
 			.onFailure(err -> handleError(err, context));
 		})
 		.onFailure(err -> handleError(err, context));		
-	}	
-
+	}		
+	
 	/**
 	 * Get the participant for the current user. 
 	 * @param user the authenticated {@link User} from a routing context

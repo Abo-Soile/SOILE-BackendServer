@@ -3,10 +3,6 @@ package fi.abo.kogni.soile2.http_server.auth;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.io.filefilter.CanExecuteFileFilter;
-
-import com.mongodb.reactivestreams.client.MongoClient;
-
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.CannotUpdateMultipleException;

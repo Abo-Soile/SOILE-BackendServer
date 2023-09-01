@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
+import fi.abo.kogni.soile2.http_server.routes.SoileRouter;
 import fi.abo.kogni.soile2.projecthandling.projectElements.Element;
 import io.vertx.core.MultiMap;
 import io.vertx.core.file.FileProps;
@@ -41,7 +42,7 @@ public class IDSpecificFileProvider {
 	{
 		String id = context.pathParam("id");
 		String version = context.pathParam("version");
-		String fileName = context.pathParam("*");
+		String fileName = SoileRouter.normalizePath(context.pathParam("*"));
 		// We only handle files.
 		if(fileName.endsWith("/"))
 		{

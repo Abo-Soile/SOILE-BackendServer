@@ -5,10 +5,10 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.yaml.snakeyaml.util.UriEncoder;
 
 import fi.aalto.scicomp.zipper.FileDescriptor;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
-import fi.abo.kogni.soile2.projecthandling.projectElements.TaskBundler;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.Future;
@@ -79,7 +79,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	 */
 	protected Future<String> createAndStartTestProject(boolean priv, String shortcut)
 	{
-		return createAndStartProject(priv, shortcut, "Testproject");
+		return createAndStartStudy(priv, shortcut, "Testproject");
 	}
 			
 	
@@ -142,7 +142,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	 * @param ProjectName
 	 * @return
 	 */
-	protected Future<String> createAndStartProject(boolean priv, String shortcut, String ProjectName)
+	protected Future<String> createAndStartStudy(boolean priv, String shortcut, String ProjectName)
 	{
 		return createAndStartStudy(generatorSession, priv, shortcut, ProjectName);
 	}
@@ -241,7 +241,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	{
 		String host = SoileConfigLoader.getServerProperty("host");
 		int port = SoileConfigLoader.getServerIntProperty("port");
-		HttpRequest<Buffer> request = client.get(port, host, targetURL);
+		HttpRequest<Buffer> request = client.get(port, host, UriEncoder.encode(targetURL));
 		if(queryParameters != null)
 		{
 			for(String fieldname : queryParameters.fieldNames())
@@ -445,12 +445,13 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		upload(client, URL, null, fileName, uploadFile, mimeType)
 		.onSuccess(response -> {
 			try {
-				LOGGER.debug("Completing promise");
+				LOGGER.debug("Completing promise with idField:  " + idField);			
 				idPromise.complete(response.getString(idField));
 				LOGGER.debug("File uploaded");
 			}
 			catch(Exception e)
-			{
+			{				
+				e.printStackTrace(System.out);
 				idPromise.fail(e);
 			}
 		})
@@ -461,7 +462,8 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 	public static Future<JsonObject> upload(WebClient client, String URL, JsonObject queryParameters,
 											String fileName, File uploadFile, String mimeType)
 	{
-		HttpRequest<Buffer> request = client.post(URL);
+		 
+		HttpRequest<Buffer> request = client.post(UriEncoder.encode(URL));
 		String currentMime = mimeType == null ? MimeMapping.getMimeTypeForFilename(fileName) : mimeType;  
 		if(queryParameters != null)
 		{
@@ -471,8 +473,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 			}
 		}
 		MultipartForm submissionForm = MultipartForm.create()
-				.binaryFileUpload(fileName, fileName, uploadFile.getAbsolutePath(), currentMime);	
-		LOGGER.debug("Submitting to " + URL);
+				.binaryFileUpload(fileName, fileName, uploadFile.getAbsolutePath(), currentMime);			
 		return request.sendMultipartForm(submissionForm).compose(response -> 
 		{
 			if(response.statusCode() >= 400)

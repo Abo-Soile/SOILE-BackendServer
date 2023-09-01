@@ -1,6 +1,5 @@
 package fi.abo.kogni.soile2.datamanagement.cleanup;
 
-import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
