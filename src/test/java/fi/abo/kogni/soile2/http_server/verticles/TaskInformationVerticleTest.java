@@ -88,7 +88,6 @@ public class TaskInformationVerticleTest extends SoileVerticleTest {
 			eb.request("soile.task.getAPIData", new JsonObject().put("UUID",taskID).put("version", currentTask.getVersion()))
 			.onSuccess(response -> {
 				JsonObject taskData = ((JsonObject)response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
-				System.out.println(taskData);
 				context.assertEquals("FirstTask", taskData.getString("name"));
 				context.assertTrue(taskData.getBoolean("private"));
 				context.assertTrue(taskData.getString("code").contains("intermezzo"));				

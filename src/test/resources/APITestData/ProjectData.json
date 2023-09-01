@@ -94,6 +94,23 @@
 			}						
 		]
 	},
+"Testproject3": {
+	"name" : "Testproject3",
+	"start" : "tabcdefg0",
+	"private": false,
+	"tasks": 
+		[
+			{
+				"instanceID": "tabcdefg0",	
+				"position" : {"x" : 100, "y" : 100},			
+				"name": "Task With Spaces"							
+			}			
+		],	
+	"experiments": 
+		[
+					
+		]
+	},	
 "ExampleProject": {
 	"name" : "ExampleProject",
 	"start" : "tabcdefg0",

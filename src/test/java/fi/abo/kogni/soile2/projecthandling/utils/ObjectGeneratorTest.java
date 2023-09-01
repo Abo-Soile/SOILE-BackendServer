@@ -126,7 +126,6 @@ public class ObjectGeneratorTest extends GitTest {
 		Async projAsync = context.async();
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager,mongo_client, "Testproject")
 		.onSuccess(apiproj -> {
-			System.out.println(apiproj.getAPIJson().encodePrettily());
 			Async plistAsync = context.async();
 			Async elistAsync = context.async();
 			Async tlistAsync = context.async();			

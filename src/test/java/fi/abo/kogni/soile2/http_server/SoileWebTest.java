@@ -451,7 +451,6 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 			}
 			catch(Exception e)
 			{				
-				e.printStackTrace(System.out);
 				idPromise.fail(e);
 			}
 		})

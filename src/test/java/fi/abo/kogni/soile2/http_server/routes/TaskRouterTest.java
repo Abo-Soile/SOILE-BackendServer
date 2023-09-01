@@ -402,7 +402,6 @@ public class TaskRouterTest extends SoileWebTest{
 				JsonObject CompileRequest2 = new JsonObject().put("code", failingCode).put("type", CodeRetrieverVerticle.ELANG).put("version", "1.0");			
 				POST(authedSession, "/task/compile", null, CompileRequest2)
 				.onSuccess(reply-> {
-					System.out.println(reply.body());
 					context.fail("Should have failed since code does not compile");								
 				})
 				.onFailure(err -> {
@@ -430,7 +429,6 @@ public class TaskRouterTest extends SoileWebTest{
 				GET(authedSession, "/task/codeoptions", null, null)
 				.onSuccess(response -> {
 					JsonArray responseArray = response.bodyAsJsonArray();
-					System.out.println(responseArray.encodePrettily());
 					for(int i = 0; i < responseArray.size(); ++i)
 					{
 						String currentOption = responseArray.getJsonObject(i).getString("name");

@@ -76,10 +76,8 @@ public class ElementRouterTest extends SoileWebTest {
 			.onSuccess(authed -> {
 				WebObjectCreator.createTask(currentSession, "Test2")
 				.onSuccess(taskData -> {
-					System.out.println(taskData.encodePrettily());
 					POST(currentSession, "/task/" + taskData.getString("UUID") + "/list", null, null)
 					.onSuccess(versionList -> {
-						System.out.println(versionList.bodyAsJsonArray().encodePrettily());
 						JsonObject possibleVersion = null;
 						JsonObject otherVersion = new JsonObject();
 						for(int i = 0; i < versionList.bodyAsJsonArray().size(); i++)

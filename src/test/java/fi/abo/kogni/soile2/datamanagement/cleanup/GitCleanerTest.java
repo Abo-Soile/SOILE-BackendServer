@@ -41,7 +41,6 @@ public class GitCleanerTest extends SoileWebTest{
 					.onSuccess(versionList -> {
 						JsonArray tagableVersions = new JsonArray();
 						JsonArray inaccessibleVersions = new JsonArray();
-						System.out.println(versionList.encodePrettily());
 						for(Object o : versionList)
 						{
 							JsonObject current = (JsonObject) o;

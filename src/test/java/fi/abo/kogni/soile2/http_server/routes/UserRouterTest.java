@@ -180,7 +180,6 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 								// exactly one access.								
 								JsonArray permissions = dbEntries.getJsonArray(SoileConfigLoader.getUserdbField("studyPermissionsField"));
 								// execute and FULL
-								System.out.println(permissions.encodePrettily());
 								context.assertEquals(2, permissions.size());
 								context.assertTrue(permissions.contains(SoilePermissionProvider.buildPermissionString(studyID, PermissionType.EXECUTE)));
 								context.assertTrue(permissions.contains(SoilePermissionProvider.buildPermissionString(studyID, PermissionType.FULL)));
@@ -896,7 +895,6 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 								context.assertEquals(401, ((HttpException)unauthed).getStatusCode());
 								POST(nonAuthedSession, "/study/" + id + "/signup", null,null)
 								.onSuccess(res -> {
-									System.out.println(res.bodyAsJsonObject().encodePrettily());
 									String token = res.bodyAsJsonObject().getString("token");
 									nonAuthedSession.addHeader("Authorization", token);
 									POST(nonAuthedSession, "/user/activeprojects", null, null)
@@ -976,12 +974,10 @@ public class UserRouterTest extends SoileWebTest implements UserVerticleTest{
 									nonAuthedSession.addHeader("Authorization", token);
 									POST(nonAuthedSession, "/user/activeprojects", null, null)
 									.onSuccess(actives -> {
-										System.out.println(actives.bodyAsJsonArray().encodePrettily());
 										context.assertEquals(1,actives.bodyAsJsonArray().size());
 										context.assertEquals(id, actives.bodyAsJsonArray().getString(0));
 										POST(nonAuthedSession, "/study/listrunning", null, null)
 										.onSuccess(runnings -> {
-											System.out.println(runnings.bodyAsJsonArray().encodePrettily());
 											context.assertEquals(1,runnings.bodyAsJsonArray().size());
 											//context.assertEquals(id, runnings.bodyAsJsonArray().getString(0));
 										})

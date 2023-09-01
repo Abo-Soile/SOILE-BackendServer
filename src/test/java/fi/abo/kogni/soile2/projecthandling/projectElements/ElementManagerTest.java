@@ -290,8 +290,6 @@ public class ElementManagerTest extends GitTest{
 		Async testAsync = context.async();
 		ObjectGenerator.buildAPITask(taskManager, "FirstTask")
 		.onSuccess(apiTask -> {
-			System.out.println(apiTask.getAPIJson().encodePrettily());
-			System.out.println(apiTask.getGitJson().encodePrettily());
 			taskManager.getVersionListForElement(apiTask.getUUID())
 			.onSuccess(VersionList -> {
 				// The is the creation (i.e. empty) + the data from the task and files).

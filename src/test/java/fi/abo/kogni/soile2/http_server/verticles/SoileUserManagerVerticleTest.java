@@ -275,7 +275,6 @@ public class SoileUserManagerVerticleTest extends SoileVerticleTest implements U
 								context.assertEquals(SoileCommUtils.SUCCESS, ((JsonObject)set.body()).getValue(SoileCommUtils.RESULTFIELD));
 								getUserDetailsFromDB(mongo_client, "NewUser")
 								.onSuccess(userData3-> {
-									System.out.println(userData3.encodePrettily());
 									JsonArray taskPermissions3 = userData3.getJsonArray(SoileConfigLoader.getMongoTaskAuthorizationOptions().getPermissionField());
 									context.assertTrue(taskPermissions3.contains(aPermissionTest));
 									context.assertFalse(taskPermissions3.contains(a2PermissionTest));

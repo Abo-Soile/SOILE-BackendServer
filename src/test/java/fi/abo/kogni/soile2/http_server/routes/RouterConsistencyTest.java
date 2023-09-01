@@ -6,17 +6,18 @@ import java.nio.file.Path;
 
 import org.junit.Test;
 
+import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 
-public class RouterConsistencyTest extends ParticipationRouterTest {
+public class RouterConsistencyTest extends SoileWebTest {
 	@Test	
-	public void signUpTest(TestContext context)
+	public void fileAccessViaDifferentRoutesTest(TestContext context)
 	{
-		System.out.println("--------------------  Testing SignUp  ----------------------");
+		System.out.println("--------------------  Testing Access to Task files via different routes  ----------------------");
 		String TestDataFolder = RouterConsistencyTest.class.getClassLoader().getResource("FileTestData").getPath();
 
 		Async creationAsync = context.async();

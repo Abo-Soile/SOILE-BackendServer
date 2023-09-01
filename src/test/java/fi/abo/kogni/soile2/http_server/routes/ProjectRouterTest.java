@@ -42,7 +42,6 @@ public class ProjectRouterTest extends SoileWebTest {
 			Async invalidAsync2 = context.async();
 			POST(authedSession, "/project/testfilter", null, inValidRequest2)
 			.onSuccess(response -> {
-				System.out.println(response.bodyAsJsonObject().encodePrettily());
 
 				context.assertFalse(response.bodyAsJsonObject().getBoolean("valid"));
 				invalidAsync2.complete();

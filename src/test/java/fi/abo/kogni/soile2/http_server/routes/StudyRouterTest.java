@@ -349,7 +349,6 @@ public class StudyRouterTest extends SoileWebTest {
 						context.fail("Should not have access");														
 					})
 					.onFailure(cannotRead -> {
-						cannotRead.printStackTrace(System.out);
 						// Now, lets activate this user give them access to the Study.
 						permissionSettings.add(new JsonObject().put("type", PermissionType.READ.toString())
 								.put("target", id1));
@@ -368,7 +367,6 @@ public class StudyRouterTest extends SoileWebTest {
 								.onSuccess(canRead -> {	
 									mongo_client.findOne(SoileConfigLoader.getdbProperty("userCollection"), new JsonObject().put("username", "Researcher2"), null)
 									.onSuccess(dbEntries2 -> {
-										System.out.println(dbEntries2.getJsonArray(SoileConfigLoader.getUserdbField("studyPermissionsField")).encodePrettily());
 										POST(wrongSession, "/study/" + id1 + "/collaborators", null,null )
 										.onSuccess(collabList -> {	
 											JsonArray collabs = collabList.bodyAsJsonArray();
@@ -636,7 +634,6 @@ public class StudyRouterTest extends SoileWebTest {
 								context.fail("Does not have accesss");
 							})
 							.onFailure(unAuthed -> {
-								System.out.println("Access denied");
 								context.assertEquals(403, ((HttpException)unAuthed).getStatusCode());																									
 								failedAsync.complete();
 							});
