@@ -410,6 +410,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 			if(participants.size() == 0)
 			{
 				participantsPromise.complete(new JsonArray());
+				return;
 			}
 			// For some reason, 
 			JsonObject query = new JsonObject().put("_id", new JsonObject().put("$in", participants));																	

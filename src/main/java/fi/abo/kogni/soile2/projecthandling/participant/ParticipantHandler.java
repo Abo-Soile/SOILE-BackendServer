@@ -1,6 +1,5 @@
 package fi.abo.kogni.soile2.projecthandling.participant;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -154,7 +153,7 @@ public class ParticipantHandler {
 					vertx.fileSystem().deleteRecursive(results.getParticipantFolderPath(dataLakeFolder), true)
 					.onSuccess(filesDeleted -> 			
 					{
-						//TODO: Need to change this, so that it is FIRST removed from the projectInstance and THEN deleted from the participant db.... 
+						//TODO: Need to change this, so that it is FIRST removed from the Study and THEN deleted from the participant db.... 
 						removeParticipantFromManager(participant, id, participantHasToBeInStudy)
 						.onSuccess(done -> deletionPromise.complete())
 						.onFailure(err -> deletionPromise.fail(err));

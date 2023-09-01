@@ -16,6 +16,7 @@ import java.util.zip.ZipInputStream;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.datamanagement.DataLakeManagerTest;
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResults;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -360,63 +361,92 @@ public class ParticipationRouterTest extends SoileWebTest{
 											context.assertEquals(1, task1Res.getInteger("step"));
 											context.assertEquals(resultData.getValue("jsonData"), task1Res.getValue("dbData"));
 											context.assertTrue(areFilesEqual(upload, new File(Path.of(targetDir, task1Res.getJsonArray("files").getJsonObject(0).getString("path")).toString())));
-											
-											/*Async withdrawAsync = context.async();
+
+											Async withdrawAsync = context.async();
 											// now, we withdraw the participant
-											POST(tempSession,"/study/" + instanceID + "/withdraw", null, "" )
-											.onSuccess(withdrawn -> {
-												System.out.println()
-												String targetFileName2 = tmpDir + File.separator + "WebTestdownload2.tar.gz";
-												String targetDir2 = "/tmp" + File.separator + "WebTestdownload2" + File.separator + "out";
-												POST(generatorSession,"/study/" + instanceID + "/data", null, "" )
-												.onSuccess(response2 -> {
-													String dlID2 = response2.bodyAsJsonObject().getString("downloadID");
-													awaitDownloadReady(generatorSession,instanceID,dlID2, Promise.promise())
-													.compose(ready -> {
-														return GET(generatorSession,"/study/" + instanceID + "/download/" + dlID, null, null);														
+											mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"),new JsonObject().put("token", authToken), null)
+											.onSuccess(participantInfo -> {
+
+												POST(tempSession,"/study/" + instanceID + "/withdraw", null, "" )
+												.onSuccess(withdrawn -> {												
+													String targetFileName2 = tmpDir + File.separator + "WebTestdownload2.tar.gz";
+													String targetDir2 = "/tmp" + File.separator + "WebTestdownload2" + File.separator + "out";
+													// let's check all places, where there should have been data:
+													mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"),new JsonObject().put("token", authToken), null)
+													.compose(partDeleted -> {
+														context.assertNull(partDeleted);
+														ParticipantFileResults results = new ParticipantFileResults(participantInfo.getString("_id"));
+														return vertx.fileSystem().exists(results.getParticipantFolder());
 													})
-													.compose(download2 ->  {														
-														return vertx.fileSystem().writeFile(targetFileName2 , download2.bodyAsBuffer());
+													.compose(exists -> {
+														context.assertFalse(exists);
+														return POST(generatorSession,"/study/" + instanceID + "/data/list", null, "" );															
 													})
-													.onSuccess(dlfinished -> {
-														JsonObject DataJson2 = null; 
-														try {
-															unzip(targetFileName2, targetDir2);
-															DataJson2 = new JsonObject(Files.readString(Path.of(targetDir,"data.json")));
-															System.out.println(DataJson2);
-															
-														}
-														catch(Exception e)
-														{
-															context.fail(e);
-														}
-														withdrawAsync.complete();
+													.compose(dataList -> {
+														context.assertEquals(0, dataList.bodyAsJsonObject().getJsonArray("participants").size());
+														return POST(generatorSession,"/study/" + instanceID + "/data", null, "" );
+													})
+													.onSuccess(dataResponse -> {
+														String dlID2 = dataResponse.bodyAsJsonObject().getString("downloadID");
+														awaitDownloadReady(generatorSession,instanceID,dlID2, Promise.promise())
+														.compose(ready -> {
+															return GET(generatorSession,"/study/" + instanceID + "/download/" + dlID2, null, null);														
+														})
+														.compose(download2 ->  {														
+															return vertx.fileSystem().writeFile(targetFileName2 , download2.bodyAsBuffer());
+														})
+														.onSuccess(dlfinished -> {
+															JsonObject DataJson2 = null; 
+															try {
+																unzip(targetFileName2, targetDir2);
+																DataJson2 = new JsonObject(Files.readString(Path.of(targetDir2,"data.json")));
+																JsonArray taskResultData = DataJson2.getJsonArray("taskResults");
+																for(int i = 0; i < taskResultData.size(); i++)
+																{
+																	context.assertEquals(0, taskResultData.getJsonObject(i).getJsonArray("resultData").size());	
+																}																																
+																withdrawAsync.complete();
+															}
+															catch(Exception e)
+															{
+																context.fail(e);
+															}
+														})
+														.onFailure(err -> context.fail(err));														
 													})
 													.onFailure(err -> context.fail(err));
+
+													/*
+												POST(generatorSession,"/study/" + instanceID + "/data", null, "" )
+												.onSuccess(response2 -> {
+													
+												})
+												.onFailure(err -> context.fail(err));*/
+
 												})
 												.onFailure(err -> context.fail(err));
-												
-											 })
-											.onFailure(err -> context.fail(err));*/
-											
-											submitAsync.complete();
-									}
-									catch(Exception e)
-									{
-										context.fail(e);
-									}										
 
-									//submitAsync.complete();
-								})
+											})
+											.onFailure(err -> context.fail(err));
+
+											submitAsync.complete();
+										}
+										catch(Exception e)
+										{
+											context.fail(e);
+										}										
+
+										//submitAsync.complete();
+									})
 									.onFailure(err -> context.fail(err));	
 
-							})
+								})
 								.onFailure(err -> context.fail(err));
 
-						})
+							})
 							.onFailure(err -> context.fail(err));	
 
-					})
+						})
 						.onFailure(err -> context.fail(err));
 						Async invalidRequestAsync = context.async();
 						POST(tempSession,"/study/" + instanceID + "/data", null, "" )
@@ -425,81 +455,83 @@ public class ParticipationRouterTest extends SoileWebTest{
 						})
 						.onFailure(err -> invalidRequestAsync.complete());
 
-				})
+					})
 					.onFailure(err -> context.fail(err));
-			})
+				})
 				.onFailure(err -> context.fail(err));
 				creationAsync.complete();
-		})
+			})
 			.onFailure(err -> context.fail(err));
-	})
+		})
 		.onFailure(err -> context.fail(err));
-}
+	}
 
 
-@Test
-public void projectTest(TestContext context)
-{
-	System.out.println("--------------------  Running Web Project Prohgression Test  ----------------------");    
+	@Test
+	public void projectTest(TestContext context)
+	{
+		System.out.println("--------------------  Running Web Project Prohgression Test  ----------------------");    
 
-	Async creationAsync = context.async();
-	JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
-			.put("value", 1)
-			.put("timestamp", System.currentTimeMillis()));
-	JsonArray fileData = new JsonArray();
-	JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
-			.put("value", 1)
-			.put("timestamp", System.currentTimeMillis())
-			)
-			.add(new JsonObject().put("name", "smoker2")
-					.put("value", "something")
-					.put("timestamp", System.currentTimeMillis())
-					)
-			)
-			.put("fileData", fileData);
+		Async creationAsync = context.async();
+		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
+				.put("value", 1)
+				.put("timestamp", System.currentTimeMillis()));
+		JsonArray fileData = new JsonArray();
+		JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
+				.put("value", 1)
+				.put("timestamp", System.currentTimeMillis())
+				)
+				.add(new JsonObject().put("name", "smoker2")
+						.put("value", "something")
+						.put("timestamp", System.currentTimeMillis())
+						)
+				)
+				.put("fileData", fileData);
 
-	JsonObject result = new JsonObject().put("outputData", OutputData).put("persistentData",OutputData).put("resultData", resultData);		
-	String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
-	File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
-	List<File> fileUploads = new LinkedList<>();
-	fileUploads.add(upload);
-	createAndStartTestProject(true)
-	.onSuccess(instanceID -> {
-		createTokenAndSignupUser(generatorSession, instanceID)			
-		.onSuccess(authToken -> {
-			Async submitAsync = context.async();
-			WebClientSession tempSession = createSession();				
-			tempSession.addHeader("Authorization", authToken);					
-			submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
-			.onSuccess(submitted -> {
-				Async persistentAsync = context.async();
-				POST(tempSession,"/study/" + instanceID + "/getpersistent", null, null)
-				.onSuccess( response -> {
-					JsonObject responsebody = response.bodyAsJsonObject();
-					context.assertTrue(responsebody.containsKey("smoker"));
-					context.assertEquals(1, responsebody.getNumber("smoker"));
-					persistentAsync.complete();						
-				})				
-				.onFailure(err -> context.fail(err));
-				submitFilesAndResults(tempSession, fileUploads, result.copy().put("outputData",  new JsonArray().add(new JsonObject().put("name",  "clicktimes").put("value", 0.5))), instanceID)
-				.onSuccess(submitted2 -> {
-					POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
-					.onSuccess(inforesponse -> {
-						GET(tempSession, "/run/" + instanceID + "/" + inforesponse.bodyAsJsonObject().getString("id"), null, null)
-						.onSuccess(code -> {
-							context.assertEquals("application/javascript", code.headers().get("content-type"));					
-							submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
-							.onSuccess(submitted3 -> {
+		JsonObject result = new JsonObject().put("outputData", OutputData).put("persistentData",OutputData).put("resultData", resultData);		
+		String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
+		File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
+		List<File> fileUploads = new LinkedList<>();
+		fileUploads.add(upload);
+		createAndStartTestProject(true)
+		.onSuccess(instanceID -> {
+			createTokenAndSignupUser(generatorSession, instanceID)			
+			.onSuccess(authToken -> {
+				Async submitAsync = context.async();
+				WebClientSession tempSession = createSession();				
+				tempSession.addHeader("Authorization", authToken);					
+				submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
+				.onSuccess(submitted -> {
+					Async persistentAsync = context.async();
+					POST(tempSession,"/study/" + instanceID + "/getpersistent", null, null)
+					.onSuccess( response -> {
+						JsonObject responsebody = response.bodyAsJsonObject();
+						context.assertTrue(responsebody.containsKey("smoker"));
+						context.assertEquals(1, responsebody.getNumber("smoker"));
+						persistentAsync.complete();						
+					})				
+					.onFailure(err -> context.fail(err));
+					submitFilesAndResults(tempSession, fileUploads, result.copy().put("outputData",  new JsonArray().add(new JsonObject().put("name",  "clicktimes").put("value", 0.5))), instanceID)
+					.onSuccess(submitted2 -> {
+						POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
+						.onSuccess(inforesponse -> {
+							GET(tempSession, "/run/" + instanceID + "/" + inforesponse.bodyAsJsonObject().getString("id"), null, null)
+							.onSuccess(code -> {
+								context.assertEquals("application/javascript", code.headers().get("content-type"));					
 								submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
-								.onSuccess(submitted4 -> {
+								.onSuccess(submitted3 -> {
 									submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
-									.onSuccess(submitted5 -> {
-										POST(tempSession, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
-										.onSuccess(response -> {									
-											JsonObject finalresult = response.bodyAsJsonObject();
-											// now the project is done, we have passed filters and everything. 
-											context.assertTrue(finalresult.getBoolean("finished"));
-											submitAsync.complete();
+									.onSuccess(submitted4 -> {
+										submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
+										.onSuccess(submitted5 -> {
+											POST(tempSession, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
+											.onSuccess(response -> {									
+												JsonObject finalresult = response.bodyAsJsonObject();
+												// now the project is done, we have passed filters and everything. 
+												context.assertTrue(finalresult.getBoolean("finished"));
+												submitAsync.complete();
+											})
+											.onFailure(err -> context.fail(err));
 										})
 										.onFailure(err -> context.fail(err));
 									})
@@ -514,263 +546,398 @@ public void projectTest(TestContext context)
 					.onFailure(err -> context.fail(err));
 				})
 				.onFailure(err -> context.fail(err));
+				creationAsync.complete();
 			})
 			.onFailure(err -> context.fail(err));
-			creationAsync.complete();
 		})
 		.onFailure(err -> context.fail(err));
-	})
-	.onFailure(err -> context.fail(err));
-}
+	}
 
 
-@Test
-public void testPersistentData(TestContext context)
-{
-	System.out.println("--------------------  Running Web Project Prohgression Test  ----------------------");    
+	@Test
+	public void testPersistentData(TestContext context)
+	{
+		System.out.println("--------------------  Running Web Project Prohgression Test  ----------------------");    
 
-	Async creationAsync = context.async();
-	JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
-			.put("value", 1)
-			.put("timestamp", System.currentTimeMillis()));
-	JsonArray fileData = new JsonArray();
-	JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
-			.put("value", 1)
-			.put("timestamp", System.currentTimeMillis())
-			)
-			.add(new JsonObject().put("name", "smoker2")
-					.put("value", "something")
-					.put("timestamp", System.currentTimeMillis())
-					)
-			)
-			.put("fileData", fileData);
+		Async creationAsync = context.async();
+		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
+				.put("value", 1)
+				.put("timestamp", System.currentTimeMillis()));
+		JsonArray fileData = new JsonArray();
+		JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
+				.put("value", 1)
+				.put("timestamp", System.currentTimeMillis())
+				)
+				.add(new JsonObject().put("name", "smoker2")
+						.put("value", "something")
+						.put("timestamp", System.currentTimeMillis())
+						)
+				)
+				.put("fileData", fileData);
 
-	JsonObject result = new JsonObject().put("outputData", OutputData).put("persistentData",OutputData).put("resultData", resultData);		
-	String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
-	File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
-	List<File> fileUploads = new LinkedList<>();
-	fileUploads.add(upload);
-	createAndStartTestProject(true)
-	.onSuccess(instanceID -> {
-		createTokenAndSignupUser(generatorSession, instanceID)			
-		.onSuccess(authToken -> {
-			Async submitAsync = context.async();
-			WebClientSession tempSession = createSession();				
-			tempSession.addHeader("Authorization", authToken);
-			POST(tempSession,"/study/" + instanceID + "/getpersistent", null, null)
-			.onSuccess( persistentDataresponse -> {
-				context.assertTrue(persistentDataresponse.bodyAsJsonObject().isEmpty());
+		JsonObject result = new JsonObject().put("outputData", OutputData).put("persistentData",OutputData).put("resultData", resultData);		
+		String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
+		File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
+		List<File> fileUploads = new LinkedList<>();
+		fileUploads.add(upload);
+		createAndStartTestProject(true)
+		.onSuccess(instanceID -> {
+			createTokenAndSignupUser(generatorSession, instanceID)			
+			.onSuccess(authToken -> {
+				Async submitAsync = context.async();
+				WebClientSession tempSession = createSession();				
+				tempSession.addHeader("Authorization", authToken);
+				POST(tempSession,"/study/" + instanceID + "/getpersistent", null, null)
+				.onSuccess( persistentDataresponse -> {
+					context.assertTrue(persistentDataresponse.bodyAsJsonObject().isEmpty());
 
-				submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
-				.onSuccess(submitted -> {
-					Async persistentAsync = context.async();
-					POST(tempSession,"/study/" + instanceID + "/getpersistent", null, null)
-					.onSuccess( response -> {
-						JsonObject responsebody = response.bodyAsJsonObject();
-						context.assertTrue(responsebody.containsKey("smoker"));
-						context.assertEquals(1, responsebody.getNumber("smoker"));
-						persistentAsync.complete();						
-					})				
-					.onFailure(err -> context.fail(err));
-					JsonObject newResults = result.copy().put("outputData",  new JsonArray().add(new JsonObject().put("name",  "clicktimes").put("value", 0.5)));
-					newResults.put("persistentData", new JsonArray().add(new JsonObject().put("name", "smoker")
-							.put("value", 0)
-							.put("timestamp", System.currentTimeMillis())));
-					submitFilesAndResults(tempSession, fileUploads, newResults , instanceID)
-					.onSuccess(submitted2 -> {
-
+					submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
+					.onSuccess(submitted -> {
+						Async persistentAsync = context.async();
 						POST(tempSession,"/study/" + instanceID + "/getpersistent", null, null)
 						.onSuccess( response -> {
 							JsonObject responsebody = response.bodyAsJsonObject();
 							context.assertTrue(responsebody.containsKey("smoker"));
-							context.assertEquals(0, responsebody.getNumber("smoker"));
-							submitAsync.complete();
+							context.assertEquals(1, responsebody.getNumber("smoker"));
+							persistentAsync.complete();						
 						})				
 						.onFailure(err -> context.fail(err));
+						JsonObject newResults = result.copy().put("outputData",  new JsonArray().add(new JsonObject().put("name",  "clicktimes").put("value", 0.5)));
+						newResults.put("persistentData", new JsonArray().add(new JsonObject().put("name", "smoker")
+								.put("value", 0)
+								.put("timestamp", System.currentTimeMillis())));
+						submitFilesAndResults(tempSession, fileUploads, newResults , instanceID)
+						.onSuccess(submitted2 -> {
 
-					})
-					.onFailure(err -> context.fail(err));
-				})
-				.onFailure(err -> context.fail(err));
-			})
-			.onFailure(err -> context.fail(err));
-			creationAsync.complete();
-		})
-		.onFailure(err -> context.fail(err));
-	})
-	.onFailure(err -> context.fail(err));
-}
-
-@Test
-public void testRunResources(TestContext context)
-{
-	System.out.println("--------------------  Running Test for /run/{id}/*  ----------------------");    
-
-	JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
-			.put("value", 1)
-			.put("timestamp", System.currentTimeMillis()));
-	JsonArray fileData = new JsonArray();
-	JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
-			.put("value", 1)
-			.put("timestamp", System.currentTimeMillis())
-			)
-			.add(new JsonObject().put("name", "smoker2")
-					.put("value", "something")
-					.put("timestamp", System.currentTimeMillis())
-					)
-			)
-			.put("fileData", fileData);
-
-	JsonObject result = new JsonObject().put("outputData", OutputData).put("resultData", resultData);
-	String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
-	File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
-	List<File> fileUploads = new LinkedList<>();
-	fileUploads.add(upload);
-
-	Async testRunResource = context.async();
-	createAndStartTestProject(true, "testProject")
-	.onSuccess(instanceID -> {
-		createTokenAndSignupUser(generatorSession, instanceID)
-		.onSuccess(authToken -> {
-			WebClientSession tempSession = createSession();				
-			tempSession.addHeader("Authorization", authToken);
-			POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
-			.onSuccess(inforesponse -> {
-				GET(tempSession, "/run/" + instanceID + "/" + inforesponse.bodyAsJsonObject().getString("id") +  "/ImageData.jpg", null, null)
-				.onSuccess(failed -> {
-					context.fail("The first Task does NOT have any resources!");
-				})
-				.onFailure(response -> {
-					context.assertEquals(404, ((HttpException)response).getStatusCode());
-					submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
-					.onSuccess(submitted -> {
-						POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
-						.onSuccess(inforesponse2 -> {
-							GET(tempSession, "/run/testProject" + "/" + inforesponse2.bodyAsJsonObject().getString("id") +"/ImageData.jpg", null, null)
-							.onSuccess(dataResponse ->  {
-								String targetFileName = tmpDir + File.separator + "taskRouter.out"; 
-								vertx.fileSystem().writeFile(targetFileName , dataResponse.bodyAsBuffer())
-								.onSuccess(res -> {
-									// compare that the file is the same as the original one.
-									try {
-										context.assertTrue( 
-												areFilesEqual(
-														new File(targetFileName),
-														new File(DataLakeManagerTest.class.getClassLoader().getResource("FileTestData/ImageData.jpg").getPath())
-														)
-												);
-										testRunResource.complete();
-
-									}
-									catch(IOException e)
-									{
-										context.fail(e);
-									}
-								})					 
-								.onFailure(err -> context.fail(err));
-							})
+							POST(tempSession,"/study/" + instanceID + "/getpersistent", null, null)
+							.onSuccess( response -> {
+								JsonObject responsebody = response.bodyAsJsonObject();
+								context.assertTrue(responsebody.containsKey("smoker"));
+								context.assertEquals(0, responsebody.getNumber("smoker"));
+								submitAsync.complete();
+							})				
 							.onFailure(err -> context.fail(err));
-						})					 
-						.onFailure(err -> context.fail(err));
 
+						})
+						.onFailure(err -> context.fail(err));
 					})
 					.onFailure(err -> context.fail(err));
-				});					
-
-			})
-			.onFailure(err -> context.fail(err));
-		})
-		.onFailure(err -> context.fail(err));
-	})
-	.onFailure(err -> context.fail(err));
-}
-
-@Test
-public void testRunLibs(TestContext context)
-{
-	System.out.println("--------------------  Running Tests for /run/{id}/{taskID}/lib/*  ----------------------");    
-
-	Async testRunResource = context.async();
-	createAndStartTestProject(true)
-	.onSuccess(instanceID -> {
-		createTokenAndSignupUser(generatorSession, instanceID)
-		.onSuccess(authToken -> {
-			WebClientSession tempSession = createSession();				
-			tempSession.addHeader("Authorization", authToken);
-			POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
-			.onSuccess(inforesponse -> {
-				GET(tempSession, "/run/" + instanceID + "/" + inforesponse.bodyAsJsonObject().getString("id") + "/lib/testlib.js", null, null)
-				.onSuccess(response -> {
-					context.assertTrue(response.bodyAsString().contains("console.log"));
-					testRunResource.complete();
 				})
 				.onFailure(err -> context.fail(err));
-				Async failedLibAsync = context.async();
-				GET(tempSession, "/run/" + instanceID + "/" + inforesponse.bodyAsJsonObject().getString("id") + "/lib/testlib2.js", null, null)
-				.onSuccess(response -> {
-					context.fail("Should not be possible");
-				})
-				.onFailure(err ->
-				{
-					if( err instanceof HttpException)
-					{
-						context.assertEquals(404, ((HttpException)err).getStatusCode());
-						failedLibAsync.complete();
-					}
-					else
-					{
-						context.fail(err);
-					}
-
-				});
+				creationAsync.complete();
 			})
 			.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
-	})
-	.onFailure(err -> context.fail(err));
-}
-
-
-
-/**
- * Submit files and results with the given webclient(session). 
- * @param client
- * @param uploads
- * @param resultData
- * @param instanceID
- * @return
- */
-@SuppressWarnings("rawtypes")
-protected Future<Void> submitFilesAndResults(WebClient client, List<File> uploads, JsonObject resultData, String instanceID)
-{
-	Promise<Void> submittedPromise = Promise.promise();
-	List<Future> submissionFutures = new LinkedList<Future>();
-	ConcurrentLinkedDeque<JsonObject> uploadObjects = new ConcurrentLinkedDeque<>();
-	for(File f : uploads)
-	{		
-		Promise done = Promise.promise();
-		submissionFutures.add(done.future());
-		uploadResult(client, instanceID, f, f.getName(), MimeMapping.getMimeTypeForFilename(f.getName()))
-		.onSuccess(id -> {
-			uploadObjects.add(new JsonObject().put("fileformat", MimeMapping.getMimeTypeForFilename(f.getName()))
-					.put("filename", f.getName())
-					.put("targetid", id));				
-			done.complete();
-
-		})
-		.onFailure(err -> done.fail(err));
 	}
-	CompositeFuture.all(submissionFutures).onSuccess(allSubmitted -> {
-		POST(client, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
-		.onSuccess(response -> {
-			JsonArray fileResults = resultData.getJsonObject("resultData").getJsonArray("fileData");
-			for(JsonObject o : uploadObjects)
+
+	@Test
+	public void testRunResources(TestContext context)
+	{
+		System.out.println("--------------------  Running Test for /run/{id}/*  ----------------------");    
+
+		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
+				.put("value", 1)
+				.put("timestamp", System.currentTimeMillis()));
+		JsonArray fileData = new JsonArray();
+		JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
+				.put("value", 1)
+				.put("timestamp", System.currentTimeMillis())
+				)
+				.add(new JsonObject().put("name", "smoker2")
+						.put("value", "something")
+						.put("timestamp", System.currentTimeMillis())
+						)
+				)
+				.put("fileData", fileData);
+
+		JsonObject result = new JsonObject().put("outputData", OutputData).put("resultData", resultData);
+		String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
+		File upload = new File(Path.of(TestDataFolder, "textData.txt").toString());
+		List<File> fileUploads = new LinkedList<>();
+		fileUploads.add(upload);
+
+		Async testRunResource = context.async();
+		createAndStartTestProject(true, "testProject")
+		.onSuccess(instanceID -> {
+			createTokenAndSignupUser(generatorSession, instanceID)
+			.onSuccess(authToken -> {
+				WebClientSession tempSession = createSession();				
+				tempSession.addHeader("Authorization", authToken);
+				POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
+				.onSuccess(inforesponse -> {
+					GET(tempSession, "/run/" + instanceID + "/" + inforesponse.bodyAsJsonObject().getString("id") +  "/ImageData.jpg", null, null)
+					.onSuccess(failed -> {
+						context.fail("The first Task does NOT have any resources!");
+					})
+					.onFailure(response -> {
+						context.assertEquals(404, ((HttpException)response).getStatusCode());
+						submitFilesAndResults(tempSession, fileUploads, result.copy(), instanceID)
+						.onSuccess(submitted -> {
+							POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
+							.onSuccess(inforesponse2 -> {
+								GET(tempSession, "/run/testProject" + "/" + inforesponse2.bodyAsJsonObject().getString("id") +"/ImageData.jpg", null, null)
+								.onSuccess(dataResponse ->  {
+									String targetFileName = tmpDir + File.separator + "taskRouter.out"; 
+									vertx.fileSystem().writeFile(targetFileName , dataResponse.bodyAsBuffer())
+									.onSuccess(res -> {
+										// compare that the file is the same as the original one.
+										try {
+											context.assertTrue( 
+													areFilesEqual(
+															new File(targetFileName),
+															new File(DataLakeManagerTest.class.getClassLoader().getResource("FileTestData/ImageData.jpg").getPath())
+															)
+													);
+											testRunResource.complete();
+
+										}
+										catch(IOException e)
+										{
+											context.fail(e);
+										}
+									})					 
+									.onFailure(err -> context.fail(err));
+								})
+								.onFailure(err -> context.fail(err));
+							})					 
+							.onFailure(err -> context.fail(err));
+
+						})
+						.onFailure(err -> context.fail(err));
+					});					
+
+				})
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+
+	@Test
+	public void testRunLibs(TestContext context)
+	{
+		System.out.println("--------------------  Running Tests for /run/{id}/{taskID}/lib/*  ----------------------");    
+
+		Async testRunResource = context.async();
+		createAndStartTestProject(true)
+		.onSuccess(instanceID -> {
+			createTokenAndSignupUser(generatorSession, instanceID)
+			.onSuccess(authToken -> {
+				WebClientSession tempSession = createSession();				
+				tempSession.addHeader("Authorization", authToken);
+				POST(tempSession,"/study/" + instanceID + "/getcurrenttaskinfo", null, null)
+				.onSuccess(inforesponse -> {
+					GET(tempSession, "/run/" + instanceID + "/" + inforesponse.bodyAsJsonObject().getString("id") + "/lib/testlib.js", null, null)
+					.onSuccess(response -> {
+						context.assertTrue(response.bodyAsString().contains("console.log"));
+						testRunResource.complete();
+					})
+					.onFailure(err -> context.fail(err));
+					Async failedLibAsync = context.async();
+					GET(tempSession, "/run/" + instanceID + "/" + inforesponse.bodyAsJsonObject().getString("id") + "/lib/testlib2.js", null, null)
+					.onSuccess(response -> {
+						context.fail("Should not be possible");
+					})
+					.onFailure(err ->
+					{
+						if( err instanceof HttpException)
+						{
+							context.assertEquals(404, ((HttpException)err).getStatusCode());
+							failedLibAsync.complete();
+						}
+						else
+						{
+							context.fail(err);
+						}
+
+					});
+				})
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+
+
+
+	/**
+	 * Submit files and results with the given webclient(session). 
+	 * @param client
+	 * @param uploads
+	 * @param resultData
+	 * @param instanceID
+	 * @return
+	 */
+	@SuppressWarnings("rawtypes")
+	protected Future<Void> submitFilesAndResults(WebClient client, List<File> uploads, JsonObject resultData, String instanceID)
+	{
+		Promise<Void> submittedPromise = Promise.promise();
+		List<Future> submissionFutures = new LinkedList<Future>();
+		ConcurrentLinkedDeque<JsonObject> uploadObjects = new ConcurrentLinkedDeque<>();
+		for(File f : uploads)
+		{		
+			Promise done = Promise.promise();
+			submissionFutures.add(done.future());
+			uploadResult(client, instanceID, f, f.getName(), MimeMapping.getMimeTypeForFilename(f.getName()))
+			.onSuccess(id -> {
+				uploadObjects.add(new JsonObject().put("fileformat", MimeMapping.getMimeTypeForFilename(f.getName()))
+						.put("filename", f.getName())
+						.put("targetid", id));				
+				done.complete();
+
+			})
+			.onFailure(err -> done.fail(err));
+		}
+		CompositeFuture.all(submissionFutures).onSuccess(allSubmitted -> {
+			POST(client, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
+			.onSuccess(response -> {
+				JsonArray fileResults = resultData.getJsonObject("resultData").getJsonArray("fileData");
+				for(JsonObject o : uploadObjects)
+				{
+					fileResults.add(o);
+				}
+
+				String taskInstanceID = response.bodyAsJsonObject().getString("id");				
+				resultData.put("taskID",taskInstanceID);
+				POST(client, "/study/" + instanceID + "/submit", null, resultData)
+				.onSuccess(submitted -> {
+					submittedPromise.complete();								
+				})
+				.onFailure(err -> submittedPromise.fail(err));
+			})
+			.onFailure(err -> submittedPromise.fail(err));
+		})
+		.onFailure(err -> submittedPromise.fail(err));
+
+		return submittedPromise.future();
+	}
+
+
+
+	protected Future<JsonObject> getParticipantInfoForUsername(String username, String projectID)
+	{
+		Promise<JsonObject> participantPromise = Promise.promise();
+		mongo_client.findOne(SoileConfigLoader.getCollectionName("userCollection"),
+				new JsonObject().put(SoileConfigLoader.getMongoAuthNOptions().getUsernameField(), username), 
+				new JsonObject().put(SoileConfigLoader.getUserdbField("participantField"),1 ))
+		.onSuccess(participantJson -> {
+			JsonArray participantInfo = participantJson.getJsonArray(SoileConfigLoader.getUserdbField("participantField"), new JsonArray());
+			String participantID = null;
+			for(int i = 0; i < participantInfo.size(); i++)
 			{
-				fileResults.add(o);
+				// TODO: Use an aggregation to retrieve this (that's probably faster).
+				if(participantInfo.getJsonObject(i).getString("UUID").equals(projectID))
+				{
+					participantID = participantInfo.getJsonObject(i).getString("participantID");
+					break;
+				}
+
+			}
+			if(participantID != null)
+			{
+				mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"), new JsonObject().put("_id", participantID), null)
+				.onSuccess(result ->
+				{
+					participantPromise.complete(result);
+				})
+				.onFailure(err -> participantPromise.fail(err));
+			}
+			else
+			{
+				participantPromise.fail("No participant for user in project");
 			}
 
-			String taskInstanceID = response.bodyAsJsonObject().getString("id");				
+		})
+		.onFailure(err -> participantPromise.fail(err));
+
+		return participantPromise.future();		
+	}
+
+	/**
+	 * Get the participant information for a Token directly from the database.
+	 * @param token
+	 * @return
+	 */
+	protected Future<JsonObject> getParticipantInfoForToken(String token)
+	{			
+		return mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"), new JsonObject().put("token", token), null);		
+	}
+
+	private Future<Void> awaitDownloadReady(WebClient client, String projectID, String dlID, Promise<Void> readyPromise)
+	{		
+		POST(client, "/study/" + projectID + "/download/" + dlID + "/check", null, null).onSuccess(response -> 
+		{
+			JsonObject status = response.bodyAsJsonObject();
+			if(status.getString("status").equals(DownloadStatus.downloadReady.toString()))
+			{
+				readyPromise.complete();
+				return;
+			}
+			else
+			{
+				if(status.getString("status").equals(DownloadStatus.failed.toString()))
+				{
+					readyPromise.fail(new Exception("Download Failed"));
+				}
+				else
+				{
+					try {
+						// we need to wait a tiny bit... 
+						TimeUnit.MILLISECONDS.sleep(50);
+						awaitDownloadReady(client,projectID, dlID, readyPromise);
+					}
+					catch(InterruptedException e)
+					{
+						readyPromise.fail(e);
+					}
+				}
+			}											
+		});
+		return readyPromise.future();
+	}
+
+	private void unzip(String zipFilePath, String destDir) throws Exception{
+		File dir = new File(destDir);
+		// create output directory if it doesn't exist
+		if(!dir.exists()) dir.mkdirs();
+		FileInputStream fis;
+		//buffer for read and write data to file
+		byte[] buffer = new byte[1024];
+
+		fis = new FileInputStream(zipFilePath);
+		ZipInputStream zis = new ZipInputStream(fis);
+		ZipEntry ze = zis.getNextEntry();
+		while(ze != null){
+			String fileName = ze.getName();
+			File newFile = new File(destDir + File.separator + fileName);
+			//create directories for sub directories in zip
+			new File(newFile.getParent()).mkdirs();
+			FileOutputStream fos = new FileOutputStream(newFile);
+			int len;
+			while ((len = zis.read(buffer)) > 0) {
+				fos.write(buffer, 0, len);
+			}
+			fos.close();
+			//close this ZipEntry
+			zis.closeEntry();
+			ze = zis.getNextEntry();
+		}
+		//close last ZipEntry
+		zis.closeEntry();
+		zis.close();
+		fis.close();
+
+	}
+
+	protected Future<Void> submitResult(WebClient client, JsonObject resultData, String instanceID)
+	{
+		Promise<Void> submittedPromise = Promise.promise();
+		POST(client, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
+		.onSuccess(response -> {
+			String taskInstanceID = response.bodyAsJsonObject().getString("id");			
 			resultData.put("taskID",taskInstanceID);
 			POST(client, "/study/" + instanceID + "/submit", null, resultData)
 			.onSuccess(submitted -> {
@@ -779,145 +946,8 @@ protected Future<Void> submitFilesAndResults(WebClient client, List<File> upload
 			.onFailure(err -> submittedPromise.fail(err));
 		})
 		.onFailure(err -> submittedPromise.fail(err));
-	})
-	.onFailure(err -> submittedPromise.fail(err));
 
-	return submittedPromise.future();
-}
-
-
-
-protected Future<JsonObject> getParticipantInfoForUsername(String username, String projectID)
-{
-	Promise<JsonObject> participantPromise = Promise.promise();
-	mongo_client.findOne(SoileConfigLoader.getCollectionName("userCollection"),
-			new JsonObject().put(SoileConfigLoader.getMongoAuthNOptions().getUsernameField(), username), 
-			new JsonObject().put(SoileConfigLoader.getUserdbField("participantField"),1 ))
-	.onSuccess(participantJson -> {
-		JsonArray participantInfo = participantJson.getJsonArray(SoileConfigLoader.getUserdbField("participantField"), new JsonArray());
-		String participantID = null;
-		for(int i = 0; i < participantInfo.size(); i++)
-		{
-			// TODO: Use an aggregation to retrieve this (that's probably faster).
-			if(participantInfo.getJsonObject(i).getString("UUID").equals(projectID))
-			{
-				participantID = participantInfo.getJsonObject(i).getString("participantID");
-				break;
-			}
-
-		}
-		if(participantID != null)
-		{
-			mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"), new JsonObject().put("_id", participantID), null)
-			.onSuccess(result ->
-			{
-				participantPromise.complete(result);
-			})
-			.onFailure(err -> participantPromise.fail(err));
-		}
-		else
-		{
-			participantPromise.fail("No participant for user in project");
-		}
-
-	})
-	.onFailure(err -> participantPromise.fail(err));
-
-	return participantPromise.future();		
-}
-
-/**
- * Get the participant information for a Token directly from the database.
- * @param token
- * @return
- */
-protected Future<JsonObject> getParticipantInfoForToken(String token)
-{			
-	return mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"), new JsonObject().put("token", token), null);		
-}
-
-private Future<Void> awaitDownloadReady(WebClient client, String projectID, String dlID, Promise<Void> readyPromise)
-{		
-	POST(client, "/study/" + projectID + "/download/" + dlID + "/check", null, null).onSuccess(response -> 
-	{
-		JsonObject status = response.bodyAsJsonObject();
-		if(status.getString("status").equals(DownloadStatus.downloadReady.toString()))
-		{
-			readyPromise.complete();
-			return;
-		}
-		else
-		{
-			if(status.getString("status").equals(DownloadStatus.failed.toString()))
-			{
-				readyPromise.fail(new Exception("Download Failed"));
-			}
-			else
-			{
-				try {
-					// we need to wait a tiny bit... 
-					TimeUnit.MILLISECONDS.sleep(50);
-					awaitDownloadReady(client,projectID, dlID, readyPromise);
-				}
-				catch(InterruptedException e)
-				{
-					readyPromise.fail(e);
-				}
-			}
-		}											
-	});
-	return readyPromise.future();
-}
-
-private void unzip(String zipFilePath, String destDir) throws Exception{
-	File dir = new File(destDir);
-	// create output directory if it doesn't exist
-	if(!dir.exists()) dir.mkdirs();
-	FileInputStream fis;
-	//buffer for read and write data to file
-	byte[] buffer = new byte[1024];
-
-	fis = new FileInputStream(zipFilePath);
-	ZipInputStream zis = new ZipInputStream(fis);
-	ZipEntry ze = zis.getNextEntry();
-	while(ze != null){
-		String fileName = ze.getName();
-		File newFile = new File(destDir + File.separator + fileName);
-		//create directories for sub directories in zip
-		new File(newFile.getParent()).mkdirs();
-		FileOutputStream fos = new FileOutputStream(newFile);
-		int len;
-		while ((len = zis.read(buffer)) > 0) {
-			fos.write(buffer, 0, len);
-		}
-		fos.close();
-		//close this ZipEntry
-		zis.closeEntry();
-		ze = zis.getNextEntry();
+		return submittedPromise.future();
 	}
-	//close last ZipEntry
-	zis.closeEntry();
-	zis.close();
-	fis.close();
-
-}
-
-protected Future<Void> submitResult(WebClient client, JsonObject resultData, String instanceID)
-{
-	Promise<Void> submittedPromise = Promise.promise();
-	POST(client, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
-	.onSuccess(response -> {
-		String taskInstanceID = response.bodyAsJsonObject().getString("id");			
-		resultData.put("taskID",taskInstanceID);
-		POST(client, "/study/" + instanceID + "/submit", null, resultData)
-		.onSuccess(submitted -> {
-			submittedPromise.complete();								
-		})
-		.onFailure(err -> submittedPromise.fail(err));
-	})
-	.onFailure(err -> submittedPromise.fail(err));
-
-	return submittedPromise.future();
-}
 
 }

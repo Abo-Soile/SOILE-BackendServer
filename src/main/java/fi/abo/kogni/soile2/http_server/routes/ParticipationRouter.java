@@ -151,7 +151,7 @@ public class ParticipationRouter extends SoileRouter{
 	public void withdrawFromStudy(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String requestedInstanceID = context.pathParam("id");					
+		String requestedInstanceID = params.pathParameter("id").getString();					
 
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,true)
 		.onSuccess(Void -> 
@@ -162,33 +162,30 @@ public class ParticipationRouter extends SoileRouter{
 				// this list needs to be filtered by access
 				LOGGER.debug("Retrieving Participant for project " + study.getID());
 				getParticpantForUser(context.user(), study)
-				.onSuccess(participant -> {					
-					study.deleteParticipant(participant).
-					onSuccess(partDeleted -> {
-						dataLakeManager.deleteParticipantData(participant)
-						.onSuccess(dataDeleted -> {
-							if(!isTokenUser(context.user()))
-							{
-								JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
-										.put("studyID", study.getID())
-										.put("participantID", participant.getID());
-								// we also need to remove the participant from the current user.
-								eb.request("soile.umanager.removeParticipantFromStudy", partData)
-								.onSuccess( success -> {
-									context.response()
-									.setStatusCode(200)														
-									.end();
-								})
-								.onFailure(err -> handleError(err, context));
-							}
-							else
-							{
+				.onSuccess(participant -> {				
+					partHandler.deleteParticipant(participant.getID(), false)
+					.onSuccess(deleted -> {
+						if(!isTokenUser(context.user()))
+						{
+							JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
+									.put("studyID", study.getID())
+									.put("participantID", participant.getID());
+							// we also need to remove the participant from the current user.
+							eb.request("soile.umanager.removeParticipantFromStudy", partData)
+							.onSuccess( success -> {
 								context.response()
 								.setStatusCode(200)														
 								.end();
-							}
-						})
-						.onFailure(err -> handleError(err, context));
+							})
+							.onFailure(err -> handleError(err, context));
+						}
+						else
+						{
+							context.response()
+							.setStatusCode(200)														
+							.end();
+						}
+
 					})
 					.onFailure(err -> handleError(err, context));
 					

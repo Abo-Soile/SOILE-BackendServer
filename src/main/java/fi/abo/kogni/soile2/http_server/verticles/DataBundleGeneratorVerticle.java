@@ -262,6 +262,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 			}
 			study.getParticipants()
 			.onSuccess(participants -> {
+				LOGGER.debug("The participants of this study are: " + participants.encodePrettily());
 				// Collect the data  
 				@SuppressWarnings("rawtypes")
 				List<Future> partDataFutures = new LinkedList<>();				
@@ -280,6 +281,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 							);
 
 				}
+				
 				CompositeFuture.all(partDataFutures)				
 				.onSuccess(participantsData -> {
 					// at this point the List is filled with all relevant JsonObjects.
@@ -297,7 +299,8 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 						// this will be filled with the actual results for this task.
 						JsonArray currentTaskResults = new JsonArray();
 						// NOTE: this function heavily modifies the resulting resultData JsonArray					
-						resultFiles.addAll(extractFilesandUpdateResultsForTask(taskResults.get(task),currentTaskResults, true));					
+						resultFiles.addAll(extractFilesandUpdateResultsForTask(taskResults.get(task),currentTaskResults, true));
+						
 						//jsonData.add(participantData.getJsonArray("resultData"));
 						//So, the Data has been updated here as well, we can just use the resultData.						
 						// this can potentially be empty, if the participant has no data for this task.
@@ -602,6 +605,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 			filesData.add(fileInfo);
 			DataLakeFile currentFile = res.getFile(dataLakeFolder);
 			currentFile.setOriginalFileName(pathInZip);
+			LOGGER.debug(currentFile.toJson().encodePrettily());
 			files.add(currentFile.toJson());
 			if(removeTask)
 			{
