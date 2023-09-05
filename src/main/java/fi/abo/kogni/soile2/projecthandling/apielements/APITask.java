@@ -7,9 +7,6 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.projecthandling.exceptions.NoCodeTypeChangeException;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
@@ -40,11 +37,9 @@ public class APITask extends APIElementBase<Task> {
 		loadGitJson(data);
 	}
 
-	@JsonProperty("codeType")
 	public JsonObject getCodeType() {
 		return data.getJsonObject("codeType", new JsonObject());
 	}
-	@JsonProperty("codeType")
 	public void setCodetype(JsonObject codeType) {
 		data.put("codeType", codeType);
 	}
@@ -79,11 +74,9 @@ public class APITask extends APIElementBase<Task> {
 		}
 	}
 	
-	@JsonProperty("code")
 	public String getCode() {
 		return data.getString("code","");
 	}
-	@JsonProperty("code")
 	public void setCode(String code) {
 		data.put("code", code);
 	}

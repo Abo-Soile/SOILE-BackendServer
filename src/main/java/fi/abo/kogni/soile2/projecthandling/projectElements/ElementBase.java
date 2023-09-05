@@ -8,8 +8,6 @@ import java.util.Map.Entry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -80,14 +78,12 @@ public abstract class ElementBase implements Element {
 	}		
 
 	@Override
-	@JsonProperty("UUID")
 	public String getUUID()
 	{
 		return data.getString("_id");
 	}	
 
 	@Override
-	@JsonProperty("UUID")
 	public void setUUID(String UUID)
 	{
 		data.put("_id", UUID);
@@ -102,7 +98,6 @@ public abstract class ElementBase implements Element {
 	 * @return the versions array.
 	 */
 	@Override
-	@JsonProperty("versions")
 	public JsonArray getVersions() {
 		JsonArray versionArray = new JsonArray();
 		for(Entry<String,Date> key : versions.entrySet())
@@ -113,7 +108,6 @@ public abstract class ElementBase implements Element {
 	}
 	
 	@Override
-	@JsonProperty("versions")
 	public void setVersions(JsonArray versions) {
 		HashMap<String,Date> newVersions = new HashMap<>();
 		String latestVersion = null;
@@ -137,19 +131,16 @@ public abstract class ElementBase implements Element {
 		this.versions = newVersions;
 	}
 	@Override
-	@JsonProperty("name")
 	public String getName() {
 		return data.getString("name");
 	}
 	
 	@Override
-	@JsonProperty("name")
 	public void setName(String name) {
 		data.put("name", name);
 	}
 
 	@Override
-	@JsonProperty("tags")
 	public JsonArray getTags() {
 		JsonArray tagArray = new JsonArray();
 		for(Entry<String,String> key : tags.entrySet())
@@ -160,7 +151,6 @@ public abstract class ElementBase implements Element {
 	}
 	
 	@Override	
-	@JsonProperty("tags")
 	public void setTags(JsonArray tags) {
 		HashMap<String,String> newTags = new HashMap<>();
 		for(int i = 0; i < tags.size(); i++)
@@ -172,26 +162,22 @@ public abstract class ElementBase implements Element {
 	}		
 	
 	@Override
-	@JsonProperty("private")
 	public Boolean getPrivate() {
 		return data.getBoolean("private");
 	}
 	
 	@Override
-	@JsonProperty("private")
 	public void setPrivate(Boolean isprivate) {
 		data.put("private",isprivate);
 	}
 
 	
 	@Override
-	@JsonProperty("visible")
 	public Boolean getVisible() {
 		return data.getBoolean("visible");
 	}
 	
 	@Override
-	@JsonProperty("visible")
 	public void setVisible(Boolean visible) {
 		data.put("visible",visible);
 	}

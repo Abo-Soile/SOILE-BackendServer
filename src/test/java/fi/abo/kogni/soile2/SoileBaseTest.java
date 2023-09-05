@@ -98,11 +98,11 @@ public abstract class SoileBaseTest {
 	 */
 	@After
 	public void finishUp(TestContext context) {
-		System.out.println("Shutting down Vertx");
+		//System.out.println("Shutting down Vertx");
 		Async vertxClosed = context.async();		
 		vertx.close().onComplete(res ->
 		{
-			System.out.println("Close completed.");
+			//System.out.println("Close completed.");
 			vertxClosed.complete();
 		});		
 	}
@@ -112,7 +112,7 @@ public abstract class SoileBaseTest {
 	{				
 		try
 		{
-			System.out.println("Cleaning directory");
+			//System.out.println("Cleaning directory");
 			FileUtils.deleteDirectory(new File(tmpDir));
 		}
 		catch(Exception e)

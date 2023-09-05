@@ -5,8 +5,6 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
@@ -33,7 +31,6 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	}
 	
 	@Override
-	@JsonProperty("UUID")
 	public String getUUID()
 	{
 		return data.getString("UUID");
@@ -51,7 +48,6 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	 * @return
 	 */
 	@Override
-	@JsonProperty("version")
 	public String getVersion()
 	{
 		return data.getString("version");
@@ -68,7 +64,6 @@ public abstract class ElementInstanceBase implements ElementInstance {
 
 
 	@Override
-	@JsonProperty("name")
 	public String getName()
 	{
 		return data.getString("name");
@@ -101,7 +96,6 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	}
 
 	@Override
-	@JsonProperty("private")
 	public Boolean getPrivate() {
 		return data.getBoolean("private");
 	}
@@ -111,7 +105,6 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	}
 	
 	@Override
-	@JsonProperty("next")
 	public String getNext() {
 		return data.getString("next");
 	}
@@ -122,7 +115,6 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	}
 	
 	@Override
-	@JsonProperty("instanceID")
 	public String getInstanceID() {
 		return data.getString("instanceID");
 	}

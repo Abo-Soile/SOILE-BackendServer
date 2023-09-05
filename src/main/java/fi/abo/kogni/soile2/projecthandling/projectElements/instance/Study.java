@@ -393,7 +393,6 @@ public abstract class Study implements AccessElement{
 		TaskObjectInstance currentTask = (TaskObjectInstance)getElement(taskData.getString("taskID"));
 		HashSet<String> outputs = new HashSet<>();
 		HashSet<String> persistent = new HashSet<>();
-		boolean outputsPresent = true;
 		JsonArray outputData = taskData.getJsonArray("outputData", new JsonArray());		
 		for(int i = 0; i < outputData.size(); i++)
 		{
@@ -403,11 +402,9 @@ public abstract class Study implements AccessElement{
 		for(int i = 0; i < currentOutputs.size(); i++)
 		{
 			if(!outputs.contains(currentOutputs.getString(i))) {
-				outputsPresent = false;
-				break;
+				return false;
 			}
-		}
-		boolean persistentPresent = true;
+		}		
 		LOGGER.debug(taskData.encodePrettily());		
 		JsonArray persistentData = taskData.getJsonArray("persistentData", new JsonArray());
 		LOGGER.debug(currentOutputs.encodePrettily());
@@ -420,12 +417,11 @@ public abstract class Study implements AccessElement{
 		for(int i = 0; i < currentPersistent.size(); i++)
 		{
 			if(!persistent.contains(currentPersistent.getString(i))) {
-				persistentPresent = false;
-				break;
+				return false;
 			}
 		}
 		LOGGER.debug(currentPersistent.encodePrettily());
-		return outputsPresent && persistentPresent;
+		return true;
 	}
 
 	/**

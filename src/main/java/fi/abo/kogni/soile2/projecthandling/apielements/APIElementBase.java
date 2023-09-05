@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import io.vertx.core.Future;
@@ -69,14 +67,12 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	
 
 	@Override
-	@JsonProperty("UUID")
 	public String getUUID()
 	{
 		return data.getString("UUID");
 	}	
 
 	@Override
-	@JsonProperty("UUID")
 	public void setUUID(String UUID)
 	{
 		data.put("UUID", UUID);
@@ -91,48 +87,40 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	 * @return the versions array.
 	 */
 	@Override
-	@JsonProperty("version")
 	public String getVersion() {		
 		return data.getString("version","");
 	}
 	
 	@Override
-	@JsonProperty("version")
 	public void setVersion(String version) {
 		data.put("version", version); 
 	}
 	@Override
-	@JsonProperty("name")
 	public String getName() {
 		return data.getString("name");
 	}
 	
 	@Override
-	@JsonProperty("name")
 	public void setName(String name) {
 		data.put("name", name);
 	}
 
 	@Override
-	@JsonProperty("tag")
 	public String getTag() {
 		return data.getString("tag");
 	}
 	
 	@Override	
-	@JsonProperty("tag")
 	public void setTag(String tag) {
 		data.put("tag", tag);
 	}		
 	
 	@Override
-	@JsonProperty("private")
 	public Boolean getPrivate() {
 		return data.getBoolean("private", false);
 	}
 	
 	@Override
-	@JsonProperty("private")
 	public void setPrivate(Boolean isprivate) {
 		data.put("private",isprivate);
 	}

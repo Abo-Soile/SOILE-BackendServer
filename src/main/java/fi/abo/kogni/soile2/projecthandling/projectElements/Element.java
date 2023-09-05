@@ -3,8 +3,6 @@ package fi.abo.kogni.soile2.projecthandling.projectElements;
 import java.util.Date;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
@@ -21,10 +19,8 @@ public interface Element extends AccessElement {
 	 * This UUID is a mongoDB ID. 
 	 * @return the UUID of this Element (if it is saved in a DB yet)
 	 */
-	@JsonProperty("UUID")
 	String getUUID();
 
-	@JsonProperty("UUID")
 	void setUUID(String UUID);
 
 	/**
@@ -37,14 +33,12 @@ public interface Element extends AccessElement {
 	 * ]
 	 * @return
 	 */
-	@JsonProperty("versions")
 	JsonArray getVersions();
 
 	/**
 	 * Set the Versions for this Element
 	 * @param versions A JsonArray of the form indicated in {@link getVersions);
 	 */
-	@JsonProperty("versions")
 	void setVersions(JsonArray versions);
 
 	
@@ -58,41 +52,35 @@ public interface Element extends AccessElement {
 	 * ]
 	 * @return
 	 */
-	@JsonProperty("tags")
 	JsonArray getTags();
 
 	/**
 	 * Set the Versions for this Element
 	 * @param versions A JsonArray of the form indicated in {@link getTags);
 	 */
-	@JsonProperty("tags")
 	void setTags(JsonArray tags);
 	
 	/**
 	 * The name of this element
 	 * @return
 	 */
-	@JsonProperty("name")
 	String getName();
 
 	/**
 	 * Set the name of the element 
 	 * @param name
 	 */
-	@JsonProperty("name")
 	void setName(String name);
 
 	/**
 	 * The private property of this element
 	 * @return whether the element is private (i.e. needs special access)
 	 */
-	@JsonProperty("private")
 	Boolean getPrivate();
 	/**
 	 * Set the private property of this object.
 	 * @param _private
 	 */
-	@JsonProperty("private")
 	void setPrivate(Boolean _private);
 
 	
@@ -100,13 +88,11 @@ public interface Element extends AccessElement {
 	 * The visible property of this element
 	 * @return whether the element is visible (if not visible, it is in the process of deletion and will be removed if no other element refers to it any more.)
 	 */
-	@JsonProperty("visible")
 	Boolean getVisible();
 	/**
 	 * Set the visible property of this object.
 	 * @param _private
 	 */
-	@JsonProperty("visible")
 	void setVisible(Boolean visible);
 	
 	

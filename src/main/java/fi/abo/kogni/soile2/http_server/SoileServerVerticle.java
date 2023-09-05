@@ -50,7 +50,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 		{
 			if(res.succeeded())
 			{
-				LOGGER.info("Server started successfully and listening on port " + SoileConfigLoader.getServerIntProperty("port"));
+				LOGGER.debug("Server started successfully and listening on port " + SoileConfigLoader.getServerIntProperty("port"));
 				
 				startPromise.complete();
 			}
@@ -205,7 +205,7 @@ public class SoileServerVerticle extends AbstractVerticle {
 		
 		if(SoileConfigLoader.getServerBooleanProperty("useSSL", false))
 		{
-			LOGGER.info("Using HTTPS");	
+			LOGGER.debug("Using HTTPS");	
 			String sslStoreFile = SoileConfigLoader.getServerProperty("sslStoreFile");
 			opts.setSsl(true);
 			if(sslStoreFile.endsWith(".p12"))

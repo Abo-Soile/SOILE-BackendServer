@@ -6,8 +6,6 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -30,11 +28,9 @@ public class Project extends ElementBase{
 	}
 			
 		
-	@JsonProperty("elements")
 	public JsonArray getElements() {
 		return new JsonArray(elements);
 	}
-	@JsonProperty("elements")
 	public void setElements(JsonArray elements) {
 		List<String> newElements = new LinkedList<String>();
 		for(int i = 0; i < elements.size(); i++)

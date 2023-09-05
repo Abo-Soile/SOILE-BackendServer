@@ -62,7 +62,7 @@ async function videophase() {
     },
     false
   );
-  const config = (await fetch("config.json")).json();
+  const config = await (await fetch("config.json")).json();
 
 
   //var config = window.testConfig;

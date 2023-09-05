@@ -6,6 +6,7 @@ import java.nio.file.Files;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.Logger;
 import org.junit.After;
 
 import fi.abo.kogni.soile2.datamanagement.git.GitManager;
@@ -20,6 +21,7 @@ public abstract class GitTest extends MongoTest {
 	protected GitManager gitManager;
 	protected String gitDataLakeDir;
 	protected String resultDataLakeDir;
+		
 	@Override
 	public void runBeforeTests(TestContext context)
 	{		

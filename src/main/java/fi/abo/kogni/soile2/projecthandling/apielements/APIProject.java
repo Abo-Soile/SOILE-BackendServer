@@ -2,8 +2,6 @@ package fi.abo.kogni.soile2.projecthandling.apielements;
 
 import java.util.function.Function;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
@@ -44,21 +42,28 @@ public class APIProject extends APIElementBase<Project>{
 												(x) -> FieldSpecifications.applySpecToArray((JsonArray)x, Filter.getFieldSpecs()), 
 												(x) ->  {return x;}}; 
 	}
-	
-	@JsonProperty("start")
+	/**
+	 * Set the start property
+	 * @param start
+	 */
 	public void setStart(String start)
 	{
 		this.data.put("start", start);
 	}
-
-	@JsonProperty("start")
+	
+	/**
+	 * Get the start property
+	 * @return
+	 */
 	public String getStart()
 	{
 		return this.data.getString("start");
 	}
 	
-	
-	@JsonProperty("tasks")
+	/**
+	 * Set the tasks
+	 * @param tasks
+	 */
 	public void setTasks(JsonArray tasks)
 	{
 		JsonArray newTasks =  new JsonArray();		
@@ -68,8 +73,10 @@ public class APIProject extends APIElementBase<Project>{
 		}
 		this.data.put("tasks", newTasks);
 	}
-
-	@JsonProperty("tasks")
+	/**
+	 * Get the tasks
+	 * @return
+	 */
 	public JsonArray getTasks()
 	{		
 		return this.data.getJsonArray("tasks");
@@ -81,7 +88,6 @@ public class APIProject extends APIElementBase<Project>{
 	}
 	
 	
-	@JsonProperty("experiments")
 	public void setExperiments(JsonArray experiments)
 	{
 		JsonArray newExperiments =  new JsonArray();		
@@ -92,7 +98,6 @@ public class APIProject extends APIElementBase<Project>{
 		this.data.put("experiments", newExperiments);
 	}
 
-	@JsonProperty("experiments")
 	public JsonArray getExperiments()
 	{		
 		return this.data.getJsonArray("experiments");
@@ -103,7 +108,6 @@ public class APIProject extends APIElementBase<Project>{
 		this.data.getJsonArray("experiments").add(experiment);
 	}
 	
-	@JsonProperty("filters")
 	public void setFilters(JsonArray filters)
 	{
 		JsonArray newFilters =  new JsonArray();		
@@ -114,7 +118,6 @@ public class APIProject extends APIElementBase<Project>{
 		this.data.put("filters",newFilters);
 	}
 
-	@JsonProperty("filters")
 	public JsonArray getFilters()
 	{		
 		return this.data.getJsonArray("filters");

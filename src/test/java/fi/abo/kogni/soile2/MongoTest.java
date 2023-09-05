@@ -7,8 +7,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -22,6 +23,7 @@ import de.flapdoodle.embed.process.io.ProcessOutput;
 import de.flapdoodle.embed.process.runtime.Network;
 import de.flapdoodle.reverse.TransitionWalker.ReachedState;
 import de.flapdoodle.reverse.transitions.Start;
+import fi.abo.kogni.soile2.http_server.SoileServerVerticle;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -38,10 +40,10 @@ public abstract class MongoTest extends SoileBaseTest {
 	static Mongod MONGO;
 	static ReachedState<RunningMongodProcess> state;	
 	public MongoClient mongo_client;
-	
+		
 	@BeforeClass
 	public static void initialize() throws IOException {
-		Logger mongologger = Logger.getLogger("org.mongodb.driver");
+		java.util.logging.Logger mongologger = java.util.logging.Logger.getLogger("org.mongodb.driver");
 		mongologger.setLevel(Level.SEVERE);
 		JsonObject config = new JsonObject(Files.readString(Paths.get(MongoTest.class.getClassLoader().getResource("soile_config.json").getPath())));
 		
@@ -89,7 +91,7 @@ public abstract class MongoTest extends SoileBaseTest {
 				if(collectionsDropped.size() == 0)
 				{
 					// either there was nothing to drop, then we can shut down the vertx instance
-					System.out.println("No collections found. Proceeding");
+					//"No collections found. Proceeding"
 					super.finishUp(context);
 					shutDownVertxAsync.complete();
 				}
@@ -114,7 +116,7 @@ public abstract class MongoTest extends SoileBaseTest {
 	
 	@AfterClass
 	public static void shutdown() {
-		System.out.println("Shutting down Mongo");
+		//System.out.println("Shutting down Mongo");
 		state.current().stop();
 		
 	}

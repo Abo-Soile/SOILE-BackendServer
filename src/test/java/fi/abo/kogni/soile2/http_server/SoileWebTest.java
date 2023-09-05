@@ -484,7 +484,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 			}
 			catch(Exception e)
 			{
-				LOGGER.info(response.body());
+				LOGGER.debug(response.body());
 				LOGGER.error(e, e);
 				return Future.failedFuture(e);
 			}			
@@ -516,7 +516,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		{
 			if(response.statusCode() >= 400)
 			{
-				LOGGER.info(response.bodyAsString());
+				LOGGER.debug(response.bodyAsString());
 				return Future.failedFuture(new HttpException(response.statusCode(), response.bodyAsString()));
 			}
 			try {
@@ -524,7 +524,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 			}
 			catch(Exception e)
 			{
-				LOGGER.info(response.body());
+				LOGGER.debug(response.body());
 				LOGGER.error(e, e);
 				return Future.failedFuture(e);
 			}			

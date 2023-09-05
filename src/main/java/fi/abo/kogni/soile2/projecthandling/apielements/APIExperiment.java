@@ -5,8 +5,6 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
@@ -70,7 +68,6 @@ public class APIExperiment extends APIElementBase<Experiment> {
 	
 	
 	
-	@JsonProperty("elements")
 	public JsonArray getElements() {
 		if(!data.containsKey("elements"))
 		{
@@ -78,7 +75,6 @@ public class APIExperiment extends APIElementBase<Experiment> {
 		}
 		return data.getJsonArray("elements",new JsonArray());
 	}
-	@JsonProperty("elements")
 	public void setCode(JsonArray elements) {
 		data.put("elements", elements);
 	}

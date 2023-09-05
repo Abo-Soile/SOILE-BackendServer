@@ -3,8 +3,6 @@ package fi.abo.kogni.soile2.projecthandling.apielements;
 
 import java.util.function.Function;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.ElementFactory;
 import io.vertx.core.Future;
@@ -23,10 +21,8 @@ public interface APIElement<T extends ElementBase> {
 	 * This UUID is a mongoDB ID. 
 	 * @return the UUID of this Element (if it is saved in a DB yet)
 	 */
-	@JsonProperty("UUID")
 	String getUUID();
 
-	@JsonProperty("UUID")
 	void setUUID(String UUID);
 
 	/**
@@ -39,14 +35,12 @@ public interface APIElement<T extends ElementBase> {
 	 * ]
 	 * @return
 	 */
-	@JsonProperty("version")
 	String getVersion();
 
 	/**
 	 * Set the Versions for this Element
 	 * @param versions A JsonArray of the form indicated in {@link getVersions);
 	 */
-	@JsonProperty("version")
 	void setVersion(String versions);
 
 
@@ -60,41 +54,35 @@ public interface APIElement<T extends ElementBase> {
 	 * ]
 	 * @return
 	 */
-	@JsonProperty("tag")
 	String getTag();
 
 	/**
 	 * Set the Versions for this Element
 	 * @param versions A JsonArray of the form indicated in {@link getTags);
 	 */
-	@JsonProperty("tag")
 	void setTag(String tag);
 
 	/**
 	 * The name of this element
 	 * @return
 	 */
-	@JsonProperty("name")
 	String getName();
 
 	/**
 	 * Set the name of the element 
 	 * @param name
 	 */
-	@JsonProperty("name")
 	void setName(String name);
 
 	/**
 	 * The private property of this element
 	 * @return whether the element is private (i.e. needs special access)
 	 */
-	@JsonProperty("private")
 	Boolean getPrivate();
 	/**
 	 * Set the private property of this object.
 	 * @param _private
 	 */
-	@JsonProperty("private")
 	void setPrivate(Boolean _private);
 
 	/**
