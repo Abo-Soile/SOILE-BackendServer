@@ -40,7 +40,7 @@ public class ElementFactory<T extends ElementBase> {
 	 * @param type Is Nullable, mainly for tasks codeType.
 	 * @return
 	 */
-	public Future<T> createElement(MongoClient client, String name, String type, String version)
+	public Future<T> createElement(MongoClient client, String name) //, String version, String type)
 	{		
 		Promise<T> elementPromise = Promise.<T>promise();
 		T element = DBObjectSupplier.get();
@@ -82,14 +82,14 @@ public class ElementFactory<T extends ElementBase> {
 	 * @param type Is Nullable, mainly for tasks codeType.
 	 * @return
 	 */
-	public Future<T> createElement(MongoClient client, String name)	
+	/*public Future<T> createElement(MongoClient client, String name)	
 	{		
 		if(type == TargetElementType.TASK)
 		{
 			return Future.failedFuture("Need a codeType to create a Task");
 		}
-		return createElement(client, name, null, null);
-	}
+		return createElement(client, name, null);
+	}*/
 	
 	/**
 	 * Load a project as specified by the UUID. This UUID is the mongoDB id. if no project could be loaded, the promise fails.

@@ -523,24 +523,13 @@ public class StudyRouterTest extends SoileWebTest {
 										.onSuccess(updateResponse -> {
 											context.fail("This should not be possible");
 										})
-										.onFailure(err -> failAsync.complete());	
-										studyData2.put("private",false);
-										studyData2.put("shortDescription","Fancy");		
+										.onFailure(err -> failAsync.complete());
+										// changing only the privacy should still fail on an active study. 
+										studyData2.put("private",false);											
 										POST(authedSession, "/study/" + studyId +"/update", null, studyData2)
-										.onSuccess(updateResponse -> {
-											POST(authedSession, "/study/" + studyId + "/get", null, null)
-											.onSuccess(updatedstudyDataResponse -> {
-												JsonObject studyDatanew = updatedstudyDataResponse.bodyAsJsonObject();
-												context.assertEquals("Fancy", studyDatanew.getString("shortDescription"));
-												context.assertEquals(projectID, studyDatanew.getString("sourceUUID"));
-												context.assertEquals(projectVersion, studyDatanew.getString("version"));
-												context.assertEquals(false, studyDatanew.getBoolean("private"));
-												getsetasync.complete();
-											})
-											.onFailure(err -> context.fail(err));
+										.onSuccess(updateResponse -> context.fail("Should not be allowed"))
+										.onFailure(err -> getsetasync.complete());	
 
-										})									
-										.onFailure(err -> context.fail(err));									
 									})
 									.onFailure(err -> context.fail(err));
 
@@ -571,6 +560,103 @@ public class StudyRouterTest extends SoileWebTest {
 			.onFailure(err -> context.fail(err));
 		})
 		.onFailure(err -> context.fail(err));
+	}
+
+	/**
+	 * This test tests both starting and getting the list of running projects.
+	 * @param context
+	 */
+	@Test
+	public void testActiveBlocksMod(TestContext context)
+	{
+		System.out.println("--------------------  Testing POST/GET study properties  ----------------------");    
+
+		JsonObject projectExec = new JsonObject().put("private", true).put("name", "New Project").put("shortcut","newShortcut"); 
+		Async setupAsync = context.async();
+		createUserAndAuthedSession("Researcher", "pw", Roles.Researcher)
+		.onSuccess(authedSession -> {
+			WebObjectCreator.createProject(authedSession, "Testproject")
+			.onSuccess(projectData -> {
+				String projectID = projectData.getString("UUID");					
+				String projectVersion = projectData.getString("version");
+				WebObjectCreator.createProject(authedSession, "ExampleProject")
+				.onSuccess(projectData2 -> {
+					String projectID2 = projectData2.getString("UUID");						
+					String projectVersion2 = projectData2.getString("version");
+					Async startAsync = context.async();
+					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec )					
+					.onSuccess(response -> {
+						// we have a project set up. lets try to get the information.
+						String studyId = response.bodyAsJsonObject().getString("projectID");					
+						Async possibleUpdates  = context.async();
+						POST(authedSession, "/study/" + studyId + "/get", null, null)
+						.compose(studyDataResponse -> {
+							JsonObject studyData = studyDataResponse.bodyAsJsonObject();
+							JsonObject studyData2 = studyDataResponse.bodyAsJsonObject();
+							context.assertEquals("newShortcut", studyData.getString("shortcut"));
+							context.assertEquals(projectID, studyData.getString("sourceUUID"));
+							context.assertEquals(projectVersion, studyData.getString("version"));
+							context.assertEquals(true, studyData.getBoolean("private"));
+							studyData.put("private", false);
+							studyData.put("sourceUUID", projectID2);
+							studyData.put("version", projectVersion2);
+							studyData2.put("shortDescription","fancy");											
+							return POST(authedSession, "/study/" + studyId +"/update", null, studyData)
+									.compose(updated-> {
+										return POST(authedSession, "/study/" + studyId + "/get", null, null);
+									}).compose(updateResponse -> {
+
+										JsonObject updatedStudyData = updateResponse.bodyAsJsonObject();
+										context.assertEquals(projectVersion2, updatedStudyData.getString("version"));
+										context.assertEquals(projectID2, updatedStudyData.getString("sourceUUID"));
+										return POST(authedSession, "/study/" + studyId +"/update", null, studyData2);							
+									})
+									.compose(updated -> {
+										return POST(authedSession, "/study/" + studyId + "/get", null, null);
+									});
+						})
+						.onSuccess(updateResponse -> {
+							JsonObject updatedStudyData = updateResponse.bodyAsJsonObject();
+							context.assertEquals("fancy", updatedStudyData.getString("shortDescription"));
+							// now activate it and try again...
+							Async notWorkingAsync = context.async(); 
+							POST(authedSession, "/study/" + studyId + "/start", null, null)
+							.onSuccess(started -> {
+								JsonObject studyData = updateResponse.bodyAsJsonObject();
+								JsonObject studyData2 = updateResponse.bodyAsJsonObject();
+								studyData.put("private", false);
+								studyData.put("sourceUUID", projectID2);
+								studyData.put("version", projectVersion2);
+								studyData2.put("shortDescription","fancy");
+								Async versionUpdate = context.async();
+								POST(authedSession, "/study/" + studyId +"/update", null, studyData)
+								.onFailure(err -> versionUpdate.complete())
+								.onSuccess(done -> context.fail("Should nto be possible"));
+								Async otherUpdate = context.async();
+								POST(authedSession, "/study/" + studyId +"/update", null, studyData2)
+								.onFailure(err -> otherUpdate.complete())
+								.onSuccess(done -> context.fail("Should nto be possible"));
+
+								notWorkingAsync.complete();
+							})
+							.onFailure(err -> context.fail(err));
+
+							possibleUpdates.complete();
+
+						})
+						.onFailure(err -> context.fail(err));
+						startAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));	
+
+					setupAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));					
+			})
+			.onFailure(err -> context.fail(err));
+
+		})
+		.onFailure(err -> context.fail(err));		
 	}
 
 

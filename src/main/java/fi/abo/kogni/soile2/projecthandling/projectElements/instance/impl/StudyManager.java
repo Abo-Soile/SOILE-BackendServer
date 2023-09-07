@@ -68,7 +68,7 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	
 	@Override
 	public Future<Study> getElement(String key) {		
-		return Study.instantiateProject(new JsonObject().put("_id", key), dbFactory);				
+		return Study.instantiateStudy(new JsonObject().put("_id", key), dbFactory);				
 	}
 
 	@Override
@@ -117,11 +117,11 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	 * @param projectVersion - The name of the instance.
 	 * @param handler the handler to handle the created participant
 	 */
-	public StudyManager startProject(JsonObject projectInformation, Handler<AsyncResult<Study>> handler, String projectInstanceName)
+	/*public StudyManager startProject(JsonObject projectInformation, Handler<AsyncResult<Study>> handler, String projectInstanceName)
 	{
 		handler.handle(startProject(projectInformation));
 		return this;
-	}
+	}*/
 
 	/**
 	 * Create a new Project with empty information and retrieve a new ID from the 
@@ -135,7 +135,7 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	public Future<Study> startProject(JsonObject projectInformation )
 	{						
 		LOGGER.debug("Trying to instanciate Project ");
-		return Study.instantiateProject(projectInformation, createFactory);
+		return Study.instantiateStudy(projectInformation, createFactory);
 	}
 	
 	/**
@@ -149,20 +149,6 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 							   .put("participants", new JsonArray())
 							   .put("private", false)
 							   .put("signupTokens",new JsonArray());
-	}
-	
-	/**
-	 * Save the given Project instance.
-	 * @param study
-	 * @return
-	 */
-	public Future<JsonObject> save(Study study)
-	{
-		if(study.getShortCut() != null)
-		{
-			projectPathes.putData(study.getShortCut(), study.getID());
-		}
-		return study.save();
 	}
 	
 	/**
@@ -284,7 +270,7 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 		// update the information
 		updateStudy(study);
 		// and save the study.
-		return study.save().mapEmpty();		
+		return study.save(false).mapEmpty();		
 	}
 
 	
@@ -296,9 +282,15 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 		// update the information
 		updateStudy(study);
 		// and save the study.
-		return study.save().mapEmpty();		
+		return study.save(false).mapEmpty();		
 	}
 	
+	/**
+	 * Update a study. This should always reset information. 
+	 * @param study
+	 * @param newData
+	 * @return
+	 */
 	public Future<Void> updateStudy(Study study, JsonObject newData)
 	{
 		Promise<Void> updatePromise = Promise.promise();

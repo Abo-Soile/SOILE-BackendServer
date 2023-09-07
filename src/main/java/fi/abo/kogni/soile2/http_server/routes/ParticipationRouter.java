@@ -74,7 +74,7 @@ public class ParticipationRouter extends SoileRouter{
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> 
 		{
-			loadProject(requestedInstanceID)
+			loadStudy(requestedInstanceID)
 			.onSuccess(project -> {					
 				// this list needs to be filtered by access
 				getParticpantForUser(context.user(), project)				
@@ -115,7 +115,7 @@ public class ParticipationRouter extends SoileRouter{
 			}
 			FileUpload currentUpload = context.fileUploads().get(0);
 			LOGGER.debug("Loading project " + requestedInstanceID);
-			loadProject(requestedInstanceID)
+			loadStudy(requestedInstanceID)
 			.onSuccess(project -> {				
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -126,7 +126,7 @@ public class ParticipationRouter extends SoileRouter{
 					participant.getCurrentStep()
 					.onSuccess(step -> {
 						LOGGER.debug("Saving participant data");
-						dataLakeManager.storeParticipantData(participant.getID(), step, participant.getProjectPosition(), currentUpload)
+						dataLakeManager.storeParticipantData(participant.getID(), step, participant.getStudyPosition(), currentUpload)
 						.onSuccess(id -> {
 							context.response()
 							.setStatusCode(200)						
@@ -154,7 +154,7 @@ public class ParticipationRouter extends SoileRouter{
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,true)
 		.onSuccess(Void -> 
 		{			
-			loadProject(requestedInstanceID)
+			loadStudy(requestedInstanceID)
 			.onSuccess(study -> {				
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -212,7 +212,7 @@ public class ParticipationRouter extends SoileRouter{
 					// if we don't have a token, an authed user can also sign up to a project (even though it's not needed)
 					accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 					.onSuccess(authed -> {				
-						loadProject(requestedInstanceID)
+						loadStudy(requestedInstanceID)
 						.onSuccess(project -> {
 							// this will connect the user with a new participant if they haven't already got one.
 							createParticipant(project, "", context)
@@ -231,7 +231,7 @@ public class ParticipationRouter extends SoileRouter{
 				}
 				else
 				{
-					loadProject(requestedInstanceID)
+					loadStudy(requestedInstanceID)
 					.onSuccess(project -> {
 						// this will connect the user with a new participant if they haven't already got one.
 						createParticipant(project, "", context)
@@ -252,7 +252,7 @@ public class ParticipationRouter extends SoileRouter{
 		else
 		{
 			// we got a token. This can be either associated with a user or not.
-			loadProject(requestedInstanceID)
+			loadStudy(requestedInstanceID)
 			.onSuccess(project -> {				
 				project.useToken(token)
 				.onSuccess( tokenUsed -> {
@@ -375,11 +375,11 @@ public class ParticipationRouter extends SoileRouter{
 		String requestedInstanceID = context.pathParam("id");;
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
-			loadProject(requestedInstanceID)
-			.onSuccess(project -> {					
+			loadStudy(requestedInstanceID)
+			.onSuccess(study -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
-				getParticpantForUser(context.user(), project)				
+				getParticpantForUser(context.user(), study)				
 				.onSuccess(participant-> {		
 					if(participant.isFinished())
 					{
@@ -391,14 +391,14 @@ public class ParticipationRouter extends SoileRouter{
 					else
 					{
 						try {
-							TaskObjectInstance currentTask = (TaskObjectInstance)project.getElement(participant.getProjectPosition());							
+							TaskObjectInstance currentTask = (TaskObjectInstance)study.getElement(participant.getStudyPosition());							
 							eb.request("soile.task.getVersionInfo", new JsonObject().put("UUID", currentTask.getUUID()).put("version", currentTask.getVersion()))
 							.onSuccess(response -> {								
 								JsonObject responseBody = ((JsonObject) response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
 								context.response()
 								.setStatusCode(200)	
 								.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-								.end(new JsonObject().put("finished", false).put("codeType", responseBody.getJsonObject("codeType")).put("outputs", currentTask.getOutputs()).put("persistent", currentTask.getPersistent()).put("id", participant.getProjectPosition()).encode());
+								.end(new JsonObject().put("finished", false).put("codeType", responseBody.getJsonObject("codeType")).put("outputs", currentTask.getOutputs()).put("persistent", currentTask.getPersistent()).put("id", participant.getStudyPosition()).encode());
 							})
 							.onFailure(err -> handleError(err, context));
 						}
@@ -425,7 +425,7 @@ public class ParticipationRouter extends SoileRouter{
 		String requestedInstanceID = context.pathParam("id");;
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
-			loadProject(requestedInstanceID)
+			loadStudy(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -450,7 +450,7 @@ public class ParticipationRouter extends SoileRouter{
 
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
-			loadProject(requestedInstanceID)
+			loadStudy(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -465,7 +465,7 @@ public class ParticipationRouter extends SoileRouter{
 					else
 					{
 						// Try catch block.
-						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
+						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getStudyPosition());
 						eb.request(SoileConfigLoader.getVerticleProperty("gitCompilationAddress"),
 								new JsonObject().put("UUID", currentTask.getUUID())
 								.put("type", currentTask.getCodeType())
@@ -494,7 +494,7 @@ public class ParticipationRouter extends SoileRouter{
 
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
-			loadProject(requestedInstanceID)
+			loadStudy(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -509,7 +509,7 @@ public class ParticipationRouter extends SoileRouter{
 					else
 					{
 						// Try catch block.
-						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
+						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getStudyPosition());
 						context.response()
 						.setStatusCode(200)
 						.putHeader(HttpHeaders.CONTENT_TYPE, "application/javascript")
@@ -529,7 +529,7 @@ public class ParticipationRouter extends SoileRouter{
 
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
-			loadProject(requestedInstanceID)
+			loadStudy(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -562,7 +562,7 @@ public class ParticipationRouter extends SoileRouter{
 		String pathPrefix = requestedInstanceID + "/" + taskInstanceID; 
 		accessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Participant,PermissionType.EXECUTE,false)
 		.onSuccess(Void -> {
-			loadProject(requestedInstanceID)
+			loadStudy(requestedInstanceID)
 			.onSuccess(project -> {					
 				//JsonArray taskData = project.getTasksWithNames();
 				// this list needs to be filtered by access
@@ -577,7 +577,7 @@ public class ParticipationRouter extends SoileRouter{
 					else
 					{
 						// Ok, this is a request for resources for a file referenced from git. 
-						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getProjectPosition());
+						TaskObjectInstance currentTask = (TaskObjectInstance) project.getElement(participant.getStudyPosition());
 						String treatedPath = normalizePath(context.normalizedPath());
 						if (treatedPath == null) {
 							context.next();
@@ -686,26 +686,26 @@ public class ParticipationRouter extends SoileRouter{
 	}
 
 
-	private Future<Study> loadProject(String id)
+	private Future<Study> loadStudy(String id)
 	{
-		Promise<Study> projPromise = Promise.promise();
+		Promise<Study> studyPromise = Promise.promise();
 		studyHandler.loadUpToDateStudy(id).
 		onSuccess(project -> {
 			project.isActive()
 			.onSuccess(active -> {
 				if(active)
 				{
-					projPromise.complete(project);	
+					studyPromise.complete(project);	
 				}
 				else
 				{
-					projPromise.fail(new HttpException(410,"Project is currently inactive"));	
+					studyPromise.fail(new HttpException(410,"Project is currently inactive"));	
 				}
 			})
-			.onFailure(err -> projPromise.fail(err));			
+			.onFailure(err -> studyPromise.fail(err));			
 		})
-		.onFailure(err -> projPromise.fail(err));
-		return projPromise.future();
+		.onFailure(err -> studyPromise.fail(err));
+		return studyPromise.future();
 
 	}
 }

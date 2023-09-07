@@ -3383,6 +3383,7 @@ components:
         private: 
           type: boolean
           description: Whether this element is private or generally accessible. If not set, can be accessed by anyone.
+          
     DBElement:
       type: object
       properties:
@@ -3538,6 +3539,37 @@ components:
                   type: string
                   example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
                   description: Which element to perform after this Filter if no option fits the given user. If this is empty, or doesn't exist, the assumption is that this is the end of the element (i.e. in an experiment, it points back to the experiment, or in a project it indicates that this project is finished after this filter). If in an experiment in a project, this must point to the experiment if it is the last entry in the experiment (i.e. it can't be empty)
+    RandomizerInstance:
+      allOf:
+      - $ref: '#/components/schemas/ElementInstance'
+      - type: object
+        required: 
+          - options
+          - settings
+        properties:
+          type: 
+            type: string
+            description: the type of the instance (e.g. "random" or "block")
+          options: 
+            description: Name and target of the next steps.
+            type: array
+            items: 
+              type: object
+              required:
+                - name
+                - next
+              properties: 
+                name:
+                  type: string
+                  example: "Some Name"
+                  description: a descriptive name of next step
+                next:
+                  type: string
+                  example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf
+                  description: Which element to perform after this task, cannot point back to itself! A value of "end" will indicate no next item. 
+                    This is only present in instances, not in 
+                    This will need to opint to an instanceID of another task, experiment or filter. 
+
     Experiment:
       allOf:
         - $ref: '#/components/schemas/BasicElementData'
@@ -3580,6 +3612,8 @@ components:
                 anyOf:
                   - $ref: '#/components/schemas/FilterInstance'
                   - $ref: '#/components/schemas/TaskInstance'
+                  - $ref: '#/components/schemas/ExperimentInstance'
+                  - $ref: '#/components/schemas/RandomizerInstance'
 
           description: Instances of tasks, further experiments or Filters, need to have instance IDs etc pp project back-reference, etc. The first element in this list will be assumed to be the starting element for this Experiment. Any element that does NOT have a next element being set will be assumed to be an end element. After which the instantiated experiments "next" element is called.
         randomize: 
@@ -3626,9 +3660,6 @@ components:
         shortcut:
           type: string
           description: "a shortcut string tht can be used for access via /e/shortcut"
-        vert: 
-          type: boolean
-          description: whether the study is private or publicly visible
     Study:
       allOf: 
         - $ref: '#/components/schemas/ModifyiableStudyProperties'
@@ -3674,7 +3705,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FilterInstance'
-          description: Instances of Filters, need to have instance IDs etc pp project back-reference, etc. 
+          description: Instances of Filters, need to have instance IDs etc pp project back-reference, etc.
+        randomizers:
+          type: array
+          items:
+            $ref: '#/components/schemas/RandomizerInstance'
+          description: Instances of Randomizers, need to have instance IDs etc pp project back-reference, etc. 
         start:
           type: string
           example: t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482bf

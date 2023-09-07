@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -19,7 +20,7 @@ import io.vertx.core.json.JsonObject;
  */
 public abstract class ElementInstanceBase implements ElementInstance {
 
-	protected Study sourceProject;	 
+	protected Study sourceStudy;	 
 	protected JsonObject data;
 	  static final Logger LOGGER = LogManager.getLogger(ElementInstanceBase.class);
 
@@ -27,7 +28,7 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	{
 		setupFieldsAccordingToSpec();
 		this.data.mergeIn(data);
-		this.sourceProject = source; 
+		this.sourceStudy = source; 
 	}
 	
 	@Override
@@ -131,7 +132,7 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	 * @return
 	 */
 	@Override
-	public abstract String nextTask(Participant user);
+	public abstract Future<String> nextTask(Participant user);
 
 	/**
 	 * Checks, whether "next" is possible and if not return <code>null</code>.  
@@ -139,13 +140,13 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	 * @param next the next element.
 	 * @return The instanceID of the next {@link TaskObjectInstance} or null if there is no next. 
 	 */
-	protected String getNextIfThereIsOne(Participant user, String next)
+	protected Future<String> getNextIfThereIsOne(Participant user, String next)
 	{
-		ElementInstance element = sourceProject.getElement(next);
+		ElementInstance element = sourceStudy.getElement(next);
 		// if we happen to have a no next in the source project, we are at the end.
 		if(element == null)
 		{
-			return null;
+			return Future.succeededFuture(null);
 		}
 		else
 		{

@@ -13,36 +13,41 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * The Test study does NOT offer the possibility to handle data  on a study level, i.e. some randomizers wont work, and cannot be used with it.
+ * @author Thomas Pfau
+ *
+ */
 public class ProjectFactoryImplForTesting implements StudyFactory{
 
 	@Override
 	public Study createInstance() {
-		return new TestProject();
+		return new TestStudy();
 	}
 
 	
-	private class TestProject extends Study
+	private class TestStudy extends Study
 	{
 		JsonArray participants = new JsonArray();
 		private boolean active = true;
 		@Override
-		public Future<JsonObject> save() {
+		public Future<JsonObject> save(boolean updateVersion) {
 			// do nothing;
 			return Future.<JsonObject>succeededFuture(this.toDBJson());
 		}
 
 		@Override
 		public Future<JsonObject> load(JsonObject id) {			
-			Promise<JsonObject> projectPromise = Promise.promise();
+			Promise<JsonObject> studyPromise = Promise.promise();
 			try
 			{				
-				projectPromise.complete(loadProjectData(id.getInteger("pos")));
+				studyPromise.complete(loadProjectData(id.getInteger("pos")));
 			}
 			catch(Exception e)
 			{
-				projectPromise.fail(e);
+				studyPromise.fail(e);
 			}
-			return projectPromise.future();
+			return studyPromise.future();
 		}
 
 		@Override
@@ -124,6 +129,12 @@ public class ProjectFactoryImplForTesting implements StudyFactory{
 		public Future<JsonObject> getTokenInformation() {
 			// TODO Auto-generated method stub
 			return null;
+		}
+
+		@Override
+		public Future<Integer> getFilterPassesAndAddOne(String filterID) {
+			// TODO Auto-generated method stub
+			return null;
 		}		
 	}
 	
@@ -144,7 +155,7 @@ public class ProjectFactoryImplForTesting implements StudyFactory{
 	public static Future<Study> loadProject(JsonObject id) throws IOException 
 	{		
 		ProjectFactoryImplForTesting fac = new ProjectFactoryImplForTesting();
-		return Study.instantiateProject(id, fac);
+		return Study.instantiateStudy(id, fac);
 		
 	}
 }

@@ -8,6 +8,7 @@ import fi.aalto.scicomp.mathparser.MathHandler;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -40,7 +41,7 @@ public class FilterObjectInstance extends ElementInstanceBase {
 	}
 	
 	@Override
-	public String nextTask(Participant user) {
+	public Future<String> nextTask(Participant user) {
 		for(String exp : options)
 		{			
 			double val = MathHandler.evaluate(exp, user.getOutputs());

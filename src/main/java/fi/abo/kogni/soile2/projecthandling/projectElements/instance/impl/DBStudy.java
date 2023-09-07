@@ -8,6 +8,8 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import fi.abo.kogni.soile2.projecthandling.apielements.APIElement;
+import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ProjectIsInactiveException;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
@@ -43,14 +45,16 @@ public class DBStudy extends Study{
 		this.eb = eb;
 	}
 
+	
+	
 	@Override
-	public Future<JsonObject> save() {
+	public Future<JsonObject> save(boolean sourceProjectChanged) {
 		Promise<JsonObject> saveSuccess = Promise.<JsonObject>promise();
 		//TODO: If we at some point allow later modification of Name and shortcut, we need to add checks here that they do not conflict
 		// For an implementation have a look at @ElementToDBProjectInstance
 		// remove id.
 		
-		JsonObject update = new JsonObject().put("$set", toDBJson());
+		JsonObject update = new JsonObject().put("$set", toDBJson());		
 		update.remove("_id");		
 		//first check, that this change does not interfere with another object.
 		JsonObject query = new JsonObject();
@@ -88,9 +92,26 @@ public class DBStudy extends Study{
 						return;
 					}									
 				}
-				JsonObject updateQuery = new JsonObject().put("_id", instanceID);		
-
-				client.updateCollection(getTargetCollection(), updateQuery, update).onSuccess(result ->
+				JsonObject updateQuery = new JsonObject().put("_id", instanceID);
+				// Not sure if this is the best way to do this, but this allows copying the least amount of code...
+				// essentially we check twice, whether the sourceProject was changed and if it was, we alter the update
+				Future<APIElement<Project>> sourceProject;
+				if(sourceProjectChanged)
+				{
+					sourceProject = projectManager.getAPIElementFromDB(getSourceUUID(), getSourceVersion());
+				}
+				else
+				{
+					sourceProject = Future.succeededFuture(null);
+				}
+				sourceProject.compose(apiProject -> {					
+					if(sourceProjectChanged)
+					{
+						// so the source was changed, we need to update the randomizerPasses, as we cannot rely on them any more.
+						update.getJsonObject("$set").put("randomizerPasses", createRandomizerArray(((APIProject)apiProject).getRandomizers()));
+					}
+					return client.updateCollection(getTargetCollection(), updateQuery, update);
+				}).onSuccess(result ->
 				{			
 					saveSuccess.complete(toDBJson());					
 				}).onFailure(fail ->{
@@ -155,12 +176,17 @@ public class DBStudy extends Study{
 	public Future<JsonArray> reset() {
 		JsonObject query = new JsonObject().put("_id", this.instanceID);
 		Promise<JsonArray> resetPromise = Promise.<JsonArray>promise();
-		client.findOneAndUpdate(getTargetCollection(), query, new JsonObject().put("$set",new JsonObject().put("participants", new JsonArray()))
+		projectManager.getAPIElementFromDB(this.getSourceUUID(), this.getSourceVersion())
+		.onSuccess(apiProject -> {
+		client.findOneAndUpdate(getTargetCollection(), query, new JsonObject().put("$set",new JsonObject().put("participants", new JsonArray())
+																										  .put("randomizerPasses", createRandomizerArray(((APIProject)apiProject).getRandomizers())))																			  
 																			  .put("$unset", new JsonObject().put("usedTokens", "")
 																					  						 .put("signupTokens","")
 																					  						 .put("permanentAccessToken", "")))
 		.onSuccess(result -> {
 			resetPromise.complete(result.getJsonArray("participants", new JsonArray()));
+		})
+		.onFailure(err -> resetPromise.fail(err));
 		})
 		.onFailure(err -> resetPromise.fail(err));
 		
@@ -392,7 +418,7 @@ public class DBStudy extends Study{
 		return new FieldSpecifications().put(new FieldSpecification("description", String.class, () -> "", true))
 				.put(new FieldSpecification("shortDescription", String.class, () -> "", false))
 				.put(new FieldSpecification("description", String.class, () -> "", false))
-				.put(new FieldSpecification("private", Boolean.class, () -> true, false))										
+				.put(new FieldSpecification("private", Boolean.class, () -> true, false))				
 				.put(new FieldSpecification("sourceUUID", String.class, () -> getSourceUUID(), true))
 				.put(new FieldSpecification("version", String.class, () -> getSourceVersion(), true));				
 
@@ -422,5 +448,30 @@ public class DBStudy extends Study{
 		.map(data -> data.getLong("modifiedStamp"));	
 	}
 	
+	/**
+	 * create a randomizer array indicating the number of participants who passed this 
+	 * for a given set of randomizer objects from a project json.
+	 * @param randomizers The randomizers JsonArray from a 
+	 * @return the objct to be stored in the study.
+	 */
+	protected JsonObject createRandomizerArray(JsonArray randomizers)
+	{
+		JsonObject result = new JsonObject();
+		for(int i = 0; i < randomizers.size(); ++i)
+		{
+			result.put(randomizers.getJsonObject(i).getString("instanceID"), 0);
+		}
+		return result;
+	}
+
+
+
+	@Override
+	public Future<Integer> getFilterPassesAndAddOne(String filterID) {		
+		JsonObject update = new JsonObject().put("$inc", new JsonObject().put("randomizerPasses." + filterID,1));		
+		return client.findOneAndUpdate(getTargetCollection(), new JsonObject().put("_id", getID()), update).map(targetObject -> 
+			targetObject.getJsonObject("randomizerPasses").getInteger(filterID)									
+		);		
+	}
 
 }

@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResult;
+import fi.abo.kogni.soile2.datamanagement.utils.OutputMap;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
@@ -38,7 +39,10 @@ public class ParticipantVerticleTest extends SoileVerticleTest {
 		ObjectGenerator.createProject(mongo_client, vertx, "Testproject")
 		.onSuccess(projectData -> {
 			System.out.println("------------------------------------------------Project created");
-			projHandler.createStudy(projectData.put("name", "NewProjectInstance").put("private", false))
+			JsonObject initData = new JsonObject().put("name", "NewProjectInstance")
+												  .put("private", false)
+												  .put("sourceProject", projectData);											
+			projHandler.createStudy(initData)
 			.onSuccess(proj -> {
 				proj.activate()
 				.onSuccess(activated -> {

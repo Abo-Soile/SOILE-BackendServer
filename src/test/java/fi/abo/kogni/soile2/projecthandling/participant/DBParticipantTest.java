@@ -43,7 +43,7 @@ public class DBParticipantTest extends GitTest{
 					Async projTestAsync = context.async();
 					proj.startStudy(participant)
 					.onSuccess(v1 -> {
-						context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", participant.getProjectPosition());
+						context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", participant.getStudyPosition());
 						Async invalidAsync = context.async();
 						proj.finishStep(participant, wrongquestionaireOutput).
 						onSuccess(r -> {
@@ -56,7 +56,7 @@ public class DBParticipantTest extends GitTest{
 
 						proj.finishStep(participant, smokerQuestionaireOutput)
 						.onSuccess(id -> {
-							context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2", participant.getProjectPosition());
+							context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2", participant.getStudyPosition());
 							proj.finishStep(participant, new JsonObject().put("taskID", id))
 							.onSuccess(newID -> {								
 								context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4", newID);

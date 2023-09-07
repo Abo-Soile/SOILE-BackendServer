@@ -36,13 +36,13 @@ public interface Participant {
 	 * Get the position of this participant within its project
 	 * @return
 	 */
-	String getProjectPosition();
+	String getStudyPosition();
 
 	/**
 	 * Get the ID of the project this participant is in.
 	 * @return
 	 */
-	String getProjectID();
+	String getStudyID();
 
 	/**
 	 * Get all tasks done for a given experiment
@@ -50,6 +50,21 @@ public interface Participant {
 	 */
 	List<String> getFinishedExpTasks(String experimentID);
 
+	/**
+	 * Get the Value that was assigned to this participant by a specific randomizer (if any is assigned).
+	 * This will ensure, that if a a participant encounters a randomizer twice the value is not changed. 
+	 * @param randomizerID the ID of the randomizer
+	 * @return The value that was saved for this specific randomizer. The randomizer needs to know what this value is and it has to be depositable in a JsonArray.
+	 */
+	Object getValueForRandomizationGroup(String randomizerID);
+	
+	/**
+	 * Set the Value that is assigned to this participant by a specific randomizer.
+	 * This will ensure, that if a a participant encounters a randomizer twice the value is not changed. 
+	 * @param randomizerID the ID of the randomizer 
+	 */
+	void setValueForRandomizationGroup(String randomizerID, Object value);		
+	
 	/**
 	 * Get all tasks done for a given experiment
 	 * @return

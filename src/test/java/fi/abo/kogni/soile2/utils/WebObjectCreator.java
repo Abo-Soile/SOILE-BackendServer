@@ -279,6 +279,7 @@ public class WebObjectCreator {
 				projectJson.put("start", projectDef.getString("start"));
 				JsonArray projectTasks = projectJson.getJsonArray("tasks");
 				JsonArray projectFilters = projectJson.getJsonArray("filters");
+				JsonArray projectRandomizers = projectJson.getJsonArray("randomizers");
 				JsonArray projectExperiments = projectJson.getJsonArray("experiments");
 				ConcurrentHashMap<String, JsonObject> tasks = new ConcurrentHashMap<String, JsonObject>();
 				List<Future> taskFutures = new LinkedList<Future>();
@@ -314,6 +315,10 @@ public class WebObjectCreator {
 					for(Object item : projectDef.getJsonArray("filters", new JsonArray()))
 					{
 						projectFilters.add(item);
+					}
+					for(Object item : projectDef.getJsonArray("randomizers", new JsonArray()))
+					{
+						projectRandomizers.add(item);
 					}
 					for(Object item : projectDef.getJsonArray("experiments"))
 					{

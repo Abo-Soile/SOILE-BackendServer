@@ -30,13 +30,13 @@ public class TestProjectProgression extends ProjectBaseTest{
 					Async startAsync = context.async();
 					project.startStudy(participant1)
 					.onSuccess(position -> {
-						context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", participant1.getProjectPosition());
+						context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", participant1.getStudyPosition());
 						context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1", position);
 						Async finishAsync = context.async();
 						project.finishStep(participant1,taskData.getJsonObject(0))
 						.onSuccess(v -> 
 						{
-							context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2", participant1.getProjectPosition());							
+							context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2", participant1.getStudyPosition());							
 							finishAsync.complete();
 						})
 						.onFailure(err -> context.fail(err));
@@ -51,13 +51,13 @@ public class TestProjectProgression extends ProjectBaseTest{
 				ParticipantImplForTesting.getTestParticipant(context,3,getPos(0))
 				.onSuccess(participant2 -> {
 					context.assertEquals(Double.valueOf(1.0),participant2.getOutputs().get("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker"));
-					context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",participant2.getProjectPosition());
+					context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4",participant2.getStudyPosition());
 					Async finishAsync = context.async();
 					project.finishStep(participant2,taskData.getJsonObject(1))
 					.onSuccess(v -> 
 					{
 						// The first task in the second experiment, since we skipped the second task in the first (participant doesn't pass filter)
-						context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b7",participant2.getProjectPosition());
+						context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b7",participant2.getStudyPosition());
 						finishAsync.complete();
 					})
 					.onFailure(err -> context.fail(err));					
@@ -69,7 +69,7 @@ public class TestProjectProgression extends ProjectBaseTest{
 				ParticipantImplForTesting.getTestParticipant(context,1,getPos(0))
 				.onSuccess(participant3 -> {
 					context.assertEquals(Double.valueOf(0.0),participant3.getOutputs().get("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b1.smoker"));
-					context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",participant3.getProjectPosition());				
+					context.assertEquals("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b2",participant3.getStudyPosition());				
 					Async finishAsync = context.async();
 					project.finishStep(participant3,taskData.getJsonObject(2))
 					.onSuccess(v -> {
@@ -77,8 +77,8 @@ public class TestProjectProgression extends ProjectBaseTest{
 						LinkedList<String> resultOptions = new LinkedList<String>();
 						resultOptions.add("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b4");
 						resultOptions.add("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b5");
-						context.assertTrue(resultOptions.contains(participant3.getProjectPosition()));
-						resultOptions.remove(participant3.getProjectPosition());
+						context.assertTrue(resultOptions.contains(participant3.getStudyPosition()));
+						resultOptions.remove(participant3.getStudyPosition());
 						context.assertEquals(1,resultOptions.size());
 						//this depends on which step we are at now...							
 						if(resultOptions.contains("t83297d7785fd249bdb6543a850680e812ce11873df2d48467cb9612dbd0482b5"))
@@ -87,7 +87,7 @@ public class TestProjectProgression extends ProjectBaseTest{
 							project.finishStep(participant3,taskData.getJsonObject(1))
 							.onSuccess(v2 -> {
 								//this now has to be the other task of this experiment.
-								context.assertTrue(resultOptions.contains(participant3.getProjectPosition()));
+								context.assertTrue(resultOptions.contains(participant3.getStudyPosition()));
 								finishAsync2.complete();
 							})
 							.onFailure(err -> context.fail(err));	
@@ -98,7 +98,7 @@ public class TestProjectProgression extends ProjectBaseTest{
 							project.finishStep(participant3,taskData.getJsonObject(3))
 							.onSuccess(v2 -> {
 								//this now has to be the other task of this experiment.
-								context.assertTrue(resultOptions.contains(participant3.getProjectPosition()));
+								context.assertTrue(resultOptions.contains(participant3.getStudyPosition()));
 								finishAsync2.complete();
 							})
 							.onFailure(err -> context.fail(err));								

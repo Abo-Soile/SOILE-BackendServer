@@ -142,6 +142,121 @@
 				"next": "tabcdefg3"										
 			}					
 		],
+	"filters":
+		[
+			{
+				"instanceID": "fabcdefg1",
+				"position" : {"x" : 350, "y" : 100},
+				"options": [
+							
+							{
+								"filter": "tabcdefg0.smoker = 1",
+								"next": "eabcdefg1"
+							}
+							
+					],
+				"defaultOption": "tabcdefg3"							
+								
+			}		
+		]		
+	},		
+
+"RandomExampleOnce": {
+	"name" : "RandomExample",
+	"start" : "r1",
+	"private": false,
+	"tasks": 
+		[
+			{
+				"instanceID": "tabcdefg0",	
+				"position" : {"x" : 100, "y" : 100},			
+				"outputs": ["smoker"],
+				"name": "QuestionnaireExample",
+				"next": "fabcdefg1"				
+			},
+			{
+				"instanceID": "tabcdefg1",	
+				"position" : {"x" : 100, "y" : 100},			
+				"outputs": ["smoker"],
+				"name": "PsychoPyExample",
+				"next": "fabcdefg1"				
+			},			
+			{
+				"position" : {"x" : 950, "y" : 100},
+				"instanceID": "tabcdefg2",								
+				"name": "JavascriptExample",
+				"next": "end"						
+			}	
+		],	
+	"randomizers": [
+		{
+			"instanceID" : "r1",
+			"type" : "random",
+			"options" : [ { "name": "1", "next" : "tabcdefg0"}, {"name": "2", "next" :"tabcdefg1"} ],
+			"settings" : [{"name": "assignGroupOnce", "value" : true}]
+		}
+	],
+	"experiments": 
+		[
+		],
+	"filters":
+		[
+			{
+				"instanceID": "fabcdefg1",
+				"position" : {"x" : 350, "y" : 100},
+				"options": [
+							
+							{
+								"filter": "1 = 1",
+								"next": "r1"
+							}														
+					],
+				"defaultOption": "tabcdefg2"							
+								
+			}		
+		]		
+	},	
+
+
+"RandomExampleMultiple": {
+	"name" : "RandomExample",
+	"start" : "r1",
+	"private": false,
+	"tasks": 
+		[
+			{
+				"instanceID": "tabcdefg0",	
+				"position" : {"x" : 100, "y" : 100},			
+				"outputs": ["smoker"],
+				"name": "QuestionnaireExample",
+				"persistent": ["smoker"],
+				"next": "fabcdefg1"				
+			},			
+			{
+				"position" : {"x" : 950, "y" : 100},
+				"instanceID": "tabcdefg3",								
+				"name": "JavascriptExample",
+				"next": "end"						
+			}	
+		],	
+	"randomizers": [
+		{
+			"instanceID" : "r1",
+			"type" : "random",
+			"options" : [ { "name": "1", "next" : "tabcdefg0"}, {"name": "2", "next" :"tabcdefg3"} ],
+			"settings" : [{"name": "assignGroupOnce", "value" : true}]
+		}
+	],
+	"experiments": 
+		[
+			{			
+				"instanceID" : "eabcdefg1",
+				"position" : {"x" : 650, "y" : 300},
+				"name" : "ExampleExperiment1",
+				"random" : true,
+				"next": "tabcdefg3"										
+			}					
+		],
 		"filters":
 		[
 			{
@@ -159,6 +274,69 @@
 								
 			}		
 		]		
-	}		
+	},	
+
+"BlockExample": {
+	"name" : "BlockExample",
+	"start" : "r1",
+	"private": false,
+	"tasks": 
+		[
+			{
+				"instanceID": "tabcdefg0",	
+				"position" : {"x" : 100, "y" : 100},			
+				"outputs": ["smoker"],
+				"name": "QuestionnaireExample",
+				"persistent": ["smoker"],
+				"next": "fabcdefg1"				
+			},			
+			{
+				"position" : {"x" : 950, "y" : 100},
+				"instanceID": "tabcdefg3",								
+				"name": "JavascriptExample",
+				"next": "end"						
+			}	
+		],	
+	"randomizers": [
+		{
+			"instanceID" : "r1",
+			"type" : "block",
+			"options" : [ 
+				  { "name" : "A", "next" : "tabcdefg0"},
+				  {"name" : "B" , "next" : "tabcdefg3"} 
+			  ],
+			"settings" : [
+				  { "name" : "blockSpecification", "value" : "ABBA"}
+			]
+		}
+	],
+	"experiments": 
+		[
+			{			
+				"instanceID" : "eabcdefg1",
+				"position" : {"x" : 650, "y" : 300},
+				"name" : "ExampleExperiment1",
+				"random" : true,
+				"next": "tabcdefg3"										
+			}					
+		],
+		"filters":
+		[
+			{
+				"instanceID": "fabcdefg1",
+				"position" : {"x" : 350, "y" : 100},
+				"options": [
+							
+							{
+								"filter": "tabcdefg0.smoker = 1",
+								"next": "eabcdefg1"
+							}
+							
+					],
+				"defaultOption": "tabcdefg3"							
+								
+			}		
+		]		
+	}	
 
 }

@@ -105,13 +105,14 @@ public class ElementManager<T extends ElementBase> {
 	 * Create a new element.
 	 * This future can fail with an {@link ElementNameExistException} with id = name, which indicates that an element with this name already exists.
 	 * @param name
+	 * TODO: Refactor so that this is a second argument "Properties" instead of specific arguments for tasks.
 	 * @return
 	 */
 	public Future<T> createElement(String name, String type, String languageversion)
 	{
 		Promise<T> elementPromise = Promise.<T>promise();
 		// now we need to create a unique UUID. This should (normally) not cause any clashes, but lets be sure...
-		factory.createElement(client, name, type, languageversion)
+		factory.createElement(client, name)
 		.onSuccess(element -> {
 			element.setName(name);	
 			LOGGER.debug(element.toJson().encodePrettily());
@@ -167,6 +168,9 @@ public class ElementManager<T extends ElementBase> {
 	/**
 	 * Load or Create an element. This should not normally be called but might be necessary for some tests. 
 	 * @param name
+	 * @param type
+	 * @param version 
+	 * TODO: REFACTOR to not use version and type but instead a properties object.
 	 * @return
 	 */
 	public Future<T> createOrLoadElement(String name, String type, String version)

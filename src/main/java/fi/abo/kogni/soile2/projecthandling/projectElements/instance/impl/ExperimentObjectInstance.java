@@ -12,6 +12,7 @@ import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -101,7 +102,7 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	 * in a non-random we proceed to the next element of this experiment. 
 	 */
 	@Override
-	public String nextTask(Participant user) {
+	public Future<String> nextTask(Participant user) {
 		List<String> elements = new ArrayList<String>(elementIDs);				
 		if(user.isActiveExperiment(getInstanceID()) && !getRandom())
 		{
@@ -128,16 +129,16 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 				// remove option that are already done
 				elements.removeAll(user.getFinishedExpTasks(this.getInstanceID()));
 				// this indicates, that we got a callback from a task in our list.
-				if(elements.remove(user.getProjectPosition()))
+				if(elements.remove(user.getStudyPosition()))
 				{
 					// we add the task to the finished tasks for this experiment.				
-					user.addFinishedExpTask(getInstanceID(), user.getProjectPosition());
+					user.addFinishedExpTask(getInstanceID(), user.getStudyPosition());
 				}
 				// we still have elements, so we return the next element as specified in one random element of this task.
 				if(elements.size() > 0)
 				{
 					LOGGER.debug("Random Experiment and still options left.");
-					return sourceProject.getNextTask(elements.get(rand.nextInt(elements.size())),user);
+					return sourceStudy.getNextTask(elements.get(rand.nextInt(elements.size())),user);
 				}
 				else
 				{
@@ -154,10 +155,10 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	 * @param user
 	 * @return
 	 */
-	private String getNext(Participant user)
+	private Future<String> getNext(Participant user)
 	{
 		user.endActiveExperiment(this.getInstanceID());
-		return sourceProject.getNextTask(getNext(),user);
+		return sourceStudy.getNextTask(getNext(),user);
 	}
 	
 	

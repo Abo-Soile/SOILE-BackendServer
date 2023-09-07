@@ -45,6 +45,7 @@ public abstract class ParticipantImpl implements Participant{
 	protected int currentStep;
 	protected boolean finished;
 	protected String project;
+	protected JsonObject assignedRandomGroups; 
 	/**
 	 * This map is a way to get output data faster than relying on outputData
 	 */	
@@ -68,7 +69,7 @@ public abstract class ParticipantImpl implements Participant{
 
 	
 	@Override
-	public String getProjectID()
+	public String getStudyID()
 	{
 		return project;
 	}
@@ -85,6 +86,7 @@ public abstract class ParticipantImpl implements Participant{
 		parsePersistentData(participantInfo.getJsonArray("persistentData", new JsonArray()));
 		activeExperiments = participantInfo.getJsonArray("activeExperiments",new JsonArray());
 		project = participantInfo.getString("project", "");
+		assignedRandomGroups = participantInfo.getJsonObject("assignedRandomGroups", new JsonObject());
 		for(Object o : participantInfo.getJsonArray("finishedExperimentTasks",new JsonArray()))
 		{			
 			JsonObject jo = (JsonObject) o;
@@ -225,7 +227,7 @@ public abstract class ParticipantImpl implements Participant{
 	 * @return
 	 */
 	@Override
-	public String getProjectPosition()
+	public String getStudyPosition()
 	{
 		return position;
 	}
@@ -388,7 +390,8 @@ public abstract class ParticipantImpl implements Participant{
 		.put("position", position)			
 		.put("activeExperiments", this.activeExperiments)
 		.put("project", project)
-		.put("finishedExperimentTasks", convertFinishedTasks());
+		.put("finishedExperimentTasks", convertFinishedTasks())
+		.put("assignedRandomGroups", assignedRandomGroups);
 		return Future.succeededFuture(current);
 	}
 
@@ -467,5 +470,15 @@ public abstract class ParticipantImpl implements Participant{
 	public String getToken()
 	{
 		return null;
+	}
+	
+	@Override
+	public void setValueForRandomizationGroup(String randomizerID, Object value) {
+		this.assignedRandomGroups.put(randomizerID, value);
+	}
+	
+	@Override
+	public Object getValueForRandomizationGroup(String randomizerID) {
+		return this.assignedRandomGroups.getValue(randomizerID, null);
 	}
 }

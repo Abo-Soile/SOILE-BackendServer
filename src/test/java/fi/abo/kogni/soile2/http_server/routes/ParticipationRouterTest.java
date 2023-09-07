@@ -932,22 +932,4 @@ public class ParticipationRouterTest extends SoileWebTest{
 
 	}
 
-	protected Future<Void> submitResult(WebClient client, JsonObject resultData, String instanceID)
-	{
-		Promise<Void> submittedPromise = Promise.promise();
-		POST(client, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
-		.onSuccess(response -> {
-			String taskInstanceID = response.bodyAsJsonObject().getString("id");			
-			resultData.put("taskID",taskInstanceID);
-			POST(client, "/study/" + instanceID + "/submit", null, resultData)
-			.onSuccess(submitted -> {
-				submittedPromise.complete();								
-			})
-			.onFailure(err -> submittedPromise.fail(err));
-		})
-		.onFailure(err -> submittedPromise.fail(err));
-
-		return submittedPromise.future();
-	}
-
 }

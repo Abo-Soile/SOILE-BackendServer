@@ -7,6 +7,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.Element;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
+import io.vertx.core.Future;
 
 /**
  * Representation of an element in either a {@link Study} OR a {@link ExperimentObjectInstance}.  
@@ -102,7 +103,7 @@ public interface ElementInstance {
 	 * @param user
 	 * @return
 	 */
-	String nextTask(Participant user);
+	Future<String> nextTask(Participant user);
 
 	/**
 	 * Get the Field Specifications that make up this Element. Used for Initialization of an empty element.

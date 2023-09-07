@@ -187,7 +187,7 @@ public class SetupServer extends SoileServerVerticle {
 			.onSuccess(active -> {
 				LOGGER.info("Starting public Project");
 				JsonObject publicProject = new JsonObject().put("private", false).put("name", "Example Public Project").put("shortcut","newPublicShortcut");			
-				studyHandler.createStudy(publicProject.mergeIn(projectData))
+				studyHandler.createStudy(publicProject.put("sourceProject",projectData))
 				.compose(this::addAdminToPermissions)
 				.compose(cinstance -> cinstance.activate())
 				.onSuccess(active2 -> 

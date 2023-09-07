@@ -7,6 +7,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.Experim
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.Filter;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.randomizers.Randomizer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -18,8 +19,8 @@ import io.vertx.core.json.JsonObject;
 public class APIProject extends APIElementBase<Project>{
 
 	
-	private String[] gitFields = new String[] {"name","tasks","experiments","filters","start"};
-	private Object[] gitDefaults = new Object[] {"",new JsonArray(),new JsonArray(),new JsonArray(),null};		
+	private String[] gitFields = new String[] {"name","tasks","experiments","filters","randomizers","start"};
+	private Object[] gitDefaults = new Object[] {"",new JsonArray(),new JsonArray(),new JsonArray(),new JsonArray(),null};		
 	private Function<Object, Object>[] elementCheckers;   
 	public APIProject() {
 		this(new JsonObject());
@@ -39,7 +40,8 @@ public class APIProject extends APIElementBase<Project>{
 		this.elementCheckers = new Function[] { (x) -> {return x;}, 
 												(x) -> FieldSpecifications.applySpecToArray((JsonArray)x, TaskObjectInstance.getFieldSpecs()), 
 												(x) -> FieldSpecifications.applySpecToArray((JsonArray)x, ExperimentObjectInstance.getFieldSpecs()), 
-												(x) -> FieldSpecifications.applySpecToArray((JsonArray)x, Filter.getFieldSpecs()), 
+												(x) -> FieldSpecifications.applySpecToArray((JsonArray)x, Filter.getFieldSpecs()),
+												(x) -> FieldSpecifications.applySpecToArray((JsonArray)x, Randomizer.getFieldSpecifications()),
 												(x) ->  {return x;}}; 
 	}
 	/**
@@ -85,6 +87,20 @@ public class APIProject extends APIElementBase<Project>{
 	public void addTask(JsonObject task)
 	{
 		this.data.getJsonArray("tasks").add(task);
+	}
+	
+	/**
+	 * Get and set the randomizers
+	 * @return
+	 */
+	public JsonArray getRandomizers()
+	{		
+		return this.data.getJsonArray("randomizers");
+	}
+		
+	public void addRandomizer(JsonObject randomizer)
+	{
+		this.data.getJsonArray("randomizers").add(randomizer);
 	}
 	
 	
@@ -175,7 +191,9 @@ public class APIProject extends APIElementBase<Project>{
 		case "experiments" :
 			return (x) -> {return FieldSpecifications.applySpecToArray((JsonArray)x, ExperimentObjectInstance.getFieldSpecs());};
 		case "filters" :
-			return (x) -> {return FieldSpecifications.applySpecToArray((JsonArray)x, Filter.getFieldSpecs());};		
+			return (x) -> {return FieldSpecifications.applySpecToArray((JsonArray)x, Filter.getFieldSpecs());};
+		case "randomizers" :
+			return (x) -> {return FieldSpecifications.applySpecToArray((JsonArray)x, Randomizer.getFieldSpecifications());};					
 		default:
 			return (x) -> {return x;};
 		}

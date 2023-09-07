@@ -191,12 +191,12 @@ public class StudyHandler {
 	
 	/**
 	 * Start a project with the given Project Information.
-	 * The information must contain:
-	 * 1. "UUID" of the project from which this was started
-	 * 2. "version" of the project from which this was started
-	 * 3. "private" field wrt access for this 
-	 * 4. "name" a name field.
-	 * 5. "shortcut" (optional), that can be used as a shortcut to the project.
+	 * The information must contain: 
+	 * 1. A JsonObject under the "sourceProject" field with the fields "UUID" of the project from which this was started and a 
+	 *  "version" of the project from which this was started
+	 * 2. "private" field wrt access for this 
+	 * 3. "name" a name field.
+	 * 4. "shortcut" (optional), that can be used as a shortcut to the project.
 	 * @param projectInformation The information needed to start this project.
 	 */
 	public Future<Study> createStudy(JsonObject projectInformation)	

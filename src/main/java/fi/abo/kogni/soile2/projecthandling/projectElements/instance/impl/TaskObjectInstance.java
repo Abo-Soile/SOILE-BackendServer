@@ -7,6 +7,7 @@ import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.ElementInstanceBase;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -103,9 +104,9 @@ public class TaskObjectInstance extends ElementInstanceBase {
 
 	  
 	@Override
-	public String nextTask(Participant user) {
+	public Future<String> nextTask(Participant user) {
 		// this indicates, that the user currently was on this task, so lets take the next.
-		if(user.getProjectPosition().equals(getInstanceID()))
+		if(user.getStudyPosition().equals(getInstanceID()))
 		{			
 			LOGGER.debug("Returning the next task, as this one is done.");
 			return getNextIfThereIsOne(user, getNext());
@@ -123,7 +124,7 @@ public class TaskObjectInstance extends ElementInstanceBase {
 		}
 		LOGGER.debug("User matches the filter OR there is no filter, doing this task");
 		// otherwise we are here at this task!
-		return this.getInstanceID();
+		return Future.succeededFuture(this.getInstanceID());
 	}
 
 	

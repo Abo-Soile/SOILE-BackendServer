@@ -187,7 +187,7 @@ public class ParticipantHandler {
 	private Future<Void> removeParticipantFromManager(Participant participant, String id, boolean participantHasToBeInStudy)
 	{
 		Promise<Void> removedPromise = Promise.promise();
-		studyHandler.removeParticipant(participant.getProjectID(), participant, participantHasToBeInStudy)
+		studyHandler.removeParticipant(participant.getStudyID(), participant, participantHasToBeInStudy)
 		.onSuccess( success -> {
 			manager.deleteParticipant(id)
 			.onSuccess(deletionSuccess -> {

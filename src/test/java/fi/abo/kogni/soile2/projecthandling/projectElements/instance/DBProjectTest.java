@@ -172,9 +172,9 @@ public class DBProjectTest extends GitTest{
 		Async testAsync = context.async();
 		ObjectGenerator.buildAPIProject(projManager, expManager, taskManager, mongo_client, "Testproject")
 		.onSuccess(apiProject -> {
-			JsonObject projInstData = new JsonObject().put("UUID", apiProject.getUUID())
-					.put("name", "TestingProject")
-					.put("version", apiProject.getVersion())
+			JsonObject projInstData = new JsonObject().put("sourceProject", new JsonObject().put("UUID", apiProject.getUUID())
+																							.put("version", apiProject.getVersion()))
+					.put("name", "TestingProject")					
 					.put("private", false);
 			Async projAsync = context.async(); 
 			handler.createStudy(projInstData)
