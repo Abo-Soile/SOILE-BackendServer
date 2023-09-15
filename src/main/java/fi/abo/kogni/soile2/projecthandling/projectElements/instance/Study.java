@@ -683,7 +683,7 @@ public abstract class Study implements AccessElement{
 				}
 				else
 				{
-					updatePromise.fail("Conflicing shortcuts");
+					updatePromise.fail("Conflicing shortcuts, please choose a different shortcut");
 				}
 			})
 			.onFailure(err -> updatePromise.fail(err));		
