@@ -97,7 +97,7 @@ public class ElementToDBStudy extends DBStudy{
 					dbJson.put("private", inputJson.getBoolean("private",false));
 					dbJson.put("active", inputJson.getBoolean("active",false));
 					String shortcut = inputJson.getString("shortcut",null);
-					if(shortcut != null)
+					if(shortcut != null && !"".equals(shortcut)) // an empty string can't be a shortcut, and we won't put it in.
 					{
 						dbJson.put("shortcut", inputJson.getString("shortcut"));
 					}				

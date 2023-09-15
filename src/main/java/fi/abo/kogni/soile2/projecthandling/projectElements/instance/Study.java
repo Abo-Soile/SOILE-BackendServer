@@ -323,7 +323,7 @@ public abstract class Study implements AccessElement{
 				.put("private", isPrivate)
 				.put("modifiedStamp", modifiedStamp);				
 
-		if(shortcut != null)
+		if(shortcut != null && !"".equals(shortcut))
 		{
 			dbData.put("shortcut", shortcut);
 		}
