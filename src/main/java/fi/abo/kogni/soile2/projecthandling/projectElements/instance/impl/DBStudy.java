@@ -58,7 +58,7 @@ public class DBStudy extends Study{
 		update.remove("_id");		
 		//first check, that this change does not interfere with another object.
 		JsonObject query = new JsonObject();
-		if(shortcut != null && !"".equals(shortcut))
+		if(shortcut != null && !"".equals(shortcut)) // if it's a shortcut and not "" (indicating no shortcut)
 		{
 			// the shortcut is not allowed to clash with either the IDs OR other shortcuts 
 			query.put("$or", new JsonArray().add(new JsonObject()
@@ -435,6 +435,11 @@ public class DBStudy extends Study{
 
 	@Override
 	protected Future<Boolean> checkShortCutAvailable(String shortcut) {
+		
+		if(shortcut == null || "".equals(shortcut))
+		{
+			return Future.succeededFuture(true);
+		}		
 		JsonObject query = new JsonObject().put("$and", new JsonArray()
 															.add(new JsonObject().put("shortcut", shortcut))
 															.add(new JsonObject().put("_id", new JsonObject().put("$ne", getID())))
