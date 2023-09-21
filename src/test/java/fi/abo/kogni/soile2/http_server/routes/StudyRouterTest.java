@@ -689,6 +689,7 @@ public class StudyRouterTest extends SoileWebTest {
 							.onSuccess(studyDataResponse -> {
 
 								JsonObject studyData = studyDataResponse.bodyAsJsonObject();
+								context.assertEquals("en", studyData.getString("language"));
 								context.assertEquals("newShortcut", studyData.getString("shortcut"));
 								context.assertEquals(projectID, studyData.getString("sourceUUID"));
 								context.assertEquals(projectVersion, studyData.getString("version"));
@@ -696,12 +697,14 @@ public class StudyRouterTest extends SoileWebTest {
 								studyData.put("private", false);
 								studyData.put("sourceUUID", projectID2);
 								studyData.put("version", projectVersion2);
+								studyData.put("language", "fi");
 								POST(authedSession, "/study/" + studyId +"/update", null, studyData)
 								.onSuccess(updateResponse -> {
 									POST(authedSession, "/study/" + studyId + "/get", null, null)
 									.onSuccess(updatedstudyDataResponse -> {
 										JsonObject studyData2 = updatedstudyDataResponse.bodyAsJsonObject();
 										context.assertEquals("newShortcut", studyData2.getString("shortcut"));
+										context.assertEquals("fi", studyData2.getString("language"));
 										context.assertEquals(projectID2, studyData2.getString("sourceUUID"));
 										context.assertEquals(projectVersion2, studyData2.getString("version"));
 										context.assertEquals(false, studyData2.getBoolean("private"));

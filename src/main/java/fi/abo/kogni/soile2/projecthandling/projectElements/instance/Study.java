@@ -68,6 +68,7 @@ public abstract class Study implements AccessElement{
 	protected String shortcut;	
 	protected String shortDescription;
 	protected String description;
+	protected String language;
 	protected boolean isPrivate;
 	protected Long modifiedStamp;	
 	
@@ -91,6 +92,7 @@ public abstract class Study implements AccessElement{
 		description = "";
 		shortDescription = "";
 		isPrivate = false; 
+		language = "en";
 		modifiedStamp = new Date().getTime();
 	};
 
@@ -118,7 +120,7 @@ public abstract class Study implements AccessElement{
 	 * json.
 	 * @param data
 	 */
-	protected void setupProject(JsonObject data) throws UnknownRandomizerException
+	protected void setupStudy(JsonObject data) throws UnknownRandomizerException
 	{
 		elements = new HashMap<String, ElementInstance>();
 		LOGGER.debug("Loading data into project from: " + data);
@@ -144,7 +146,7 @@ public abstract class Study implements AccessElement{
 		.onSuccess(dataJson -> {
 			LOGGER.debug("Trying to set up project from data: \n " + dataJson.encodePrettily());
 			try {
-				p.setupProject(dataJson);
+				p.setupStudy(dataJson);
 			}
 			catch(UnknownRandomizerException e)
 			{
@@ -216,6 +218,7 @@ public abstract class Study implements AccessElement{
 		shortDescription = data.getString("shortDescription", "");
 		description = data.getString("description","");
 		isPrivate = data.getBoolean("private",false);
+		language = data.getString("language","en");
 		modifiedStamp = data.getLong("modifiedStamp", new Date().getTime());
 		for(Object cTaskData : sourceProject.getJsonArray("tasks", new JsonArray()))
 		{
@@ -321,6 +324,7 @@ public abstract class Study implements AccessElement{
 				.put("description", description )
 				.put("shortDescription", shortDescription)
 				.put("private", isPrivate)
+				.put("language", language)
 				.put("modifiedStamp", modifiedStamp);				
 
 		if(shortcut != null && !"".equals(shortcut))
@@ -455,7 +459,8 @@ public abstract class Study implements AccessElement{
 		JsonObject resultData = new JsonObject();
 		resultData.put("task", taskData.getString("taskID"))
 		.put("dbData", taskData.getJsonObject("resultData",new JsonObject()).getJsonArray("jsonData", new JsonArray()))
-		.put("fileData", taskData.getJsonObject("resultData",new JsonObject()).getJsonArray("fileData", new JsonArray()));
+		.put("fileData", taskData.getJsonObject("resultData",new JsonObject()).getJsonArray("fileData", new JsonArray()))
+		.put("timestamp",new Date().getTime());
 		return resultData;
 	}
 
@@ -673,7 +678,8 @@ public abstract class Study implements AccessElement{
 					isPrivate = updateInformation.getBoolean("private", isPrivate);
 					description = updateInformation.getString("description", description);
 					shortDescription = updateInformation.getString("shortDescription", shortDescription);
-					shortcut = updateInformation.getString("shortcut", shortcut);				
+					shortcut = updateInformation.getString("shortcut", shortcut);
+					language = updateInformation.getString("language", language);
 					setModifiedDate();				
 					save(projectChange || versionChange)
 					.onSuccess(res -> {

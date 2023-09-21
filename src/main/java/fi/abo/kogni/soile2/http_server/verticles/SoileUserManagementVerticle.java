@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
+import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
@@ -301,6 +302,16 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 			msg.fail(400, "Invalid Email address");
 			return;
 		}
+		
+		// we allow an empty role field, which will translate to a participant signing up. 
+		if(command.containsKey("role"))
+		{
+			if(command.getString("role").equals(""))
+			{
+				command.put("role", Roles.Participant.toString());
+			}
+			
+		}
 		LOGGER.debug("Adding user with name:" + command.getString("username"));
 		String userName = command.getString("username");
 		//LOGGER.debug("Verticle: Creating user");
@@ -314,8 +325,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 				msg.reply(SoileCommUtils.successObject());	
 			})
 			.onFailure(err -> {
-				LOGGER.debug("Failed setting Email for user " + command.getString("username") +  " to " + email + ", removing it");
-
+				LOGGER.debug(err);				
 				userManager.deleteUser(userName)				
 				.onSuccess(res -> {
 					LOGGER.debug("Removed user " + command.getString("username"));

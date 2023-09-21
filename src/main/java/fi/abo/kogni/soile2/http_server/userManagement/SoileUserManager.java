@@ -885,6 +885,7 @@ public class SoileUserManager implements MongoUserUtil{
 			case "email": target = SoileConfigLoader.getUserdbField("userEmailField");
 						  if(!UserUtils.isValidEmail(command.getString(key)))
 						  {
+							  LOGGER.debug("Invalid email: " + command.getString(key));
 							  return Future.failedFuture(new InvalidEmailAddress(target));
 						  }
 						  break;
