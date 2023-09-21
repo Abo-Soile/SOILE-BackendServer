@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.mchange.util.DuplicateElementException;
+
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
@@ -986,6 +988,36 @@ public class SoileUserManager implements MongoUserUtil{
 				return Future.succeededFuture();
 			}
 		});
+	}
+	
+	/**
+	 * Remove Participants in specific studies from users. This is mainly necessary if a study got reset. 
+	 * @param studyID
+	 * @param participantID
+	 * @return A Future of a JsonOBject with the permissions.
+	 */
+	public Future<Void> removeParticipantInStudyFromUsers(String studyID, String participantID) {
+		JsonObject query = new JsonObject().put(SoileConfigLoader.getUserdbField("participantField"),
+												new JsonObject().put("$in", new JsonArray().add( new JsonObject().put("UUID", studyID)
+																	.put("participantID", participantID))));
+		JsonObject pullObject = new JsonObject().put("$pull", 
+													 new JsonObject().put(SoileConfigLoader.getUserdbField("participantField"),
+															 			  new JsonObject().put("UUID", studyID)
+																                          .put("participantID", participantID)));				
+				
+		return client.find(authnOptions.getCollectionName(), query).compose(found -> {
+			if(found.size() > 1)
+			{
+				LOGGER.error("Found more than one user with this participant");
+				return Future.failedFuture(new DuplicateElementException("Duplicate Participant in users"));
+			}
+			if(found.size() == 0)
+			{
+				LOGGER.error("User not found");
+				return Future.failedFuture(new UserDoesNotExistException("The requested participant ID was nto associatd with any user"));
+			}
+			return client.updateCollection(authnOptions.getCollectionName(), query, pullObject);
+		}).mapEmpty();
 	}
 	
 	/**

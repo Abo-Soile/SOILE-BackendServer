@@ -132,11 +132,20 @@ public class ParticipationRouterTest extends SoileWebTest{
 			.onSuccess(authToken -> {
 				Async codeTypeAsync = context.async();
 				WebClientSession tempSession = createSession();
-				tempSession.addHeader("Authorization", authToken);
+				tempSession.addHeader("Authorization", authToken);				
 				POST(tempSession, "/study/" + instanceID + "/getcurrenttaskinfo", null, null)
 				.onSuccess(inforesponse -> {
-					Async codeAsync = context.async();
 					JsonObject codeTypeInfo = inforesponse.bodyAsJsonObject();
+					Async comparisonAsync = context.async();
+					mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"), new JsonObject().put("token", authToken), null)
+					.onSuccess(particpantData ->  {
+						context.assertEquals(particpantData.getString("_id"), codeTypeInfo.getString("participantID"));	
+						comparisonAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));
+					
+					Async codeAsync = context.async();
+					
 					GET(tempSession, "/run/" + instanceID +"/" + codeTypeInfo.getString("id"), null, null)
 					.onSuccess(response -> {
 						context.assertEquals("application/json", response.headers().get("content-type"));					

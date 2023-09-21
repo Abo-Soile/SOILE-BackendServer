@@ -133,6 +133,7 @@ public class StudyRouterTest extends SoileWebTest {
 								.compose(listresponse -> {
 									context.assertEquals(1, listresponse.bodyAsJsonArray().size());
 									context.assertEquals(id1, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
+									context.assertEquals("en", listresponse.bodyAsJsonArray().getJsonObject(0).getString("language"));
 									return POST(wrongSession, "/study/listrunning", null,null);
 								})
 								.compose(listresponse -> {

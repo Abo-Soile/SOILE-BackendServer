@@ -398,7 +398,13 @@ public class ParticipationRouter extends SoileRouter{
 								context.response()
 								.setStatusCode(200)	
 								.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-								.end(new JsonObject().put("finished", false).put("codeType", responseBody.getJsonObject("codeType")).put("outputs", currentTask.getOutputs()).put("persistent", currentTask.getPersistent()).put("id", participant.getStudyPosition()).encode());
+								.end(new JsonObject().put("finished", false)
+													 .put("codeType", responseBody.getJsonObject("codeType"))
+													 .put("outputs", currentTask.getOutputs())
+													 .put("persistent", currentTask.getPersistent())
+													 .put("id", participant.getStudyPosition())
+													 .put("participantID", participant.getID())
+													 .encode());
 							})
 							.onFailure(err -> handleError(err, context));
 						}

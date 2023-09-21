@@ -144,10 +144,11 @@ public class ParticipantHandler {
 		// all Files for a participant are stored in the folder: datalake/PARTICIPANTID
 		getParticipant(id)
 		.onSuccess( participant -> {
-			ParticipantFileResults results = new ParticipantFileResults(id);			
+			ParticipantFileResults results = new ParticipantFileResults(id);
+			
 			vertx.fileSystem().exists(results.getParticipantFolderPath(dataLakeFolder))
 			.onSuccess(deleteFiles -> {
-
+				
 				if(deleteFiles)
 				{
 					vertx.fileSystem().deleteRecursive(results.getParticipantFolderPath(dataLakeFolder), true)
@@ -188,23 +189,33 @@ public class ParticipantHandler {
 	{
 		Promise<Void> removedPromise = Promise.promise();
 		studyHandler.removeParticipant(participant.getStudyID(), participant, participantHasToBeInStudy)
-		.onSuccess( success -> {
-			manager.deleteParticipant(id)
-			.onSuccess(deletionSuccess -> {
+		.onFailure(err -> {
+			LOGGER.error("Error while deleting participant " + id + ". Couldnt remove from the Project !");
+			LOGGER.error(err); 
+		})
+		.compose( success -> {
+			return manager.deleteParticipant(id);
+		})
+		.onFailure(err -> {
+			LOGGER.error("Error while deleting participant " + id + ". Couldnt remove from the participant database!");
+			LOGGER.error(err);				
+		})
+		.compose(managerRemoved -> {
+			// remove from the User, if it was a user participant.
+			if(participant.hasToken())
+			{
+				return Future.succeededFuture();
+			}
+			// not a token participant so we need to look it up from the user database and pull it from whoever has it. 
+			return null;
+		})
+		.onFailure(err -> removedPromise.fail(err))
+		.onSuccess(deletionSuccess -> {
 
 				activeparticipants.cleanElement(id);
 				removedPromise.complete();
-			}).onFailure(err -> {
-				LOGGER.error("Error while deleting participant " + id + ". Couldnt remove from the participant database!");
-				LOGGER.error(err);
-				removedPromise.fail(err);	
-			});										
-		})
-		.onFailure(err -> {
-			LOGGER.error("Error while deleting participant " + id + ". Couldnt remove from the Project !");
-			LOGGER.error(err);
-			removedPromise.fail(err);	
-		});
+			});									
+		
 		return removedPromise.future();
 	}
 

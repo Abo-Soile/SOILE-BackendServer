@@ -106,6 +106,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		consumers.add(vertx.eventBus().consumer("soile.umanager.getAccessRequest", this::getUserAccessInfo));
 		consumers.add(vertx.eventBus().consumer("soile.umanager.setPassword", this::setPassword));
 		consumers.add(vertx.eventBus().consumer("soile.umanager.getCollaboratorsforStudy", this::getCollaboratorsForStudy));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.removeParticipantInStudy", this::removeParticipantFromStudy));
 
 	}
 
@@ -639,6 +640,28 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		userManager.getUserWithAccessToStudy(command.getString("studyID"))
 		.onSuccess(list -> {					
 			msg.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, list));					
+		})
+		.onFailure(err -> 
+		{
+			LOGGER.error(err,err);
+			msg.fail(400, "Error fetching Data");									
+		});		
+	}
+	/**
+	 * Remove a specified participant in a specified study from its user association.
+	 * {
+	 *  "participantID" : the participantID to remove,
+	 *  "studyID" : the studyID of the participant,	 *  
+	 *  }
+	 * @param msg
+	 */
+	void removeParticipantFromStudy(Message<JsonObject> msg)
+	{		
+		//make sure we actually get the right thing			
+		JsonObject command = msg.body();		
+		userManager.removeParticipantInStudyFromUsers(command.getString("participantID"),command.getString("studyID"))
+		.onSuccess(removed -> {					
+			msg.reply(SoileCommUtils.successObject());					
 		})
 		.onFailure(err -> 
 		{
