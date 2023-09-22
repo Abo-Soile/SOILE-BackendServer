@@ -659,7 +659,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	{		
 		//make sure we actually get the right thing			
 		JsonObject command = msg.body();		
-		userManager.removeParticipantInStudyFromUsers(command.getString("participantID"),command.getString("studyID"))
+		userManager.removeParticipantInStudyFromUsers(command.getString("studyID"),command.getString("participantID"))
 		.onSuccess(removed -> {					
 			msg.reply(SoileCommUtils.successObject());					
 		})

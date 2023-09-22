@@ -207,7 +207,7 @@ public class ParticipantHandler {
 				return Future.succeededFuture();
 			}
 			// not a token participant so we need to look it up from the user database and pull it from whoever has it. 
-			return null;
+			return vertx.eventBus().request("soile.umanager.removeParticipantInStudy", new JsonObject().put("participantID", participant.getID()).put("studyID", participant.getStudyID()));
 		})
 		.onFailure(err -> removedPromise.fail(err))
 		.onSuccess(deletionSuccess -> {

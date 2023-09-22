@@ -78,7 +78,7 @@ public class ParticipantVerticle extends AbstractVerticle {
 		.onFailure(err -> {
 			LOGGER.error("Problems while deleting participant: " );
 			LOGGER.error(err);
-			message.fail(500, "Problems while deleting Participants");
+			message.fail(500, err.getMessage());
 		});
 	}
 	

@@ -1004,17 +1004,18 @@ public class SoileUserManager implements MongoUserUtil{
 													 new JsonObject().put(SoileConfigLoader.getUserdbField("participantField"),
 															 			  new JsonObject().put("UUID", studyID)
 																                          .put("participantID", participantID)));				
-				
+		LOGGER.debug("StudyID: " + studyID + "// ParticipantID: " + participantID);
 		return client.find(authnOptions.getCollectionName(), query).compose(found -> {
 			if(found.size() > 1)
 			{
 				LOGGER.error("Found more than one user with this participant");
 				return Future.failedFuture(new DuplicateElementException("Duplicate Participant in users"));
 			}
-			if(found.size() == 0)
+			if(found.size() == 0) 				
 			{
-				LOGGER.error("User not found");
-				return Future.failedFuture(new UserDoesNotExistException("The requested participant ID was nto associatd with any user"));
+				// this is ok. If no matching user exists, the participant doesn't need to be removed from any user, although this is an odd occurence...
+				LOGGER.warn("User not found");
+				return Future.succeededFuture();
 			}
 			return client.updateCollection(authnOptions.getCollectionName(), query, pullObject);
 		}).mapEmpty();
