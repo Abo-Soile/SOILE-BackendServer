@@ -78,6 +78,7 @@ public class ElementToDBStudy extends DBStudy{
 					JsonObject dbJson = new JsonObject();
 					dbJson.put("participants", new JsonArray());
 					dbJson.put("name", inputJson.getString("name"));
+					dbJson.put("language", inputJson.getString("language", "en"));
 					dbJson.put("description", inputJson.getString("description", "This is a new project"));
 					dbJson.put("shortDescription", inputJson.getString("shortDescription", "This is a new project"));
 					// now, handle the randomizers
