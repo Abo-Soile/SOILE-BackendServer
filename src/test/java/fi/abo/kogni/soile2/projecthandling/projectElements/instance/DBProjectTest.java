@@ -106,9 +106,14 @@ public class DBProjectTest extends GitTest{
 						.put("shortcut", "thisIsSomeShortcut");							
 				projInstHandler.createStudy(creationJson)
 				.onSuccess(projectInstance -> {
-					projectInstance.activate()
+					context.assertEquals(10,projectInstance.getElements().size());				
+					Async progressionAsync = context.async(); 
+					projectInstance.getParticipants()
+					.compose(parts -> {
+						context.assertEquals(0, parts.size());						
+						return projectInstance.activate();
+					})
 					.onSuccess(active -> {
-						Async progressionAsync = context.async(); 
 						partHandler.create(projectInstance).onSuccess(participant -> {
 							//TODO: Run the project						
 							projectInstance.startStudy(participant)
@@ -141,15 +146,7 @@ public class DBProjectTest extends GitTest{
 						})
 						.onFailure(err -> context.fail(err));
 					})
-					.onFailure(err -> context.fail(err));
-					Async partListAsync = context.async();
-					projectInstance.getParticipants()
-					.onSuccess(parts -> {
-						context.assertEquals(0, parts.size());
-						partListAsync.complete();
-					})
-					.onFailure(err -> context.fail(err));				
-					context.assertEquals(10,projectInstance.getElements().size());				
+					.onFailure(err -> context.fail(err));								
 					projInstAsync.complete();
 				})
 				.onFailure(err -> context.fail(err));
