@@ -1,19 +1,15 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.impl;
 
-import java.io.File;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import org.apache.commons.lang3.function.Failable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import fi.aalto.scicomp.gitFs.gitProviderVerticle;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitElement;
@@ -96,6 +92,7 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Clean up any caches used by this manager.
+	 * This is mainly data from the git Repository. 
 	 */
 	public void cleanUp()
 	{
@@ -277,18 +274,20 @@ public class ElementManager<T extends ElementBase> {
 			JsonObject requestObject = currentVersion.toJson();
 			if(tag != null)
 			{
-				requestObject.put("tag", tag);				
+				requestObject.put("tag", tag);
+				element.addDependencies(newData.calcDependencies());
 			}
 			// the gitJson can be directly derived from the API element.
 			eb.request("soile.git.writeGitFile", requestObject.put("data", newData.getGitJson()))
 			.onSuccess(reply -> {
 				String version = (String) reply.body();
+				
 				if(newData.hasAdditionalGitContent())
 				{
 					// this has additional data that we need to save in git.
 					newData.storeAdditionalData(version, eb, getGitIDForUUID(newData.getUUID()))
 					.onSuccess(newVersion -> {
-						element.addVersion(newVersion);
+						element.addVersion(newVersion);						
 						if( tag != null)
 						{
 							element.addTag(tag, newVersion);
@@ -342,20 +341,98 @@ public class ElementManager<T extends ElementBase> {
 		.onFailure(fail -> deletionPromise.fail(fail));		
 		return deletionPromise.future();			
 	}
+	
+	/**
+	 * Delete the given element. This does NOT actually delete the element, but makes it invisible, so it can still be used but it can no longer be modified or updated. 
+	 * Elements that contain it will still be valid, but the element can no longer be updated. 
+	 * @param newData
+	 * @return
+	 */
+	public Future<Boolean> deleteElement(String UUID)
+	{
+		// well, we want to delete the Object. This is final 		
+		Promise<Boolean> deletionPromise = Promise.<Boolean>promise();		
+		// This will return an updated Element given the newData object, so we don't need to update the internals of the object
+		// but can directly go on to write and save the data.		
+		factory.loadElement(client, UUID).onSuccess(element -> 
+		{
+			element.setVisible(false);
+			element.save(client).onSuccess(Void -> {
+				deletionPromise.complete(true);
+			})			
+			.onFailure(fail -> deletionPromise.fail(fail));
+		})
+		.onFailure(fail -> deletionPromise.fail(fail));		
+		return deletionPromise.future();			
+	}
 
-
+	/**
+	 * Finally remove the given Element. There will be a last check,  
+	 * @param newData
+	 * @return
+	 */
+	public Future<Boolean> removeElementAndCleanUpGit(String UUID)
+	{
+		// well, we want to delete the Object. This is final 		
+		Promise<Boolean> deletionPromise = Promise.<Boolean>promise();
+		// we will first delete this from the database (easiest to recover from);
+		JsonObject target = new JsonObject().put("_id", UUID);
+		client.findOneAndDelete(supplier.get().getTargetCollection(), target )
+		.onSuccess(dbEntry -> {
+			// now delete
+			eb.request("soile.git.deleteRepo",getGitIDForUUID(UUID))
+			.onFailure(err -> {
+				// restore the db Entry
+				LOGGER.error(err, err);
+				client.insert(supplier.get().getTargetCollection(), dbEntry)
+				.onSuccess(reInserted -> {					
+					LOGGER.error("Could not delete Element " + getGitIDForUUID(UUID) + " , problem deleting git Repo. Element might be corrupted. First item is the Type of element");
+					deletionPromise.fail("Could not delete Element, problem deleting git Repo. Element might be corrupted");
+				})
+				.onFailure(err2 -> {
+					deletionPromise.fail(err2);
+				});
+			})
+			.compose(gitDeleted -> {
+				// clean up dataLake
+				return dataHandler.deleteElementFolder(UUID);
+			})
+			.onFailure(err -> {
+				LOGGER.error(err, err);
+				LOGGER.error("Could not delete Element " + getGitIDForUUID(UUID) + " , problem deleting git Repo. Element might be corrupted. First item is the Type of element. Element Might be corrupted!");
+				client.insert(supplier.get().getTargetCollection(), dbEntry)
+				.onSuccess(reInserted -> {					
+					LOGGER.error("Could not delete Element " + getGitIDForUUID(UUID) + " , problem deleting git Repo. Element might be corrupted. First item is the Type of element");
+					deletionPromise.fail("Could not delete Element, problem deleting git Repo. Element might be corrupted");
+				})
+				.onFailure(err2 -> {
+					deletionPromise.fail(err2);
+				});
+			})
+			.onSuccess(done -> deletionPromise.complete());
+		})
+		.onFailure(err -> deletionPromise.fail(err));			
+		return deletionPromise.future();			
+	}
+	
 	/**
 	 * Get the List of all elements of the specified type. 
 	 * Returns a list of 
+	 * @param full - whether to obtain all (including invisible) elements.
 	 * @return
 	 */
-	public Future<JsonArray> getElementList()
+	public Future<JsonArray> getElementList(boolean full)
 	{
 		Promise<JsonArray> listPromise = Promise.<JsonArray>promise();		
 		Element e = supplier.get();
 		JsonArray result = new JsonArray();		
 		// should possibly be done via findBatch
-		client.findWithOptions(e.getTargetCollection(), new JsonObject(), new FindOptions().setFields(new JsonObject().put("private",1).put("visible", 1).put("name", 1).put("_id", 1)))
+		JsonObject search = new JsonObject();
+		if(!full)
+		{
+			search = new JsonObject().put("visible", "true");
+		}
+		client.findWithOptions(e.getTargetCollection(), search, new FindOptions().setFields(new JsonObject().put("private",1).put("visible", 1).put("name", 1).put("_id", 1)))
 		.onSuccess(res -> {
 			for(JsonObject current : res)
 			{
@@ -383,6 +460,16 @@ public class ElementManager<T extends ElementBase> {
 		return listPromise.future();		
 	}
 
+	/**
+	 * Get the List of all elements of the specified type. 
+	 * Returns a list of 
+	 * @return
+	 */
+	public Future<JsonArray> getElementList()
+	{
+		return this.getElementList(false);			
+	}
+	
 	/**
 	 * Get the List of all elements of the specified type. 
 	 * Returns a list of 

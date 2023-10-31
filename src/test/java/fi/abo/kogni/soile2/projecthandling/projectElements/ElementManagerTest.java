@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements;
 
+import java.nio.file.Path;
+
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.GitTest;
@@ -13,6 +15,9 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.netty.util.concurrent.SucceededFuture;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -299,6 +304,59 @@ public class ElementManagerTest extends GitTest{
 			})
 			.onFailure(err -> context.fail(err));
 
+		})		
+		.onFailure(err ->{
+			context.fail(err);
+		});	
+
+	}	
+	
+	@Test
+	public void testDeleteElement(TestContext context)
+	{
+		System.out.println("--------------------  Testing Version List Retrieval ----------------------");
+		String dataLakeDirectory = SoileConfigLoader.getServerProperty("soileGitDataLakeFolder");
+		Async testAsync = context.async();
+		ObjectGenerator.buildAPITask(taskManager, "FirstTask")
+		.onSuccess(apiTask -> {			
+			// first see that things were created
+			String repoID = taskManager.getGitIDForUUID(apiTask.getUUID());
+			String targetFolder = Path.of(dataLakeDirectory, repoID).toAbsolutePath().toString();
+			vertx.fileSystem().exists(targetFolder)
+			.compose(exists -> {
+				// the folder with the data exists
+				context.assertTrue(exists);
+				return vertx.eventBus().request("soile.git.doesRepoExist", repoID);
+			}).compose(response -> {
+				//and the git repo exists. 
+				context.assertTrue((Boolean)response.body());
+				return taskManager.removeElementAndCleanUpGit(apiTask.getUUID());
+			})
+			.onSuccess(removed -> {
+				vertx.fileSystem().exists(targetFolder)
+				.compose(exists -> {
+					System.out.println("DataLake Folder removed");
+					context.assertFalse(exists);
+					return vertx.eventBus().request("soile.git.doesRepoExist", repoID);
+				})
+				.compose(response -> {
+					//and the git repo exists.
+					System.out.println("Repo deleted");
+					context.assertFalse((Boolean)response.body());
+					return taskManager.getElementList(true);
+				})
+				.compose(elementList -> {			
+					for(int i = 0; i < elementList.size(); i++)
+					{
+						context.assertNotEquals(apiTask.getUUID(), elementList.getJsonObject(i).getString("UUID"));
+					}
+					System.out.println("Element no longer exists");
+					return Future.succeededFuture();
+				})
+				.onSuccess(done -> testAsync.complete())
+				.onFailure(err -> context.fail(err));
+			})
+			.onFailure(err -> context.fail(err));
 		})		
 		.onFailure(err ->{
 			context.fail(err);

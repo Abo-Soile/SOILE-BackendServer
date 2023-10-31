@@ -239,84 +239,84 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	}
 
 
-	/**
-	 * Get The files stored for a specific participant. 
-	 * @param resultJson a {@link JsonObject} that contains at least a "resultData" array from a participant along with the "_id" field.
-	 * @return 
-	 */
-	public Set<ParticipantFileResult> getFilesFromResults(JsonObject resultJson)
-	{
-
-		Set<ParticipantFileResult> results = new HashSet<>();
-		JsonArray resultData = resultJson.getJsonArray("resultData", new JsonArray());
-		for(int i = 0; i < resultData.size(); i++)
-		{
-			JsonObject taskResults = resultData.getJsonObject(i);
-			int step = taskResults.getInteger("step");
-			JsonArray fileResults = taskResults.getJsonArray("fileData", new JsonArray());
-			for(int j = 0; i < fileResults.size(); j++)
-			{
-				JsonObject fileResult = fileResults.getJsonObject(j);				
-				results.add(new ParticipantFileResult(fileResult.getString("targetid"),
-						fileResult.getString("filename"),											   
-						fileResult.getString("fileformat"),
-						step,
-						taskResults.getString("task"), 
-						resultJson.getString("_id")));
-			}
-		}
-		return results;
-	}
-
-	/**
-	 * Get a list of dbResults for the given participants. 
-	 * @param participantIDs
-	 * @return A fture of the list of JsonResults.
-	 */
-	public Future<List<JsonObject>> getDataBaseResultsForParticipants(List<String> participantIDs, boolean finished)
-	{
-		JsonObject matchObj = new JsonObject().put("_id", new JsonArray(participantIDs));
-		if(finished)
-		{
-			matchObj.put("finished", true);
-		}
-		FindOptions options = new FindOptions();
-		options.setFields(new JsonObject().put("_id", 1).put("resultData", new JsonObject().put("task", 1).put("dbData", 1)));
-		return client.findWithOptions(participantCollection, matchObj,options);
-	}
-
-	/**
-	 * Get the tasks from a result object that contain files
-	 * @param resultJson a {@link JsonObject} that contains at least a "resultData" array from a participant.  
-	 * @return 
-	 */
-	public Set<String> getTaskWithFilesFromResults(JsonObject resultJson)
-	{
-
-		Set<String> results = new HashSet<>();
-		JsonArray resultData = resultJson.getJsonArray("resultData", new JsonArray());
-		for(int i = 0; i < resultData.size(); i++)
-		{
-			JsonObject taskResults = resultData.getJsonObject(i);
-			JsonArray fileResults = taskResults.getJsonArray("fileData", new JsonArray());
-			if(fileResults.size() > 0)
-			{
-				results.add(taskResults.getString("task"));
-			}
-		}
-		return results;
-	}
-
-
-	/**
-	 * Get the results stored for a specific participant. 
-	 * @param id the ID of the participant.
-	 * @return 
-	 */
-	public Future<JsonObject> getParticipantResults(String participantID)
-	{		
-		return client.findOne(participantCollection, new JsonObject().put("_id", participantID), new JsonObject().put("resultData", 1).put("_id", 1));
-	}
+//	/**
+//	 * Get The files stored for a specific participant. 
+//	 * @param resultJson a {@link JsonObject} that contains at least a "resultData" array from a participant along with the "_id" field.
+//	 * @return 
+//	 */
+//	public Set<ParticipantFileResult> getFilesFromResults(JsonObject resultJson)
+//	{
+//
+//		Set<ParticipantFileResult> results = new HashSet<>();
+//		JsonArray resultData = resultJson.getJsonArray("resultData", new JsonArray());
+//		for(int i = 0; i < resultData.size(); i++)
+//		{
+//			JsonObject taskResults = resultData.getJsonObject(i);
+//			int step = taskResults.getInteger("step");
+//			JsonArray fileResults = taskResults.getJsonArray("fileData", new JsonArray());
+//			for(int j = 0; i < fileResults.size(); j++)
+//			{
+//				JsonObject fileResult = fileResults.getJsonObject(j);				
+//				results.add(new ParticipantFileResult(fileResult.getString("targetid"),
+//						fileResult.getString("filename"),											   
+//						fileResult.getString("fileformat"),
+//						step,
+//						taskResults.getString("task"), 
+//						resultJson.getString("_id")));
+//			}
+//		}
+//		return results;
+//	}
+//
+//	/**
+//	 * Get a list of dbResults for the given participants. 
+//	 * @param participantIDs
+//	 * @return A fture of the list of JsonResults.
+//	 */
+//	public Future<List<JsonObject>> getDataBaseResultsForParticipants(List<String> participantIDs, boolean finished)
+//	{
+//		JsonObject matchObj = new JsonObject().put("_id", new JsonArray(participantIDs));
+//		if(finished)
+//		{
+//			matchObj.put("finished", true);
+//		}
+//		FindOptions options = new FindOptions();
+//		options.setFields(new JsonObject().put("_id", 1).put("resultData", new JsonObject().put("task", 1).put("dbData", 1)));
+//		return client.findWithOptions(participantCollection, matchObj,options);
+//	}
+//
+//	/**
+//	 * Get the tasks from a result object that contain files
+//	 * @param resultJson a {@link JsonObject} that contains at least a "resultData" array from a participant.  
+//	 * @return 
+//	 */
+//	public Set<String> getTaskWithFilesFromResults(JsonObject resultJson)
+//	{
+//
+//		Set<String> results = new HashSet<>();
+//		JsonArray resultData = resultJson.getJsonArray("resultData", new JsonArray());
+//		for(int i = 0; i < resultData.size(); i++)
+//		{
+//			JsonObject taskResults = resultData.getJsonObject(i);
+//			JsonArray fileResults = taskResults.getJsonArray("fileData", new JsonArray());
+//			if(fileResults.size() > 0)
+//			{
+//				results.add(taskResults.getString("task"));
+//			}
+//		}
+//		return results;
+//	}
+//
+//
+//	/**
+//	 * Get the results stored for a specific participant. 
+//	 * @param id the ID of the participant.
+//	 * @return 
+//	 */
+//	public Future<JsonObject> getParticipantResults(String participantID)
+//	{		
+//		return client.findOne(participantCollection, new JsonObject().put("_id", participantID), new JsonObject().put("resultData", 1).put("_id", 1));
+//	}
 
 
 	/**

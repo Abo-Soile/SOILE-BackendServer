@@ -181,6 +181,35 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 		.onFailure(err -> dataLakeFilePromise.fail(err));
 		return dataLakeFilePromise.future();	
 	}	
+
+	/**
+	 * Delete a Task folder and all its contents from the dataLake. 
+	 * @param RepoID The ID of the Repository belonging to the task.
+	 * @return A Future that succeeded if the path was deleted.
+	 */
+	public Future<Void> deleteElementFolder(String RepoID)
+	{
+		Promise<Void> dataLakeFolderRemovedPromise = Promise.promise();
+		String targetFolder = Path.of(dataLakeDirectory, RepoID).toAbsolutePath().toString();
+		vertx.fileSystem().exists(targetFolder)
+		.compose(exists -> {
+			if(exists)
+			{
+				return vertx.fileSystem().deleteRecursive(targetFolder, true);
+			}
+			else
+			{
+				// we still continue since this is fine, as the folder no longer exists.. 
+				LOGGER.warn("Trying to delete non existing folder " + targetFolder);
+				return Future.succeededFuture();
+			}		
+		})
+		.onSuccess(folderRemoved -> {			
+			dataLakeFolderRemovedPromise.complete();
+		})		
+		.onFailure(err -> dataLakeFolderRemovedPromise.fail(err));
+		return dataLakeFolderRemovedPromise.future();
+	}
 	
 	/**
 	 * Write the data from an {@link OutputStream} to the datalake, creating a new file 
@@ -225,17 +254,28 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 		return dataLakeFilePromise.future();	
 	}	
 
-
+	/**
+	 * Delete a file in the datalake associated with the given git file.
+	 * Be careful the file will be deleted, so make sure it's not associated with something else.
+	 * @param toDelete
+	 * @return A Future of the operation succeeding.
+	 */
 	public Future<Void> deleteFile(GitDataLakeFile toDelete)
 	{
 		return vertx.fileSystem().delete(toDelete.getDataLakeFile().getAbsolutePath());
 	}
 	
+	/**
+	 * Remove a File for a specific taskID in the data lake
+	 * @param taskID the task for which to delete a file
+	 * @param dataLakeFileName the name of the file in the data lake
+	 * @return A Future of the operation succeeding.
+	 */
 	public Future<Void> deleteDataLakeFile(String taskID, String dataLakeFileName)
 	{
 		File toDelete = getTaskDataLakeFile(taskID, dataLakeFileName);		
 		return vertx.fileSystem().delete(toDelete.getAbsolutePath());		
-	}
+	}	
 	
 	/**
 	 * Get the {@link File} specified by the taskID and the filename in the resource datalake.

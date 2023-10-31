@@ -159,4 +159,9 @@ public class APITask extends APIElementBase<Task> {
 	{
 		return (x) -> { return x;};
 	}
+	
+	@Override
+	public JsonObject calcDependencies() {
+		return new JsonObject();		
+	}
 }

@@ -146,6 +146,12 @@ public interface APIElement<T extends ElementBase> {
 	 * @param json
 	 */
 	void loadFromAPIJson(JsonObject json);
+
+	/**
+	 * Calculate the dependencies of this element 
+	 * @param json
+	 */
+	JsonObject calcDependencies();
 	
 	/**
 	 * Update this APIElement from a Json. but only use fields that are present in this element.

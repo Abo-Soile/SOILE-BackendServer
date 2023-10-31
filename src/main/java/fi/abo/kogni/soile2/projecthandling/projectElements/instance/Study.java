@@ -26,6 +26,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.handler.HttpException;
 
 /**
  * Instance of a Study in Soile. 
@@ -649,7 +650,7 @@ public abstract class Study implements AccessElement{
 		.compose(active -> {
 			if(active) 
 			{				
-				return Future.failedFuture("You cannot modify an active study");
+				return Future.failedFuture(new HttpException(400,"You cannot modify an active study"));
 			}
 			else
 			{
@@ -664,15 +665,13 @@ public abstract class Study implements AccessElement{
 			// if it has it it must be equal, or this fails.
 			if(hasParticipants && (projectChange || versionChange || descChange) )
 			{			
-				updatePromise.fail("Cannot change underlying project or descriptions for Studies with Participants");
+				updatePromise.fail(new HttpException(400,"Cannot change underlying project or descriptions for Studies with Participants"));
 				return;
 			}
 			
 				
-			checkShortCutAvailable(updateInformation.getString("shortcut",shortcut))
+			checkChangeAllowed(updateInformation)
 			.onSuccess(allowed -> {
-				if(allowed)
-				{
 					setSourceUUID(updateInformation.getString("sourceUUID", getSourceUUID()));
 					setSourceVersion(updateInformation.getString("version", getSourceVersion()));
 					isPrivate = updateInformation.getBoolean("private", isPrivate);
@@ -680,17 +679,13 @@ public abstract class Study implements AccessElement{
 					shortDescription = updateInformation.getString("shortDescription", shortDescription);
 					shortcut = updateInformation.getString("shortcut", shortcut);
 					language = updateInformation.getString("language", language);
+					name = updateInformation.getString("name",name);
 					setModifiedDate();				
 					save(projectChange || versionChange)
 					.onSuccess(res -> {
 						updatePromise.complete(this.modifiedStamp);
 					})
 					.onFailure(err -> updatePromise.fail(err));
-				}
-				else
-				{
-					updatePromise.fail("Conflicing shortcuts, please choose a different shortcut");
-				}
 			})
 			.onFailure(err -> updatePromise.fail(err));		
 		})
@@ -700,7 +695,7 @@ public abstract class Study implements AccessElement{
 		return updatePromise.future();			
 	}
 
-	protected abstract Future<Boolean> checkShortCutAvailable(String shortcut);
+	protected abstract Future<Void> checkChangeAllowed(JsonObject newData);
 
 	/**
 	 * This operation saves the Project. It should ensure that the data can be reconstructed by supplying what is returned 

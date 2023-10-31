@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
@@ -118,6 +120,25 @@ public class APIExperiment extends APIElementBase<Experiment> {
 		{
 			return (x) -> {return x;};
 		}
+	}
+
+	@Override
+	public JsonObject calcDependencies() {
+		HashSet<String> taskDependencies = new HashSet<>();
+		HashSet<String> experimentDependencies = new HashSet<>();
+		for(int i = 0 ; i < this.getElements().size(); i++)
+		{
+			JsonObject element = this.getElements().getJsonObject(i);
+			switch(element.getString("elementType"))
+			{
+				case "task" : taskDependencies.add(element.getJsonObject("data").getString("UUID")); break;
+				case "experiment" : experimentDependencies.add(element.getJsonObject("data").getString("UUID")); break;
+				default: continue;
+			}			
+		}
+		return new JsonObject().put("tasks", new JsonArray(new LinkedList<String>(taskDependencies)))
+				.put("experiments", new JsonArray(new LinkedList<String>(experimentDependencies)));
+		
 	}
 	
 }

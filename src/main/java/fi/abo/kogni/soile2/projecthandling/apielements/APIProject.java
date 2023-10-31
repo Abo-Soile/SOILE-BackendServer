@@ -1,6 +1,11 @@
 package fi.abo.kogni.soile2.projecthandling.apielements;
 
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.function.Function;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
@@ -18,7 +23,8 @@ import io.vertx.core.json.JsonObject;
  */
 public class APIProject extends APIElementBase<Project>{
 
-	
+	private static final Logger LOGGER = LogManager.getLogger(APIProject.class);
+
 	private String[] gitFields = new String[] {"name","tasks","experiments","filters","randomizers","start"};
 	private Object[] gitDefaults = new Object[] {"",new JsonArray(),new JsonArray(),new JsonArray(),new JsonArray(),null};		
 	private Function<Object, Object>[] elementCheckers;   
@@ -197,5 +203,22 @@ public class APIProject extends APIElementBase<Project>{
 		default:
 			return (x) -> {return x;};
 		}
+	}
+	
+	@Override
+	public JsonObject calcDependencies() {
+		HashSet<String> taskDependencies = new HashSet<>();
+		HashSet<String> experimentDependencies = new HashSet<>();		
+		for(int i = 0 ; i < this.getTasks().size(); i++)
+		{
+			taskDependencies.add(this.getTasks().getJsonObject(i).getString("UUID"));			
+		}
+		for(int i = 0 ; i < this.getExperiments().size(); i++)
+		{
+			experimentDependencies.add(this.getExperiments().getJsonObject(i).getString("UUID"));			
+		}
+		return new JsonObject().put("tasks", new JsonArray(new LinkedList<String>(taskDependencies)))
+				.put("experiments", new JsonArray(new LinkedList<String>(experimentDependencies)));
+		
 	}
 }

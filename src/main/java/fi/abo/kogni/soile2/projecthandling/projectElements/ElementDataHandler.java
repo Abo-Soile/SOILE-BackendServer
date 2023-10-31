@@ -132,4 +132,21 @@ public class ElementDataHandler<T extends Element>{
 		});		
 		return successPromise.future();
 	}
+	
+	/**
+	 * Delete the Folder associated with the given element in the datalake
+	 * @param elementID the ID of the element
+	 * @return A succeeded {@link Future} if the folder was deleted.  
+	 */
+	public Future<Void> deleteElementFolder(String elementID)
+	{		
+		Promise<Void> successPromise = Promise.promise();
+		String repoID = this.typeID + elementID;		
+		resourceManager.deleteElementFolder(repoID)			
+		.onSuccess(version -> {
+			LOGGER.debug("Folder deleted");
+			successPromise.complete();				
+		});		
+		return successPromise.future();
+	}
 }

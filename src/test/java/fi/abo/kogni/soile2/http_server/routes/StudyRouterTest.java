@@ -13,6 +13,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
+import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -243,6 +244,25 @@ public class StudyRouterTest extends SoileWebTest {
 								context.assertTrue(UUIDs.contains(id2));
 								readlistasync.complete();
 							})
+							.onFailure(err -> context.fail(err));
+							Async adminList = context.async();
+
+							createUserAndAuthedSession("Admin", "pw", Roles.Admin)
+							.compose(adminSession -> {
+								return POST(adminSession, "/study/list", new JsonObject().put("full",  "true"),null);
+							})
+							.compose(listresponse -> {
+								context.assertEquals(2, listresponse.bodyAsJsonArray().size());
+								List<String> UUIDs = new LinkedList<>();
+								for(int i = 0 ; i < listresponse.bodyAsJsonArray().size(); i++)
+								{
+									UUIDs.add(listresponse.bodyAsJsonArray().getJsonObject(i).getString("UUID"));								
+								}
+								context.assertTrue(UUIDs.contains(id1));
+								context.assertTrue(UUIDs.contains(id2));
+								return Future.succeededFuture();
+							})
+							.onSuccess(done -> adminList.complete())
 							.onFailure(err -> context.fail(err));
 							Async emptyListAsync = context.async();
 
@@ -666,7 +686,8 @@ public class StudyRouterTest extends SoileWebTest {
 	{
 		System.out.println("--------------------  Testing POST/GET study properties  ----------------------");    
 
-		JsonObject projectExec = new JsonObject().put("private", true).put("name", "New Project").put("shortcut","newShortcut"); 
+		JsonObject projectExec = new JsonObject().put("private", true).put("name", "New Project").put("shortcut","newShortcut");
+		JsonObject secondExec = new JsonObject().put("private", true).put("name", "Second Project").put("shortcut","secondShortcut");
 		Async setupAsync = context.async();
 		createUserAndAuthedSession("Researcher", "pw", Roles.Researcher)
 		.onSuccess(authedSession -> {
@@ -681,38 +702,73 @@ public class StudyRouterTest extends SoileWebTest {
 						String projectID2 = projectData2.getString("UUID");
 						String projectVersion2 = projectData2.getString("version");
 						Async startAsync = context.async();
-						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec )					
+						POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,secondExec )					
+						.compose(response -> {
+							return POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec );
+						})
 						.onSuccess(response -> {
 							// we have a project set up. lets try to get the information.
 							String studyId = response.bodyAsJsonObject().getString("projectID");					
 							Async getsetasync = context.async();
 							POST(authedSession, "/study/" + studyId + "/get", null, null)
 							.onSuccess(studyDataResponse -> {
-
 								JsonObject studyData = studyDataResponse.bodyAsJsonObject();
+								JsonObject invalidChange1 = new JsonObject();								
+								invalidChange1.put("UUID", studyData.getString("UUID"));
+								invalidChange1.put("name", "Second Project");
+								Async invalid1Async = context.async();
+								POST(authedSession, "/study/" + studyId +"/update", null, invalidChange1)
+								.onSuccess(done -> context.fail("Names not allowed to conflict"))
+								.onFailure(err -> {
+									context.assertEquals(409, ((HttpException)err).getStatusCode());
+									invalid1Async.complete();
+								});
+								JsonObject invalidChange2 = new JsonObject();
+								invalidChange2.put("UUID", studyData.getString("UUID"));
+								invalidChange2.put("shortcut", "secondShortcut");
+								Async invalid2Async = context.async();
+								POST(authedSession, "/study/" + studyId +"/update", null, invalidChange2)
+								.onSuccess(done -> context.fail("Shortcuts not allowed to conflict"))
+								.onFailure(err -> {
+									context.assertEquals(409,  ((HttpException)err).getStatusCode());
+									invalid2Async.complete();
+								});
+								
 								context.assertEquals("en", studyData.getString("language"));
 								context.assertEquals("newShortcut", studyData.getString("shortcut"));
 								context.assertEquals(projectID, studyData.getString("sourceUUID"));
 								context.assertEquals(projectVersion, studyData.getString("version"));
-								context.assertEquals(true, studyData.getBoolean("private"));
+								context.assertEquals(true, studyData.getBoolean("private"));								
 								studyData.put("private", false);
 								studyData.put("sourceUUID", projectID2);
 								studyData.put("version", projectVersion2);
 								studyData.put("language", "fi");
 								POST(authedSession, "/study/" + studyId +"/update", null, studyData)
-								.onSuccess(updateResponse -> {
-									POST(authedSession, "/study/" + studyId + "/get", null, null)
-									.onSuccess(updatedstudyDataResponse -> {
-										JsonObject studyData2 = updatedstudyDataResponse.bodyAsJsonObject();
-										context.assertEquals("newShortcut", studyData2.getString("shortcut"));
-										context.assertEquals("fi", studyData2.getString("language"));
-										context.assertEquals(projectID2, studyData2.getString("sourceUUID"));
-										context.assertEquals(projectVersion2, studyData2.getString("version"));
-										context.assertEquals(false, studyData2.getBoolean("private"));
-										getsetasync.complete();				
+								.compose(updateResponse -> {
+									return POST(authedSession, "/study/" + studyId + "/get", null, null);
+								})
+								.onSuccess(updatedstudyDataResponse -> {
+									JsonObject studyData2 = updatedstudyDataResponse.bodyAsJsonObject();
+									context.assertEquals("newShortcut", studyData2.getString("shortcut"));
+									context.assertEquals("fi", studyData2.getString("language"));
+									context.assertEquals(projectID2, studyData2.getString("sourceUUID"));
+									context.assertEquals(projectVersion2, studyData2.getString("version"));
+									context.assertEquals(false, studyData2.getBoolean("private"));
+									studyData.put("name", "Changed Name");
+									Async nameChangeAsync = context.async(); 
+													
+									POST(authedSession, "/study/" + studyId +"/update", null, studyData)
+									.compose(updateResponse -> {										
+										return POST(authedSession, "/study/" + studyId + "/get", null, null);
 									})
-									.onFailure(err -> context.fail(err));
-
+									.onSuccess(changedDataResponse -> {
+										JsonObject studyData3 = changedDataResponse.bodyAsJsonObject();
+										context.assertEquals("Changed Name", studyData3.getString("name"));
+										nameChangeAsync.complete();
+									})
+									.onFailure(err -> context.fail(err));	
+									getsetasync.complete();
+									
 								})
 								.onFailure(err -> context.fail(err));
 

@@ -54,9 +54,16 @@ public class ParticipationRouterTest extends SoileWebTest{
 					context.assertEquals(1, codeTypeInfo.getJsonArray("outputs").size());
 					context.assertEquals("smoker", codeTypeInfo.getJsonArray("outputs").getString(0));
 					context.assertEquals(false, codeTypeInfo.getBoolean("finished") == null ? false : codeTypeInfo.getBoolean("finished"));
-					codeTypeAsync.complete();
+					POST(tempSession, "/study/" + instanceID + "/getcurrenttaskid", null, null)
+					.onSuccess(idResponse -> {						
+						String idInfo = idResponse.bodyAsString();
+						context.assertEquals("tabcdefg0", idInfo);	
+						codeTypeAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));					
 				})
-				.onFailure(err -> context.fail(err));							
+				.onFailure(err -> context.fail(err));
+				
 				creationAsync.complete();
 			})
 			.onFailure(err -> context.fail(err));

@@ -647,26 +647,6 @@ public class ParticipationRouter extends SoileRouter{
 	}		
 
 
-	public Future<Participant> createParticipantForUser(User user, Study project)
-	{			
-		Promise<Participant> partPromise = Promise.promise();
-		partHandler.create(project)
-		.onSuccess(particpant -> {
-			// update the user.
-			JsonObject request = new JsonObject().put("username", user.principal().getString("username")).put("studyID", project.getID());
-			request.put("participantID", particpant.getID());
-			eb.request("soile.umanager.makeUserParticipantInStudy", request)
-			.onSuccess( success -> {
-				partPromise.complete(particpant);
-			})
-			.onFailure(err -> partPromise.fail(err));
-		})
-		.onFailure(err -> partPromise.fail(err));
-
-		return partPromise.future();
-
-	}
-
 	public void handleRequest(RoutingContext context, Handler<RoutingContext> method)
 	{
 		String projectID = context.pathParam("id");

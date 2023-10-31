@@ -6,6 +6,7 @@ import java.util.List;
 import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 /**
  * Objects that implement this class reflect elements in a database that allow linking to 
@@ -23,6 +24,28 @@ public interface Element extends AccessElement {
 
 	void setUUID(String UUID);
 
+	
+	/**
+	 * The Elements, this element depends on, separated by type.
+	 * i.e. { tasks : [ id1, id2,...], experiments: [ exp1,exp2,...]} 
+	 * @return 
+	 */
+	JsonObject getDependencies();
+
+	/**
+	 * Set the dependencies of this object
+	 * i.e. { tasks : [ id1, id2,...], experiments: [ exp1,exp2,...]} 
+	 * @return 
+	 */
+	void setDependencies(JsonObject dependencies);
+	
+	/**
+	 * Add elements, this element depends on, separated by type.
+	 * i.e. { tasks : [ id1, id2,...], experiments: [ exp1,exp2,...]} 
+	 * @param dependencies this element depends on.
+	 */
+	void addDependencies(JsonObject dependencies);
+	
 	/**
 	 * A JsonArray of the form: 
 	 * [
@@ -164,7 +187,7 @@ public interface Element extends AccessElement {
 	 * Get the Type identifier, to be used for git retrieval.
 	 * @return
 	 */
-	public String getTypeID();
+	public String getTypeID();		
 	
 
 }

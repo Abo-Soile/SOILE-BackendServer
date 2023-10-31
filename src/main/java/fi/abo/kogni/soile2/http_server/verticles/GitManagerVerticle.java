@@ -71,6 +71,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 		consumers.add(eb.consumer("soile.git.writeGitResourceFile",this::writeGitResourceFile));
 		consumers.add(eb.consumer("soile.git.deleteGitResourceFile",this::deleteGitResourceFile));
 		consumers.add(eb.consumer("soile.git.cleanUp",this::cleanUp));
+		consumers.add(eb.consumer("soile.git.deleteRepo",this::deleteRepo));
 	}
 	
 	
@@ -145,6 +146,20 @@ public class GitManagerVerticle extends AbstractVerticle{
 		.onFailure(err -> message.fail(500, err.getMessage()));
 	}
 
+	/**
+	 * Initialize a repository
+	 * @param message the message with the "elementID" to create 
+	 * The supplied message gets answered with the current Version of the (empty) repository. Fails if the repository exists.    
+	 */
+	public void deleteRepo(Message<String> message)
+	{
+		gitManager.deleteRepo(message.body())
+		.onSuccess(deleted -> {
+			message.reply(deleted);
+		})
+		.onFailure(err -> message.fail(500, err.getMessage()));
+	}
+	
 	/**
 	 * Get the file contents of a file in the github repository, these are all just json/linker files).
 	 * @param message the message with the GitFile contents. 

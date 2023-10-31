@@ -2,8 +2,11 @@ package fi.abo.kogni.soile2.projecthandling.projectElements;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,6 +68,7 @@ public abstract class ElementBase implements Element {
 	protected HashMap<String,String> tags;
 	protected String baseCollection;
 	protected String collectionToUse;
+	protected JsonObject dependencies;
 	static final Logger LOGGER = LogManager.getLogger(ElementBase.class);
 
 	public ElementBase(JsonObject data, String collectionToUse)
@@ -89,6 +93,50 @@ public abstract class ElementBase implements Element {
 		data.put("_id", UUID);
 	}
 		
+	/**
+	 * The Elements, this element depends on, separated by type.
+	 * i.e. { tasks : [ id1, id2,...], experiments: [ exp1,exp2,...]} 
+	 * @return 
+	 */
+	@Override
+	public JsonObject getDependencies()
+	{
+		return this.dependencies;
+	}
+
+	/**
+	 * Add elements, this element depends on, separated by type.
+	 * i.e. { tasks : [ id1, id2,...], experiments: [ exp1,exp2,...]} 
+	 * @param dependencies this element depends on.
+	 */
+	@Override
+	public void addDependencies(JsonObject dependencies)
+	{
+		for(String field : dependencies.fieldNames())
+		{
+			JsonArray cdeps = this.dependencies.getJsonArray(field,new JsonArray()); 			
+			Set<Object> currentdeps = new HashSet<>();
+			// add everything.
+			for(Object o : cdeps)
+			{
+				currentdeps.add(o);
+			}
+			for(Object o : dependencies.getJsonArray(field))
+			{
+				currentdeps.add(o);
+			}
+			this.dependencies.put(field, new JsonArray(new LinkedList<Object>(currentdeps)));			
+		}
+	}
+	/**
+	 * Set dependencies
+	 * @param dependencies this element depends on.
+	 */
+	@Override
+	public void setDependencies(JsonObject dependencies)
+	{
+		this.dependencies = dependencies;
+	}
 	/**
 	 * Get the versions as a JsonArray of JsonObjects with:
 	 * {
@@ -284,7 +332,8 @@ public abstract class ElementBase implements Element {
 		setVisible(json.getBoolean("visible", true));
 		// either load from the UUID Field or from the _id field if the UUID does not exist.
 		setUUID(json.getString("UUID", json.getString("_id")));
-		setPrivate(json.getBoolean("private",false));		
+		setPrivate(json.getBoolean("private",false));
+		setDependencies(json.getJsonObject("dependencies",new JsonObject()));
 	}
 	/**
 	 * Get the Json object including the UUID as UUID field
@@ -306,7 +355,9 @@ public abstract class ElementBase implements Element {
 				   .put("versions", getVersions())
 				   .put("tags", getTags())				   
 				   .put("private", getPrivate())
+				   .put("dependencies", getDependencies())
 				   .put("visible",getVisible());
+				   
 		if(provideUUID)
 		{
 			result.put("_id", getUUID());	
@@ -331,7 +382,13 @@ public abstract class ElementBase implements Element {
 		if(getUUID() != null)
 		{
 			// So, we have a UUID in this element, which means it is not freshly created.
-			JsonObject defaultSetUpdates = new JsonObject().put("name", getName()).put("private", getPrivate()).put("visible", getVisible());			
+			JsonObject defaultSetUpdates = new JsonObject().put("name", getName()).put("private", getPrivate()).put("visible", getVisible());
+			JsonObject dependencyUpdate = new JsonObject();			
+			JsonObject dependencies = getDependencies();
+			for(String field : dependencies.fieldNames())
+			{
+				dependencyUpdate.put("dependencies." + field , new JsonObject().put("$each", dependencies.getJsonArray(field)));
+			}
 			JsonObject updates = getUpdates();			
 			if(!updates.containsKey("$set"))
 			{
@@ -340,6 +397,14 @@ public abstract class ElementBase implements Element {
 			else
 			{
 				updates.getJsonObject("$set").mergeIn(defaultSetUpdates);
+			}
+			if(!updates.containsKey("$addToSet"))
+			{
+				updates.put("$addToSet", dependencyUpdate);
+			}
+			else
+			{
+				updates.getJsonObject("$addToSet").mergeIn(dependencyUpdate);
 			}
 			// now, check that the name we have here does not collide with a name in the db.
 			JsonObject differingIDQuery = new JsonObject()
@@ -356,7 +421,7 @@ public abstract class ElementBase implements Element {
 					saveSuccess.fail(new ElementNameExistException(getName(), exists.getString("_id")));	
 				}
 				else
-				{
+				{					
 					client.updateCollection(collectionToUse,
 							new JsonObject().put("_id", this.getUUID().toString()), updates)
 					.onSuccess(res -> {

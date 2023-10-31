@@ -114,9 +114,9 @@ public class ProjectFactoryImplForTesting implements StudyFactory{
 		}
 
 		@Override
-		protected Future<Boolean> checkShortCutAvailable(String shortcut) {
+		protected Future<Void> checkChangeAllowed(JsonObject change) {
 			// TODO Auto-generated method stub
-			return Future.succeededFuture(true);
+			return Future.succeededFuture();
 		}
 
 		@Override

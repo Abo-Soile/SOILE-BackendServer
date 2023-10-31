@@ -78,7 +78,7 @@ public class DBStudy extends Study{
 			// this should only bring up the entry corresponding to this element. 
 			if(res.size() > 1)
 			{
-				saveSuccess.fail("Shortcut or name in use by another project");
+				saveSuccess.fail(new HttpException(409,"Shortcut or name in use by another project"));
 				return;
 			}
 			else
@@ -88,7 +88,7 @@ public class DBStudy extends Study{
 					// check that this is the correct object.
 					if(!res.get(0).getString("_id").equals(instanceID))
 					{
-						saveSuccess.fail("Shortcut or name in use by another project");
+						saveSuccess.fail(new HttpException(409,"Shortcut or name in use by another project"));
 						return;
 					}									
 				}
@@ -434,17 +434,40 @@ public class DBStudy extends Study{
 	}
 
 	@Override
-	protected Future<Boolean> checkShortCutAvailable(String shortcut) {
+	protected Future<Void> checkChangeAllowed(JsonObject updateData) {
 		
-		if(shortcut == null || "".equals(shortcut))
+		Promise canChangePromise = Promise.promise();
+		String newShortCut = updateData.getString("shortcut","");
+		String newName = updateData.getString("name",this.name);
+		if((newShortCut.equals(this.shortcut) || newShortCut.equals("")) && newName.equals(this.name))
 		{
-			return Future.succeededFuture(true);
-		}		
+			// Name stays the same, shortcut is either the old shortcut or set to empty. 
+			return Future.succeededFuture();
+		}
 		JsonObject query = new JsonObject().put("$and", new JsonArray()
-															.add(new JsonObject().put("shortcut", shortcut))
+															.add(new JsonObject().put("$or", new JsonArray().add(new JsonObject().put("shortcut", newShortCut))
+																											.add(new JsonObject().put("name", newName))))
 															.add(new JsonObject().put("_id", new JsonObject().put("$ne", getID())))
 												);
-		return client.findOne(getTargetCollection(), query, null).map(res -> { return res == null; });		
+		client.findOne(getTargetCollection(), query, null)
+		.onSuccess(res -> {
+			if(res == null)
+			{
+				canChangePromise.complete();
+			}				
+			else
+			{
+				if(res.getString("name").equals(newName))
+				{
+					canChangePromise.fail(new HttpException(409, "Study with this name already exists, you might not have access to it."));					
+				}
+				else
+				{
+					canChangePromise.fail(new HttpException(409, "Study with this shortcut already exists, you might not have access to it."));
+				}
+			}
+			});
+		return canChangePromise.future();
 	}
 
 	@Override

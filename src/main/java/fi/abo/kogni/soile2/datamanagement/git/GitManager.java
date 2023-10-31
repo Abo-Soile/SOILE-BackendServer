@@ -134,6 +134,35 @@ public class GitManager{
 	}
 
 	/**
+	 * Delete a repository
+	 * @param elementID the ID (Project, Task or ExperimentID)
+	 * @return a Future that on success returns the current Version of the (empty) repository. Fails if the repository exists.    
+	 */
+	public Future<String> deleteRepo(String elementID)
+	{
+		Promise<String> deletePromise = Promise.<String>promise();
+		eb.request(SoileConfigLoader.getServerProperty("gitVerticleAddress"), gitProviderVerticle.createCommandForRepo(elementID).put(gitProviderVerticle.COMMANDFIELD, gitProviderVerticle.DELETE_REPO_COMMAND))
+		.onSuccess( reply ->
+		{
+			JsonObject replyObject = (JsonObject) reply.body();
+			if(replyObject.getBoolean(gitProviderVerticle.DATAFIELD))
+			{
+				deletePromise.complete();	
+			}
+			else
+			{
+				deletePromise.fail("Repo not deleted.");
+			}
+										
+		})
+		.onFailure(fail ->
+		{
+			deletePromise.fail(fail);
+		});
+		return deletePromise.future();
+	}
+	
+	/**
 	 * Get the file contents of a file in the github repository, these are all just json/linker files). 
 	 * @param fileName The name of the file
 	 * @param taskID The task the file belongs to 

@@ -199,26 +199,6 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	}
 
-	public void getTagList(RoutingContext context)
-	{
-		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
-		String elementID = params.pathParameter("id").getString();	
-		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
-		.onSuccess(Void -> 
-		{
-			elementManager.getTagListForElement(elementID)
-			.onSuccess(tagList -> {			
-				context.response()
-				.setStatusCode(200)
-				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-				.end(tagList.encode());	
-			})
-			.onFailure(err -> handleError(err, context));
-		})
-		.onFailure(err -> handleError(err, context));
-
-	}
-
 	public void removeTagsFromElement(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);

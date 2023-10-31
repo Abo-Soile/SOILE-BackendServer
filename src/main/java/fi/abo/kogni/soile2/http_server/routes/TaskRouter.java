@@ -140,28 +140,6 @@ public class TaskRouter extends ElementRouter<Task> {
 	}
 	
 	
-	//TODO: Add to API.
-	public void getTaskInformation(RoutingContext context)
-	{
-		String elementID = context.pathParam("id");
-		String version = context.pathParam("version");	
-		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ,true)
-		.compose(allowed -> { return checkVersionAndID(elementID, version); })
-		.onSuccess(Void -> 
-		{									
-			eb.request("soile.task.getVersionInfo", new JsonObject().put("UUID", elementID).put("version", version))
-			.onSuccess(response -> {								
-				JsonObject responseBody = ((JsonObject) response.body()).getJsonObject(SoileCommUtils.DATAFIELD);
-				context.response()
-				.setStatusCode(200)	
-				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-				.end(new JsonObject().put("finished", false).put("codeType", responseBody.getJsonObject("codeType")).encode());
-			})
-			.onFailure(err -> handleError(err, context));
-		})
-		.onFailure(err -> handleError(err, context));
-	}
-	
 	public void getCodeOptions(RoutingContext context)
 	{
 		accessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
