@@ -14,6 +14,7 @@ import io.vertx.core.json.JsonObject;
 public class Task extends ElementBase {
 
 	public static String typeID = "T";
+	private static JsonObject listFields = new JsonObject().put("author", 1).put("language", 1).put("keywords", 1).put("created", 1).put("type", 1);
 	public Task()
 	{
 		this(new JsonObject());
@@ -193,6 +194,10 @@ public class Task extends ElementBase {
 	{
 		return this.data.getLong("created");
 	}
-	
+	@Override
+	public JsonObject getListFields()
+	{
+		return listFields;
+	}
 	
 }

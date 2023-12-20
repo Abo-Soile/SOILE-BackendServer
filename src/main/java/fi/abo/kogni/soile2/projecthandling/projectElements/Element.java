@@ -62,8 +62,7 @@ public interface Element extends AccessElement {
 	 * Set the Versions for this Element
 	 * @param versions A JsonArray of the form indicated in {@link getVersions);
 	 */
-	void setVersions(JsonArray versions);
-
+	void setVersions(JsonArray versions);	
 	
 	/**
 	 * A JsonArray of the form: 
@@ -188,6 +187,12 @@ public interface Element extends AccessElement {
 	 * @return
 	 */
 	public String getTypeID();		
-	
+
+	/**
+	 * Get the fields of the database that should be returned when a list of these objects is requested.
+	 * name and UUID do not need to get included in this object
+	 * @return A {@link JsonObject} containing the fields to include in the list as in "{"author" : 1 } 
+	 */
+	public JsonObject getListFields();
 
 }

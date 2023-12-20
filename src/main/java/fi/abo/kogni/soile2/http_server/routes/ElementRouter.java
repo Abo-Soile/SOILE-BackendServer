@@ -85,9 +85,9 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 			elementManager.getAPIElementFromDB(elementID,elementVersion)
 			.onSuccess(apiElement -> {
-				LOGGER.info(apiElement.getAPIJson().encodePrettily());
+				LOGGER.debug(apiElement.getAPIJson().encodePrettily());
 				JsonObject requestElement = params.body().getJsonObject();
-				LOGGER.info(requestElement.encodePrettily());
+				LOGGER.debug(requestElement.encodePrettily());
 				String tag = null;
 				if(requestElement.containsKey("tag"))
 				{
@@ -96,7 +96,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 					requestElement.remove("tag");
 				}
 				apiElement.updateFromJson(params.body().getJsonObject());
-				LOGGER.info(apiElement.getAPIJson().encodePrettily());				
+				LOGGER.debug(apiElement.getAPIJson().encodePrettily());				
 				elementManager.updateElement(apiElement, tag)
 				.onSuccess(version -> {
 					context.response()

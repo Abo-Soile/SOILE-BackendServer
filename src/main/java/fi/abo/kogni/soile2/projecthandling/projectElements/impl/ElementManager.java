@@ -482,7 +482,9 @@ public class ElementManager<T extends ElementBase> {
 		Element e = supplier.get();
 		JsonArray result = new JsonArray();		
 		// should possibly be done via findBatch
-		client.findWithOptions(e.getTargetCollection(), new JsonObject(), new FindOptions().setFields(new JsonObject().put("private",1).put("visible", 1).put("name", 1).put("_id", 1)))
+		JsonObject defaultFields = new JsonObject().put("private",1).put("visible", 1).put("name", 1).put("_id", 1);
+		defaultFields.mergeIn(supplier.get().getListFields());
+		client.findWithOptions(e.getTargetCollection(), new JsonObject(), new FindOptions().setFields(defaultFields))
 		.onSuccess(res -> {
 			for(JsonObject current : res)
 			{

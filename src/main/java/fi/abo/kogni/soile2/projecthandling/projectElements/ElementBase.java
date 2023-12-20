@@ -454,5 +454,10 @@ public abstract class ElementBase implements Element {
 	 * @return a {@link JsonObject} that can be used with a {@link MongoClient}s update methods. 
 	 */
 	public abstract JsonObject getUpdates();
-		
+	
+	@Override
+	public JsonObject getListFields()
+	{
+		return new JsonObject();
+	}
 }

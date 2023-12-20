@@ -19,6 +19,7 @@
 		<vertx.verticle>fi.abo.kogni.soile2.http_server.SoileServerVerticle</vertx.verticle>
 		<vertx.launcher>io.vertx.core.Launcher</vertx.launcher>
 		<setup.verticle>fi.abo.kogni.soile2.http_server.SetupServer</setup.verticle>
+		<update.verticle>fi.abo.kogni.soile2.http_server.ServerUpdater</update.verticle>
 		<launcher.class>io.vertx.core.Launcher</launcher.class>
 		<vertx-maven-plugin.version>1.0.28</vertx-maven-plugin.version>
 		<jackson-datatype-jsr310.version>2.7.4</jackson-datatype-jsr310.version>
@@ -315,7 +316,16 @@
 							</arguments>
 						</configuration>
 					</execution>
-					
+					<execution>
+						<id>update</id>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<configuration>
+							<mainClass>${update.verticle}</mainClass>
+							<cleanupDaemonThreads>false</cleanupDaemonThreads>							
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 			<plugin>
