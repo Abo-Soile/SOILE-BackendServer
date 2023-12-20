@@ -620,7 +620,7 @@ public class ElementRouterTest extends SoileWebTest {
 	@Test
 	public void testUpdateWebTask(TestContext context)
 	{	
-		System.out.println("--------------------  Testing Task generation ----------------------");
+		System.out.println("--------------------  Testing Task update ----------------------");
 	
 		Async setupAsync = context.async();
 		WebClientSession currentSession = createSession();
@@ -668,7 +668,7 @@ public class ElementRouterTest extends SoileWebTest {
 								return mongo_client.findOne(SoileConfigLoader.getCollectionName("taskCollection"), new JsonObject().put("_id", taskID), null);												
 							})							
 							.onSuccess(dbData -> {
-								context.assertEquals("New Author", db.getValue("author"));	
+								context.assertEquals("New Author", dbData.getValue("author"));	
 								updateAsync.complete();
 							})
 							.onFailure(err -> context.fail(err));	
