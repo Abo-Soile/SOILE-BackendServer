@@ -5,6 +5,7 @@ import org.junit.Test;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -32,12 +33,18 @@ public class ElementRouterTest extends SoileWebTest {
 					Async taskInfoAsync = context.async();
 					String taskID = taskData.getString("UUID");
 					String taskVersion = taskData.getString("version");
-					getElement(currentSession, "task", taskID, taskVersion)
-					.onSuccess(newData -> {
+					getElement(currentSession, "task", taskID, taskVersion)					
+					.compose(newData -> {
 						context.assertEquals(taskID, newData.getString("UUID"));
 						context.assertEquals(taskVersion, newData.getString("version"));
 						context.assertEquals(taskData.getString("code"), newData.getString("code"));
 						context.assertTrue(taskData.getString("code").contains("intermezzo"));
+						context.assertEquals("UNKNOWN", newData.getValue("author"));
+						context.assertEquals(0, newData.getJsonArray("keywords").size());
+						return mongo_client.findOne(SoileConfigLoader.getCollectionName("taskCollection"), new JsonObject().put("_id", taskID), null);												
+					})
+					.onSuccess(db -> {						
+						System.out.println(db.encodePrettily());
 						taskInfoAsync.complete();
 					})
 					.onFailure(err -> context.fail(err));
@@ -603,6 +610,92 @@ public class ElementRouterTest extends SoileWebTest {
 				context.assertTrue(filters.getJsonObject(0).containsKey("position"));
 				context.assertEquals(350, filters.getJsonObject(0).getJsonObject("position").getNumber("x"));
 				projAsync.complete();		
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+
+
+	@Test
+	public void testUpdateWebTask(TestContext context)
+	{	
+		System.out.println("--------------------  Testing Task generation ----------------------");
+	
+		Async setupAsync = context.async();
+		WebClientSession currentSession = createSession();
+		createUser(vertx, "TestUser", "testPassword", Roles.Admin)
+		.onSuccess(userCreated -> {
+			authenticateSession(currentSession, "TestUser", "testPassword")
+			.onSuccess(authed -> {
+				WebObjectCreator.createTask(currentSession, "Test2")
+				.onSuccess(taskData -> {
+					Async taskInfoAsync = context.async();
+					String taskID = taskData.getString("UUID");
+					String taskVersion = taskData.getString("version");
+					getElement(currentSession, "task", taskID, taskVersion)					
+					.compose(newData -> {
+						context.assertEquals(taskID, newData.getString("UUID"));
+						context.assertEquals(taskVersion, newData.getString("version"));
+						context.assertEquals(taskData.getString("code"), newData.getString("code"));
+						context.assertTrue(taskData.getString("code").contains("intermezzo"));
+						context.assertEquals("UNKNOWN", newData.getValue("author"));
+						context.assertEquals(0, newData.getJsonArray("keywords").size());						
+						return mongo_client.findOne(SoileConfigLoader.getCollectionName("taskCollection"), new JsonObject().put("_id", taskID), null);												
+					})
+					.onSuccess(db -> {						
+						context.assertEquals("UNKNOWN", db.getValue("author"));
+						Async updateAsync = context.async();
+						JsonObject TaskUpdate = new JsonObject().put("UUID", taskID)
+																.put("version", taskVersion)
+																.put("author", "New Author")
+																.put("description", "New description")
+																.put("keywords", new JsonArray().add("keyword1"));
+						
+						POST(currentSession, "/task/" + taskID +"/" +taskVersion + "/post" , null, TaskUpdate)
+						.onSuccess(response -> {
+							
+							String newVersion = response.bodyAsJsonObject().getString("version");
+							getElement(currentSession, "task", taskID, newVersion)					
+							.compose(newData -> {
+								context.assertEquals(taskID, newData.getString("UUID"));
+								context.assertEquals(newVersion, newData.getString("version"));
+								context.assertEquals(taskData.getString("code"), newData.getString("code"));
+								context.assertTrue(taskData.getString("code").contains("intermezzo"));
+								context.assertEquals("New Author", newData.getValue("author"));
+								context.assertEquals(TaskUpdate.getValue("description"), newData.getValue("description"));
+								context.assertEquals(1, newData.getJsonArray("keywords").size());						
+								return mongo_client.findOne(SoileConfigLoader.getCollectionName("taskCollection"), new JsonObject().put("_id", taskID), null);												
+							})							
+							.onSuccess(dbData -> {
+								context.assertEquals("New Author", db.getValue("author"));	
+								updateAsync.complete();
+							})
+							.onFailure(err -> context.fail(err));	
+						})
+						.onFailure(err -> context.fail(err));	
+						taskInfoAsync.complete();
+						
+						
+					})
+					.onFailure(err -> context.fail(err));
+	
+					Async taskListAsync = context.async();
+	
+					getElementList(currentSession, "task")
+					.onSuccess(taskList-> {
+						context.assertEquals(1, taskList.size());
+						context.assertEquals(taskID, taskList.getJsonObject(0).getValue("UUID"));
+						context.assertEquals(taskData.getString("name"), taskList.getJsonObject(0).getValue("name"));
+						taskListAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));
+					// now we run an update and see what happens
+					
+					setupAsync.complete();
+	
+				})
+				.onFailure(err -> context.fail(err));			 
 			})
 			.onFailure(err -> context.fail(err));
 		})

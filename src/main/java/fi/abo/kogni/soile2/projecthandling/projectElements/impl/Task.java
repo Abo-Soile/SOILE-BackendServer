@@ -24,8 +24,9 @@ public class Task extends ElementBase {
 		super(data, SoileConfigLoader.getdbProperty("taskCollection"));
 		if(data.getJsonArray("resources") == null)
 		{
-			data.put("resources", new JsonArray());
+			this.data.put("resources", new JsonArray());
 		}
+		initRequiredFields();
 	}
 
 	/**
@@ -39,11 +40,32 @@ public class Task extends ElementBase {
 	public void loadfromJson(JsonObject json)
 	{		
 		super.loadfromJson(json);
+		this.data.put("author", json.getValue("author","UNKNOWN"));
+		this.data.put("language", json.getValue("language","UNKNOWN"));
+		this.data.put("type", json.getValue("type","UNKNOWN"));
+		this.data.put("description", json.getValue("description",this.getName()));
+		this.data.put("keywords", json.getValue("keywords",new JsonArray()));
+		this.data.put("created", json.getValue("created",System.currentTimeMillis()));
 	}
+	
+	private JsonObject getDatafields()
+	{				
+		JsonObject res = new JsonObject();
+		res.put("author", this.data.getValue("author","UNKNOWN"));
+		res.put("language", this.data.getValue("language","UNKNOWN"));
+		res.put("type", this.data.getValue("type","UNKNOWN"));
+		res.put("description", this.data.getValue("description",this.getName()));
+		res.put("keywords", this.data.getValue("keywords",new JsonArray()));
+		res.put("created", this.data.getValue("created",System.currentTimeMillis()));
+		return res;
+	}
+	
 	@Override
 	public JsonObject toJson(boolean provideUUID)
-	{		
-		return super.toJson(provideUUID); 
+	{			
+		JsonObject res = super.toJson(provideUUID);
+		res.mergeIn(getDatafields());		
+		return res;		
 	}
 	@Override
 	public JsonObject getUpdates()
@@ -51,6 +73,7 @@ public class Task extends ElementBase {
 			JsonObject updateVersions = new JsonObject().put("versions", new JsonObject().put("$each", getVersions()));
 			JsonObject updateTags = new JsonObject().put("tags", new JsonObject().put("$each", getTags()));
 			JsonObject updates = new JsonObject().put("$addToSet", new JsonObject().mergeIn(updateVersions).mergeIn(updateTags));
+			updates.put("$set", getDatafields());
 			return updates;
 	}
 
@@ -62,5 +85,114 @@ public class Task extends ElementBase {
 	public TargetElementType getElementType() {
 		return TargetElementType.TASK;
 	}
+	
+	/**
+	 * This function creates all required fields for a task, if they don't exist in the current data of the task.
+	 * These fields include:
+	 * author: The original author of the task 
+	 * language: The language the task content is in
+	 * type: The type of the task
+	 * description: A textual description of the task
+	 * keywords: a list of keywords for the task (for searchability)
+	 * created: A time stamp of the creation time of this task
+	 */
+	private void initRequiredFields() {
+		this.data.mergeIn(this.getDatafields());					
+	}
+	
+	/**
+	 * Get the author of the task
+	 * @return
+	 */
+	public String getAuthor()
+	{
+		return this.data.getString("author");
+	}
+	/**
+	 * Set the author of the task
+	 * @return
+	 */
+	public void setAuthor(String author)
+	{
+		this.data.put("author", author);
+	}
+	
+	/**
+	 * Get the language of the task
+	 * @return
+	 */
+	public String getLanguage()
+	{
+		return this.data.getString("language");
+	}
+	/**
+	 * Set the language of the task
+	 * @return
+	 */
+	public void setLanguage(String language)
+	{
+		this.data.put("language", language);
+	}
+	
+	/**
+	 * Get the type category of the task
+	 * @return
+	 */
+	public String getType()
+	{
+		return this.data.getString("type");
+	}
+	/**
+	 * Set the type catregory of the task
+	 * @return
+	 */
+	public void setType(String type)
+	{
+		this.data.put("type", type);
+	}
+	
+	/**
+	 * Get the description of the task
+	 * @return
+	 */
+	public String getDescription()
+	{
+		return this.data.getString("description");
+	}
+	/**
+	 * Set the author of the task
+	 * @return
+	 */
+	public void setDescription(String description)
+	{
+		this.data.put("description", description);
+	}
+	
+	/**
+	 * Get the keywords for the task
+	 * @return
+	 */
+	public JsonArray getKeywords()
+	{
+		return this.data.getJsonArray("keywords");
+	}
+	/**
+	 * Set the keywords for the task
+	 * @return
+	 */
+	public void setKeywords(JsonArray keywords)
+	{
+		this.data.put("keywords", keywords);
+	}
+	
+	/**
+	 * Get the author of the task
+	 * @return
+	 */
+	public Long getCreated()
+	{
+		return this.data.getLong("created");
+	}
+	
 	
 }

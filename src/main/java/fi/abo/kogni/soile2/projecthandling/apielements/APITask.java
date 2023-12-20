@@ -10,11 +10,17 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.projecthandling.exceptions.NoCodeTypeChangeException;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.Filter;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.randomizers.Randomizer;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -28,25 +34,47 @@ public class APITask extends APIElementBase<Task> {
 	private String[] gitFields = new String[] {"name", "codeType"};
 	private Object[] gitDefaults = new Object[] {"", new JsonObject()};
 	
+	
+	
+	
 	public APITask() {
-		super(new JsonObject());
+		this(new JsonObject());
 	}
 	
 	public APITask(JsonObject data) {
 		super(data);
 		loadGitJson(data);
 	}
-
+	/**
+	 * Get the type of the code (i.e. what language the code is in, to be able to 
+	 * determine how it is going to be interpreted.
+	 * This includes the Code type version (if that makes a difference).
+	 * @return
+	 */
 	public JsonObject getCodeType() {
 		return data.getJsonObject("codeType", new JsonObject());
 	}
+	
+	/**
+	 * Set the type of the code (i.e. what language the code is in, to be able to 
+	 * determine how it is going to be interpreted. 
+	 */
 	public void setCodetype(JsonObject codeType) {
 		data.put("codeType", codeType);
 	}
-
+	
+	/**
+	 * Get the code type version (i.e. the version of the language the code is in.
+	 * Might make a difference for some code 
+	 * @return
+	 */
 	public String getCodeVersion() {
 		return getCodeType().getString("version","");
 	}
+	/**
+	 * Set the code type version
+	 * @param codeVersion
+	 */
 	public void setCodeVersion(String codeVersion) {		
 		JsonObject codeType = data.getJsonObject("codeType");
 		if(codeType != null)
@@ -58,10 +86,18 @@ public class APITask extends APIElementBase<Task> {
 			data.put("codeType", new JsonObject().put("version", codeVersion));
 		}
 	}
-	
+	/**
+	 * Get the language the code was written in.
+	 * @return
+	 */
 	public String getCodeLanguage() {
 		return getCodeType().getString("language", "");
 	}
+	
+	/**
+	 * Set the language the code is written in.
+	 * @param language
+	 */
 	public void setCodeLanguage(String language) {
 		JsonObject codeType = data.getJsonObject("codeType");
 		if(codeType != null)
@@ -73,17 +109,29 @@ public class APITask extends APIElementBase<Task> {
 			data.put("codeType", new JsonObject().put("language", language));
 		}
 	}
-	
+	/**
+	 * Get the code of the Task
+	 * @return
+	 */
 	public String getCode() {
 		return data.getString("code","");
 	}
+	/**
+	 * Set the code of the task
+	 * @param code
+	 */
 	public void setCode(String code) {
 		data.put("code", code);
 	}
+	
 	@Override
 	public void setElementProperties(Task task) throws NoCodeTypeChangeException
 	{
-		LOGGER.debug("Current Code Type: \n" + getCodeType().encodePrettily());
+		task.setAuthor(this.data.getString("author", task.getAuthor()));
+		task.setDescription(this.data.getString("description", task.getDescription()));
+		task.setKeywords(this.data.getJsonArray("keywords", task.getKeywords()));
+		task.setLanguage(this.data.getString("language", task.getLanguage()));
+		task.setType(this.data.getString("type", task.getType()));
 	}
 	@Override
 	public JsonObject getGitJson() {
@@ -157,11 +205,28 @@ public class APITask extends APIElementBase<Task> {
 	@Override
 	public Function<Object,Object> getFieldFilter(String fieldName)
 	{
-		return (x) -> { return x;};
+		if(fieldName.equals("created"))
+		{
+			// we do not allow updating the created timestamp. 
+			return (x) -> this.data.getValue(fieldName);
+		}
+		// all Fields in a task can be directly mapped. NO change needed.
+		return (x) -> {return x;};
 	}
 	
 	@Override
 	public JsonObject calcDependencies() {
 		return new JsonObject();		
+	}
+	
+	@Override
+	public void loadFromDBElement(Task element) {
+		super.loadFromDBElement(element);
+		this.data.put("author", element.getAuthor());
+		this.data.put("description", element.getDescription());
+		this.data.put("keywords", element.getKeywords());
+		this.data.put("language", element.getLanguage());
+		this.data.put("type", element.getType());
+		this.data.put("created", element.getCreated());
 	}
 }

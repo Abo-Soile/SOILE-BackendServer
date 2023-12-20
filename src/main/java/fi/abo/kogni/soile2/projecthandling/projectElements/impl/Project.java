@@ -51,7 +51,7 @@ public class Project extends ElementBase{
 	
 	@Override
 	public JsonObject toJson(boolean provideUUID)
-	{
+	{		
 		return super.toJson(provideUUID).put("elements", getElements());
 	}	
 	

@@ -68,7 +68,7 @@ public class TaskRouter extends ElementRouter<Task> {
 		}
 		
 		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.READ_WRITE,true)
-.compose(allowed -> { return checkVersionAndID(elementID, version); })
+		.compose(allowed -> { return checkVersionAndID(elementID, version); })
 		.onSuccess(Void -> 
 		{
 			if(delete)
