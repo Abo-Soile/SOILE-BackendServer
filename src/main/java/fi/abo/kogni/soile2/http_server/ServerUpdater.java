@@ -6,6 +6,7 @@ import fi.abo.kogni.soile2.migrations.TaskFieldAddition;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.ext.mongo.MongoClient;
 
 public class ServerUpdater extends SoileServerVerticle{
@@ -44,5 +45,30 @@ public class ServerUpdater extends SoileServerVerticle{
 	public void stop(Promise<Void> stopPromise) throws Exception {
 		LOGGER.debug("Stopping Server Verticle");					
 		undeploy(stopPromise);
+	}
+	
+	
+	public static void main(String[] args)
+	{
+		Vertx instance = Vertx.vertx();
+
+		instance.deployVerticle(new ServerUpdater())
+		.onSuccess(res -> {			
+			instance.close()
+			.onSuccess(closed -> {				
+				LOGGER.info("Update successfull");
+			})
+			.onFailure(err -> {							
+				LOGGER.error("Error during update");
+				LOGGER.error(err, err);
+				System.exit(1);
+			});
+		})
+		.onFailure(err -> {
+			instance.close();
+			LOGGER.error("Error during update: ");
+			LOGGER.error(err, err);
+			System.exit(1);
+		});
 	}
 }
