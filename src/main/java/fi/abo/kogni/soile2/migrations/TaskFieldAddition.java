@@ -71,16 +71,26 @@ public class TaskFieldAddition {
 
 	private Future<Void> findAndUpdateField(String fieldName, Object defaultValue)
 	{
-		return this.client.updateCollectionWithOptions(SoileConfigLoader.getCollectionName("taskCollection"),
-				new JsonObject().put(fieldName, new JsonObject().put("$exists", false)),
-				new JsonObject().put("$set", new JsonObject().put(fieldName, defaultValue)),
-				new UpdateOptions().setMulti(true)
-				).
-				compose(res -> {
-					LOGGER.info("Updated " + res.getDocModified() + " documents"); 
-					return Future.succeededFuture();
-				}).
-				mapEmpty();
+		JsonObject command = new JsonObject().put("update", SoileConfigLoader.getCollectionName("taskCollection"))
+											 .put("updates", new JsonArray().add(new JsonObject()
+													 					.put("q", new JsonObject().put(fieldName, new JsonObject().put("$exists", false)))
+													 					.put("u", new JsonArray().add(new JsonObject().put("$set", new JsonObject().put(fieldName, defaultValue))))
+													 					.put("multi", true)
+													 ));
+		
+		return this.client.runCommand("update", command)
+				.compose(res -> {
+					LOGGER.info("Updated " + res.getNumber("nModified") + " documents");
+					if(res.getNumber("ok").equals(1.0))
+					{
+						return Future.succeededFuture();
+					}
+					else
+					{
+						return Future.failedFuture("Command did not succeed");
+					}
+				})
+				.mapEmpty();		
 	}
 	/**
 	 * Add the created field. This is essentially the earliest possible version.
