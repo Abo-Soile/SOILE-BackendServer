@@ -3,6 +3,10 @@ package fi.abo.kogni.soile2.migrations;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import fi.abo.kogni.soile2.http_server.SetupServer;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -18,6 +22,8 @@ import io.vertx.ext.mongo.MongoClient;
  *
  */
 public class TaskFieldAddition {
+	static final Logger LOGGER = LogManager.getLogger(TaskFieldAddition.class);
+
 	MongoClient client;
 	public TaskFieldAddition(MongoClient client)
 	{
@@ -30,26 +36,29 @@ public class TaskFieldAddition {
 	public Future<Void> run()
 	{
 		Promise<Void> updatePromise = Promise.promise();
+		LOGGER.info("Updating author field");
 		findAndUpdateField("author", "UNKNOWN")
 		.compose(v -> {
 			return findAndUpdateField("description", "$name");
 		})		
 		.compose(v -> {
+			LOGGER.info("Updating keyword field");
 			return findAndUpdateField("keywords", new JsonArray());
 		})
 		.compose(v -> {
+			LOGGER.info("Updating language field");
 			return findAndUpdateField("language", "UNKNOWN");
 		})
 		.compose(v -> {
-			System.out.println("Updating type");
+			LOGGER.info("Updating type");
 			return findAndUpdateField("type", "UNKNOWN");
 		})
 		.compose(v -> {
-			System.out.println("Updating created");
+			LOGGER.info("Updating created");
 			return updateCreated();
 		})
 		.onSuccess(done -> {
-			System.out.println("Update done");
+			LOGGER.info("Update done");
 			updatePromise.complete();
 		})
 		.onFailure(err -> updatePromise.fail(err));
@@ -63,7 +72,12 @@ public class TaskFieldAddition {
 	{
 		return this.client.updateCollection(SoileConfigLoader.getCollectionName("taskCollection"),
 									 new JsonObject().put(fieldName, new JsonObject().put("$exists", false)),
-									 new JsonObject().put("$set", new JsonObject().put(fieldName, defaultValue))).mapEmpty();
+									 new JsonObject().put("$set", new JsonObject().put(fieldName, defaultValue))).
+				compose(res -> {
+					LOGGER.info("Updated " + res.getDocModified() + " documents"); 
+					return Future.succeededFuture();
+				}).
+				mapEmpty();
 	}
 	/**
 	 * Add the created field. This is essentially the earliest possible version.
@@ -77,7 +91,6 @@ public class TaskFieldAddition {
 		this.client.find(SoileConfigLoader.getCollectionName("taskCollection"),
 									 new JsonObject().put("created", new JsonObject().put("$exists", false)))
 		.compose(result -> {
-			System.out.println("Waaaaaaaaaaaah");
 			
 			List<BulkOperation> ops = new LinkedList<>();
 			for(int i = 0; i < result.size(); i++)
