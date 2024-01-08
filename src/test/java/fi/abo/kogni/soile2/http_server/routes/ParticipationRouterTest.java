@@ -486,7 +486,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 	@Test
 	public void projectTest(TestContext context)
 	{
-		System.out.println("--------------------  Running Web Project Prohgression Test  ----------------------");    
+		System.out.println("--------------------  Running Web Project Progression Test  ----------------------");    
 
 		Async creationAsync = context.async();
 		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
@@ -573,7 +573,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 	@Test
 	public void testPersistentData(TestContext context)
 	{
-		System.out.println("--------------------  Running Web Project Prohgression Test  ----------------------");    
+		System.out.println("--------------------  Running Persistent Data Test  ----------------------");    
 
 		Async creationAsync = context.async();
 		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")

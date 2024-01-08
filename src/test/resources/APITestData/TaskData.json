@@ -3,6 +3,7 @@
 		"name": "FirstTask",
 		"resources": ["ImageData.jpg"],
 		"private": true,
+		"author": "Example",
 		"codeType": { "language" : "elang",
 					  "version" : "1.0"},
 		"codeFile": "FirstTask.elang"
@@ -12,6 +13,7 @@
 		"codeType" : { "language" : "qmarkup",
 				 "version" : "1.0"},
 		"private": false,
+		"author": "Example",
 		"codeFile": "pilotform.qmarkup"
 		
 	},  			
@@ -55,6 +57,10 @@
 		"name": "PsychoPyEx",
 		"resources": ["minitest-legacy-browsers.js","minitest.js","images/apple.jpg","images/teddy.jpg","images/pear.jpg", "conditions.xlsx", "psychojsconfig.json"],
 		"codeFile": "psychopy.html",
+		"author": "Example",
+		"type": "Test",
+		"keywords": ["recognition"],
+		"language": "english",
 		"codeType" : { "language" : "psychopy",
 					   "version" : "2022.2.5"}
 	},
@@ -62,12 +68,20 @@
 		"name": "ElangExp",
 		"resources": ["Circle.png"],
 		"codeFile": "ElangTask.elang",
+		"author": "Example",
+		"type": "Test",
+		"keywords": ["reaction"],
+		"language": "finnish",
 		"codeType" : { "language" : "elang",
 					   "version" : "1.0"}
 	},
 	"QuestionnaireExample": {							
 		"name": "QuestionnaireExample",
 		"resources": ["Circle.png"],
+		"author": "Example",
+		"keywords": ["example"],
+		"type": "Questionnaire",
+		"language": "english",
 		"codeFile": "QuestionnaireExample.qmarkup",
 		"codeType" : { "language" : "qmarkup",
 					   "version" : "1.0"}
@@ -75,6 +89,10 @@
 	"JavascriptExample": {							
 		"name": "JSExp",		
 		"codeFile": "JSExample.html",
+		"author": "Example",
+		"keywords": ["JavaScript", "video"],
+		"type": "Test",
+		"language": "english",
 		"resources": ["config.json","videophase.js", "Video.mp4", "css/styles.css"],
 		"codeType" : { "language" : "javascript",
 					   "version" : "ES6"}
