@@ -14,6 +14,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.BulkOperation;
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.ext.mongo.UpdateOptions;
 
 /**
  * This migration adds a Additional fields to the task database used for storing further information.
@@ -62,17 +63,19 @@ public class TaskFieldAddition {
 			updatePromise.complete();
 		})
 		.onFailure(err -> updatePromise.fail(err));
-		
+
 		return updatePromise.future();
-		
+
 	}
-	
-	
+
+
 	private Future<Void> findAndUpdateField(String fieldName, Object defaultValue)
 	{
-		return this.client.updateCollection(SoileConfigLoader.getCollectionName("taskCollection"),
-									 new JsonObject().put(fieldName, new JsonObject().put("$exists", false)),
-									 new JsonObject().put("$set", new JsonObject().put(fieldName, defaultValue))).
+		return this.client.updateCollectionWithOptions(SoileConfigLoader.getCollectionName("taskCollection"),
+				new JsonObject().put(fieldName, new JsonObject().put("$exists", false)),
+				new JsonObject().put("$set", new JsonObject().put(fieldName, defaultValue)),
+				new UpdateOptions().setMulti(true)
+				).
 				compose(res -> {
 					LOGGER.info("Updated " + res.getDocModified() + " documents"); 
 					return Future.succeededFuture();
@@ -85,24 +88,30 @@ public class TaskFieldAddition {
 	 */
 	private Future<Void> updateCreated()
 	{
-		
+
 		Promise<Void> updatedPromise = Promise.promise();
-		
+
 		this.client.find(SoileConfigLoader.getCollectionName("taskCollection"),
-									 new JsonObject().put("created", new JsonObject().put("$exists", false)))
+				new JsonObject().put("created", new JsonObject().put("$exists", false)))
 		.compose(result -> {
-			
-			List<BulkOperation> ops = new LinkedList<>();
-			for(int i = 0; i < result.size(); i++)
+			// if nothing needs to be updated, nothing needs to be done.
+			if(result.size() > 0)
 			{
-				JsonObject o = result.get(i);
-				JsonObject query = new JsonObject().put("_id", o.getString("_id"));				
-				JsonObject update = new JsonObject().put("$set", new JsonObject().put("created",getMinVersion(o.getJsonArray("versions"))));
-				ops.add(BulkOperation.createUpdate(query, update));
-				System.out.println(update.encodePrettily());
-				System.out.println(query.encodePrettily());
-			}						
-			return client.bulkWrite(SoileConfigLoader.getCollectionName("taskCollection"), ops);
+				List<BulkOperation> ops = new LinkedList<>();
+				for(int i = 0; i < result.size(); i++)
+				{
+					JsonObject o = result.get(i);
+					JsonObject query = new JsonObject().put("_id", o.getString("_id"));				
+					JsonObject update = new JsonObject().put("$set", new JsonObject().put("created",getMinVersion(o.getJsonArray("versions"))));
+					ops.add(BulkOperation.createUpdate(query, update));
+					System.out.println(update.encodePrettily());
+					System.out.println(query.encodePrettily());
+				}						
+				return client.bulkWrite(SoileConfigLoader.getCollectionName("taskCollection"), ops);
+			}
+			else {
+				return Future.succeededFuture();
+			}
 		})
 		.onSuccess(done -> {
 			System.out.println("Update complete");
@@ -111,7 +120,7 @@ public class TaskFieldAddition {
 		.onFailure(err -> updatedPromise.fail(err));
 		return updatedPromise.future();
 	}
-	
+
 	private long getMinVersion(JsonArray versions)
 	{
 		long minVer = Long.MAX_VALUE;
