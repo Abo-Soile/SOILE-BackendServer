@@ -39,8 +39,8 @@ public class UpdaterTest extends MongoTest{
 		
 		mongo_client.insert(SoileConfigLoader.getCollectionName("taskCollection"), oldTask)
 		.compose(res -> {
-			Vertx updateVertx = Vertx.vertx();
-			return updateVertx.deployVerticle(new ServerUpdater());					
+			
+			return vertx.deployVerticle(new ServerUpdater());					
 		})
 		.compose(deployed -> {			
 			return mongo_client.findOne(SoileConfigLoader.getCollectionName("taskCollection"), new JsonObject().put("name", "Test Task"), null);

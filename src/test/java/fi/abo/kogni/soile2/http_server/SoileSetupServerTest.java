@@ -31,8 +31,7 @@ public class SoileSetupServerTest extends MongoTest{
 	@Test
 	public void testSetup(TestContext context){
 		Async serverSetupAsync = context.async();
-		try {
-			Vertx setupVertx = Vertx.vertx();
+		try {			
 			JsonObject TaskDefs = new JsonObject(Files.readString(Paths.get(WebObjectCreator.class.getClassLoader().getResource("APITestData/TaskData.json").getPath())));			
 			JsonObject questionnaireTask = TaskDefs.getJsonObject("QuestionnaireExample");
 			JsonObject jsTask = TaskDefs.getJsonObject("JavascriptExample");
@@ -40,7 +39,7 @@ public class SoileSetupServerTest extends MongoTest{
 			JsonObject elangTask = TaskDefs.getJsonObject("ElangExample");
 			JsonObject setupConf = new JsonObject(Files.readString(Paths.get(SoileSetupServerTest.class.getClassLoader().getResource("setup.json").getPath())));
 			// for testing there is no specific data Folder
-			setupVertx.deployVerticle(new SetupServer(null), new DeploymentOptions())
+			vertx.deployVerticle(new SetupServer(null), new DeploymentOptions())
 			.onSuccess(serverVerticleID -> 
 			{		
 				mongo_client.find(SoileConfigLoader.getDbCfg().getString("taskCollection"), new JsonObject())
@@ -76,7 +75,7 @@ public class SoileSetupServerTest extends MongoTest{
 							String version = p1.getString("version");
 							String gitID = "P" + p1.getString("sourceUUID");
 							GitFile targetFile = new GitFile("Object.json", gitID, version);
-							setupVertx.eventBus().request("soile.git.getGitFileContentsAsJson", targetFile.toJson())
+							vertx.eventBus().request("soile.git.getGitFileContentsAsJson", targetFile.toJson())
 							.onSuccess(reply -> {
 
 								JsonObject projectObject = (JsonObject)reply.body();
@@ -93,7 +92,7 @@ public class SoileSetupServerTest extends MongoTest{
 								}
 
 								context.assertTrue(checkedType);
-								setupVertx.undeploy(serverVerticleID).
+								vertx.undeploy(serverVerticleID).
 								onSuccess(undeployed -> {
 									serverSetupAsync.complete();	
 								})
@@ -120,10 +119,9 @@ public class SoileSetupServerTest extends MongoTest{
 	public void testSetupContent(TestContext context){
 		Async serverSetupAsync = context.async();
 		try {
-			Vertx setupVertx = Vertx.vertx();
 			JsonObject setupConf = new JsonObject(Files.readString(Paths.get(SoileSetupServerTest.class.getClassLoader().getResource("setup.json").getPath())));
 			// for testing there is no specific data Folder
-			setupVertx.deployVerticle(new SetupServer(null), new DeploymentOptions())
+			vertx.deployVerticle(new SetupServer(null), new DeploymentOptions())
 			.onSuccess(serverVerticleID -> 
 			{			
 				mongo_client.find(SoileConfigLoader.getDbCfg().getString("projectCollection"), new JsonObject())
@@ -132,13 +130,13 @@ public class SoileSetupServerTest extends MongoTest{
 					String projectID = projectList.get(0).getString("_id");
 					String projectVersion = projectList.get(0).getJsonArray("tags").getJsonObject(0).getString("version"); // this is the initial version. Can't be anything else.
 					GitFile f = new GitFile("Object.json", "P" + projectID, projectVersion);
-					setupVertx.eventBus().request("soile.git.getGitFileContentsAsJson", f.toJson())
+					vertx.eventBus().request("soile.git.getGitFileContentsAsJson", f.toJson())
 					.onSuccess(response -> {
 						JsonObject projectContent = (JsonObject)response.body();
 						context.assertEquals(2, projectContent.getJsonArray("tasks").size());
 						context.assertEquals(1, projectContent.getJsonArray("experiments").size());
 						context.assertEquals(1, projectContent.getJsonArray("filters").size());
-						setupVertx.undeploy(serverVerticleID).
+						vertx.undeploy(serverVerticleID).
 						onSuccess(undeployed -> {
 							serverSetupAsync.complete();	
 						})
@@ -160,17 +158,16 @@ public class SoileSetupServerTest extends MongoTest{
 	public void testReSetup(TestContext context){
 		Async serverSetupAsync = context.async();
 		try {
-			Vertx setupVertx = Vertx.vertx();
 			JsonObject setupConf = new JsonObject(Files.readString(Paths.get(SoileSetupServerTest.class.getClassLoader().getResource("setup.json").getPath())));
 			// for testing there is no specific data Folder
-			setupVertx.deployVerticle(new SetupServer(null), new DeploymentOptions())
+			vertx.deployVerticle(new SetupServer(null), new DeploymentOptions())
 			.onSuccess( initID -> 
 			{			
 				// undeploy the server setup (and thus the server)
 				System.out.println("Undeploying setup verticle");
-				setupVertx.undeploy(initID).map(initID)
+				vertx.undeploy(initID).map(initID)
 				.onSuccess(undeployed -> {
-
+					// 
 					Vertx newVertx = Vertx.vertx();
 					newVertx.deployVerticle(new SetupServer(null), new DeploymentOptions())
 					.onSuccess(serverReStarted -> {
