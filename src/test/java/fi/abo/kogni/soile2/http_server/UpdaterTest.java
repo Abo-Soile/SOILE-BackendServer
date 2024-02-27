@@ -36,10 +36,10 @@ public class UpdaterTest extends MongoTest{
 											 .put("private",false)
 											 .put("dependencies", new JsonObject())
 											 .put("visible", true);			
-		
+		System.out.println("Testing task update");
 		mongo_client.insert(SoileConfigLoader.getCollectionName("taskCollection"), oldTask)
 		.compose(res -> {
-			
+			System.out.println(vertx.deploymentIDs());
 			return vertx.deployVerticle(new ServerUpdater());					
 		})
 		.compose(deployed -> {			

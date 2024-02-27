@@ -166,10 +166,8 @@ public class SoileSetupServerTest extends MongoTest{
 				// undeploy the server setup (and thus the server)
 				System.out.println("Undeploying setup verticle");
 				vertx.undeploy(initID).map(initID)
-				.onSuccess(undeployed -> {
-					// 
-					Vertx newVertx = Vertx.vertx();
-					newVertx.deployVerticle(new SetupServer(null), new DeploymentOptions())
+				.onSuccess(undeployed -> {					
+					vertx.deployVerticle(new SetupServer(null), new DeploymentOptions())
 					.onSuccess(serverReStarted -> {
 						mongo_client.find(SoileConfigLoader.getDbCfg().getString("userCollection"), new JsonObject())
 						.onSuccess(res -> {

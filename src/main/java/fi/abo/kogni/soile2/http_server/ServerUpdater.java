@@ -24,7 +24,7 @@ public class ServerUpdater extends SoileServerVerticle{
 	public void start(Promise<Void> startPromise) throws Exception {
 		soileRouter = new SoileRouteBuilding();
 		deployedVerticles = new ConcurrentLinkedQueue<>();					
-		setupConfig() // As the very first stepp we need to set up the config so that it is available for all later steps.
+		setupConfig() // As the very first step we need to set up the config so that it is available for all later steps.
 		.compose(this::setupFolders) // Set up all necessary folders		
 		.compose(this::deployVerticles) // deploy all necessary verticles (including routing etc), but don't actually start the server...
 		.compose(this::updateServer)
