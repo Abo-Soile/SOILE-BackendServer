@@ -72,6 +72,27 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
 	}
 
+	public void deleteElement(RoutingContext context)
+	{		
+		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
+		String elementID = params.pathParameter("id").getString();
+		LOGGER.debug("Got Delete Request for Element: " + elementID );
+		accessHandler.checkAccess(context.user(),elementID, Roles.Researcher,PermissionType.FULL,false)
+		.onSuccess(Void -> 
+		{
+			elementManager.deleteElement(elementID)
+			.onSuccess(success -> {
+				context.response()
+				.setStatusCode(200)
+				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+				.end();
+			})
+			.onFailure(err -> handleError(err, context));
+		})
+		.onFailure(err -> handleError(err, context));
+
+	}
+	
 	public void writeElement(RoutingContext context)
 	{
 		LOGGER.debug("Trying to update an element");

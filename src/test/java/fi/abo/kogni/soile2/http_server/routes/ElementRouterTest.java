@@ -231,6 +231,70 @@ public class ElementRouterTest extends SoileWebTest {
 		.onFailure(err -> context.fail(err));
 	}
 
+	@Test
+	public void testDeletion(TestContext context)
+	{	
+		System.out.println("--------------------  Testing Element deletion ----------------------");
+
+		Async setupAsync = context.async();				
+		createUser(vertx, "TestUser", "testPassword", Roles.Admin)
+		.compose(userCreated -> createAuthedSession("TestUser", "testPassword"))
+		.onSuccess(adminSession -> {
+			createResearcher(vertx, "Researcher", "pw")
+			.compose(researcherCreated -> createAuthedSession("Researcher", "pw"))
+			.onSuccess(researcherSession -> {
+				createUser(vertx, "TestParticipant", "testPassword", Roles.Participant)
+				.compose(userCreated -> createAuthedSession("TestParticipant", "testPassword"))
+				.onSuccess(participantSession -> {
+					WebObjectCreator.createTask(researcherSession, "PrivateTask")
+					.onSuccess(taskData -> {
+						Async taskListAsync = context.async();
+						String taskID = taskData.getString("UUID"); 
+						getElementList(adminSession, "task")
+						.compose(taskList-> {
+							context.assertEquals(0, taskList.size());
+							return POST(adminSession, "/task/list",new JsonObject().put("full", true), null);							
+						})
+						.onSuccess(response -> {
+							context.assertEquals(1, response.bodyAsJsonArray().size());							
+							Async adminTest = context.async();
+							POST(adminSession, "/task/"+ taskID + "/delete",new JsonObject(), null)
+							.onSuccess(res -> context.fail("Should not be possible"))
+							.onFailure(err -> adminTest.complete());
+							Async deletionTest = context.async();
+							POST(researcherSession, "/task/"+ taskID + "/delete",new JsonObject(), null)
+							.compose(res -> {									
+
+								return POST(adminSession, "/task/list",new JsonObject().put("full", true), null);
+							})
+							.compose(res -> {
+								context.assertEquals(0, res.bodyAsJsonArray().size());										
+								return POST(researcherSession, "/task/list",new JsonObject().put("full", true), null);
+							})																		
+							.compose(res -> {
+								context.assertEquals(0, res.bodyAsJsonArray().size());
+								return mongo_client.find(SoileConfigLoader.getCollectionName("taskCollection"), new JsonObject());
+							})
+							.onSuccess(mongoresult -> {
+								context.assertEquals(1, mongoresult.size());
+								System.out.println(mongoresult.get(0));
+								deletionTest.complete();
+							})
+							.onFailure(err -> adminTest.complete());
+							taskListAsync.complete();
+						})												
+						.onFailure(err -> context.fail(err));
+
+						setupAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));	
+				})
+				.onFailure(err -> context.fail(err));			 
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
 
 	@Test
 	public void testTaskExists(TestContext context)
@@ -621,7 +685,7 @@ public class ElementRouterTest extends SoileWebTest {
 	public void testUpdateWebTask(TestContext context)
 	{	
 		System.out.println("--------------------  Testing Task update ----------------------");
-	
+
 		Async setupAsync = context.async();
 		WebClientSession currentSession = createSession();
 		createUser(vertx, "TestUser", "testPassword", Roles.Admin)
@@ -647,14 +711,14 @@ public class ElementRouterTest extends SoileWebTest {
 						context.assertEquals("UNKNOWN", db.getValue("author"));
 						Async updateAsync = context.async();
 						JsonObject TaskUpdate = new JsonObject().put("UUID", taskID)
-																.put("version", taskVersion)
-																.put("author", "New Author")
-																.put("description", "New description")
-																.put("keywords", new JsonArray().add("keyword1"));
-						
+								.put("version", taskVersion)
+								.put("author", "New Author")
+								.put("description", "New description")
+								.put("keywords", new JsonArray().add("keyword1"));
+
 						POST(currentSession, "/task/" + taskID +"/" +taskVersion + "/post" , null, TaskUpdate)
 						.onSuccess(response -> {
-							
+
 							String newVersion = response.bodyAsJsonObject().getString("version");
 							getElement(currentSession, "task", taskID, newVersion)					
 							.compose(newData -> {
@@ -675,13 +739,13 @@ public class ElementRouterTest extends SoileWebTest {
 						})
 						.onFailure(err -> context.fail(err));	
 						taskInfoAsync.complete();
-						
-						
+
+
 					})
 					.onFailure(err -> context.fail(err));
-	
+
 					Async taskListAsync = context.async();
-	
+
 					getElementList(currentSession, "task")
 					.onSuccess(taskList-> {
 						context.assertEquals(1, taskList.size());
@@ -691,9 +755,9 @@ public class ElementRouterTest extends SoileWebTest {
 					})
 					.onFailure(err -> context.fail(err));
 					// now we run an update and see what happens
-					
+
 					setupAsync.complete();
-	
+
 				})
 				.onFailure(err -> context.fail(err));			 
 			})

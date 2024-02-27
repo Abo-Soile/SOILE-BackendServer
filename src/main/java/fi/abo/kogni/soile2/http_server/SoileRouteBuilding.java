@@ -330,6 +330,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("uploadTask").handler(taskRouter::uploadTask);
 		builder.operation("removeTagsForTask").handler(taskRouter::removeTagsFromElement);
 		builder.operation("addTagToTaskVersion").handler(taskRouter::addTagToVersion);
+		builder.operation("deleteTask").handler(taskRouter::deleteElement);
 		builder.operation("getCodeOptions").handler(taskRouter::getCodeOptions);		
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
@@ -349,7 +350,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("updateExperiment").handler(router::writeElement);
 		builder.operation("getTagForExperimentVersion").handler(router::getTagForVersion);
 		builder.operation("removeTagsForExperiment").handler(router::removeTagsFromElement);
-		builder.operation("addTagToExperimentVersion").handler(taskRouter::addTagToVersion);
+		builder.operation("deleteExperiment").handler(router::deleteElement);
+		builder.operation("addTagToExperimentVersion").handler(router::addTagToVersion);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 
@@ -369,7 +371,8 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("getTagForProjectVersion").handler(router::getTagForVersion);
 		builder.operation("isFilterValid").handler(router::isFilterValid);
 		builder.operation("removeTagsForProject").handler(router::removeTagsFromElement);
-		builder.operation("addTagToProjectVersion").handler(taskRouter::addTagToVersion);
+		builder.operation("deleteProject").handler(router::removeTagsFromElement);
+		builder.operation("addTagToProjectVersion").handler(router::addTagToVersion);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
 		
@@ -383,12 +386,12 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	{
 		StudyRouter router = new StudyRouter(soileAuthorization, vertx, client, partHandler, projHandler);
 		builder.operation("listDownloadData").handler(router::listDownloadData);
-		builder.operation("startProject").handler(router::startProject);
-		builder.operation("getRunningProjectList").handler(router::getRunningProjectList);
-		builder.operation("stopProject").handler(router::stopProject);		
-		builder.operation("restartProject").handler(router::restartProject);
-		builder.operation("deleteProject").handler(router::deleteProject);
-		builder.operation("getProjectResults").handler(router::getProjectResults);		
+		builder.operation("startStudy").handler(router::startProject);
+		builder.operation("getRunningStudies").handler(router::getRunningProjectList);
+		builder.operation("stopStudy").handler(router::stopProject);		
+		builder.operation("restartStudy").handler(router::restartProject);
+		builder.operation("deleteStudy").handler(router::deleteProject);
+		builder.operation("getStudyResults").handler(router::getProjectResults);		
 		builder.operation("downloadResults").handler(router::downloadResults);
 		builder.operation("downloadTest").handler(router::downloadTest);
 		builder.operation("createTokens").handler(router::createTokens);

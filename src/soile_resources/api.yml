@@ -1,10 +1,11 @@
 openapi: 3.0.0
 servers:
-  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/THOMASPFAU_1/SOILE_Backend/1.0.0
   - description: SwaggerHub API Auto Mocking
     url: https://virtserver.swaggerhub.com/THOMASPFAU/SoileAPI/1.0.0
   - description: Soile Backend API
-    url: soile.nbe.aalto.fi
+    url: https://soile-server.nbe.aalto.fi/
 info:
   description: This is the Backend API for the Soile webservice.
   version: "1.0.0"
@@ -74,10 +75,12 @@ paths:
                       description: true if authenticated, false if not.
                     user: 
                       type: string
+                      example: "Admin"
                     roles:
                       type: array
                       items:
                         type: string
+                        example: "Admin"
         '401':
           description: No user authenticated
   /login:
@@ -337,6 +340,7 @@ paths:
                 type: array
                 items: 
                   type: string
+                  example: "Project 2"
                   description: "a list of UUIDs of all projects the authenticated user is participating in."
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -518,7 +522,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ObjectList'      
+                type: array
+                items: 
+                  type: object
+                  properties:
+                    UUID: 
+                      type: string
+                      example: "1234567"
+                    name:
+                      type: string
+                      example: "Task 1"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -548,14 +561,17 @@ paths:
                     name: 
                       type: string
                       description: name of the option
+                      example: "QMarkup"
                     versions:
                       type: array
                       items: 
                         type: string
                         description: version strings
+                        example: "1.0"
                     mimetype: 
                       type: string
                       description: mimetype of the returned code.
+                      example: "application/json"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -625,7 +641,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ElementVersions'
+                type: array
+                items: 
+                  type: object
+                  properties:
+                    tag: 
+                      type: string
+                      example: "Version 1"
+                    version:
+                      type: string
+                      example: "1234567"
+                      description: "A string representing a version ID"
+                    date:
+                      type: number
+                      example: 123456789
+                      description: "Timestamp in long format.."
                 
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -672,6 +702,35 @@ paths:
                 type: string
                 description: the tags to remove
                 example: "Initial Version"
+  /task/{id}/delete:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - task
+      summary: Delete a task (it will no longer be available for editing, but existing projects using it will still be able to use it)
+      operationId: deleteTask
+      description: Removes the specified Task from the server. It will no longer be accessible for editing, but projects currently using it will still work.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task for which versions are requested
+          schema:
+            type : string
+      responses:
+        '200':
+          description: "success"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'    
+          
   /task/{id}/{version}/addtag:
     post:
       security:
@@ -686,7 +745,7 @@ paths:
         - name: id
           in: path
           required: true
-          description: UUID of the task for which versions are requested
+          description: UUID of the task to remove
           schema:
             type : string
         - name: version
@@ -1274,6 +1333,36 @@ paths:
                 parameters:
                   type: object
                   example: {element1 : 1, element2 : 1}
+
+  /project/{id}/delete:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - project
+      summary: Delete a project (it will no longer be available for editing, but existing projects using it will still be able to use it)
+      operationId: deleteProject
+      description: Removes the specified project from the server. It will no longer be accessible for editing, but studies currently using it will still work.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the project to remove
+          schema:
+            type : string
+      responses:
+        '200':
+          description: "success"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'    
+          
   /project/list:
     post:
       security:
@@ -1297,7 +1386,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ObjectList'
+                type: array
+                items: 
+                  type: object
+                  properties:
+                    UUID: 
+                      type: string
+                      example: "1234567"
+                    name:
+                      type: string
+                      example: "Project 1"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -1329,8 +1427,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ElementVersions'    
-                
+                type: array
+                items: 
+                  type: object
+                  properties:
+                    tag: 
+                      type: string
+                      example: "Version 1"
+                    version:
+                      type: string
+                      example: "1234567"
+                      description: "A string representing a version ID"
+                    date:
+                      type: number
+                      example: 123456789
+                      description: "Timestamp in long format.."
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -1616,10 +1727,10 @@ paths:
       tags:
         - project
         - study
-      summary: start a project
-      operationId: startProject
-      description: Start a project, making it available to the outside world. 
-                   Once a project is started the started instance cannot be modified any more. 
+      summary: start a Study
+      operationId: startStudy
+      description: Start a Study based on the project identified, making it available to the outside world. 
+                   Once a study is started the started instance cannot be modified any more. 
                    You can delete a started instance, or stop it, but it is fixed at a version of the project.
       parameters:
         - name: id
@@ -1690,7 +1801,7 @@ paths:
       tags:
         - study
       summary: Get a list of all projects.
-      operationId: getRunningProjectList
+      operationId: getRunningStudies
       description: Get a list of all projects which are currently running and that you have access to.
       responses:
         '200':
@@ -1698,7 +1809,28 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ObjectList'
+                type: array
+                items: 
+                  type: object
+                  properties:
+                    UUID: 
+                      type: string
+                      example: "1234567"
+                    name:
+                      type: string
+                      example: "Project 1"
+                    language: 
+                      type: string
+                      example: "en"
+                    description: 
+                      type: string
+                      example: "This is a new project"
+                    shortDescription:
+                      type: string
+                      example: "This is a new project"
+                    shortcut: 
+                      type: string
+                      example: "newShortcut2"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '400':
@@ -1751,7 +1883,7 @@ paths:
       tags:
         - study
       summary: stop a project
-      operationId: stopProject
+      operationId: stopStudy
       description: Stop a project, disabling the project from execution.
       parameters:
         - name: id
@@ -1823,7 +1955,7 @@ paths:
       tags:
         - study
       summary: restart a project that was previously stopped
-      operationId: restartProject
+      operationId: restartStudy
       description: Restarting a previously stopped project. 
       parameters:
         - name: id
@@ -1851,7 +1983,7 @@ paths:
       tags:
         - study
       summary: Delete a project instance and all associated data. 
-      operationId: deleteProject
+      operationId: deleteStudy
       description: "DANGER: This endpoint will delete ALL data associated with the given project. 
                     It will stop the project from execution and will irreversibly delete all participant 
                     information currently stored for this project instance."
@@ -1916,7 +2048,7 @@ paths:
       tags:
         - study
       summary: Get the result data for a project  
-      operationId: getProjectResults
+      operationId: getStudyResults
       description: "This is the general access point for data retrieval for projects. A simple request without any body will generate one huge tar file with all data while individual files can be requested using the same scheme as returned under the   /project/{id}/data/list endpoint. This post will return an ID that can then be downloaded via /project/{id}/download/{downloadid}, where a tar file is waiting for download."
       parameters:
         - name: id
@@ -2122,6 +2254,9 @@ paths:
                     type: array
                     items: 
                       type: string
+                  participantID: 
+                    type: string
+                    description: The id of this participant, so that it can be used in tasks. 
                   finished:
                     type: boolean
                     description: Whether this project is finished. clear indicator that this is finished in addition to the next property being undefined.
@@ -2630,7 +2765,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ObjectList'    
+                type: array
+                items: 
+                  type: object
+                  properties:
+                    UUID: 
+                      type: string
+                      example: "1234567"
+                    name:
+                      type: string
+                      example: "Experiment 1"
                 
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -2702,7 +2846,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ElementVersions'    
+                type: array
+                items: 
+                  type: object
+                  properties:
+                    tag: 
+                      type: string
+                      example: "Version 1"
+                    version:
+                      type: string
+                      example: "1234567"
+                      description: "A string representing a version ID"
+                    date:
+                      type: number
+                      example: 123456789
+                      description: "Timestamp in long format.."  
                 
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -2749,7 +2907,35 @@ paths:
                 type: string
                 description: the tags to remove
                 example: "Initial Version"  
-
+  /experiment/{id}/delete:
+    post:
+      security:
+        - cookieAuth: []
+        - JWTAuth: []
+      tags:
+        - experiment
+      summary: Delete an Experiment (it will no longer be available for editing, but existing projects using it will still be able to use it)
+      operationId: deleteExperiment
+      description: Removes the specified Experiment from the server. It will no longer be accessible for editing, but projects currently using it will still work.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the experiment to remove
+          schema:
+            type : string
+      responses:
+        '200':
+          description: "success"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          description: 'invalid input, object invalid'
+        '403':
+          description: User has no authorization to make this call 
+        '410':
+          $ref: '#/components/responses/ResourceDoesNotExist'    
+          
   /experiment/{id}/{version}/addtag:
     post:
       security:
@@ -3321,17 +3507,18 @@ components:
         UUID:
           type: string
           description: Has to have the form of a UUID (from a mongoDB ID)
-          example: 507f1f77bcf86cd799439011
+          example: "12343567"
         name:
           type: string
-          example: Name of the , this cannot be changed after creation. 
+          example: "Element 1"
         version:
           type: string
           description: This is the version (in form of a githash) of this element. When submitting a new version this field should be empty. It is however provided when requesting a specific version.
-          example: dd6de3fddf28e769ef80808db277608ae9b76ead
+          example: "1234567"
         tag:
           type: string
           description: A Tag that either is assciated with the given version, or should be associated with it. When submitted with an update, the corresponding version will be tagged with this tag.
+          example: "Version 1"
     ElementInstance:
       type: object
       required:
@@ -3503,6 +3690,23 @@ components:
             version:
               type: string
               example: "2022.2.5"
+            description:
+              type: string
+              example: "This is an example task"
+            keywords:
+              type: array
+              items:
+                type: string
+                example: "cognitive"
+            taskType:
+              type: string
+              example: "INFORMED CONSENT, TASK INSTRUCTION, QUESTIONNAIRE, TEST, TRAINING, OTHER"
+            creator:
+              type: string
+              example: "John Smith"
+            naturalLanguage:
+              type: string
+              example: "english"
 
     FilterInstance:
       allOf:
@@ -3550,6 +3754,21 @@ components:
           type: 
             type: string
             description: the type of the instance (e.g. "random" or "block")
+          settings: 
+            description: Name and target of the settings fo this ranodmizer.
+            type: array
+            items: 
+              type: object
+              required:
+                - name
+                - value
+              properties: 
+                name:
+                  type: string
+                  example: "Some Name"
+                  description: a descriptive name of value
+                value:
+                  description: A Value for the given setting
           options: 
             description: Name and target of the next steps.
             type: array
@@ -3811,12 +4030,15 @@ components:
       properties:
         label: 
           type: string
+          example: "Folder 1"
           description: the label of the element
         children:
           type: array
           items:
             $ref : '#/components/schemas/FileOrDirectory'    
           description: Elements of this directory. Presence of a children element indicates that this is a folder
+          example: [label: "File"]
+          
     DBDownloadScheme:
       type: object
       properties:
