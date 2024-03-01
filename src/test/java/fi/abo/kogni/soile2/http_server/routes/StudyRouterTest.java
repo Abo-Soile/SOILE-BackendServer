@@ -496,6 +496,80 @@ public class StudyRouterTest extends SoileWebTest {
 
 
 	/**
+	 * This test tests both starting and getting the list of running projects for a project without shortcut
+	 * @param context
+	 */
+	@Test
+	public void testStopRestartNoShortcut(TestContext context)
+	{
+		System.out.println("--------------------  Testing Start/Stop project  ----------------------");    
+
+		JsonObject projectExec = new JsonObject().put("private", true).put("name", "New Project").put("shortcut",""); 
+		Async setupAsync = context.async();
+		createUserAndAuthedSession("Researcher", "pw", Roles.Researcher)
+		.onSuccess(authedSession -> {
+			createUserAndAuthedSession("Researcher2", "pw", Roles.Researcher)
+			.onSuccess(wrongSession -> {
+				WebObjectCreator.createProject(authedSession, "Testproject")
+				.onSuccess(projectData -> {
+					String projectID = projectData.getString("UUID");
+					String projectVersion = projectData.getString("version");
+					Async startAsync = context.async();
+
+					POST(authedSession, "/project/" + projectID + "/" + projectVersion + "/init", null,projectExec )
+					.onSuccess(response -> {
+						Async listAsync = context.async();
+						Async emptyListAsync = context.async();
+						String id = response.bodyAsJsonObject().getString("projectID");
+						POST(authedSession, "/study/list", null,null)
+						.onSuccess(listresponse -> {
+							context.assertEquals(1, listresponse.bodyAsJsonArray().size());
+							context.assertEquals(id, listresponse.bodyAsJsonArray().getJsonObject(0).getString("UUID"));
+							POST(authedSession, "/study/" + id + "/stop", null,null )
+							.onSuccess( stopped -> {
+								POST(authedSession, "/study/" + id + "/signup", null,null)
+								.onSuccess(res -> context.fail("This should fail because the project is inactive"))
+								.onFailure(rejected -> {
+									context.assertEquals(410, ((HttpException)rejected).getStatusCode());
+									POST(authedSession, "/study/" + id + "/start", null,null )
+									.onSuccess( restarted -> {
+										POST(authedSession, "/study/" + id + "/signup", null,null)
+										.onSuccess(res -> {											
+											listAsync.complete();																		
+										})
+										.onFailure(err -> context.fail(err));
+									})
+									.onFailure(err -> context.fail(err));
+
+
+								});
+							})
+							.onFailure(err -> context.fail(err));
+
+						})
+						.onFailure(err -> context.fail(err));
+
+						POST(wrongSession, "/study/list", null,null)
+						.onSuccess(listresponse -> {
+							context.assertEquals(0, listresponse.bodyAsJsonArray().size());
+							emptyListAsync.complete();
+						})
+						.onFailure(err -> context.fail(err));
+						startAsync.complete();
+					})
+					.onFailure(err -> context.fail(err));	
+
+					setupAsync.complete();
+				})
+				.onFailure(err -> context.fail(err));
+
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
+	
+	/**
 	 * This test tests both starting and getting the list of running projects.
 	 * @param context
 	 */

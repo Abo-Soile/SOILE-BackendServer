@@ -223,7 +223,7 @@ public class StudyRouter extends SoileRouter {
 		.onFailure(err -> handleError(err, context));			
 	}
 
-	public void restartProject(RoutingContext context)
+	public void startStudy(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
 		String requestedInstanceID = params.pathParameter("id").getString();

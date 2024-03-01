@@ -265,7 +265,7 @@ public abstract class Study implements AccessElement{
 
 	public String getShortCut()
 	{
-		return shortcut.equals("") ? null : shortcut;
+		return (shortcut == null || shortcut.equals("")) ? null : shortcut;
 	}
 	/**
 	 * Parse an experiment from the given experiment Json. 
