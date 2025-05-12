@@ -1,5 +1,7 @@
 package fi.abo.kogni.soile2.http_server;
 
+import static org.junit.Assert.fail;
+
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.http_server.utils.DebugCookieStore;
@@ -117,10 +119,56 @@ public class SoileLoginTest extends SoileVerticleTest {
 										foundSessionCookie = true;
 									}
 								}
+								Async auth_check = context.async();
+								session.post(port,"localhost","/test/auth").send().onSuccess( authed_test -> {									
+									JsonObject response = authed_test.bodyAsJsonObject();
+									context.assertTrue(response.getBoolean("authenticated"));
+									context.assertEquals(response.getString("user"),userObject.getString("username") );
+									auth_check.complete();
+								})
+								.onFailure(err -> {									
+									context.fail("Auth test failed");
+									auth_check.complete();
+								});;
 								context.assertTrue(foundSessionCookie);
 								context.assertEquals(200,authed.statusCode());
-								context.assertTrue(new JsonObject(authed.body().toString()).fieldNames().contains("token"));																		
-								session.post(hashingAlgo);
+								context.assertTrue(new JsonObject(authed.body().toString()).fieldNames().contains("token"));
+								Async logoutSync = context.async();
+								newsession.post(port,"localhost","/logout").send()
+								.onSuccess( not_authed -> {
+									boolean foundNewCookie = false;
+									boolean cookieExists = false;
+									for(Cookie current : newsession.cookieStore().get(true, SoileConfigLoader.getServerProperty("domain"), SoileConfigLoader.getSessionProperty("cookiePath")))
+									{
+										if(current.name().equals(SoileConfigLoader.getSessionProperty("sessionCookieID")))
+										{		
+											//add the cookie to the other session.
+											if(current.maxAge() > 0)
+											{
+												newsession.cookieStore().put(current);
+												foundNewCookie = true;
+											}					
+											cookieExists = true;
+										}
+									}	
+									context.assertFalse(foundNewCookie);
+									context.assertTrue(cookieExists);
+									context.assertEquals(200,not_authed.statusCode());
+									Async auth_check2 = context.async();
+									newsession.post(port,"localhost","/test/auth").send().onSuccess( authed_test -> {
+										context.assertEquals(authed_test.statusCode(),401);						
+										auth_check2.complete();
+									})
+									.onFailure(err -> {									
+										context.fail("Auth test failed");
+										auth_check2.complete();
+									});
+									logoutSync.complete();
+								})
+								.onFailure(err -> {									
+									context.fail("logout failed");
+									logoutSync.complete();
+								});;								
 								sucAsync.complete();	
 								async.complete();
 							});								

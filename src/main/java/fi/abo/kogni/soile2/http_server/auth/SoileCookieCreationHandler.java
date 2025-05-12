@@ -85,16 +85,23 @@ public class SoileCookieCreationHandler {
 	{
 		Cookie sessionCookie = ctx.request().getCookie(SoileConfigLoader.getSessionProperty("sessionCookieID"));
 		// if we have a Session cookie from Soile, delete it.
+		Cookie cookie = Cookie.cookie(SoileConfigLoader.getSessionProperty("sessionCookieID"),"")
+				  .setDomain(SoileConfigLoader.getServerProperty(("domain")))
+				  .setSecure(true)
+				  .setPath(SoileConfigLoader.getSessionProperty("cookiePath"))
+				  .setMaxAge(0);
 		if(sessionCookie != null)
 		{
 			String token = SoileCookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
 			String username = SoileCookieStrategy.getUserNameFromCookieContent(sessionCookie.getValue());		
+			ctx.response().addCookie(cookie);
 			return eb.request("soile.umanager.removeSession"
 				   ,new JsonObject().put("sessionID",token)
 					 				.put("username",username)).mapEmpty();
 		}
 		else
 		{
+			ctx.response().removeCookie(SoileConfigLoader.getSessionProperty("sessionCookieID"));
 			return Future.succeededFuture();
 		}
 	}
