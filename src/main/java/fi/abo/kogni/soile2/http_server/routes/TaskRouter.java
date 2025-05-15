@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import javax.swing.text.AbstractDocument.Content;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -44,6 +46,14 @@ public class TaskRouter extends ElementRouter<Task> {
 	IDSpecificFileProvider resourceHandler;
 	TaskBundler bundler;
 	Vertx vertx;
+	/**
+	 * Default constructor
+	 * All Functions receiving a routing context use that routing context to provide the Response.
+	 * @param client the {@link MongoClient} for DB access
+	 * @param resManager the {@link IDSpecificFileProvider} used for file retrieval.
+	 * @param vertx The {@link Vertx} instance for communication
+	 * @param auth The {@link SoileAuthorization} for authorization checks.
+	 */
 	public TaskRouter(MongoClient client, IDSpecificFileProvider resManager, Vertx vertx, SoileAuthorization auth)
 	{
 		super(ElementManager.getTaskManager(client,vertx),auth, vertx.eventBus(), client);
@@ -53,7 +63,10 @@ public class TaskRouter extends ElementRouter<Task> {
 		this.vertx = vertx;
 	}		
 
-	
+	/**
+	 * Add a resource to a task
+	 * @param context the {@link RoutingContext} containing the resource and the task
+	 */
 	public void putResource(RoutingContext context)
 	{				
 		LOGGER.debug(context.pathParam("id") + "/" + context.pathParam("version") + "/" + context.pathParam("*") );				
@@ -106,7 +119,10 @@ public class TaskRouter extends ElementRouter<Task> {
 		})
 		.onFailure(err -> handleError(err, context));
 	}
-	
+	/**
+	 * Get a resource for a task
+	 * @param context The {@link RoutingContext} specifying the Task and resource to get
+	 */
 	public void getResource(RoutingContext context)
 	{
 		String elementID = context.pathParam("id");
@@ -139,7 +155,10 @@ public class TaskRouter extends ElementRouter<Task> {
 		.onFailure(err -> handleError(err, context));
 	}
 	
-	
+	/**
+	 * Get the code options available  
+	 * @param context The {@link RoutingContext} for auth checks
+	 */
 	public void getCodeOptions(RoutingContext context)
 	{
 		accessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)
@@ -154,7 +173,10 @@ public class TaskRouter extends ElementRouter<Task> {
 	}
 	
 	
-	
+	/**
+	 * Get the compiled code for the given task
+	 * @param context The {@link RoutingContext} indicating the {@link Task}
+	 */
 	public void getCompiledTask(RoutingContext context)
 	{
 		String elementID = context.pathParam("id");
@@ -185,6 +207,10 @@ public class TaskRouter extends ElementRouter<Task> {
 		.onFailure(err -> handleError(err, context));
 	}
 	
+	/**
+	 * Compile code for the given Task
+	 * @param context The {@link RoutingContext} containing the Task to compile the code for
+	 */
 	public void compileCode(RoutingContext context)
 	{
 		
@@ -207,7 +233,10 @@ public class TaskRouter extends ElementRouter<Task> {
 		.onFailure(err -> handleError(err, context));
 	}
 	
-	
+	/**
+	 * Get a library for the given Task
+	 * @param context The {@link RoutingContext} indicating the library to obtain
+	 */
 	public void getLib(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");
@@ -221,7 +250,10 @@ public class TaskRouter extends ElementRouter<Task> {
 		.onFailure(err -> handleError(err, context));		
 	}
 
-	
+	/**
+	 * Get the files associated with the Task
+	 * @param context The {@link RoutingContext} indicating the Task 
+	 */
 	public void getTaskFileList(RoutingContext context)
 	{
 		String elementID = context.pathParam("id");
@@ -243,7 +275,10 @@ public class TaskRouter extends ElementRouter<Task> {
 		.onFailure(err -> handleError(err, context));		
 	}
 
-	
+	/**
+	 * Get Resources for execution of a task
+	 * @param context The {@link RoutingContext} indicating the requested resource
+	 */
 	public void getResourceForExecution(RoutingContext context)
 	{
 		String elementID = context.pathParam("id");
@@ -254,6 +289,10 @@ public class TaskRouter extends ElementRouter<Task> {
 		.onFailure(err -> handleError(err, context));		
 	}
 
+	/**
+	 * Download the specified task
+	 * @param context The {@link RoutingContext} speifiying the {@link Task}  to download
+	 */
 	public void downloadTask(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -285,7 +324,10 @@ public class TaskRouter extends ElementRouter<Task> {
 		.onFailure(err -> handleError(err, context));
 	}
 	
-	
+	/**
+	 * Upload a Task from a Task Zip file
+	 * @param context The {@link RoutingContext} containing the Task Zip file.
+	 */
 	public void uploadTask(RoutingContext context)
 	{		
 		LOGGER.debug("Received a request for creation");
@@ -349,7 +391,9 @@ public class TaskRouter extends ElementRouter<Task> {
 		})
 		.onFailure(err -> handleError(err, context));
 	}
-	
+	/**
+	 * Clean up this Router (periodic cleanup).
+	 */
 	public void cleanup()
 	{
 		elementManager.cleanUp();

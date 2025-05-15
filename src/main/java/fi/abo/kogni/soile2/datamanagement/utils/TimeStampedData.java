@@ -16,27 +16,38 @@ public class TimeStampedData<T> implements Comparable<TimeStampedData<T>>{
 	
 	/**
 	 * Create a new Property with a specified time to live (in ms)
-	 * @param properties the JsonObject to store
+	 * @param data the JsonObject to store
 	 * @param ttl the time to live
 	 */
 	public TimeStampedData(T data, long ttl)
 	{		
 		this(data,System.currentTimeMillis(),ttl);		
 	}	
-	
+	/**
+	 * Create a new Property with a specified expiry time
+	 * @param data the JsonObject to store
+	 * @param date the date at which the element expires 
+	 */
 	public TimeStampedData(T data, Date date)
 	{
 		this(data,date,null);
 	}
 	/**
-	 * 
-	 * @param data
+	 * Timestamped data with just data
+	 * @param data the data 
 	 */
 	public TimeStampedData(T data)
 	{		
 		this(data, System.currentTimeMillis(), null);
 	}
 	
+	/**
+	 * Time stamped data with a ttl and a expiration data in ms
+	 * if ttl is null there is no expiration date
+	 * @param data the data
+	 * @param date the generation date
+	 * @param ttl the time to live
+	 */
 	public TimeStampedData(T data, Long date, Long ttl)
 	{
 		this.data = data;
@@ -44,6 +55,13 @@ public class TimeStampedData<T> implements Comparable<TimeStampedData<T>>{
 		this.timeToLive = ttl;
 	}
 	
+	/**
+	 * Time stamped data with a ttl and a expiration date as a {@link Date}
+	 * if ttl is null there is no expiration date
+	 * @param data the data
+	 * @param date the generation date
+	 * @param ttl the time to live
+	 */
 	public TimeStampedData(T data, Date date, Long ttl)
 	{
 		this.data = data;
@@ -54,7 +72,7 @@ public class TimeStampedData<T> implements Comparable<TimeStampedData<T>>{
 	
 	/**
 	 * Get the actual data
-	 * @return
+	 * @return the data of this object
 	 */
 	public T getData()
 	{
@@ -63,7 +81,7 @@ public class TimeStampedData<T> implements Comparable<TimeStampedData<T>>{
 		
 	/**
 	 * Test, whether this is still valid
-	 * @return
+	 * @return whether the element is valid
 	 */
 	public boolean isValid()
 	{
@@ -91,7 +109,7 @@ public class TimeStampedData<T> implements Comparable<TimeStampedData<T>>{
 	
 	/**
 	 * Get the time stamp this Data was stored with
-	 * @return
+	 * @return the timestamp
 	 */
 	public Long getTimeStamp()
 	{

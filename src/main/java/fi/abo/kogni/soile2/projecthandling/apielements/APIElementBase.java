@@ -52,13 +52,22 @@ import io.vertx.ext.mongo.MongoClient;
  */
 public abstract class APIElementBase<T extends ElementBase> implements APIElement<T> {
 
+	/**
+	 * Internal data object that contains the API data
+	 */
 	protected JsonObject data; 	
 
+	/**
+	 * Default costructor
+	 */
 	public APIElementBase()
 	{
 		this.data = new JsonObject();
 	}
-	
+	/**
+	 * Default constructor from Json Data
+	 * @param data the {@link JsonObject} to construct this from
+	 */
 	public APIElementBase(JsonObject data)
 	{	
 		this.data = data;
@@ -127,7 +136,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 
 	/**
 	 * Update the versions and tags of a DBElement to reflect this elements data in it.
-	 * @param target
+	 * @param target The target element
 	 */
 	public void setDefaultProperties(T target)
 	{
@@ -142,7 +151,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	
 	/**
 	 * Load the default properties retrievable from the db object.
-	 * @param target
+	 * @param target the target element
 	 */
 	public void loadDefaultProperties(T target)
 	{
@@ -153,6 +162,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	
 	/**
 	 * Indicate whether this Element has additional Git content that needs to be loaded.
+	 * @return whether this has additional content in git
 	 */
 	public boolean hasAdditionalGitContent()
 	{
@@ -161,6 +171,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	
 	/**
 	 * This is essentially a no--op on most objects.
+	 * @return a {@link Future} of the version that contains the additional data (if there is any). 
 	 */
 	@Override
 	public Future<String> storeAdditionalData(String currentVersion, EventBus eb, String targetRepository)
@@ -170,6 +181,7 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 
 	/**
 	 * This is essentially a no--op on most objects.
+	 * @return A Boolean whether loading succeeded
 	 */
 	@Override
 	public Future<Boolean> loadAdditionalData(EventBus eb, String targetRepository)
@@ -178,17 +190,11 @@ public abstract class APIElementBase<T extends ElementBase> implements APIElemen
 	}
 	/**
 	 * Set the element Properties for a DB element of the type specified for this APIElement.
-	 * @param target
+	 * @param target the Target element to set the properties
+	 * @throws Exception Any errors can be thrown based on implementation
 	 */
 	public abstract void setElementProperties(T target) throws Exception;
-	
-	/**
-	 * Load properties which are specific to this element.
-	 * @param target
-	 */
-	//public abstract void loadElementProperties(T target);
-	
-	
+		
 	@Override
 	public Future<T> getDBElement(MongoClient client, ElementFactory<T> ElementFactory) {
 		Promise<T> elementPromise = Promise.<T>promise();

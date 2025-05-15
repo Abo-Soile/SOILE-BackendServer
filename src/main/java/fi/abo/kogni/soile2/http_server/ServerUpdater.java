@@ -9,10 +9,19 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.mongo.MongoClient;
 
+/**
+ * A Verticle to update the server
+ * @author Thomas Pfau
+ */
 public class ServerUpdater extends SoileServerVerticle{
 	
 	MongoClient client;
 
+	/**
+	 * Update the server
+	 * @param empty not sure what this is for
+	 * @return A {@link Future} of the execution of the verticle
+	 */
 	public Future<Void> updateServer(Void empty) {
 		client = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg());
 		TaskFieldAddition adder = new TaskFieldAddition(client);
@@ -47,7 +56,10 @@ public class ServerUpdater extends SoileServerVerticle{
 		undeploy(stopPromise);
 	}
 	
-	
+	/**
+	 * Execution function
+	 * @param args input arguments
+	 */
 	public static void main(String[] args)
 	{
 		Vertx instance = Vertx.vertx();

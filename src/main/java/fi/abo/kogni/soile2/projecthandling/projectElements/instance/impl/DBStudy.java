@@ -37,7 +37,12 @@ public class DBStudy extends Study{
 	EventBus eb;
 	ElementManager<Project> projectManager;	
 	static final Logger LOGGER = LogManager.getLogger(DBStudy.class);
-
+	/**
+	 * Default constructor
+	 * @param projManager Element Manager for Project retrieval
+	 * @param client {@link MongoClient} for db access 
+	 * @param eb {@link EventBus} for communication
+	 */
 	public DBStudy(ElementManager<Project> projManager, MongoClient client, EventBus eb) {
 		super();
 		this.projectManager = projManager;
@@ -423,7 +428,10 @@ public class DBStudy extends Study{
 				.put(new FieldSpecification("version", String.class, () -> getSourceVersion(), true));				
 
 	}
-		
+	/**
+	 * Get unmodifyable fields in a study
+	 * @return {@link FieldSpecifications} of unmodifyable fields
+	 */
 	public FieldSpecifications getUnmodifyableDBFields() {
 		
 		return new FieldSpecifications().put(new FieldSpecification("_id", String.class, () -> getID(), true))

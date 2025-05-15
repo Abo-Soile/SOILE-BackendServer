@@ -42,9 +42,9 @@ public class GitCleaner {
 	
 	/**
 	 * Like the normal constructor but assumes a maxAge of 12 hours.
-	 * @param client
-	 * @param vertx
-	 * @param taskManager
+	 * @param client the mongoclient used for this cleaner (communication with db)
+	 * @param vertx the vertx instance the cleaner is running for
+	 * @param taskManager the {@link ElementManager} to use 
 	 */
 	public GitCleaner(MongoClient client, Vertx vertx, ElementManager<Task> taskManager) {
 		// default maxAge is 12 hours
@@ -53,10 +53,10 @@ public class GitCleaner {
 	/**
 	 * Create a GitCleaner with a specified maxAge. The maxAge indicates how old a version can be to still be
 	 * considered reachable for deletion purposes (i.e. we assume this could be under active work)
-	 * @param client
-	 * @param vertx
-	 * @param taskManager
-	 * @param maxAge
+	 * @param client the mongoclient used for this cleaner (communication with db)
+	 * @param vertx the vertx instance the cleaner is running for
+	 * @param taskManager the {@link ElementManager} to use
+	 * @param maxAge a maxage  before reloading data
 	 */
 	public GitCleaner(MongoClient client, Vertx vertx, ElementManager<Task> taskManager, long maxAge) {
 		super();

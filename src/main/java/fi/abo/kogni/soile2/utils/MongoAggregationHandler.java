@@ -51,7 +51,7 @@ public class MongoAggregationHandler {
 	 * @param field the field to in which to check for the subfield
 	 * @param subField the subfield in which to check for the items
 	 * @param subFieldIn the items to check
-	 * @return
+	 * @return the Filter {@link JsonObject}
 	 */
 	public static JsonObject createInFilter(String field, String subField, JsonArray subFieldIn)
 	{
@@ -69,7 +69,7 @@ public class MongoAggregationHandler {
 	 * @param field the field to in which to check for the subfield
 	 * @param subField the subfield in which to check for the items
 	 * @param subFieldEqual the items the subField needs to be equal to.
-	 * @return
+	 * @return the Filter {@link JsonObject}
 	 */
 	public static JsonObject createEqFilter(String field, String subField, Object subFieldEqual)
 	{

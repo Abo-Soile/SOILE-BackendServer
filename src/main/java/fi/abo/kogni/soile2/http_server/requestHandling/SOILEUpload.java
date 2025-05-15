@@ -2,6 +2,11 @@ package fi.abo.kogni.soile2.http_server.requestHandling;
 
 import io.vertx.ext.web.FileUpload;
 
+/**
+ * SOILE Specific Upload class
+ * @author Thomas Pfau
+ *
+ */
 public interface SOILEUpload {
 
 	/**
@@ -22,11 +27,22 @@ public interface SOILEUpload {
 	 */
 	public String contentType();
 	
+	/**
+	 * Default constructor
+	 * @param upload the fileUpload to use
+	 * @return A new {@link SOILEUpload}
+	 */
 	public static SOILEUpload create(FileUpload upload)
 	{
 		return new SOILEUploadImpl(upload);
 	}
-	
+	/**
+	 * Create a upload by more details
+	 * @param uploadedFileName the uploaded file name
+	 * @param fileName the file name
+	 * @param contentType the content type
+	 * @return a new {@link SOILEUpload}
+	 */
 	public static SOILEUpload create(String uploadedFileName, String fileName, String contentType)
 	{
 		return new SOILEUploadImpl(fileName,uploadedFileName,contentType);

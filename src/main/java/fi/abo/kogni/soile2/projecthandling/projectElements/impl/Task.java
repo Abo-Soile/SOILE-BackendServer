@@ -13,13 +13,22 @@ import io.vertx.core.json.JsonObject;
  */
 public class Task extends ElementBase {
 
+	/**
+	 * Type ID for type specification
+	 */
 	public static String typeID = "T";
 	private static JsonObject listFields = new JsonObject().put("author", 1).put("language", 1).put("keywords", 1).put("created", 1).put("type", 1);
+	/**
+	 * Default empty Constructor
+	 */
 	public Task()
 	{
 		this(new JsonObject());
 	}
-	
+	/**
+	 * Copy constructor from Json Data
+	 * @param data the data to load into the task
+	 */
 	public Task(JsonObject data)
 	{		
 		super(data, SoileConfigLoader.getdbProperty("taskCollection"));
@@ -32,7 +41,7 @@ public class Task extends ElementBase {
 
 	/**
 	 * Add a specific resource
-	 * @param filename
+	 * @param filename the filename of the resource to add
 	 */
 	public void addResource(String filename) {		
 		data.getJsonArray("resources").add(filename);
@@ -103,7 +112,7 @@ public class Task extends ElementBase {
 	
 	/**
 	 * Get the author of the task
-	 * @return
+	 * @return the author of this task
 	 */
 	public String getAuthor()
 	{
@@ -111,7 +120,7 @@ public class Task extends ElementBase {
 	}
 	/**
 	 * Set the author of the task
-	 * @return
+	 * @param author the author of the task
 	 */
 	public void setAuthor(String author)
 	{
@@ -120,7 +129,7 @@ public class Task extends ElementBase {
 	
 	/**
 	 * Get the language of the task
-	 * @return
+	 * @return the language (non coding)  the task is in
 	 */
 	public String getLanguage()
 	{
@@ -128,7 +137,7 @@ public class Task extends ElementBase {
 	}
 	/**
 	 * Set the language of the task
-	 * @return
+	 * @param language the language the task is in
 	 */
 	public void setLanguage(String language)
 	{
@@ -137,7 +146,7 @@ public class Task extends ElementBase {
 	
 	/**
 	 * Get the type category of the task
-	 * @return
+	 * @return the type of the task
 	 */
 	public String getType()
 	{
@@ -145,7 +154,7 @@ public class Task extends ElementBase {
 	}
 	/**
 	 * Set the type catregory of the task
-	 * @return
+	 * @param type the type of the task
 	 */
 	public void setType(String type)
 	{
@@ -154,15 +163,15 @@ public class Task extends ElementBase {
 	
 	/**
 	 * Get the description of the task
-	 * @return
+	 * @return the description of the task
 	 */
 	public String getDescription()
 	{
 		return this.data.getString("description");
 	}
 	/**
-	 * Set the author of the task
-	 * @return
+	 * Set the description of the task
+	 * @param description the description of the task
 	 */
 	public void setDescription(String description)
 	{
@@ -171,7 +180,7 @@ public class Task extends ElementBase {
 	
 	/**
 	 * Get the keywords for the task
-	 * @return
+	 * @return a {@link JsonArray} with keywords
 	 */
 	public JsonArray getKeywords()
 	{
@@ -179,7 +188,7 @@ public class Task extends ElementBase {
 	}
 	/**
 	 * Set the keywords for the task
-	 * @return
+	 * @param keywords the keywords to assign to the task
 	 */
 	public void setKeywords(JsonArray keywords)
 	{
@@ -187,8 +196,8 @@ public class Task extends ElementBase {
 	}
 	
 	/**
-	 * Get the author of the task
-	 * @return
+	 * Get the created timestamp of the task
+	 * @return the timestamp of creation
 	 */
 	public Long getCreated()
 	{

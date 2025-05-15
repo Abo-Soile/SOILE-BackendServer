@@ -7,6 +7,10 @@ package fi.abo.kogni.soile2.projecthandling.exceptions;
  */
 public class ProjectIsInactiveException extends Exception {
 
+	/**
+	 * Default constructor
+	 * @param name the name of the inactive project
+	 */
 	public ProjectIsInactiveException(String name) {
 		super("Project \"" + name + "\" is not active" );
 	}

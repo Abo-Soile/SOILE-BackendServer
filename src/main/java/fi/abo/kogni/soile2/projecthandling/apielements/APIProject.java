@@ -27,13 +27,19 @@ public class APIProject extends APIElementBase<Project>{
 
 	private String[] gitFields = new String[] {"name","tasks","experiments","filters","randomizers","start"};
 	private Object[] gitDefaults = new Object[] {"",new JsonArray(),new JsonArray(),new JsonArray(),new JsonArray(),null};		
-	private Function<Object, Object>[] elementCheckers;   
+	private Function<Object, Object>[] elementCheckers;
+	/**
+	 * Constructor for an empty element
+	 */
 	public APIProject() {
 		this(new JsonObject());
 		
 	}
 
-	
+	/**
+	 * Element Constructor using Json Data 
+	 * @param data the Json representation of the {@link APIProject}
+	 */
 	public APIProject(JsonObject data) {
 		super(data);
 		createFunctionCheckers();
@@ -52,7 +58,7 @@ public class APIProject extends APIElementBase<Project>{
 	}
 	/**
 	 * Set the start property
-	 * @param start
+	 * @param start the start element of the project
 	 */
 	public void setStart(String start)
 	{
@@ -61,7 +67,7 @@ public class APIProject extends APIElementBase<Project>{
 	
 	/**
 	 * Get the start property
-	 * @return
+	 * @return the id of the start object of the Project
 	 */
 	public String getStart()
 	{
@@ -70,7 +76,7 @@ public class APIProject extends APIElementBase<Project>{
 	
 	/**
 	 * Set the tasks
-	 * @param tasks
+	 * @param tasks the list of tasks
 	 */
 	public void setTasks(JsonArray tasks)
 	{
@@ -83,13 +89,17 @@ public class APIProject extends APIElementBase<Project>{
 	}
 	/**
 	 * Get the tasks
-	 * @return
+	 * @return A JsonArray of all Task (JsonObjects)
 	 */
 	public JsonArray getTasks()
 	{		
 		return this.data.getJsonArray("tasks");
 	}
 		
+	/**
+	 * Add a task
+	 * @param task A {@link JsonObject} describing the task
+	 */
 	public void addTask(JsonObject task)
 	{
 		this.data.getJsonArray("tasks").add(task);
@@ -97,19 +107,26 @@ public class APIProject extends APIElementBase<Project>{
 	
 	/**
 	 * Get and set the randomizers
-	 * @return
+	 * @return A {@link JsonArray} of Randomizer {@link JsonObject}s
 	 */
 	public JsonArray getRandomizers()
 	{		
 		return this.data.getJsonArray("randomizers");
 	}
 		
+	/**
+	 * Add a JsonObject representing a Randomizer to this API Project
+	 * @param randomizer the Randomizer to add.
+	 */
 	public void addRandomizer(JsonObject randomizer)
 	{
 		this.data.getJsonArray("randomizers").add(randomizer);
 	}
 	
-	
+	/**
+	 * Set the Experiments {@link JsonArray}.
+	 * @param experiments A {@link JsonArray} with Objects representing Experiments 
+	 */
 	public void setExperiments(JsonArray experiments)
 	{
 		JsonArray newExperiments =  new JsonArray();		
@@ -120,16 +137,28 @@ public class APIProject extends APIElementBase<Project>{
 		this.data.put("experiments", newExperiments);
 	}
 
+	/**
+	 * Get the Experiments contained in this Project
+	 * @return A {@link JsonArray} of {@link JsonObject}s contaiing the data for the experiments in this Project
+	 */
 	public JsonArray getExperiments()
 	{		
 		return this.data.getJsonArray("experiments");
 	}
 		
+	/**
+	 * Add a Experiment to this Project
+	 * @param experiment The JsonObject with the experiment data
+	 */
 	public void addExperiment(JsonObject experiment)
 	{
 		this.data.getJsonArray("experiments").add(experiment);
 	}
 	
+	/**
+	 * Set the Filters for this Project
+	 * @param filters A {@link JsonArray} of {@link JsonObject} representing the filters.
+	 */
 	public void setFilters(JsonArray filters)
 	{
 		JsonArray newFilters =  new JsonArray();		
@@ -140,11 +169,19 @@ public class APIProject extends APIElementBase<Project>{
 		this.data.put("filters",newFilters);
 	}
 
+	/**
+	 * Get the Filter definitions for this Project
+	 * @return a {@link JsonArray} of {@link JsonObject}s representing the filters
+	 */
 	public JsonArray getFilters()
 	{		
 		return this.data.getJsonArray("filters");
 	}
 		
+	/**
+	 * Add a Filter by description
+	 * @param filter The JsonObject describing the filter
+	 */
 	public void addFilter(JsonObject filter)
 	{
 		this.data.getJsonArray("filters").add(filter);

@@ -79,6 +79,11 @@ public class DBParticipant extends ParticipantImpl{
 	
 	private ParticipantManager manager;
 	static final Logger LOGGER = LogManager.getLogger(DBParticipant.class);
+	/**
+	 * Default constructor
+	 * @param data the {@link JsonObject} to create the Participant with
+	 * @param manager the {@link ParticipantManager} for db access
+	 */
 	public DBParticipant(JsonObject data, ParticipantManager manager)
 	{
 		super(data);

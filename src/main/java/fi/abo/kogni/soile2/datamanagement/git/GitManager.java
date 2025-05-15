@@ -1,5 +1,6 @@
 package fi.abo.kogni.soile2.datamanagement.git;
 
+import java.awt.Event;
 import java.io.File;
 
 import org.apache.logging.log4j.LogManager;
@@ -12,6 +13,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -27,11 +29,18 @@ public class GitManager{
 
 	EventBus eb;
 	
+	/**
+	 * Default constructor
+	 * @param eb the {@link EventBus} used for communication
+	 */
 	public GitManager(EventBus eb)
 	{
 		this.eb = eb;
-	}
+	}	
 	private static final Logger LOGGER = LogManager.getLogger(GitManager.class.getName());
+	/**
+	 * Resource folder name
+	 */
 	public static String resourceFolder = "resources";
 
 	
@@ -74,9 +83,8 @@ public class GitManager{
 	
 	/**
 	 * Test whether a repo exists and the given version is in the repo asynchronosly
-	 * @param elementID the ID (Project, Task or ExperimentID)
-	 * @param version The version of that should be checked.
-	 * @return a Future that on success indicates whether the element exists or not. Failure means either the request was inconsistent, or something went wrong 
+	 * @param element The Element to check 
+	 * @return a {@link Future} that on success indicates whether the element exists or not. Failure means either the request was inconsistent, or something went wrong 
 	 * 		   in the process, and should not be taken as non existence indication. 
 	 */
 	public Future<Boolean> doesRepoAndVersionExist(GitElement element)
@@ -164,9 +172,7 @@ public class GitManager{
 	
 	/**
 	 * Get the file contents of a file in the github repository, these are all just json/linker files). 
-	 * @param fileName The name of the file
-	 * @param taskID The task the file belongs to 
-	 * @param taskVersion the version of the file.
+	 * @param file The Git File to obtain the contents for 
 	 * @return A String with the contents that can normally be parsed as json.
 	 */
 	public Future<String> getGitFileContents(GitFile file)
@@ -193,9 +199,7 @@ public class GitManager{
 	
 	/**
 	 * Get the file contents of a file in the github repository, these are all just json/linker files). 
-	 * @param fileName The name of the file
-	 * @param taskID The task the file belongs to 
-	 * @param taskVersion the version of the file.
+	 * @param file the file to get the Resource contents for
 	 * @return A String with the contents that can normally be parsed as json.
 	 */
 	public Future<String> getGitResourceContents(GitFile file)
@@ -203,8 +207,9 @@ public class GitManager{
 		return getGitFileContents(new GitFile(resourceFolder + File.separator + file.getFileName(), file.getRepoID(), file.getRepoVersion()));
 	}
 	/**
-	 * Get the file contents of a git file as a Json Object. 
-	 * @return A {@link JsonObject} of the contents of the git file.
+	 * Get the file contents of a git file as a Json Object.
+	 * @param file the file to get the Resources contents for 
+	 * @return A {@link Future} of a {@link JsonObject} of the contents of the git file.
 	 */
 	public Future<JsonObject> getGitResourceContentsAsJson(GitFile file)
 	{
@@ -231,8 +236,9 @@ public class GitManager{
 	}
 	
 	/**
-	 * Get the file contents of a git file as a Json Object. 
-	 * @return A {@link JsonObject} of the contents of the git file.
+	 * Get the file contents of a git file as a Json Object.
+	 * @param file the File to get the Contents for 
+	 * @return A {@link Future} of a {@link JsonObject} of the contents of the git file.
 	 */
 	public Future<JsonObject> getGitFileContentsAsJson(GitFile file)
 	{
@@ -261,8 +267,9 @@ public class GitManager{
 	}
 
 	/**
-	 * Get the resource files available for a specific git Version of an Object  
-	 * @return A {@link JsonObject} of the contents of the git file.
+	 * Get the resource files available for a specific git Version of an Object
+	 * @param repoVersion the Element to get the Resource list for
+	 * @return A {@link Future} of a {@link JsonObject} of the contents of the git file.
 	 */
 	public Future<JsonArray> getResourceList(GitElement repoVersion)
 	{
@@ -295,8 +302,9 @@ public class GitManager{
 	
 	
 	/**
-	 * Get the resource files available for a specific git Version of an Object  
-	 * @return A {@link JsonObject} of the contents of the git file.
+	 * Get the resource files available for a specific git Version of an Object
+	 * @param repoVersion the element to get the history for  
+	 * @return A {@link Future} of a {@link JsonObject} of the contents of the git file.
 	 */
 	public Future<JsonArray> getHistory(GitElement repoVersion)
 	{
@@ -320,8 +328,9 @@ public class GitManager{
 	/**
 	 * Write data to a file specified by the {@link GitFile}, receive the new version of the respective file. 
 	 * @param file the GitFile containing name (including folders),  
-	 * @param data
-	 * @return
+	 * @param data the data to write to the file 
+	 * @param tag the tag to give the version 
+	 * @return A {@link Future} of the new version of the file
 	 */
 	public Future<String> writeGitFile(GitFile file, String data, String tag)
 	{
@@ -351,7 +360,7 @@ public class GitManager{
 	 * Delete the specified file from the git repo. 
 	 * @param file the GitFile containing name (including folders),  
 	 * @param tag A Tag to give 
-	 * @return
+	 * @return A {@link Future} of a the new version
 	 */
 	public Future<String> deleteGitFile(GitFile file, String tag)
 	{
@@ -381,8 +390,7 @@ public class GitManager{
 	/**
 	 * Write data to a file specified by the {@link GitFile} in the resources folder of the repo.  
 	 * @param file the GitFile containing name (including folders) but excluding the resources folder,  
-	 * @param data the data to be written to the file.
-	 * @return a Future with the version of the git repository after execution.
+	 * @return A {@link Future} with the version of the git repository after execution.
 	 */
 	public Future<String> deleteGitResourceFile(GitFile file)
 	{
@@ -397,7 +405,8 @@ public class GitManager{
 	 * Same as writeGitFile with a string, but encodes the provided Json as a pretty string.
 	 * @param file the file indicating where to write to.
 	 * @param data the data that should be encoded in the file
-	 * @return the new version of the file.
+	 * @param tag the tag to give the new version
+	 * @return A {@link Future} of the new version of the file.
 	 */
 	public Future<String> writeGitFile(GitFile file, JsonObject data, String tag)
 	{
@@ -408,7 +417,7 @@ public class GitManager{
 	 * Write data to a file specified by the {@link GitFile} in the resources folder of the repo.  
 	 * @param file the GitFile containing name (including folders) but excluding the resources folder,  
 	 * @param data the data to be written to the file.
-	 * @return a Future with the version of the git repository after execution.
+	 * @return A {@link Future} of with the version of the git repository after execution.
 	 */
 	public Future<String> writeGitResourceFile(GitFile file, String data)
 	{
@@ -420,13 +429,18 @@ public class GitManager{
 	 * Same as writeGitFile with a string, but encodes the provided Json as a pretty string.
 	 * @param file the file indicating where to write to.
 	 * @param data the data that should be encoded in the file
-	 * @return the new version of the file.
+	 * @return A {@link Future} of the new version of the file.
 	 */
 	public Future<String> writeGitResourceFile(GitFile file, JsonObject data)
 	{
 		return writeGitResourceFile(file, data.encodePrettily());
 	}
 	
+	/**
+	 * Check, whether the given git file object is valid
+	 * @param file the file object to check
+	 * @return whether the object is valid
+	 */
 	public boolean gitFileValid(GitFile file)
 	{
 		if(file.getRepoID() == null)
@@ -449,7 +463,7 @@ public class GitManager{
 	 * Create a basic git element for different types of elements.
 	 * @param name Name of the element 
 	 * @param type Class 
-	 * @return
+	 * @return A basic element of the requested type with the given name
 	 */
 	public static JsonObject buildBasicGitElement(String name, TargetElementType type)
 	{
@@ -465,8 +479,8 @@ public class GitManager{
 	
 	/**
 	 * A Basic Github object with a given name.
-	 * @param name
-	 * @return
+	 * @param name the name of the element
+	 * @return a {@link JsonObject} with the name field set to the given name
 	 */
 	public static JsonObject buildBasicGitObject(String name)
 	{
@@ -475,8 +489,8 @@ public class GitManager{
 	
 	/**
 	 * Build an empty github Project object
-	 * @param name
-	 * @return
+	 * @param name the name to give to the project
+	 * @return A jsonObjet with the basic properties for a Project
 	 */
 	public static JsonObject buildBasicGitProject(String name)
 	{
@@ -485,8 +499,8 @@ public class GitManager{
 
 	/**
 	 * Build an empty github Task object
-	 * @param name
-	 * @return
+	 * @param name the name to give the task
+	 * @return a {@link JsonObject} with basic task properties and the name given
 	 */
 	public static JsonObject buildBasicGitTask(String name)
 	{
@@ -495,8 +509,8 @@ public class GitManager{
 	
 	/**
 	 * Build an empty github experiment
-	 * @param name
-	 * @return
+	 * @param name the name to give the experiment
+	 * @return a {@link JsonObject} with basic experiment properties and the name given
 	 */
 	public static JsonObject buildBasicGitExperiment(String name)
 	{

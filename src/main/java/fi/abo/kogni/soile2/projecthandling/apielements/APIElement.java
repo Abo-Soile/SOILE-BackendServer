@@ -23,9 +23,14 @@ public interface APIElement<T extends ElementBase> {
 	 */
 	String getUUID();
 
+	/**
+	 * Set the UUID of this element
+	 * @param UUID The UUID String to set. 
+	 */
 	void setUUID(String UUID);
 
 	/**
+	 * Get the Version of the APIElement. This in the form of 
 	 * A JsonArray of the form: 
 	 * [
 	 * 	{
@@ -33,13 +38,13 @@ public interface APIElement<T extends ElementBase> {
 	 * 		timestamp: 1234567
 	 * 	}
 	 * ]
-	 * @return
+	 * @return The version String 
 	 */
 	String getVersion();
 
 	/**
 	 * Set the Versions for this Element
-	 * @param versions A JsonArray of the form indicated in {@link getVersions);
+	 * @param versions A JsonArray of the form indicated in {@link #getVersion()};
 	 */
 	void setVersion(String versions);
 
@@ -52,25 +57,25 @@ public interface APIElement<T extends ElementBase> {
 	 * 		timestamp: "12345abcdf"
 	 * 	}
 	 * ]
-	 * @return
+	 * @return the Tag in the described format
 	 */
 	String getTag();
 
 	/**
-	 * Set the Versions for this Element
-	 * @param versions A JsonArray of the form indicated in {@link getTags);
+	 * Set the tag for this element form of the tag as in getTag
+	 * @param tag The tag string
 	 */
 	void setTag(String tag);
 
 	/**
 	 * The name of this element
-	 * @return
+	 * @return The name of this element
 	 */
 	String getName();
 
 	/**
 	 * Set the name of the element 
-	 * @param name
+	 * @param name the new name of the element
 	 */
 	void setName(String name);
 
@@ -81,7 +86,7 @@ public interface APIElement<T extends ElementBase> {
 	Boolean getPrivate();
 	/**
 	 * Set the private property of this object.
-	 * @param _private
+	 * @param _private whether this element is private
 	 */
 	void setPrivate(Boolean _private);
 
@@ -90,14 +95,13 @@ public interface APIElement<T extends ElementBase> {
 	 * in the API Element and can directly be saved in order to update the database object.
 	 * @param client the mongoclient to use to save the data
 	 * @param elementFactory the elementFactory used to build the element  
-	 * @return
+	 * @return A {@link Future} of the Instance of the DB Element represented by this API Element
 	 */
 	Future<T> getDBElement(MongoClient client, ElementFactory<T> elementFactory);
 	
 	/**
 	 * Load data from a database element fitting to this API elements type 
 	 * @param element The element to load data from 
-	 * @return
 	 */
 	void loadFromDBElement(T element);	
 	
@@ -107,25 +111,27 @@ public interface APIElement<T extends ElementBase> {
 	 * @return this API Element has additional Content stored in the git repository
 	 */
 	boolean hasAdditionalGitContent();
-	
+		
 	/**
 	 * Store additional data to the git Manager, returns a future of the new git repo version with the data stored.
 	 * @param currentVersion the version on which to base the additions
-	 * @param gitManager a git Manager to use
+	 * @param eb {@link EventBus} used for to contact git
+	 * @param targetRepository name of the target repository
 	 * @return A Future of the updated version
 	 */
 	Future<String> storeAdditionalData(String currentVersion, EventBus eb, String targetRepository);
 	
 	/**
 	 * Load additional data to from git and add it to this object.
-	 * @param gitManager a git Manager to use
+	 * @param eb {@link EventBus} used for to contact git
+	 * @param targetRepository name of the target repository
 	 * @return if the loading operation was successfull
 	 */
 	Future<Boolean> loadAdditionalData(EventBus eb, String targetRepository);
 	
 	/**
 	 * Get the json as stored in Git.
-	 * @return
+	 * @return the Json of this API Element that should go into git
 	 */
 	JsonObject getGitJson();
 	
@@ -137,27 +143,33 @@ public interface APIElement<T extends ElementBase> {
 	
 	/**
 	 * Get the Json for this 
-	 * @return
+	 * @return the {@link JsonObject} representing this APIElement
 	 */
 	JsonObject getAPIJson();
 	
 	/**
 	 * Load APIElement Data from a json object. 
-	 * @param json
+	 * @param json the JsonObject to create this object from
 	 */
 	void loadFromAPIJson(JsonObject json);
 
 	/**
 	 * Calculate the dependencies of this element 
-	 * @param json
+	 * @return The dependencies of this object
 	 */
 	JsonObject calcDependencies();
 	
 	/**
 	 * Update this APIElement from a Json. but only use fields that are present in this element.
+	 * @param update The Json Object to update this from
 	 */
 	void updateFromJson(JsonObject update);
 	
+	/**
+	 * Get the filter for the specified field.
+	 * @param fieldName The field name for the filter
+	 * @return A Function filtering for the specific field
+	 */
 	Function<Object,Object> getFieldFilter(String fieldName); 
 }
 

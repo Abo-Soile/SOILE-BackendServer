@@ -28,6 +28,10 @@ public class SoileAuthentication implements AuthenticationProvider{
 	private final HashingStrategy strategy;
 
 	static final Logger LOGGER = LogManager.getLogger(SoileAuthentication.class);
+	/**
+	 * Default constructor
+	 * @param client {@link MongoClient} for authentication db access
+	 */
 	public SoileAuthentication(MongoClient client)
 	{		
 		this.client = client;

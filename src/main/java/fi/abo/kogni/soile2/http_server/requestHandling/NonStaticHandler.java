@@ -103,6 +103,7 @@ public class NonStaticHandler implements StaticHandler {
    *
    * @param visibility          path specified by root is RELATIVE or ROOT
    * @param staticRootDirectory path on host with static file location
+   * @param relevantSubPath the subpath to use
    */
   public NonStaticHandler(FileSystemAccess visibility, String staticRootDirectory, String relevantSubPath ) {
 

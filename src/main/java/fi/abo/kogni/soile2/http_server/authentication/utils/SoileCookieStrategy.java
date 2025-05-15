@@ -9,9 +9,9 @@ public class SoileCookieStrategy {
 
 	/**
 	 * Build a Cookie String from Username and token.
-	 * @param username
-	 * @param token
-	 * @return
+	 * @param username the username
+	 * @param token the token to use
+	 * @return the combined token
 	 */
 	public static String buildCookieContent(String username, String token)
 	{
@@ -20,8 +20,8 @@ public class SoileCookieStrategy {
 	
 	/**
 	 * Extract a Username from the cookie string
-	 * @param content
-	 * @return
+	 * @param content the content of the cookie
+	 * @return the user name
 	 */
 	public static String getUserNameFromCookieContent(String content)
 	{
@@ -30,8 +30,8 @@ public class SoileCookieStrategy {
 	
 	/**
 	 * Extract a Token from the cookie string
-	 * @param content
-	 * @return
+	 * @param content the cookie string
+	 * @return the token 
 	 */
 	public static String getTokenFromCookieContent(String content)
 	{

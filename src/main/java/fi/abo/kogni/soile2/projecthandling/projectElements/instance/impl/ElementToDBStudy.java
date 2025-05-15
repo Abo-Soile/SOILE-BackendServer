@@ -27,6 +27,12 @@ public class ElementToDBStudy extends DBStudy{
 
 	private static final Logger LOGGER = LogManager.getLogger(ElementToDBStudy.class.getName());	
 
+	/**
+	 * Default constructor
+	 * @param manager {@link ElementManager} for {@link Project} access
+	 * @param client {@link MongoClient} for db access 
+	 * @param eb {@link EventBus} for communication
+	 */
 	public ElementToDBStudy(ElementManager<Project> manager, MongoClient client, EventBus eb) {
 		super(manager, client, eb);
 	}

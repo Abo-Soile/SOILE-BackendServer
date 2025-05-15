@@ -15,6 +15,11 @@ public class CompiledCodeProvider implements CodeProvider {
 	
 	private TimeStampedMap<GitFile, String> codeMap;	
 	private CompiledCodeRetriever codeRetriever;
+	/**
+	 * Default constuctor
+	 * @param targetAddress the targetAddress (on the eventbus) for the code Retriever 
+	 * @param eb the {@link EventBus} for communication
+	 */
 	public CompiledCodeProvider(String targetAddress, EventBus eb)
 	{
 		codeRetriever = new CompiledCodeRetriever(eb, targetAddress);

@@ -20,10 +20,22 @@ import io.vertx.core.json.JsonObject;
  */
 public abstract class ElementInstanceBase implements ElementInstance {
 
-	protected Study sourceStudy;	 
+	/**
+	 * The Study this instance is in
+	 */
+	protected Study sourceStudy;	
+	/**
+	 * The underlying data (in json of this instance)
+	 */
 	protected JsonObject data;
-	  static final Logger LOGGER = LogManager.getLogger(ElementInstanceBase.class);
+	
+	static final Logger LOGGER = LogManager.getLogger(ElementInstanceBase.class);
 
+	/**
+	 * Default Constructor
+	 * @param data the Data to read from
+	 * @param source the source Study in which this instance is located
+	 */
 	public ElementInstanceBase(JsonObject data, Study source)
 	{
 		setupFieldsAccordingToSpec();
@@ -44,19 +56,12 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	}
 
 
-	/**
-	 * Can be either be a commit ID or a Tag
-	 * @return
-	 */
 	@Override
 	public String getVersion()
 	{
 		return data.getString("version");
 	}
 
-	/**
-	 * Can be either be a commit ID or a Tag
-	 */
 	@Override
 	public void setVersion(String version)
 	{
@@ -69,10 +74,7 @@ public abstract class ElementInstanceBase implements ElementInstance {
 	{
 		return data.getString("name");
 	}
-	/**
-	 * A human readable name for a 
-	 * @param name
-	 */
+
 	@Override
 	public void setName(String name)
 	{
@@ -125,12 +127,6 @@ public abstract class ElementInstanceBase implements ElementInstance {
 		data.put("instanceID", instanceID);
 	}
 	
-	/**
-	 * Return the ID of the next {@link TaskObjectInstance} for the given user based on the assumption, that 
-	 * has finished the task at its `getProjectPosition()`. This should check, whether    
-	 * @param user
-	 * @return
-	 */
 	@Override
 	public abstract Future<String> nextTask(Participant user);
 

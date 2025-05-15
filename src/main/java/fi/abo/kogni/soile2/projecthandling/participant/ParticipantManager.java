@@ -45,8 +45,15 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	private HashMap<String, Long> dirtyTimeStamps; 
 	//TODO: needs constructor.
 	private String participantCollection = SoileConfigLoader.getdbProperty("participantCollection");
+	/**
+	 * Logger
+	 */
 	public static final Logger LOGGER = LogManager.getLogger(ParticipantManager.class);
 
+	/**
+	 * Default constructor
+	 * @param client the {@link MongoClient} for db access
+	 */
 	public ParticipantManager(MongoClient client)
 	{
 		this.client  = client;
@@ -132,8 +139,9 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 * Create a new Participant with empty information and retrieve a new ID from the 
 	 * database.
 	 * @param study the study to create a participant in.
-	 * @param a signUpToken (optional, can be null or empty)
+	 * @param signupToken a signUpToken (optional, can be null or empty)
 	 * @param tokenParticipant whether the created Participant is a token participant
+	 * @return A {@link Future} of the created {@link Participant}
 	 */
 	public Future<Participant> createParticipant(Study study, String signupToken, boolean tokenParticipant)
 	{
@@ -176,7 +184,9 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	/**
 	 * Create a new Participant with empty information and retrieve a new ID from the 
 	 * database.
-	 * @param handler the handler to handle the created participant
+	 * @param currentStudy the study to create a participant for
+	 * @param defaultParticipant data for a default participant
+	 * @return A Future of the created {@link Participant}
 	 */
 	private Future<Participant> createParticipant(Study currentstudy, JsonObject defaultParticipant)
 	{	
@@ -194,7 +204,9 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	/**
 	 * Create a new Token Participant with empty information and retrieve a new ID from the 
 	 * database.
-	 * @param handler the handler to handle the created participant
+	 * @param currentStudy the study to create a participant for
+	 * @param defaultParticipant data for a default participant
+	 * @return A Future of the created {@link Participant}
 	 */
 	private Future<Participant> createTokenParticipant(Study currentStudy, JsonObject defaultParticipant)
 	{	
@@ -219,8 +231,8 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 
 	/**
 	 * Delete a participant and all associated data from the database
-	 * @param id
-	 * @param handler
+	 * @param id the id of the participant
+	 * @param handler a handle to handle the (mongo client result of the deletion operation)
 	 */
 	public void deleteParticipant(String id, Handler<AsyncResult<JsonObject>> handler)
 	{		
@@ -321,6 +333,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 
 	/**
 	 * Default schema of a Participant.
+	 * @param projectID the project id for which to get default data
 	 * @return an empty participant information {@link JsonObject}
 	 */
 	public static JsonObject getDefaultParticipantInfo(String projectID)
@@ -337,7 +350,7 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	/**
 	 * Save the given participant.
 	 * @param p the {@link Participant} to save
-	 * @return
+	 * @return a {@link Future} of id of the {@link Participant}
 	 */
 	public Future<String> save(Participant p)
 	{
@@ -369,7 +382,9 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 * Update the results for the given task. 
 	 * @param taskID the Task to be updated
 	 * @param results the results { an element of the resultData array with (or without) the task ID}
-	 * @return
+	 * @param p the participant
+	 * @param step the step to update
+	 * @return a {@link Future} indicating success of the operation
 	 */
 	public Future<Void> updateResults(Participant p, int step, String taskID, JsonObject results)
 	{
@@ -397,9 +412,10 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 		return client.bulkWrite(participantCollection, pullAndPut).mapEmpty();
 	}
 	/**
-	 * Get a {@link JsonArray} of {@link JsonObject} elements that contain the 
-	 * @param project
-	 * @return
+	 * Get a {@link JsonArray} of {@link JsonObject} elements that contain the state of all participants
+	 * (essentially this is a dump of the participants in this study) 
+	 * @param project the project for which to retrieve participant data
+	 * @return A {@link Future} of the particpant data as a {@link JsonArray} of db entries( {@link JsonObject}s).
 	 */
 	public Future<JsonArray> getParticipantStatusForProject(Study project)
 	{
@@ -433,8 +449,8 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 
 	/**
 	 * Reset the Participant based on the given participants data and empty results. 
-	 * @param studyHandler
-	 * @return
+	 * @param part the participant to reset
+	 * @return a {@link Future} indicating success of the operation
 	 */
 	public Future<Void> resetParticipant(Participant part)
 	{
@@ -493,8 +509,8 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	 * TODO: Check if the timestamp from the input data needs to be updated... 
 	 * Update the outputs of a participant for the given TaskID and Outputs array.
 	 * @param p The {@link Participant} to update
-	 * @param taskID the id of the Task for which to update the Outputs
 	 * @param Outputs The Output data
+	 * @param outputNames the names of the outputs to update
 	 * @return A Successfull future if the outputs were updated.
 	 */
 	public Future<Void> updatePersistentData(Participant p, JsonArray Outputs, JsonArray outputNames)
@@ -552,20 +568,22 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 	}
 
 	/**
-	 * Get the results for the participantIDs indicated in the provided {@link JsonArray}
-	 * @param participantIDs
-	 * @return
+	 * Get the results for the participantIDs indicated in the provided study
+	 * @param participantIDs a list of participant IDs
+	 * @param studyID the id of the study
+	 * @param TaskID the id of the task for which to get data
+	 * @return A {@link Future} of a List of JsonObjects containing the results for the given participants in the given project and task
 	 */
-	public Future<List<JsonObject>> getParticipantsResultsForTask(JsonArray participantIDs, String projectID, String TaskID)
+	public Future<List<JsonObject>> getParticipantsResultsForTask(JsonArray participantIDs, String studyID, String TaskID)
 	{
 
 		JsonObject query = new JsonObject().put("$and", new JsonArray().add(new JsonObject().put("_id", new JsonObject().put("$in", participantIDs)))
 				.add(new JsonObject().put("resultData.task", new JsonObject().put("$eq", TaskID)))
 				);
 		// if we have a projectID, we need to restrict the query
-		if(projectID != null && !projectID.equals(""))
+		if(studyID != null && !studyID.equals(""))
 		{
-			query = new JsonObject().put("$and", new JsonArray().add(query).add(new JsonObject().put("project", projectID)));
+			query = new JsonObject().put("$and", new JsonArray().add(query).add(new JsonObject().put("project", studyID)));
 		}
 		query = new JsonObject().put("$match",query);		
 		JsonObject dataAddReArr = new JsonObject().put("$set", new JsonObject().put("resultData", new JsonObject().put("participantID", "$_id")));
@@ -575,9 +593,9 @@ public class ParticipantManager implements DirtyDataRetriever<String, Participan
 
 	/**
 	 * Get the participant ID associated with the provided Token.
-	 * @param token - the provided token
+	 * @param token the provided token
 	 * @param projectID the project ID (as check that ID and project match).
-	 * @return
+	 * @return A Future of the {@link Participant}s ID for the given Token in the Study
 	 */
 	public Future<String> getParticipantIDForToken(String token, String projectID)
 	{

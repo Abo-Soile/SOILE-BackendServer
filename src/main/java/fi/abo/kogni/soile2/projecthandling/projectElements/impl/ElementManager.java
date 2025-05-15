@@ -48,7 +48,7 @@ import io.vertx.ext.web.handler.HttpException;
  * There should be two different updates: Tagged updates and Automatic updates.   
  * @author Thomas Pfau
  *
- * @param <T>
+ * @param <T> The class of the Element managed by this manager needs to implement {@link ElementBase}
  */
 public class ElementManager<T extends ElementBase> {
 
@@ -60,14 +60,32 @@ public class ElementManager<T extends ElementBase> {
 	String typeID;
 	TargetElementType type;
 	ElementDataHandler<T> dataHandler;
+	/**
+	 * Logger
+	 */
 	public static final Logger LOGGER = LogManager.getLogger(ElementManager.class);
 	//private static DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SS");
 
+	/**
+	 * Default Constructor 
+	 * @param supplier the {@link Element} {@link Supplier}
+	 * @param apisupplier the {@link APIElement} {@link Supplier} 
+	 * @param client {@link MongoClient} for db access
+	 * @param vertx {@link Vertx} instance for communication
+	 */
 	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, Vertx vertx)
 	{
 		this(supplier, apisupplier, client, vertx, new ElementDataHandler<T>(new DataLakeResourceManager(vertx), supplier));		
 	}
 
+	/**
+	 * Constructor with explcit data handler
+	 * @param supplier the {@link Element} {@link Supplier}
+	 * @param apisupplier the {@link APIElement} {@link Supplier} 
+	 * @param client {@link MongoClient} for db access
+	 * @param vertx {@link Vertx} instance for communication
+	 * @param handler Explicit DataHandler
+	 */
 	public ElementManager(Supplier<T> supplier, Supplier<APIElement<T>> apisupplier,  MongoClient client, Vertx vertx, ElementDataHandler<T> handler)
 	{
 		this.apisupplier = apisupplier;
@@ -101,9 +119,11 @@ public class ElementManager<T extends ElementBase> {
 	/**
 	 * Create a new element.
 	 * This future can fail with an {@link ElementNameExistException} with id = name, which indicates that an element with this name already exists.
-	 * @param name
+	 * @param name name of the new element
+	 * @param type the code type (only applicable for Tasks)
+	 * @param languageversion the version of the language (only aplicable to tasks)
 	 * TODO: Refactor so that this is a second argument "Properties" instead of specific arguments for tasks.
-	 * @return
+	 * @return A {@link Future} of an object of the Type managed by this manager
 	 */
 	public Future<T> createElement(String name, String type, String languageversion)
 	{
@@ -150,8 +170,8 @@ public class ElementManager<T extends ElementBase> {
 	/**
 	 * Create a new element.
 	 * This future can fail with an {@link ElementNameExistException} with id = name, which indicates that an element with this name already exists.
-	 * @param name
-	 * @return
+	 * @param name the name of the element
+	 * @return A {@link Future} of an object of the Type managed by this manager
 	 */
 	public Future<T> createElement(String name)
 	{
@@ -164,11 +184,11 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Load or Create an element. This should not normally be called but might be necessary for some tests. 
-	 * @param name
-	 * @param type
-	 * @param version 
+	 * @param name the name of the element to load
+	 * @param type the code type of the element (Tasks only)
+	 * @param version the version of the code type, i.e. laguage (Tasks only) 
 	 * TODO: REFACTOR to not use version and type but instead a properties object.
-	 * @return
+     * @return A {@link Future} of an object of the Type managed by this manager
 	 */
 	public Future<T> createOrLoadElement(String name, String type, String version)
 	{
@@ -202,7 +222,7 @@ public class ElementManager<T extends ElementBase> {
 	 * Create or load an Element
 	 * This future can fail with an {@link ElementNameExistException} with id = name, which indicates that an element with this name already exists.
 	 * @param name The name of the element
-	 * @return
+	 * @return A {@link Future} of an object of the Type managed by this manager
 	 */
 	public Future<T> createOrLoadElement(String name)
 	{
@@ -245,8 +265,8 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Update the given element in the database and on git using the Data from the provided API element
-	 * @param newData
-	 * @return
+	 * @param newData the data with which to update the element
+	 * @return A {@link Future} of the new version of the element
 	 */
 	public Future<String> updateElement(APIElement<T> newData)
 	{
@@ -255,8 +275,9 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Update the given element in the database and on git using the Data from the provided API element
-	 * @param newData
-	 * @return
+	 * @param newData the new data for the element
+	 * @param tag the tag to give the new version
+	 * @return A {@link Future} of the new version of the element
 	 */
 	public Future<String> updateElement(APIElement<T> newData, String tag)
 	{		
@@ -321,16 +342,16 @@ public class ElementManager<T extends ElementBase> {
 	/**
 	 * Delete the given element. This does NOT actually delete the element, but makes it invisible, so it can still be used but it can no longer be modified or updated. 
 	 * Elements that contain it will still be valid, but the element can no longer be updated. 
-	 * @param newData
-	 * @return
+	 * @param deletionData An API element indicating what should be deleted
+	 * @return A {@link Future} that succeeds if the element was deleted
 	 */
-	public Future<Boolean> deleteElement(APIElement<T> newData)
+	public Future<Boolean> deleteElement(APIElement<T> deletionData)
 	{
 		// well, we want to delete the Object. This is final 		
 		Promise<Boolean> deletionPromise = Promise.<Boolean>promise();		
 		// This will return an updated Element given the newData object, so we don't need to update the internals of the object
 		// but can directly go on to write and save the data. 
-		newData.getDBElement(client, factory).onSuccess(element -> 
+		deletionData.getDBElement(client, factory).onSuccess(element -> 
 		{
 			element.setVisible(false);
 			element.save(client).onSuccess(Void -> {
@@ -345,8 +366,8 @@ public class ElementManager<T extends ElementBase> {
 	/**
 	 * Delete the given element. This does NOT actually delete the element, but makes it invisible, so it can still be used but it can no longer be modified or updated. 
 	 * Elements that contain it will still be valid, but the element can no longer be updated. 
-	 * @param newData
-	 * @return
+	 * @param UUID the UUID of the element to delete
+	 * @return A {@link Future} that succeeds if the element was deleted
 	 */
 	public Future<Boolean> deleteElement(String UUID)
 	{
@@ -368,8 +389,8 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Finally remove the given Element. There will be a last check,  
-	 * @param newData
-	 * @return
+	 * @param UUID the uuid of the element to remove 
+	 * @return A {@link Future} that succeeds if the element was deleted
 	 */
 	public Future<Boolean> removeElementAndCleanUpGit(String UUID)
 	{
@@ -417,9 +438,9 @@ public class ElementManager<T extends ElementBase> {
 	
 	/**
 	 * Get the List of all elements of the specified type. 
-	 * Returns a list of 
-	 * @param full - whether to obtain all (including invisible) elements.
-	 * @return
+	 * Returns a list of the elements handled by this Manager
+	 * @param full whether to obtain all (including invisible) elements (access was checked before).
+	 * @return A {@link Future} that contains a list of all elements 
 	 */
 	public Future<JsonArray> getElementList(boolean full)
 	{
@@ -462,8 +483,8 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Get the List of all elements of the specified type. 
-	 * Returns a list of 
-	 * @return
+     * Returns a list of the elements handled by this Manager
+	 * @return A {@link Future} that contains a list of all elements 
 	 */
 	public Future<JsonArray> getElementList()
 	{
@@ -471,9 +492,10 @@ public class ElementManager<T extends ElementBase> {
 	}
 	
 	/**
-	 * Get the List of all elements of the specified type. 
-	 * Returns a list of 
-	 * @return
+	 * Get the List of all elements of the specified type for the given permissions. 
+	 * Returns a list of the elements handled by this Manager
+	 * @param permissions the permissions with which to select the elements  
+	 * @return A {@link Future} that contains a list of all elements 
 	 */
 	public Future<JsonArray> getElementList(JsonArray permissions)
 	{
@@ -521,9 +543,9 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Get the list of all tags for the given element.  
-	 * Returns a list of 
+	 * Returns a list of tags 
 	 * @param id The id of the element in question
-	 * @return
+	 * @return Returns a list of the tags of the given element
 	 */
 	public Future<JsonArray> getTagListForElement(String id)
 	{
@@ -554,7 +576,7 @@ public class ElementManager<T extends ElementBase> {
 	 * Get the Tag of a specific version of an element, if it exists (null otherwise).  
 	 * @param id The id of the element in question
 	 * @param version The version of the element
-	 * @return
+	 * @return A {@link Future} of the Tag (if any) for the given element and version
 	 */
 	public Future<String> getTagForElementVersion(String id, String version)
 	{
@@ -650,7 +672,7 @@ public class ElementManager<T extends ElementBase> {
 	 * Add Tag to a specific version of the element
 	 * @param elementID the elementID for which to remove versions
 	 * @param version the version to add the tag to.
-	 * @param tagsToRemove the tags to remove from the element.
+	 * @param tag the tags to remove from the element.
 	 * @return A successful {@link Future} if the tags were removed.
 	 */
 	public Future<Void> addTagToVersion(String elementID, String version, String tag)
@@ -713,7 +735,7 @@ public class ElementManager<T extends ElementBase> {
 	 * Get the list of all versions for the given element.  
 	 * Returns a list of all versions of the element with the given ID
 	 * @param id The id of the element in question
-	 * @return
+	 * @return A {@link Future} of a JsonArray containing the Versions for the element
 	 */
 	public Future<JsonArray> getVersionListForElement(String id)
 	{
@@ -817,7 +839,7 @@ public class ElementManager<T extends ElementBase> {
 	 * @param elementID the Id of the element 
 	 * @param elementVersion the Version of the element
 	 * @param filename the filename of the requested file
-	 * @return a Future of the Datalake file associated with the given file at this version for the element.
+	 * @return a {@link Future} of the {@link DataLakeFile} associated with the given file at this version for the element.
 	 */
 	public Future<DataLakeFile> handleGetFile(String elementID, String elementVersion, String filename)
 	{
@@ -829,7 +851,7 @@ public class ElementManager<T extends ElementBase> {
 	 * @param elementVersion the version of the element to add the file to
 	 * @param filename the name of the file
 	 * @param upload the upload to associate with the file.
-	 * @return A Future with the NEw Version of the repository for this element with the data added.
+	 * @return A {@link Future} with the NEw Version of the repository for this element with the data added.
 	 */
 	public Future<String> handlePostFile(String elementID, String elementVersion, String filename, SOILEUpload upload)
 	{
@@ -844,9 +866,9 @@ public class ElementManager<T extends ElementBase> {
 	 * Post a given upload to the given task at the given version. Return the new version of the element with the file added.  
 	 * @param elementID the id of the element
 	 * @param elementVersion the version of the element to add the file to
-	 * @param the name of the directory all the files are to be extracted to.
+	 * @param dirName the name of the directory all the files are to be extracted to.
 	 * @param uploads the files to be uploaded
-	 * @return A Future with the NEw Version of the repository for this element with the data added.
+	 * @return A {@link Future} with the NEw Version of the repository for this element with the data added.
 	 */
 	public Future<String> handlePostFiles(String elementID, String elementVersion, String dirName, List<FileUpload> uploads)
 	{
@@ -879,6 +901,12 @@ public class ElementManager<T extends ElementBase> {
 		return filesUploadedPromise.future();
 	}
 
+	/**
+	 * Check whether the repo (element) exists and has the specified version 
+	 * @param UUID The UUID of the element (repo)
+	 * @param version the version to check
+	 * @return A {@link Future} of whether the repo exists
+	 */
 	public Future<Boolean> doesRepoAtVersionExist(String UUID, String version)
 	{
 		return eb.request("soile.git.doesRepoAndVersionExist", new GitElement(getGitIDForUUID(UUID), version).toJson())
@@ -916,7 +944,7 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Get the supplier for the ElementType represented by this Manager
-	 * @return
+	 * @return the supplier used in this manager
 	 */
 	public Supplier<T> getElementSupplier()
 	{
@@ -924,7 +952,7 @@ public class ElementManager<T extends ElementBase> {
 	}
 	/**
 	 * Build an API element based on the given Json Object.
-	 * @param apiJson The json representing the API object. 
+	 * @param json The json representing the API object. 
 	 * @return an APIObject representing the given json
 	 */
 	public Future<APIElement<T>> getAPIElementFromJson(JsonObject json)
@@ -939,9 +967,9 @@ public class ElementManager<T extends ElementBase> {
 	
 	/**
 	 * Update an item adding a specific version. This is likely an element which has some files being added.
-	 * @param elementID
-	 * @param newVersion
-	 * @return
+	 * @param elementID the element to update
+	 * @param newVersion the version to add to the element
+	 * @return A {@link Future} of the new Version (supplied)
 	 */
 	private Future<String> updateItemWithVersion(String elementID, String newVersion)
 	{		
@@ -952,9 +980,9 @@ public class ElementManager<T extends ElementBase> {
 	}
 	/**
 	 * Static method to create a Project Manager
-	 * @param client
-	 * @param vertx
-	 * @return
+	 * @param client a {@link MongoClient} for db access
+	 * @param vertx {@link Vertx} instance for communication
+	 * @return a {@link ElementManager} for {@link Project}s
 	 */
 	public static ElementManager<Project> getProjectManager(MongoClient client, Vertx vertx)
 	{
@@ -963,9 +991,9 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Static method to create a Experiment Manager
-	 * @param client
-	 * @param vertx
-	 * @return
+	 * @param client a {@link MongoClient} for db access
+	 * @param vertx {@link Vertx} instance for communication
+	 * @return a {@link ElementManager} for {@link Experiment}s
 	 */
 	public static ElementManager<Experiment> getExperimentManager(MongoClient client, Vertx vertx)
 	{
@@ -974,9 +1002,9 @@ public class ElementManager<T extends ElementBase> {
 
 	/**
 	 * Static method to create a Task Manager
-	 * @param client
-	 * @param vertx
-	 * @return
+	 * @param client a {@link MongoClient} for db access
+	 * @param vertx {@link Vertx} instance for communication
+	 * @return a {@link ElementManager} for {@link Task}s
 	 */
 	public static ElementManager<Task> getTaskManager(MongoClient client, Vertx vertx)
 	{

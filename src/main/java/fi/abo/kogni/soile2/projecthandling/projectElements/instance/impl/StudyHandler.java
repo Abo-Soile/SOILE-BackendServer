@@ -36,20 +36,17 @@ public class StudyHandler {
 	
 	/**
 	 * Default constructor that sets up a Manager with DB connections.
-	 * @param participants the participants handler to obtain participants
-	 * @param dataLakeFolder The Folder where the dataLake for result files is located
 	 * @param client the mongoclient for connecting to the mongo database
+	 * @param vertx {@link Vertx} instance for communication
 	 */
 	public StudyHandler(MongoClient client, Vertx vertx) {
 		this(client, new StudyManager(client, vertx) );		
 	}
 
 	/**
-	 * Default constructor that sets up a Manager with DB connections.
-	 * @param participants the participants handler to obtain participants
-	 * @param dataLakeFolder The Folder where the dataLake for result files is located
+	 * Constructor using a pre-defined studymanager
 	 * @param client the mongoclient for connecting to the mongo database
-	 * @param manager a custom project Manager.
+	 * @param manager {@link StudyManager} for study retrieval 
 	 */
 	public StudyHandler(MongoClient client, StudyManager manager) {
 		super();
@@ -69,7 +66,8 @@ public class StudyHandler {
 	
 	/**
 	 * Deactivate a study
-	 * @param study the study to deactivate
+	 * @param id the study id to deactivate
+	 * @return A Future indicating success or failure of the operation
 	 */	
 	public Future<Void> deactivate(String id)
 	{		
@@ -78,7 +76,8 @@ public class StudyHandler {
 	
 	/**
 	 * Activate a study
-	 * @param study the study to activate
+	 * @param id the study id to activate
+	 * @return A Future indicating success or failure of the operation
 	 */	
 	public Future<Void> activate(String id)
 	{
@@ -87,7 +86,8 @@ public class StudyHandler {
 	
 	/**
 	 * Delete a study,
-	 * @return The Object that was deleted from the Study database
+	 * @param studyID the id of the study to delete
+	 * @return A {@link Future} if the  {@link JsonObject} that was deleted from the Study database
 	 */		
 	public Future<JsonObject> deleteStudy(String studyID)
 	{
@@ -107,9 +107,9 @@ public class StudyHandler {
 	}
 	
 	/**
-	 * Get a list of all Files associated with the specified {@link DBParticipant} within this {@link Study}.
-	 * @param p the {@link DBParticipant} for which to retrieve the file results.
-	 * @return
+	 * Get the datalake files for the {@link ParticipantFileResult} indicated
+	 * @param fileResults the results to retrieve the {@link DataLakeFile}s for
+	 * @return A Set of {@link DataLakeFile}s 
 	 */
 	public Set<DataLakeFile> getFilesinProject(Set<ParticipantFileResult> fileResults)
 	{
@@ -125,7 +125,7 @@ public class StudyHandler {
 	 * Add the participant to the project with the given ID.
 	 * @param projectInstanceID The id of the project to which to add the participant.
 	 * @param participant The id of the participant to add to the project.
-	 * @Return a Successfull future if the participant was added
+	 * @return a Successfull future if the participant was added
 	 */
 	public Future<Void> addParticipant(String projectInstanceID, Participant participant)
 	{
@@ -152,7 +152,7 @@ public class StudyHandler {
 	 * @param projectInstanceID The id of the project to which to add the participant.
 	 * @param participant The participant to remove from the project.
 	 * @param ensureDeletionFromStudy Whether this Future should fail, if the participant was just not present in the study.
-	 * @Return a Successfull future if the participant was removed
+	 * @return a Successfull future if the participant was removed
 	 */
 	public Future<Void> removeParticipant(String projectInstanceID, Participant participant, boolean ensureDeletionFromStudy)
 	{
@@ -198,6 +198,7 @@ public class StudyHandler {
 	 * 3. "name" a name field.
 	 * 4. "shortcut" (optional), that can be used as a shortcut to the project.
 	 * @param projectInformation The information needed to start this project.
+	 * @return A {@link Future} of the Study that was created
 	 */
 	public Future<Study> createStudy(JsonObject projectInformation)	
 	{
@@ -208,6 +209,7 @@ public class StudyHandler {
 	 * Load a project with the given ID. 
 	 * This can fail if the project does not exist.
 	 * @param projectInstanceID the instance ID of the project to retrieve.
+	 * @return a {@link Future} to the updated {@link Study}
 	 */
 	public Future<Study> loadUpToDateStudy(String projectInstanceID)
 	{
@@ -218,6 +220,7 @@ public class StudyHandler {
 	 * Load a project with the given ID and don't care whether it is current (only the ID is important here.. 
 	 * This can fail if the project does not exist.
 	 * @param projectInstanceID the instance ID of the project to retrieve.
+	 * @return A {@link Future} of the requested {@link Study}
 	 */
 	public Future<Study> loadPotentiallyOutdatedStudy(String projectInstanceID)
 	{
@@ -228,6 +231,8 @@ public class StudyHandler {
 	 * Update a study 
 	 * This can fail if the study does not exist OR if the requested update is not possible.
 	 * @param studyID the instance ID of the project to retrieve.
+	 * @param newData the new data to update the study with
+	 * @return a {@link Future} indicating whether the update was successful.
 	 */
 	public Future<Void> updateStudy(String studyID, JsonObject newData)
 	{

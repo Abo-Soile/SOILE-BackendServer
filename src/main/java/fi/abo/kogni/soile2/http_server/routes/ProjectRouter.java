@@ -13,13 +13,29 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.RoutingContext;
 
+/**
+ * The Router for Project routes
+ * @author Thomas Pfau
+ *
+ */
 public class ProjectRouter extends ElementRouter<Project>{
 
+	/**
+	 * Defaul constructor
+	 * @param manager The Project Manager to obtain projects
+	 * @param auth the {@link SoileAuthorization} used to chck Auth
+	 * @param eb the {@link EventBus} for communication
+	 * @param client the {@link MongoClient} for DB access
+	 */
 	public ProjectRouter(ElementManager<Project> manager, SoileAuthorization auth, EventBus eb, MongoClient client) {
 		super(manager, auth, eb, client);
 		// TODO Auto-generated constructor stub
 	}
-	
+	/**
+	 * Check whether a filter applies to the given Context
+	 * Context needs to contain the values and filter to check.  
+	 * @param context The {@link RoutingContext} to check
+	 */
 	public void isFilterValid(RoutingContext context)
 	{								
 		accessHandler.checkAccess(context.user(),null, Roles.Researcher,null,true)

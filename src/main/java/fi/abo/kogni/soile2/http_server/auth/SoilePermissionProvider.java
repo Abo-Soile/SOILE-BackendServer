@@ -34,7 +34,7 @@ public class SoilePermissionProvider {
 	/**
 	 * Get the target from the given permission. 
 	 * @param permissionString The permision string to obain the target from.
-	 * @return
+	 * @return the target of the permission
 	 */
 	public static String getTargetFromPermission(String permissionString)
 	{		
@@ -44,7 +44,7 @@ public class SoilePermissionProvider {
 	/**
 	 * Get the type of permission from the given permission. 
 	 * @param permissionString The permission string to obtain the type from.
-	 * @return
+	 * @return the type of the permission 
 	 */
 	public static String getTypeFromPermission(String permissionString)
 	{		
@@ -80,9 +80,9 @@ public class SoilePermissionProvider {
 	
 	/**
 	 * Build a permission String from targetID and {@link PermissionType};
-	 * @param targetID
-	 * @param type
-	 * @return
+	 * @param targetID the target of the permission
+	 * @param type the type of the permission
+	 * @return the permission string
 	 */
 	public static String buildPermissionString(String targetID, PermissionType type)
 	{
@@ -91,9 +91,9 @@ public class SoilePermissionProvider {
 
 	/**
 	 * Build a permission String from targetID and Type as String;
-	 * @param targetID
-	 * @param type
-	 * @return
+	 * @param targetID the target of the permission
+	 * @param type the type of the permission
+	 * @return the permission string
 	 */
 	public static String buildPermissionString(String targetID, String type)
 	{
@@ -104,9 +104,10 @@ public class SoilePermissionProvider {
 	
 	/**
 	 * Build a permission String from targetID and Type as String;
-	 * @param targetID
-	 * @param type
-	 * @return
+	 * @param targetID the target of the permission
+	 * @param type the type of the permission
+	 * @param regexp whether the target is a regexp 
+	 * @return the permission string
 	 */
 	public static String buildPermissionString(String targetID, String type, boolean regexp)
 	{
@@ -122,9 +123,9 @@ public class SoilePermissionProvider {
 	
 	/**
 	 * Build an {@link Authorization} based on targetID and Type
-	 * @param targetID
-	 * @param type
-	 * @return
+	 * @param targetID the target of the permission
+	 * @param type the type of the permission
+	 * @return The Authorization for the given permission request
 	 */
 	public static Authorization buildPermission(String targetID, PermissionType type)
 	{
@@ -133,9 +134,9 @@ public class SoilePermissionProvider {
 	
 	/**
 	 * Build an {@link Authorization} based on targetID and Type
-	 * @param targetID
-	 * @param type
-	 * @return
+	 * @param targetID the target of the permission
+	 * @param type the type of the permission
+	 * @return the Authorization for the given permission request
 	 */
 	public static Authorization buildPermission(String targetID, String type)
 	{
@@ -144,9 +145,9 @@ public class SoilePermissionProvider {
 
 	/**
 	 * Build a permission String from targetID and {@link PermissionType};
-	 * @param targetID
-	 * @param minimalPermission the minimal permission needed to match this query
-	 * @return
+	 * @param targetID the target of the permission
+     * @param minimalPermission the minimal permission needed to match this query
+	 * @return the permission query string
 	 */
 	public static String buildPermissionQuery(String targetID, PermissionType minimalPermission)
 	{
@@ -168,7 +169,7 @@ public class SoilePermissionProvider {
 	 * Get the highest permission from a list of permission types, ONLY READ/WRITE/FULL are supported by this function,
 	 * as execute is a special permission.
 	 * @param permissions the list of permissions
-	 * @return
+	 * @return the maximal permission type given the list of permissions 
 	 */
 	public static PermissionType getMaxPermission(List<PermissionType> permissions)
 	{		  	
@@ -189,11 +190,11 @@ public class SoilePermissionProvider {
 	
 	/**
 	 * Get an update Object for the given permission change.
-	 * @param targetID
-	 * @param change
-	 * @param newPermission
-	 * @param targetField
-	 * @return
+	 * @param targetID the target for the change
+	 * @param change the change
+	 * @param newPermission the new type of permission
+	 * @param targetField the target field to update
+	 * @return the update Json Object to use with the mongo db.
 	 */
 	public static JsonObject getPermissionUpdate(String targetID, PermissionChange change, PermissionType newPermission, String targetField)
 	{
@@ -217,7 +218,8 @@ public class SoilePermissionProvider {
 	 * @param change - the type of change, i.e. whether add/remove or replace. Change will cause an error here, as it is a more complex operation that isn't implemented for multiple changes.
 	 * @param changedPermissions - All permissions (ID$Perm format) that are changing with this update. 
 	 * @param targetField the target 
-	 * @return
+	 * @return the JsonObject to use with Mongo to change permissions
+	 * @throws CannotUpdateMultipleException if an update is not possible
 	 */
 	public static JsonObject getPermissionUpdate(PermissionChange change, JsonArray changedPermissions, String targetField) throws CannotUpdateMultipleException
 	{
@@ -234,7 +236,12 @@ public class SoilePermissionProvider {
 	}
 	
 	
-	
+	/**
+	 * Get general access to a target with certain permissions excluded
+	 * @param targetID the target id
+	 * @param excludedPermission which permissions to exclude
+	 * @return the remaining permissions.
+	 */
 	public static JsonArray getOtherAccess(String targetID, PermissionType excludedPermission)
 	{
 		JsonArray result = new JsonArray();

@@ -14,12 +14,22 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Class for compiled code retrieval. 
+ * @author Thomas Pfau
+ *
+ */
 public class CompiledCodeRetriever implements DataRetriever<GitFile, String> {
 
 	EventBus eb;
 	String targetAddress;		
 	static final Logger LOGGER = LogManager.getLogger(CompiledCodeRetriever.class);
 
+	/**
+	 * Default constuctor
+	 * @param targetAddress the targetAddress (on the eventbus) for the code Retriever 
+	 * @param eb the {@link EventBus} for communication
+	 */
 	public CompiledCodeRetriever(EventBus eb, String targetAddress) {
 		super();
 		this.eb = eb;
@@ -48,7 +58,11 @@ public class CompiledCodeRetriever implements DataRetriever<GitFile, String> {
 	public void getElement(GitFile key, Handler<AsyncResult<String>> handler) {
 		handler.handle(getElement(key));		
 	}		
-	
+	/**
+	 * Compile code
+	 * @param code the code to compile
+	 * @return {@link Future} of the compiled code
+	 */
 	public Future<String> compileCode(String code)
 	{
 		if(code == null)

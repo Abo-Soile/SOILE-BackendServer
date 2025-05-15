@@ -30,6 +30,9 @@ public class TaskInformationverticle extends AbstractVerticle{
 
 	
 	ElementManager<Task> taskManager;	
+	/**
+	 * Class logger
+	 */
 	public static final Logger LOGGER = LogManager.getLogger(TaskInformationverticle.class);
 
 	
@@ -65,7 +68,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 
 	/**
 	 * Get information on the requested Task.
-	 * @param request
+	 * @param request the message containing the request data (UUID field in JSON Object) and which to reply to (with a {@link SoileCommUtils} successObject that contains the task in the DATAField
 	 */
 	public void getTaskInfo(Message<JsonObject> request)
 	{
@@ -81,7 +84,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 	
 	/**
 	 * Get the API Element representing the requested task.
-	 * @param request
+	 * @param request the message containing the request data (UUID and version fields in JSON Object) and which to reply to (with a {@link SoileCommUtils} successObject that contains the task API object Json in the DATAField
 	 */
 	public void getTaskAPIData(Message<JsonObject> request)
 	{
@@ -102,7 +105,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 	
 	/**
 	 * Get information on the requested Task.
-	 * @param request
+	 * @param request the message containing the request data (UUID field in JSON Object) and which to reply to (with a {@link SoileCommUtils} successObject that contains the requested data in the DATA field
 	 */
 	public void getTaskVersionInfo(Message<JsonObject> request)
 	{
@@ -123,14 +126,14 @@ public class TaskInformationverticle extends AbstractVerticle{
 
 	/**
 	 * Get a resource for a task
-	 * @param request
+	 * @param request the message containing the request data (UUID field in JSON Object) and which to reply to (with a DataLakeFile)
 	 */
 	public void getResource(Message<JsonObject> request)
 	{		
 		GitFile target = new GitFile(request.body());
 		taskManager.handleGetFile(target.getRepoID(), target.getRepoVersion(), target.getFileName())
-		.onSuccess(task -> {
-			request.reply(task);
+		.onSuccess(datalakeFile -> {
+			request.reply(datalakeFile);
 		})
 		.onFailure(err -> {			
 			request.fail(500, err.getMessage());
@@ -141,7 +144,7 @@ public class TaskInformationverticle extends AbstractVerticle{
 	/**
 	 * Get a resource for a task
 	 * Request for a Json that contains UUID and version
-	 * @param request
+	 * @param request the message containing the request data (UUID and version fields in JSON Object) and which to reply to (with a {@link SoileCommUtils} successObject that contains the requested data in the DATA field
 	 */
 	public void getResourceList(Message<JsonObject> request)
 	{		
@@ -157,14 +160,14 @@ public class TaskInformationverticle extends AbstractVerticle{
 	/**
 	 * Get the History of a specific version of a task 
 	 * Request for a Json that contains UUID and version
-	 * @param request
+	 * @param request the message containing the request data (UUID and version fields in JSON Object) and which to reply to (with a {@link SoileCommUtils} successObject that contains the requested data in the DATA field
 	 */
 	public void getHistory(Message<JsonObject> request)
 	{		
 		GitElement target = new GitElement(Task.typeID + request.body().getString("UUID"), request.body().getString("version"));		
 		vertx.eventBus().request("soile.git.getHistory", target.toJson())
-		.onSuccess(taskResourceList -> {
-			request.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, taskResourceList.body()));			
+		.onSuccess(history -> {
+			request.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, history.body()));			
 		})
 		.onFailure(err -> {			
 			request.fail(500, err.getMessage());

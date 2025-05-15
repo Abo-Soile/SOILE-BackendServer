@@ -28,8 +28,17 @@ public class SoileCookieAuth {
 	private final Vertx vertx;
 	private MongoClient client;
 	private SoileCookieCreationHandler cookieHandler;
+	/**
+	 * Logger for the class
+	 */
 	public static final Logger LOGGER = LogManager.getLogger(SoileCookieAuth.class);
 	
+	/**
+	 * DEfault Constructor
+	 * @param vertx the {@link Vertx} instance
+	 * @param client the {@link MongoClient} for db access
+	 * @param cookieHandler {@link SoileCookieCreationHandler} for cookie building
+	 */
 	public SoileCookieAuth(Vertx vertx, MongoClient client, SoileCookieCreationHandler cookieHandler)
 	{
 		this.client = client;
@@ -40,8 +49,8 @@ public class SoileCookieAuth {
 	/**
 	 * Retrieve a user for the given context if it has a relevant cookie. 
 	 * TODO: Ensure that this also works with Tokens. Might not be possible. For Tokens, we probably have to 
-	 * @param context
-	 * @return
+	 * @param context the {@link RoutingContext} for the request
+	 * @return A {@link Future} of the {@link User} in the context
 	 */
 	public Future<User> authenticate(RoutingContext context ) {
 		LOGGER.debug("Checking session cookies");

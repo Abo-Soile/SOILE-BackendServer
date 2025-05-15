@@ -23,6 +23,7 @@ import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidEmailAdd
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidRoleException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
+import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -59,16 +60,37 @@ public class SoileUserManager implements MongoUserUtil{
 	private final MongoAuthenticationOptions authnOptions;
 	private final MongoAuthorizationOptions authzOptions;
 	private final String hashingAlgorithm;
-	private HashMap<PermissionChange, String> permissionMap;	
+	private HashMap<PermissionChange, String> permissionMap;
+	/**
+	 * Types of permission changes
+	 * @author Thomas Pfau
+	 *
+	 */
 	public static enum PermissionChange{
+		/**
+		 * Remove a permission
+		 */
 		Remove,
+		/**
+		 * Add a permission
+		 */
 		Add,
+		/**
+		 * Set (replacing existing) permissions
+		 */
 		Set,
+		/**
+		 * Update / alter existing permissions
+		 */
 		Update
 	}
 
 
 
+	/**
+	 * Default constructor
+	 * @param client The {@link MongoClient} for db interaction
+	 */
 	public SoileUserManager(MongoClient client) {
 		this.client = client;
 		this.authnOptions = SoileConfigLoader.getMongoAuthNOptions();
@@ -83,7 +105,7 @@ public class SoileUserManager implements MongoUserUtil{
 
 	/**
 	 * Set up the DB (i.e. making the usernameField a unique index.
-	 * @return
+	 * @return A {@link Future} that is successfull if the db was set up successfully
 	 */
 	public Future<Void> setupDB()
 	{		
@@ -100,8 +122,8 @@ public class SoileUserManager implements MongoUserUtil{
 	 * Check whether the Email listed is present in the email list of the database.
 	 * The handler needs to handle the AsyncResult that is the number of entries with that email.
 	 * @param email The email address to check
-	 * @param handler
-	 * @return
+	 * @param handler the {@link Handler} to handle the result of the call 
+	 * @return this object for chained commands
 	 */
 	public SoileUserManager checkEmailPresent(String email, Handler<AsyncResult<Boolean>> handler)
 	{		
@@ -113,8 +135,8 @@ public class SoileUserManager implements MongoUserUtil{
 	 * Check whether the Email listed is present in the email list of the database.
 	 * The handler needs to handle the AsyncResult that is the number of entries with that email.
 	 * @param email The email address to check
-	 * @param handler
-	 * @return
+	 * @param excludeUser A user to exclude for the lookup
+	 * @return A {@link Future} that contains a boolean inidcating whether the email is in use
 	 */
 	public Future<Boolean> isEmailInUse(String email, String excludeUser)
 	{
@@ -143,7 +165,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param skip how many results to skip
 	 * @param limit how many results at most to return
 	 * @param query a search query to look up in the usernames
-	 * @param type
+	 * @param type The type of user (i.e. their role, Researcher, Participant, Admin), providing User will return all Researchers and Admins
 	 * @param namesOnly only list the names
 	 * @return A List of JsonObjects with the results.
 	 */
@@ -227,7 +249,10 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param skip how many results to skip
 	 * @param limit how many results at most to return
 	 * @param query a search query to look up in the usernames
-	 * @return A List of JsonObjects with the results.
+	 * @param type The type of user (i.e. their role, Researcher, Participant, Admin), providing User will return all Researchers and Admins
+	 * @param namesOnly only list the names
+	 * @param handler {@link Handler} for the result 
+	 * @return this object
 	 */
 	public SoileUserManager getUserList(Integer skip, Integer limit, String query, String type, boolean namesOnly, Handler<AsyncResult<JsonArray>> handler)
 	{
@@ -239,12 +264,12 @@ public class SoileUserManager implements MongoUserUtil{
 
 	/**
 	 * Change roles or permissions indicating the correct field of the database. 
-	 * @param username - the id to add the roles/permissions for.
-	 * @param options - the roles or permissions database field
-	 * @param permissions - the list of roles or permissions to change
-	 * @param alterationFlag - Whether to add, remove or replace the indicated permissions. 
-	 * @param resultHandler - the handler for the results.	 
-	 * @return this
+	 * @param username the id to add the roles/permissions for.
+	 * @param options The {@link MongoAuthorizationOptions} used (indicating field names)
+	 * @param permissions the list of roles or permissions to change
+	 * @param alterationFlag Whether to add, remove or replace the indicated permissions. 
+	 * @param resultHandler the handler for the results.	 
+	 * @return this  object
 	 */
 	public SoileUserManager changePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, PermissionChange alterationFlag, Handler<AsyncResult<Void>> resultHandler)
 	{
@@ -270,12 +295,13 @@ public class SoileUserManager implements MongoUserUtil{
 	
 	/**
 	 * Change roles or permissions indicating the correct field of the database. 
-	 * @param username - the id to add the roles/permissions for.
-	 * @param options - the roles or permissions database field
-	 * @param permissions - the list of roles or permissions to change
-	 * @param alterationFlag - Whether to add, remove or replace the indicated permissions. 
-	 * @param resultHandler - the handler for the results.	 
-	 * @return this
+	 * @param username the id to add the roles/permissions for.
+	 * @param options The {@link MongoAuthorizationOptions} used (indicating field names)
+	 * @param targetElement the target of the permission change
+	 * @param newType the new type of permission
+	 * @param alterationFlag the flag of the change (add/remove/set) 
+	 * @param resultHandler the {@link Handler} of the result
+	 * @return this object
 	 */
 	public SoileUserManager changePermissions(String username, MongoAuthorizationOptions options, String targetElement, PermissionType newType, PermissionChange alterationFlag, Handler<AsyncResult<Void>> resultHandler)
 	{
@@ -312,11 +338,11 @@ public class SoileUserManager implements MongoUserUtil{
 	
 	/**
 	 * Update the permissions for a given user, replacing the old ones by the new ones.
-	 * @param username - the id of the user to remove permissions
-	 * @param options - the options to use for the update
-	 * @param permission - the the permission to remove
-	 * @param resultHandler - a result handler to handle the results.
-	 * @return
+	 * @param username the id of the user to remove permissions
+	 * @param options The {@link MongoAuthorizationOptions} used (indicating field names)
+	 * @param permissions the the permissions to remove
+	 * @param resultHandler a result handler to handle the results.
+	 * @return this object
 	 */
 	public SoileUserManager updatePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<Void>> resultHandler)
 	{
@@ -326,10 +352,11 @@ public class SoileUserManager implements MongoUserUtil{
 
 	/**
 	 * Update the roles for a given user, replacing the old ones by the new ones.
-	 * @param username - the id of the user to remove permissions
-	 * @param permission - the the permission to remove
-	 * @param resultHandler - a result handler to handle the results.
-	 * @return
+	 * @param username the id of the user to remove permissions
+	 * @param options The {@link MongoAuthorizationOptions} used (indicating field names)
+	 * @param role the new role
+	 * @param resultHandler a result handler to handle the results.
+	 * @return this object
 	 */
 	public SoileUserManager updateRole(String username, MongoAuthorizationOptions options, String role, Handler<AsyncResult<JsonObject>> resultHandler)
 	{
@@ -364,10 +391,11 @@ public class SoileUserManager implements MongoUserUtil{
 	}
 	/**
 	 * Remove a permission for a specific user
-	 * @param username - the id of the user to remove permissions
-	 * @param permission - the the permission to remove
-	 * @param resultHandler - a result handler to handle the results.
-	 * @return
+	 * @param username the id of the user to remove permissions
+	 * @param options The {@link MongoAuthorizationOptions} used (indicating field names)
+	 * @param permission the the permission to add (as a permission string)
+	 * @param resultHandler a result handler to handle the results.
+	 * @return this object 
 	 */
 	public SoileUserManager addPermission(String username, MongoAuthorizationOptions options, String permission, Handler<AsyncResult<Void>> resultHandler)
 	{
@@ -377,10 +405,11 @@ public class SoileUserManager implements MongoUserUtil{
 
 	/**
 	 * Remove a permission for a specific user
-	 * @param username - the id of the user to remove permissions
-	 * @param permissions - the the permissions to remove
-	 * @param resultHandler - a result handler to handle the results.
-	 * @return
+	 * @param username the id of the user to remove permissions
+	 * @param options The {@link MongoAuthorizationOptions} used (indicating field names)
+	 * @param permissions the the permissions to add
+	 * @param resultHandler a result handler to handle the results.
+	 * @return this object
 	 */
 	public SoileUserManager addPermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<Void>> resultHandler)
 	{
@@ -390,10 +419,11 @@ public class SoileUserManager implements MongoUserUtil{
 
 	/**
 	 * Remove a permission for a specific user
-	 * @param username - the id of the user to remove permissions
-	 * @param permission - the the permission to remove
-	 * @param resultHandler - a result handler to handle the results.
-	 * @return
+	 * @param username the id of the user to remove permissions
+	 * @param options The {@link MongoAuthorizationOptions} used (indicating field names)
+	 * @param permission the the permission to remove
+	 * @param resultHandler a result handler to handle the results.
+	 * @return this object
 	 */
 	public SoileUserManager removePermission(String username, MongoAuthorizationOptions options, String permission, Handler<AsyncResult<Void>> resultHandler)
 	{
@@ -403,17 +433,25 @@ public class SoileUserManager implements MongoUserUtil{
 
 	/**
 	 * Remove a permission for a specific user
-	 * @param username - the id of the user to remove permissions
-	 * @param permissions - the the permissions to remove
-	 * @param resultHandler - a result handler to handle the results.
-	 * @return
+	 * @param username the id of the user to remove permissions
+	 * @param options The {@link MongoAuthorizationOptions} used (indicating field names)
+	 * @param permissions the the permissions to remove
+	 * @param resultHandler a result handler to handle the results.
+	 * @return this object
 	 */
 	public SoileUserManager removePermissions(String username, MongoAuthorizationOptions options, JsonArray permissions, Handler<AsyncResult<Void>> resultHandler)
 	{
 		return this.changePermissions(username, options, permissions, PermissionChange.Remove, resultHandler);
 
-	}
-
+	}	
+	
+	/**
+	 * create a user with the given name and password
+	 * @param username name of the user
+	 * @param password password of the new user
+	 * @param resultHandler the {@link Handler} handling the result (
+	 * @return this {@link SoileUserManager}
+	 */
 	public SoileUserManager createUser(String username, String password, Handler<AsyncResult<String>> resultHandler) {
 		if (username == null || password == null) {
 			resultHandler.handle(Future.failedFuture("username or password are null"));			
@@ -431,9 +469,8 @@ public class SoileUserManager implements MongoUserUtil{
 
 	/**
 	 * Delete a user from the database
-	 * @param username - 
-	 * @param cleanupFiles - whether to remove all data from experiments. 
-	 * @param resultHandler
+	 * @param username the username to delete
+	 * @param resultHandler the handler handling the result
 	 * @return this {@link SoileUserManager}
 	 */	
 	public SoileUserManager deleteUser(String username, Handler<AsyncResult<Void>> resultHandler)
@@ -441,7 +478,11 @@ public class SoileUserManager implements MongoUserUtil{
 		resultHandler.handle(deleteUser(username));		
 		return this;
 	}
-
+	/**
+	 * Delete the user with the given name 
+	 * @param username the username of the user to delete
+	 * @return A {@link Future} that is successful if the user was deleted.
+	 */
 	public Future<Void> deleteUser(String username)
 	{
 		// CleanUp of the users data needs to be done elsewhere, and this needs to be done after the cleanup.
@@ -465,8 +506,8 @@ public class SoileUserManager implements MongoUserUtil{
 
 	/**
 	 * Retrieve the participant ID of this user in the given project. 
-	 * @param username
-	 * @param project
+	 * @param username the username to get the partiicpant for
+	 * @param project the project for which to get the {@link Participant}s ID for this given username
 	 * @return A Future of the ID of the participant for this user in the project.If the user has no participant in the project, the Future will be <code>null</code>. 
 	 */
 	public Future<String> getParticipantIDForUserInStudy(String username, String project)
@@ -496,7 +537,7 @@ public class SoileUserManager implements MongoUserUtil{
 	/**
 	 * Get all project/participant ID combinations for the given user.
 	 * @param username The user for which data is requested.
-	 * @return A {@link Future} of a {@link JsonArray} containing objects  with { UUID: <studyID>, participantID : <IDofParticipantInStudy> }. 
+	 * @return A {@link Future} of a {@link JsonArray} containing objects  with { UUID: {@literal <}participantID : {@literal <}IDofParticipantInStudy> }. 
 	 */
 	public Future<JsonArray> getParticipantInfoForUser(String username)
 	{
@@ -540,7 +581,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param username The username to change
 	 * @param studyID the study ID to remove from
 	 * @param participantID the participantID to delete
-	 * @return
+	 * @return a successful {@link Future} if the user was removed from the study
 	 */
 	public Future<Void> removeUserAsParticipant(String username, String studyID, String participantID)
 	{
@@ -555,6 +596,13 @@ public class SoileUserManager implements MongoUserUtil{
 	}
 	
 
+	/**
+	 * Create a user (hashed password) 
+	 * @param username the username of the user to create
+	 * @param hash the password hash to use
+	 * @param resultHandler the Handler that should handle the id of the mongodb object created for the user
+	 * @return this {@link SoileUserManager}
+	 */
 	public SoileUserManager createHashedUser(String username, String hash, Handler<AsyncResult<String>> resultHandler) {
 		if (username == null || hash == null) {
 			resultHandler.handle(Future.failedFuture("username or password hash are null"));
@@ -692,7 +740,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param username The username for which to add a session
 	 * @param sessionID the ID of the session to add 
 	 * @param handler the handler to handle the resulting {@link MongoClientUpdateResult}
-	 * @return
+	 * @return this {@link SoileUserManager} for fluent use
 	 */
 	public SoileUserManager addUserSession(String username, String sessionID, Handler<AsyncResult<MongoClientUpdateResult>> handler)	
 	{
@@ -780,7 +828,7 @@ public class SoileUserManager implements MongoUserUtil{
 	 * @param username the username of the user
 	 * @param sessionID the sessionID to check
 	 * @param handler the handler to handle the {@link Boolean} {@link Future}
-	 * @return
+	 * @return this {@link SoileUserManager} for fluent use
 	 */
 	public SoileUserManager isSessionValid(String username, String sessionID, Handler<AsyncResult<Boolean>> handler)	
 	{
@@ -954,10 +1002,9 @@ public class SoileUserManager implements MongoUserUtil{
 	}
 
 	/**
-	 * Set the user information for a user (fullname, email, role) 
+	 * Get the user information for a user (fullname, email, role) 
 	 * @param username the user for which to change the information
-	 * @param command the new values ( currently only "email", "role" and "fullname" fields are supported.
-	 * @return A Future that indicates whether this operation was a success
+	 * @return A {@link Future} of the {@link JsonObject} containing the data
 	 */
 	public Future<JsonObject> getUserInfo(String username) {
 		JsonObject query = new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), username);
@@ -991,9 +1038,10 @@ public class SoileUserManager implements MongoUserUtil{
 	}
 	
 	/**
-	 * Remove Participants in specific studies from users. This is mainly necessary if a study got reset. 
-	 * @param studyID
-	 * @param participantID
+	 * Remove Participants in specific studies from users. This is mainly necessary if a study got reset.
+	 * This is primarily an update method for the user db, in order to stay in sync with the participant dbs. 
+	 * @param studyID the ID of the study to remove the participant form 
+	 * @param participantID the participant to remove
 	 * @return A Future of a JsonOBject with the permissions.
 	 */
 	public Future<Void> removeParticipantInStudyFromUsers(String studyID, String participantID) {
@@ -1039,6 +1087,7 @@ public class SoileUserManager implements MongoUserUtil{
 	
 	/**
 	 * Get users with access to a specific Study
+	 * @param studyID the Study for which to retrieve users 
 	 * @return A {@link JsonArray} of objects with "user" and "access" fields, where access is one of READ / READ_WRITE / FULL and user is a username  
 	 */
 	public Future<JsonArray> getUserWithAccessToStudy(String studyID) {

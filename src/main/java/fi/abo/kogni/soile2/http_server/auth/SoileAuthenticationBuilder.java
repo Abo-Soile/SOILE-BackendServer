@@ -22,7 +22,7 @@ public class SoileAuthenticationBuilder {
 	private SimpleAuthenticationHandler tokenHandler;
 	/**
 	 * Get a JWTAuth Provider for the Soile platform
-	 * @param vertx
+	 * @param vertx {@link Vertx} instance for communication
 	 * @return A {@link JWTAuth} provider with a soile specific config (generated if it did not previously exist)
 	 */
 	public synchronized JWTAuth getJWTAuthProvider(Vertx vertx)
@@ -39,7 +39,9 @@ public class SoileAuthenticationBuilder {
 	
 	/**
 	 * A {@link AuthenticationHandler} that authenticates using cookies. 
-	 * @param vertx
+	 * @param vertx {@link Vertx} instance for communication 
+	 * @param client MongoClient for db access
+	 * @param cookieCreationHandler handler for cookie creation
 	 * @return a Auth Provider using Cookies for auth
 	 */
 	public synchronized SimpleAuthenticationHandler getCookieAuthProvider(Vertx vertx, MongoClient client, SoileCookieCreationHandler cookieCreationHandler)
@@ -56,7 +58,8 @@ public class SoileAuthenticationBuilder {
 	/**
 	 * A {@link AuthenticationHandler} that authenticates using a token. Should only be used for Project execution specific 
 	 * end-points 
-	 * @param vertx
+	 * @param partHandler {@link ParticipantHandler} to handle participant data
+	 * @param client {@link MongoClient} for db interaction
 	 * @return a Auth Provider using Cookies for auth
 	 */
 	public synchronized SimpleAuthenticationHandler getTokenAuthProvider(ParticipantHandler partHandler, MongoClient client)

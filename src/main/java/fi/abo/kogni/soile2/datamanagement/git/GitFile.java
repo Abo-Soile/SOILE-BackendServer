@@ -12,12 +12,22 @@ public class GitFile {
 	private String fileName;
 	private String repoID;
 	private String repoVersion;	
+	/**
+	 * Default constructor using individual data
+	 * @param fileName the Filename of the file
+	 * @param repoID the id of the repo the file is in
+	 * @param repoVersion the version of the file
+	 */
 	public GitFile(String fileName, String repoID, String repoVersion) {
 		super();
 		this.fileName = fileName;
 		this.repoID = repoID;
 		this.repoVersion = repoVersion;
 	}
+	/**
+	 * Default constructor using data from a Json object
+	 * @param json the Json containing the data
+	 */
 	public GitFile(JsonObject json) {
 		super();
 		this.fileName = json.getString("filename");
@@ -27,21 +37,21 @@ public class GitFile {
 	
 	/**
 	 * Get the fileName this File represents.
-	 * @return
+	 * @return the name of the file
 	 */
 	public String getFileName() {
 		return fileName;
 	}
 	/**
 	 * Get the RepoId this file should be stored in / retrieved from
-	 * @return
+	 * @return the id of the repo
 	 */
 	public String getRepoID() {
 		return repoID;
 	}
 	/**
 	 * Get the version of the file that will be looked up / stored to.
-	 * @return
+	 * @return the version of the file
 	 */
 	public String getRepoVersion() {
 		return repoVersion;

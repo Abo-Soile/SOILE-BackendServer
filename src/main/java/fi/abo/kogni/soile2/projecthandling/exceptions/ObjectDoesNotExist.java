@@ -7,6 +7,10 @@ package fi.abo.kogni.soile2.projecthandling.exceptions;
  */
 public class ObjectDoesNotExist extends Exception {
 
+	/**
+	 * Default constructor
+	 * @param ID the ID that doesn't exist
+	 */
 	public ObjectDoesNotExist(String ID)
 	{
 		super("Object with the id " + ID + " does not exist");

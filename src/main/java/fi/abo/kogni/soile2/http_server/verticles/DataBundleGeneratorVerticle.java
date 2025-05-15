@@ -43,6 +43,12 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	static final Logger LOGGER = LogManager.getLogger(DataBundleGeneratorVerticle.class);
 
 
+	/**
+	 * Defaul constructor
+	 * @param client the {@link MongoClient} for db access
+	 * @param projHandler the {@link StudyHandler} for study access
+	 * @param partHandler the {@link ParticipantHandler} for participant access
+	 */
 	public DataBundleGeneratorVerticle(MongoClient client, StudyHandler projHandler, ParticipantHandler partHandler)
 	{
 		dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
@@ -84,12 +90,33 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	 */
 	public enum DownloadStatus
 	{
+		/**
+		 * Download is currently being created
+		 */
 		creating,
+		/**
+		 * Download files are currently being collected
+		 */
 		collecting,		
+		/**
+		 * Download is ready
+		 */
 		downloadReady,
+		/**
+		 * There were problems with the download
+		 */
 		problems,
+		/**
+		 * Download generation failed
+		 */
 		failed,
+		/**
+		 * Download doesn't exist
+		 */
 		notExistent,
+		/**
+		 * Download not ready (yet)
+		 */
 		notReady
 
 	}
@@ -99,7 +126,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	 * The message needs to have a "requestType" (participants, participant, tasks or task).
 	 * participants/tasks need to be JsonArrays, task/participant are strings. 
 	 * along with a projectID for which to generate the download.  
-	 * @param message
+	 * @param message the message containing the JsonObject that describes what download to create.
 	 */
 	public void createDownload(Message<JsonObject> message)
 	{

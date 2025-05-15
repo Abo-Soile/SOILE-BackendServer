@@ -10,8 +10,8 @@ public interface ParticipantFactory {
 	
 	/**
 	 * Create a Participant based on the provided data
-	 * @param data
-	 * @return
+	 * @param data the JsonData to use to create a Participant
+	 * @return the created {@link Participant}
 	 */
 	public Participant createParticipant(JsonObject data);
 }

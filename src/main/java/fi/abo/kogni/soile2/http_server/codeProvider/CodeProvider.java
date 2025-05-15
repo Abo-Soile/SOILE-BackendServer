@@ -13,14 +13,14 @@ public interface CodeProvider {
 
 	/**
 	 * Get the compiled Code associated with the given {@link GitFile}.
-	 * @param file
-	 * @return
+	 * @param file the file to retrieve the code for
+	 * @return a {@link Future} of the code
 	 */
 	Future<String> getCode(GitFile file);
 
 	/**
 	 * Compile the given code 
-	 * @param code
+	 * @param code the code to compile
 	 * @return A {@link Future} of the compild code as string
 	 */
 	Future<String> compileCode(String code);

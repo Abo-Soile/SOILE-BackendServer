@@ -172,7 +172,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	
 	/**
 	 * Set the Deployment options for the verticles required for routing.
-	 * @param opts
+	 * @param opts the {@link DeploymentOptions}
 	 */
 	public void setDeploymentOptions(DeploymentOptions opts)
 	{
@@ -190,7 +190,10 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		return RouterBuilder.create(vertx, config().getString("api"));
 	}
 
-	
+	/**
+	 * Get the router
+	 * @return the {@link Router}
+	 */
 	public Router getRouter()
 	{
 		return this.soileRouter;
@@ -198,7 +201,7 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	
 	/**
 	 * Clean up old cached data.
-	 * @param cleanupRequest
+	 * @param cleanupRequest A message (could be void) 
 	 */
 	public void cleanUP(Message<Object> cleanupRequest)
 	{
@@ -284,7 +287,10 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	}
 	
 
-	
+	/**
+	 * Test auth route
+	 * @param ctx the routing context
+	 */
 	public void testAuth(RoutingContext ctx)
 	{
 		LOGGER.debug("AuthTest got a request");

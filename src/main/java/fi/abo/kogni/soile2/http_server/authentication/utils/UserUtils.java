@@ -25,8 +25,11 @@ public class UserUtils {
 	/**
 	 * Build a user from the database result adding several properties.
 	 * This fails if multiple or no entry were returned.
-	 * @param userJson the Json representing the data for the user (essentially the 
-	 * @return 
+	 * @param dbResultList The Result from the DB query
+	 * @param username the username to generate a user for 
+	 * @return the User
+	 * @throws DuplicateUserEntryInDBException if the indicated use is in the DB twice (should not happen)
+	 * @throws InvalidLoginException if there is no user in the db 
 	 */
 	public static User buildUserFromDBResult(List<JsonObject> dbResultList, String username) throws DuplicateUserEntryInDBException,InvalidLoginException
 	{
@@ -48,7 +51,8 @@ public class UserUtils {
 
 	/**
 	 * Build a user from an individual database entry.
-	 * @param userJson the Json representing the data for the user ( 
+	 * @param userJson the Json representing the data for the user (
+	 * @param username the username to build the user 
 	 * @return the generated user with all necessary properties set.
 	 */
 	public static User buildUserForDBEntry(JsonObject userJson, String username)
@@ -62,9 +66,9 @@ public class UserUtils {
 
 	/**
 	 * Query a Mongo Database for information about a specific user and return the 
-	 * @param dbclient
-	 * @param username
-	 * @param resultHandler
+	 * @param dbclient the {@link MongoClient} to communicate with the database 
+	 * @param username the name of the user
+	 * @param resultHandler the handler that handles the resulting User
 	 */
 	public static void getUserDataFromCollection(MongoClient dbclient, String username, Handler<Future<JsonObject>> resultHandler)
 	{

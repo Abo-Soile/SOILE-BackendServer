@@ -18,19 +18,33 @@ public class Experiment extends ElementBase {
 
 	private List<String> elements;
 
+	/**
+	 * Default Constructor
+	 */
 	public Experiment()
 	{
 		this(new JsonObject());
 		
 	}
-	
+	/**
+	 * Default constructor using json data
+	 * @param data Json data to use for the Experiment
+	 */
 	public Experiment(JsonObject data) {
 		super(data, SoileConfigLoader.getdbProperty("experimentCollection"));
 	}
-
+	
+	/**
+	 * Get the Element ids in this experiments
+	 * @return a List of IDs of objects in this experiment
+	 */
 	public JsonArray getElements() {
 		return new JsonArray(elements);
 	}
+	/**
+	 * Set the elements in this object
+	 * @param elements the element (IDs) to set
+	 */
 	public void setElements(JsonArray elements) {
 		List<String> newElements = new LinkedList<String>();
 		for(int i = 0; i < elements.size(); i++)
@@ -39,7 +53,10 @@ public class Experiment extends ElementBase {
 		}
 		this.elements = newElements;
 	}
-	
+	/**
+	 * Add an element (ID) to the elements in this Experiment
+	 * @param elementID the id to add
+	 */
 	public void addElement(String elementID)
 	{
 		elements.add(elementID);

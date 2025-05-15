@@ -18,6 +18,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ExperimentObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FieldSpecifications;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.FilterObjectInstance;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.TaskObjectInstance;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.randomizers.Randomizer;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.randomizers.RandomizerFactory;
@@ -30,8 +31,8 @@ import io.vertx.ext.web.handler.HttpException;
 
 /**
  * Instance of a Study in Soile. 
- * This reflects  running instance of a project. The Project Management (during creation and modfication of the project)
- * is handled in the {@link Project} class, which represents a project in the database that the {@link ProjectManagerImpl} 
+ * This reflects a running instance of a project. The Project Management (during creation and modfication of the project)
+ * is handled in the {@link Project} class, which represents a project in the database that the {@link StudyManager} 
  * links with the respective code in the git Repository.
  * To walk through a Project the following steps are necessary:
  * Participant participant 
@@ -62,15 +63,34 @@ public abstract class Study implements AccessElement{
 	//protected List<String> participants;
 
 
+	// DB Fields
 	/**
-	 * Fields reflecting the other db Fields
+	 * The name of the study
 	 */
-	protected String name;	
+	protected String name;
+	/**
+	 * The (url) shortcut for the study
+	 */
 	protected String shortcut;	
+	/**
+	 * The short description of the study
+	 */
 	protected String shortDescription;
+	/**
+	 * The long description of the study
+	 */
 	protected String description;
+	/**
+	 * The language (spoken) of the study 
+	 */
 	protected String language;
+	/**
+	 * Whether the study is private (or public if false)
+	 */
 	protected boolean isPrivate;
+	/**
+	 * The last modification timestamp
+	 */
 	protected Long modifiedStamp;	
 	
 	/**
@@ -98,8 +118,7 @@ public abstract class Study implements AccessElement{
 	};
 
 	/**
-	 * Set the modification date.
-	 * @param date
+	 * Set the modification date (to now).
 	 */
 	public void setModifiedDate()
 	{
@@ -119,7 +138,8 @@ public abstract class Study implements AccessElement{
 	 * A Project will be set up based on the data provided here.
 	 * The fields defined in the "Project" and "Study" schemas need to be specified in this 
 	 * json.
-	 * @param data
+	 * @param data setup data for the study
+	 * @throws UnknownRandomizerException if there is an unknown Randomizer in the study
 	 */
 	protected void setupStudy(JsonObject data) throws UnknownRandomizerException
 	{
@@ -132,9 +152,8 @@ public abstract class Study implements AccessElement{
 	 * Instantiate the project (return a {@link Study} when finished), where data is data the provided project implementation
 	 * can use to retrieve the information required by setupProject.
 	 * @param instantiationInfo All information needed by the Instance generated from the provided factory to create the instance.
-	 * @param data The data required by the project implementation to build the Project data
-	 * @param pManager the project Manager 
-	 * @return a Future that will have the instantiated project created from the factory.
+	 * @param factory The study generation factory
+	 * @return a Future that will have the instantiated {@link Study} created from the factory.
 	 */
 	public static Future<Study> instantiateStudy(JsonObject instantiationInfo, StudyFactory factory) 
 	{
@@ -205,7 +224,8 @@ public abstract class Study implements AccessElement{
 
 	/**
 	 * Parse a project from Json data.
-	 * @param data
+	 * @param data the data to parse the Study from
+	 * @throws UnknownRandomizerException if the data contains an unknown randomizer
 	 */
 	private void parseProject(JsonObject data) throws UnknownRandomizerException
 	{
@@ -248,8 +268,8 @@ public abstract class Study implements AccessElement{
 	}
 
 	/**
-	 * Get the name of the project Instance
-	 * @return
+	 * Get the name of the Study Instance
+	 * @return the name of the instance
 	 */
 	public String getName()
 	{
@@ -262,14 +282,18 @@ public abstract class Study implements AccessElement{
 	{
 		return toDBJson().encodePrettily() + elements.toString();
 	}
-
+	/**
+	 * Get the shortcut for this Study
+	 * @return the shortcut
+	 */
 	public String getShortCut()
 	{
 		return (shortcut == null || shortcut.equals("")) ? null : shortcut;
 	}
 	/**
 	 * Parse an experiment from the given experiment Json. 
-	 * @param experiment
+	 * @param experiment the experiment to parse
+	 * @throws UnknownRandomizerException if the experiment contains invalid randomizers
 	 */
 	private void parseExperiment(JsonObject experiment) throws UnknownRandomizerException
 	{
@@ -467,8 +491,8 @@ public abstract class Study implements AccessElement{
 
 	/**
 	 * Get a specific Task/Experiment element for the given Element ID.
-	 * @param elementID
-	 * @return
+	 * @param elementID the id of the element to get
+	 * @return the {@link ElementInstance} of the request element (if any), or null if it doesn't exist
 	 */
 	public ElementInstance getElement(String elementID)
 	{
@@ -486,8 +510,8 @@ public abstract class Study implements AccessElement{
 
 	/**
 	 * Obtain the next element for the given user using the given element ID to query the next element 
-	 * @param nextElementID
-	 * @param user
+	 * @param nextElementID the assumed nextElementID for the user
+	 * @param user the user to check where to go to if the nextElement is the assumed next step.
 	 * @return The next Task as defined by the element with the given ID, or null if the element is not defined (which means that we have reached an end-point). 
 	 */
 	public Future<String> getNextTask(String nextElementID, Participant user)
@@ -502,7 +526,7 @@ public abstract class Study implements AccessElement{
 
 	/**
 	 * Start the project for the provided user.
-	 * @param user
+	 * @param user the {@link Participant} to start the study for
 	 * @return A Future of the position the user will be at after they have started.
 	 */
 	public Future<String> startStudy(Participant user)
@@ -642,6 +666,7 @@ public abstract class Study implements AccessElement{
 	/**
 	 * Update the Study, returns the modification date set in the database.
 	 * @param updateInformation the updating json information. 
+	 * @return A {@link Future} of the modified timestamp of the updated study
 	 */
 	public Future<Long> updateStudy(JsonObject updateInformation)
 	{
@@ -695,6 +720,11 @@ public abstract class Study implements AccessElement{
 		return updatePromise.future();			
 	}
 
+	/**
+	 * Test whether a change with the new data is allowed (and or a change on this study in general)
+	 * @param newData the new data that would change the Study
+	 * @return A successful {@link Future} if the change is allowed
+	 */
 	protected abstract Future<Void> checkChangeAllowed(JsonObject newData);
 
 	/**
@@ -708,7 +738,7 @@ public abstract class Study implements AccessElement{
 	/**
 	 * Load all data that is necessary for the project. This function should work with the Data contained in the future provided by 
 	 * the save function.  
-	 * @param object The object to retrieve the data from. Can be specific to the Actual implementation used. e.g. can only contain one ID if loading from a DB or multiple fields if construction from multiple DBs. 
+	 * @param instanceInfo The object to retrieve the data from. Can be specific to the Actual implementation used. e.g. can only contain one ID if loading from a DB or multiple fields if construction from multiple DBs. 
 	 * @return A Future containing all data actually necessary for {@link Study} to reconstruct all necessary fields. 
 	 */
 	public abstract Future<JsonObject> load(JsonObject instanceInfo);
@@ -755,8 +785,8 @@ public abstract class Study implements AccessElement{
 	/**
 	 * Delete a participant from the list of participants of this projects
 	 * Will return false, if the participant was not removed 
-	 * @param p the participant to remove
-	 * @ A Future that returning true, if the participant was removed, or false if it wasn't
+	 * @param participant the participant to remove
+	 * @return A Future that returning true, if the participant was removed, or false if it wasn't
 	 */
 	public abstract Future<Boolean> deleteParticipant(Participant participant);
 
@@ -776,7 +806,7 @@ public abstract class Study implements AccessElement{
 	/**
 	 * Create a general access token for this project. This token is reusable and not linked to a specific user.
 	 * On signup, it will be exchanged against a individual access token.
-	 * @return
+	 * @return a {@link Future} containing the permanent Access token
 	 */
 	public abstract Future<String> createPermanentAccessToken();
 
@@ -794,20 +824,24 @@ public abstract class Study implements AccessElement{
 	public abstract Future<Void> useToken(String token);
 
 	/**
-	 * 
+	 * Get all Field Specs for updateable fields
+	 * @return {@link FieldSpecifications} of all updateable fields 
 	 */
 	public abstract FieldSpecifications getUpdateableDBFields();
 
 	/**
 	 * Get the modification date of this study stored in the database.
 	 * This is only updated in the save() method of the Study, and does not consider modifications of fields 
-	 * which are accessed directly in the db and not stored on the project instance. 
+	 * which are accessed directly in the db and not stored on the project instance.
+	 * @return A {@link Future} of the modification timestamp 
 	 */
 	public abstract Future<Long> getStoredModificationDate();
 	
 	
 	/**
-	 *  This will search for the given filtrID in the filterPasses and update it to "one more"  
+	 *  This will search for the given filterID in the filterPasses and update it to "one more"
+	 *  @param filterID the filter to update
+	 *  @return A {@link Future} of the new number of Filter passes
 	 */
 	public abstract Future<Integer> getFilterPassesAndAddOne(String filterID);
 }

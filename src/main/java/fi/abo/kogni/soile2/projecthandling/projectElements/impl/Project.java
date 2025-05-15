@@ -21,16 +21,26 @@ import io.vertx.core.json.JsonObject;
 public class Project extends ElementBase{
 	static final Logger LOGGER = LogManager.getLogger(Project.class);
 	private List<String> elements;
+	/**
+	 * Default constructor
+	 */
 	public Project()
 	{
 		super(new JsonObject(), SoileConfigLoader.getdbProperty("projectCollection"));
 		elements = new LinkedList<String>();
 	}
 			
-		
+	/**
+	 * Get Elements in this project
+	 * @return a JsonArray with Strings containing the IDs of all elements
+	 */
 	public JsonArray getElements() {
 		return new JsonArray(elements);
 	}
+	/**
+	 * Set the elements in this project
+	 * @param elements the new elements in this project
+	 */
 	public void setElements(JsonArray elements) {
 		List<String> newElements = new LinkedList<String>();
 		for(int i = 0; i < elements.size(); i++)
@@ -42,7 +52,7 @@ public class Project extends ElementBase{
 	
 	/**
 	 * Add an element to the list of elements used by this Project
-	 * @param elementID
+	 * @param elementID the id of the element to add
 	 */
 	public void addElement(String elementID)
 	{

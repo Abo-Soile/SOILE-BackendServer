@@ -162,8 +162,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 	
 	/**
 	 * Get the file contents of a file in the github repository, these are all just json/linker files).
-	 * @param message the message with the GitFile contents. 
-	 * @return A String with the contents that can normally be parsed as json.
+	 * @param request the message with the GitFile contents in JsonObject format and that will be replied to.  
 	 */
 	public void getGitFileContents(Message<JsonObject> request)
 	{
@@ -178,7 +177,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 	/**
 	 * Get the file contents of a resource file in the github repository as string, 
 	 * since no binary files are in the git repo and those are all pointers this will essentially return the pointer file.
-	 * @param message the message with the GitFile contents. 
+	 * @param request the message with the GitFile contents and that will be replied to. 
 	 */
 	public void getGitResourceContents(Message<JsonObject> request)
 	{
@@ -190,7 +189,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 	}
 	/**
 	 * Get the file contents of a git resource file as a Json Object. the reply will be the json object of the contents. 
-	 * @return A {@link JsonObject} of the contents of the git file.
+	 * @param request The message containing the {@link JsonObject} indicating the GitFile and which will be replied to with the {@link JsonObject} of the fiel contents
 	 */
 	public void getGitResourceContentsAsJson(Message<JsonObject> request)
 	{
@@ -203,8 +202,8 @@ public class GitManagerVerticle extends AbstractVerticle{
 
 	/**
 	 * Get the file contents of a git file as a Json Object. 
-	 * @return A {@link JsonObject} of the contents of the git file.
-	 */
+     * @param request The message containing the {@link JsonObject} indicating the GitFile and which will be replied to with the {@link JsonObject} of the fiel contents	 
+     */
 	public void getGitFileContentsAsJson(Message<JsonObject> request)
 	{
 		fileJsonContents.getData(new GitFile(request.body()))
@@ -214,8 +213,8 @@ public class GitManagerVerticle extends AbstractVerticle{
 		.onFailure(err -> handleFail(request,err));
 	}
 	/**
-	 * Get the resource files available for a specific git Version of an Object as a JsonArray  
-	 * @return A {@link JsonArray} representing the file structure of the version.
+	 * Get the resource files available for a specific git Version of an Object as a JsonArray
+	 * @param request The message containing the {@link JsonObject} indicating the GitElement for which to retrieve the resource list and which to reply to.  
 	 */
 	public void getResourceList(Message<JsonObject> request)
 	{
@@ -228,7 +227,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 	}
 	/**
 	 * Get the history (i.e. all previous commits) for a given git version.  
-	 * @return A {@link JsonArray} of the commit ids of upstream commits (including this commit). 
+	 * @param request The message containing the {@link JsonObject} indicating the GitElement and to which to reply with the history
 	 */
 	public void getHistory(Message<JsonObject> request)
 	{
@@ -242,7 +241,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 	/**
 	 * Write data to a file specified by the {@link GitFile}, reply with the new version of the respective repo. 
 	 * a request with gitFile fields and a data field for the data to write.
-	 * @return
+	 * @param request The message containing the {@link JsonObject} indicating the GitFile and which to reply to 
 	 */
 	public void writeGitFile(Message<JsonObject> request)
 	{
@@ -265,10 +264,8 @@ public class GitManagerVerticle extends AbstractVerticle{
 	}
 
 	/**
-	 * Write data to a file specified by the {@link GitFile} in the resources folder of the repo.  
-	 * @param file the GitFile containing name (including folders) but excluding the resources folder,  
-	 * @param data the data to be written to the file.
-	 * @return a Future with the version of the git repository after execution.
+	 * Write data to a file specified by the {@link GitFile} in the resources folder of the repo.
+	 * @param request The message containing the {@link JsonObject} indicating the GitFile and content and which to reply to
 	 */
 	public void writeGitResourceFile(Message<JsonObject> request)
 	{
@@ -292,8 +289,7 @@ public class GitManagerVerticle extends AbstractVerticle{
 
 	/**
 	 * Delete the specified git Resource file  
-	 * @param A Json representinga GitFile needs to be parsable into a GitFile.  
-	 * @return a Future with the version of the git repository after execution.
+	 * @param request The message containing the {@link JsonObject} indicating the GitFile and content and which to reply to   
 	 */
 	public void deleteGitResourceFile(Message<JsonObject> request)
 	{

@@ -17,13 +17,13 @@ import io.vertx.ext.web.FileUpload;
  * The Data is ordered as follows:
  * Project 
  * 	- participantID1
- *  	- <taskID>
- *   		- <step> (a number)
+ *  	- {@literal <}taskID>
+ *   		- {@literal <}step> (a number)
  *   			- localFileName
- *   		- <step> (a number)
+ *   		- {@literal <}step> (a number)
  *   			- localFileName
- *   	- <taskID>
- *   		- <step> (a number)
+ *   	- {@literal <}taskID>
+ *   		- {@literal <}step> (a number)
  *   			- localFileName
  *   			...
  *   - participantID2 
@@ -37,7 +37,12 @@ public class ParticipantDataLakeManager{
 	String datalakedirectory;
 	Vertx vertx;
 	static final Logger LOGGER = LogManager.getLogger(ParticipantDataLakeManager.class);
-
+	
+	/**
+	 * Default constructor 
+	 * @param Folder The datalake folder to use 
+	 * @param vertx the vertx instance for communication
+	 */
 	public ParticipantDataLakeManager(String Folder, Vertx vertx) {
 		datalakedirectory = Folder;
 		this.vertx = vertx; 
@@ -50,9 +55,9 @@ public class ParticipantDataLakeManager{
 	 * This allows a quick removal of all data for a participant by deleting the respective participantID folder.
 	 * @param participantID the participant for which to store the data
 	 * @param step the step for the data 
-	 * @param taskId the task for which data is stored.
-	 * @param upload
-	 * @return
+	 * @param taskID the task for which data is stored.
+	 * @param upload The fileUpload containing the data
+	 * @return A {@link Future} of the version used
 	 */
 	public Future<String> storeParticipantData(String participantID, int step, String taskID, FileUpload upload)
 	{
@@ -91,7 +96,7 @@ public class ParticipantDataLakeManager{
 	/**
 	 * Delete a participant from a study. This will remove the participant data from the project.
 	 * @param p the participant for which to store the data
-	 * @return
+	 * @return A {@link Future} indicating whether the deletion was successful (if it succeeded)
 	 */
 	public Future<Void> deleteParticipantData(Participant p)
 	{
@@ -101,7 +106,7 @@ public class ParticipantDataLakeManager{
 	/**
 	 * Get a File from a TaskFileResult
 	 * @param result the result for which to obtain the file location in the datalake
-	 * @return
+	 * @return The corresponding {@link DataLakeFile}
 	 */
 	public DataLakeFile getFile(ParticipantFileResult result)
 	{

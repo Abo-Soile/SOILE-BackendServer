@@ -19,6 +19,11 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
+/**
+ * A Class that creates integrations between different parts of the Projects
+ * @author Thomas Pfau
+ *
+ */
 public class IntegrationBuilder {
 	private static final Logger LOGGER = LogManager.getLogger(IntegrationBuilder.class);
 
@@ -28,6 +33,13 @@ public class IntegrationBuilder {
 	MongoClient client;
 	
 	
+	/**
+	 * Default constructor
+	 * @param taskManager the {@link ElementManager} for {@link Task}s to use 
+	 * @param experimentManager the {@link ElementManager} for {@link Experiment}s to use
+	 * @param projectManager the {@link ElementManager} for {@link Project}s to use
+	 * @param client the {@link MongoClient} connecting to the database
+	 */
 	public IntegrationBuilder(ElementManager<Task> taskManager, ElementManager<Experiment> experimentManager,
 			ElementManager<Project> projectManager, MongoClient client) {
 		super();

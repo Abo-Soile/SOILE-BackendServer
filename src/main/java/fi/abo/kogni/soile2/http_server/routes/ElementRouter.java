@@ -15,6 +15,7 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
@@ -30,7 +31,7 @@ import io.vertx.ext.web.validation.ValidationHandler;
  * Descriptions for the individual calls can be obtained from the API document ( method names are 1:1 reflected by operation Names)
  * @author Thomas Pfau
  *
- * @param <T>
+ * @param <T> The base for this Element Router (i.e. the {@link ElementBase} the router is targeting)
  */
 public class ElementRouter<T extends ElementBase> extends SoileRouter{
 
@@ -38,7 +39,14 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 	EventBus eb;
 	AccessHandler accessHandler;
 	private static final Logger LOGGER = LogManager.getLogger(ElementRouter.class);
-
+	
+	/**
+	 * Basic constructor
+	 * @param manager The {@link ElementManager} for the target resource
+	 * @param auth the used {@link SoileAuthorization} mechanism 
+	 * @param eb {@link Vertx} {@link EventBus}
+	 * @param client the {@link MongoClient} used by the router
+	 */
 	public ElementRouter(ElementManager<T> manager, SoileAuthorization auth, EventBus eb, MongoClient client)
 	{		
 		super(auth,client);
@@ -49,7 +57,11 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 				roleHandler);
 		this.eb = eb;
 	}
-
+	
+	/**
+	 * Get the element defined in the context (path parameter ids and version)
+	 * @param context The {@link RoutingContext} to look up the elements IDs
+	 */
 	public void getElement(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -71,7 +83,10 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 
 	}
-
+	/**
+	 * Delete the element specified in the context (id path parameter
+	 * @param context The {@link RoutingContext} to extract the id from
+	 */
 	public void deleteElement(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -92,7 +107,10 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 
 	}
-	
+	/**
+	 * Write an element as specified in the context (data, id and version)
+	 * @param context The {@link RoutingContext} to extract the data from
+	 */
 	public void writeElement(RoutingContext context)
 	{
 		LOGGER.debug("Trying to update an element");
@@ -132,7 +150,11 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 
 	}
-
+	/**
+	 * Get a List of Elements of the type represented by this Router
+	 * The "full" parameter from the queryParameters indicates, whether to return everything obtainable
+	 * @param context The {@link RoutingContext} to get the data. 
+	 */
 	public void getElementList(RoutingContext context)
 	{				
 		//TODO: Add skip + limit + query here.		
@@ -179,7 +201,10 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 			.onFailure(err -> handleError(err, context));
 		}
 	}
-
+	/**
+	 * Get the Tag for the specified version of the Element with the specified ID
+	 * @param context The {@link RoutingContext} to obtain the data from
+	 */
 	public void getTagForVersion(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -201,7 +226,10 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 
 	}
-
+	/**
+	 * Get a list of version for a specified Element 
+	 * @param context The {@link RoutingContext} specifying the Element to get versions for
+	 */
 	public void getVersionList(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -221,7 +249,11 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 
 	}
-
+	
+	/**
+	 * Remove a tag from an element specified in the given Context
+	 * @param context The {@link RoutingContext} to extract the data from
+	 */
 	public void removeTagsFromElement(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -241,7 +273,10 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 
 	}
-
+	/**
+	 * Add a Tag to a specific version of the element as specified in the given {@link RoutingContext} 
+	 * @param context The {@link RoutingContext} to extract data from
+	 */
 	public void addTagToVersion(RoutingContext context)
 	{		
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -269,7 +304,11 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 
 	}
-
+	
+	/**
+	 * Create an element of the type represented by this Router
+	 * @param context The {@link RoutingContext}
+	 */
 	public void create(RoutingContext context)
 	{		
 		LOGGER.debug("Received a request for creation");
@@ -339,7 +378,7 @@ public class ElementRouter<T extends ElementBase> extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 
 	}
-
+	
 	Future<Void> checkVersionAndID(String id, String version)
 	{
 		Promise<Void> existPromise = Promise.promise();

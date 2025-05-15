@@ -14,14 +14,27 @@ import io.vertx.ext.mongo.MongoClient;
  */
 public class DBStudyFactory implements StudyFactory {
 
+	/**
+	 * MongoClient
+	 */
 	protected MongoClient client;
+	/**
+	 * The project instance database name (i.e. study database)
+	 */
 	protected String projectInstanceDB;
+	/**
+	 * The eventbus used for communication
+	 */
 	protected EventBus eb;
+	/**
+	 * The {@link ElementManager} for Projects
+	 */
 	protected ElementManager<Project> projManager;
 	/**
 	 * Default constructor
-	 * @param client
-	 * @param projectInstanceDB
+	 * @param manager {@link ElementManager} for Project access
+	 * @param client {@link MongoClient} for db access
+	 * @param eb {@link EventBus} for communication
 	 */
 	public DBStudyFactory(ElementManager<Project> manager, MongoClient client, EventBus eb) {
 		super();

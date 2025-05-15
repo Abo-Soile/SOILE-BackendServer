@@ -11,7 +11,11 @@ import io.vertx.core.json.JsonObject;
 public class TokenParticipant extends DBParticipant {
 
 	private String token;
-	
+	/**
+	 * Default constructor
+	 * @param data data of the participant 
+	 * @param manager the manager for the participant
+	 */
 	public TokenParticipant(JsonObject data, ParticipantManager manager) {
 		super(data,manager);
 		token = data.getString("token");

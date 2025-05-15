@@ -13,6 +13,12 @@ public class SimpleFileUpload implements FileUpload
 	private String uploadFileName;
 	private String originalFileName;
 	private String contentType;
+	/**
+	 * Default constructor
+	 * @param uploadedFileName name of the uploaded file
+	 * @param originalFileName name of the origial file
+	 * @param contentType type of the content
+	 */
 	public SimpleFileUpload(String uploadedFileName, String originalFileName, String contentType)
 	{	
 		this.uploadFileName = uploadedFileName;

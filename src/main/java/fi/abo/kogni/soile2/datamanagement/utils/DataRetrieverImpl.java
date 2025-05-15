@@ -17,6 +17,10 @@ public class DataRetrieverImpl<K,T> implements DataRetriever<K,T> {
 
 	private Function<K,Future<T>> retrievalFunction;
 	
+	/**
+	 * Default constructor
+	 * @param retrievalFunction the function that is used to retrieve the data
+	 */
 	public DataRetrieverImpl(Function<K,Future<T>> retrievalFunction)
 	{
 		this.retrievalFunction = retrievalFunction;

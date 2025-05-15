@@ -21,12 +21,19 @@ public abstract class Randomizer extends ElementInstanceBase{
 		// TODO Auto-generated method stub
 		return getFieldSpecifications();		
 	}
-	
+	/**
+	 * Default constructor
+	 * @param data The data to build the Randomizer
+	 * @param source The source study for the randomizer
+	 */
 	public Randomizer(JsonObject data, Study source)
 	{
 		super(data,source);
 	}	
-	
+	/**
+	 * Get field specs for a Randomizer
+	 * @return The specs
+	 */
 	public static FieldSpecifications getFieldSpecifications() {
 		// TODO Auto-generated method stub
 		return new FieldSpecifications().put(new FieldSpecification("instanceID", String.class, String::new, false))																																								

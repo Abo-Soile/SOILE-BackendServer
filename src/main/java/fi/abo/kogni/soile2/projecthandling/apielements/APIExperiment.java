@@ -24,13 +24,23 @@ public class APIExperiment extends APIElementBase<Experiment> {
 
 	private String[] gitFields = new String[] {"name", "elements"};
 	private Object[] gitDefaults = new Object[] {"", new JsonArray()};
-	private Function<Object, Object>[] elementCheckers;   
+	private Function<Object, Object>[] elementCheckers; 
+	/**
+	 * The Logger for API Experiments
+	 */
 	public static final Logger LOGGER = LogManager.getLogger(ElementManager.class);
 
+	/**
+	 * Default empty constructor
+	 */
 	public APIExperiment() {
 		this(new JsonObject());
 	}
 	
+	/**
+	 * Default constructor using Json data
+	 * @param data the Json Representation of the experiment
+	 */
 	public APIExperiment(JsonObject data) {
 		super(data);
 		createFunctionCheckers();
@@ -69,7 +79,10 @@ public class APIExperiment extends APIElementBase<Experiment> {
 	}
 	
 	
-	
+	/**
+	 * Get all elements that are part of this experiment
+	 * @return A JsonArray of element IDs
+	 */
 	public JsonArray getElements() {
 		if(!data.containsKey("elements"))
 		{
@@ -77,6 +90,11 @@ public class APIExperiment extends APIElementBase<Experiment> {
 		}
 		return data.getJsonArray("elements",new JsonArray());
 	}
+	/**
+	 * Set the code
+	 * TODO: Check whether this function is necessary
+	 * @param elements odd... 
+	 */
 	public void setCode(JsonArray elements) {
 		data.put("elements", elements);
 	}

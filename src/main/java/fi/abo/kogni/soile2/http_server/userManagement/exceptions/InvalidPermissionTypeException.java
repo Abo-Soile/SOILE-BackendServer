@@ -7,6 +7,10 @@ package fi.abo.kogni.soile2.http_server.userManagement.exceptions;
  */
 public class InvalidPermissionTypeException extends Exception {
 
+	/**
+	 * Default Constructor
+	 * @param message the message attached with the exception
+	 */
 	public InvalidPermissionTypeException(String message)
 	{
 		super(message);

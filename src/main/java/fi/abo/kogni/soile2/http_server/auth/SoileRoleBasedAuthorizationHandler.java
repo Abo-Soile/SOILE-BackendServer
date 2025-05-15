@@ -11,12 +11,16 @@ import io.vertx.ext.auth.authorization.RoleBasedAuthorization;
 import io.vertx.ext.web.handler.HttpException;
 
 /**
- * Class to handle Role based athorization
+ * Class to handle Role based authorization
  * @author Thomas Pfau
  *
  */
 public class SoileRoleBasedAuthorizationHandler{
 
+
+	/**
+	 * Default constructor
+	 */
 	public SoileRoleBasedAuthorizationHandler()
 	{
 	}
@@ -26,7 +30,7 @@ public class SoileRoleBasedAuthorizationHandler{
 	 * This requires the authorizations to be loaded for the USER PRE testing!
 	 * @param user The user with the authorizations loaded.
 	 * @param requiredRole the Role required for the user to proceed
-	 * @return
+	 * @return A Successful {@link Future} if the {@link User} was authorized.
 	 */
 	public Future<Void> authorize(User user, Roles requiredRole) {
 		Promise<Void> authorizationPromise = Promise.<Void>promise(); 

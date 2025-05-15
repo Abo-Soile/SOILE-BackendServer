@@ -31,18 +31,53 @@ public class SoileRouter {
 
 	private static final Logger LOGGER = LogManager.getLogger(ElementRouter.class);
 
+	/**
+	 * The project Authorization
+	 */
 	protected MongoAuthorization projectAuth;
+	/**
+	 * The experiment Authorization
+	 */
 	protected MongoAuthorization experimentAuth;
+	/**
+	 * The task Authorization
+	 */
 	protected MongoAuthorization taskAuth;
+	/**
+	 * The study Authorization
+	 */
 	protected MongoAuthorization studyAuth;
+	/**
+	 * ID Access Handler for Tasks
+	 */
 	protected SoileIDBasedAuthorizationHandler taskIDAccessHandler;
+	/**
+	 * ID Access Handler for Projects
+	 */
 	protected SoileIDBasedAuthorizationHandler projectIDAccessHandler;
+	/**
+	 * ID Access Handler for experiments
+	 */
 	protected SoileIDBasedAuthorizationHandler experimentIDAccessHandler;
+	/**
+	 * ID Access Handler for Studies
+	 */
 	protected SoileIDBasedAuthorizationHandler studyIDAccessHandler;
+	/**
+	 * Authorization retriever
+	 */
 	protected SoileAuthorization authorizationRertiever;
+	/**
+	 * Role based authorization retriever
+	 */
 	protected SoileRoleBasedAuthorizationHandler roleHandler;
 	
 	
+	/**
+	 * Default constructor
+	 * @param auth the {@link SoileAuthorization} for Auth checks
+	 * @param client The {@link MongoClient} for DB access
+	 */
 	public SoileRouter(SoileAuthorization auth, MongoClient client)
 	{
 		authorizationRertiever = auth;
@@ -60,8 +95,8 @@ public class SoileRouter {
 	
 	/**
 	 * Default handling of errors. 
-	 * @param err
-	 * @param context
+	 * @param err the error to handle
+	 * @param context the RoutingContext the Error occurs in
 	 */
 	public static void handleError(Throwable err, RoutingContext context)
 	{
@@ -97,6 +132,12 @@ public class SoileRouter {
 		sendError(context, 400, err.getMessage());
 	}
 	
+	/**
+	 * Send an error for the given context
+	 * @param context the RoutingContext to send the error
+	 * @param code the error cod to send
+	 * @param message the message to send along the error
+	 */
 	static void sendError(RoutingContext context, int code, String message)
 	{		
 		LOGGER.error("Request errored. Returning code" + code + " with message " + message);
@@ -105,6 +146,11 @@ public class SoileRouter {
 		.end(message);
 	}
 	
+	/**
+	 * Get the handler for a specific TargetElement 
+	 * @param type the type of element to get the handler for
+	 * @return The {@link SoileIDBasedAuthorizationHandler} corresponding to the right Target type
+	 */
 	protected SoileIDBasedAuthorizationHandler getHandlerForType(TargetElementType type)
 	{
 		switch(type)
@@ -117,12 +163,20 @@ public class SoileRouter {
 		}
 		
 	}
-	
+	/**
+	 * Get the handler for a specific TargetElement 
+	 * @param type the type of element to get the handler for
+	 * @return The {@link SoileIDBasedAuthorizationHandler} corresponding to the right Target type
+	 */
 	protected SoileIDBasedAuthorizationHandler getHandlerForType(String type)
 	{
 		return getHandlerForType(TargetElementType.valueOf(type));		
 	}
-	
+	/**
+	 * Get the right Authorization for the target type   
+	 * @param type the type of element to get the handler for
+	 * @return The {@link MongoAuthorization} corresponding to the right Target type
+	 */
 	protected MongoAuthorization getAuthForType(TargetElementType type)
 	{		
 		switch(type)
@@ -134,7 +188,11 @@ public class SoileRouter {
 			default: return taskAuth;
 		}
 	}
-	
+	/**
+	 * Get the right Authorization for the target type   
+	 * @param type the type of element to get the handler for
+	 * @return The {@link MongoAuthorization} corresponding to the right Target type
+	 */
 	protected MongoAuthorization getAuthForType(String type)
 	{		
 		return getAuthForType(TargetElementType.valueOf(type));
@@ -142,7 +200,7 @@ public class SoileRouter {
 	
 	/**
 	 * This is a function to test, whether the given user is a token user.
-	 * @param user
+	 * @param user the user to check
 	 * @return whether the user is a user based on a token, or not.
 	 */
 	public static boolean isTokenUser(User user)

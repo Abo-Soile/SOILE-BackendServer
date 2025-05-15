@@ -21,8 +21,8 @@ public class DatedDataMap<K,T>
 	
 	/**
 	 * Get the latest daa for a given key object.
-	 * @param key
-	 * @return
+	 * @param key the key to retrieve data for
+	 * @return the latest object associated with the given key
 	 */
 	public T getLatest(Object key)
 	{		
@@ -35,8 +35,8 @@ public class DatedDataMap<K,T>
 	}
 	/**
 	 * Get all Data stored under the given key.
-	 * @param key
-	 * @return
+	 * @param key he key to retrieve data for
+	 * @return All Data stored for the given key
 	 */
 	public List<TimeStampedData<T>> get(Object key)
 	{		
@@ -45,8 +45,8 @@ public class DatedDataMap<K,T>
 	
 	/**
 	 * Get the latest element for a key along with its ime stamp as a {@link TimeStampedData} Object
-	 * @param key
-	 * @return
+	 * @param key he key to retrieve data for
+	 * @return The {@link TimeStampedData} for the given key
 	 */
 	public TimeStampedData<T> getLatestTimeStampedElement(Object key)
 	{
@@ -60,8 +60,8 @@ public class DatedDataMap<K,T>
 	
 	/**
 	 * Add a {@link TimeStampedData} object to the list for a given Key. 
-	 * @param key 
-	 * @param value
+	 * @param key the key to store data for
+	 * @param value the value to store
 	 * @return The Element represented by the {@link TimeStampedData} provided
 	 */
 	public T addDatedEntry(K key, TimeStampedData<T> value)
@@ -76,7 +76,7 @@ public class DatedDataMap<K,T>
 	
 	/**
 	 * Get a Map of the Newest data for each element. This object will be updated if the data in this map changes.
-	 * @return
+	 * @return the latest data for all elelements (like what a normal Map would have)
 	 */
 	public HashMap<K,T> getNewestData()
 	{
@@ -93,8 +93,8 @@ public class DatedDataMap<K,T>
 
 	/**
 	 * Check whether this map contains a given key.
-	 * @param key
-	 * @return
+	 * @param key the key to check
+	 * @return whether the key is contained in this map
 	 */
 	public boolean containsKey(Object key) {
 		return data.containsKey(key);
@@ -102,7 +102,7 @@ public class DatedDataMap<K,T>
 
 	/**
 	 * Get all keys available in this map.
-	 * @return
+	 * @return all keys contained in this map
 	 */
 	public Set<K> keySet() {
 		return data.keySet();
@@ -110,9 +110,9 @@ public class DatedDataMap<K,T>
 
 	/**
 	 * Put a new object to the given key (Will add a {@link TimeStampedData} with a current timeStamp to the List of elements under the key,
-	 * @param arg0
-	 * @param arg1
-	 * @return
+	 * @param arg0 the key to put data i for
+	 * @param arg1 the value to put in 
+	 * @return the Element that has been put in 
 	 */
 	public T put(K arg0, T arg1) {
 		return this.addDatedEntry(arg0, new TimeStampedData<T>(arg1));		 
@@ -120,7 +120,7 @@ public class DatedDataMap<K,T>
 
 	/**
 	 * Get the size of the map.
-	 * @return
+	 * @return the size of the map
 	 */
 	public int size() {
 		return data.size();

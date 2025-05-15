@@ -9,7 +9,7 @@ import io.vertx.ext.web.RoutingContext;
 
 /**
  * A SOILE specific {@link MessageResponseHandler}. 
- * Replies to responses that has {@link SoileCommUtils.RESULTFIELD} being set to {@link SoileCommUtils.SUCCESS}
+ * Replies to responses that has {@link SoileCommUtils#RESULTFIELD} being set to {@link SoileCommUtils#SUCCESS}
  * checks, whether the "data" field is a Json or String, and if, resonds to the context with this information,
  * indicating the correct content-type.
  * @author Thomas Pfau
@@ -18,6 +18,10 @@ import io.vertx.ext.web.RoutingContext;
 public class MessageResponseHandlerImpl implements MessageResponseHandler{
 
 	private int successStatusCode;
+	/**
+	 * Default constructor
+	 * @param successStatusCode the status code to use for success
+	 */
 	public MessageResponseHandlerImpl(int successStatusCode)
 	{
 		this.successStatusCode = successStatusCode;

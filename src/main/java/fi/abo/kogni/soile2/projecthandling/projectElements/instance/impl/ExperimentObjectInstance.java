@@ -26,6 +26,11 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	List<String> elementIDs;
 	static final Logger LOGGER = LogManager.getLogger(ExperimentObjectInstance.class);
 
+	/**
+	 * default constructor
+	 * @param data The Data to use
+	 * @param source the source study for the instance
+	 */
 	public ExperimentObjectInstance(JsonObject data, Study source) {
 		super(data, source);
 		defineElements();		
@@ -57,7 +62,7 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	}
 	/**
 	 * Set the randomization state of this element
-	 * @param random
+	 * @param random the new randomization state
 	 */
 	public void setRandom(Boolean random) {
 		data.put("random",random);
@@ -66,14 +71,15 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	/**
 	 * Get the JsonArray of Elements in this experiment. 
 	 * Each element is a JsonObject with individual properties depending on its type. 
-	 * @return
+	 * @return a JsonArray of all element (ids)
 	 */
 	public JsonArray getElements() {
 		return data.getJsonArray("elements");
 	}
 	/**
 	 * Set the JsonArray of Elements in this experiment. 
-	 * Each element is a JsonObject with individual properties depending on its type. 
+	 * Each element is a JsonObject with individual properties depending on its type.
+	 * @param elements the new elements set for this Instance 
 	 */
 	public void setElements(JsonArray elements) {
 		data.put("elements",elements);	
@@ -99,7 +105,8 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	 * Logic here:
 	 * In a random Experiment, we have callbacks for every step. So we need to mark every finished task.
 	 * In a non random experiment, the final element needs to refer back to this, and if we get a callback
-	 * in a non-random we proceed to the next element of this experiment. 
+	 * in a non-random we proceed to the next element of this experiment.
+	 * @param user the user to get the next task for 
 	 */
 	@Override
 	public Future<String> nextTask(Participant user) {
@@ -152,8 +159,8 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	
 	/**
 	 * Utility function to get the next object based on the user.
-	 * @param user
-	 * @return
+	 * @param user the user to get the next object for
+	 * @return a {@link Future} of the next objects ID
 	 */
 	private Future<String> getNext(Participant user)
 	{
@@ -162,7 +169,10 @@ public class ExperimentObjectInstance extends ElementInstanceBase{
 	}
 	
 	
-	
+	/**
+	 * The field specifications for Experiment Instances
+	 * @return the specs
+	 */
 	public static FieldSpecifications getFieldSpecs()
 	{
 		return new FieldSpecifications().put(new FieldSpecification("instanceID", String.class, String::new, false))

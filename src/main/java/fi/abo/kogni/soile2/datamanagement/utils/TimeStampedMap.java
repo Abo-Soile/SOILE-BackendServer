@@ -21,11 +21,21 @@ public class TimeStampedMap<K,T> {
 	private ConcurrentHashMap<K, TimeStampedData<T>> elementMap = new ConcurrentHashMap<K, TimeStampedData<T>>();
 	DataRetriever<K,T> retriever;
 	long ttl;
+	/**
+	 * Timestamped map with a DataRetriever
+	 * @param retriever the retriever to use
+	 * @param TTL the ttl of the elements
+	 */
 	public TimeStampedMap(DataRetriever<K,T> retriever, long TTL) {
 		this.retriever = retriever;
 		ttl = TTL;
 	}
 	
+	/**
+	 * Constructor using a retrival function. The function will be usd to build a new retriever
+	 * @param retrievalFunction the retrival function
+	 * @param TTL the ttl of the objects
+	 */
 	public TimeStampedMap(Function<K,Future<T>> retrievalFunction, long TTL) {
 		retriever = new DataRetrieverImpl<>(retrievalFunction);
 		ttl = TTL;
@@ -46,8 +56,8 @@ public class TimeStampedMap<K,T> {
 	/**
 	 * Get an item with a specific key. The Map tries to retrieve it if it can't be found. 
 	 * If it can't be found the handler has to handle a failedFuture with a {@link NoSuchElementException} error 
-	 * @param itemID
-	 * @return the item to be looked for. or null, if it doesn't exist.
+	 * @param itemID the id of the item to retrieve
+	 * @param resultHandler the handler that will handle the item
 	 */
 	public void getData(K itemID, Handler<AsyncResult<T>> resultHandler)
 	{
@@ -57,7 +67,7 @@ public class TimeStampedMap<K,T> {
 	/**
 	 * Get an item with a specific key. The Map tries to retrieve it if it can't be found. 
 	 * If it can't be found the handler has to handle a failedFuture with a {@link NoSuchElementException} error 
-	 * @param itemID
+	 * @param itemID the id of the item to retrieve
 	 * @return the item to be looked for. or null, if it doesn't exist.
 	 */
 	public Future<T> getData(K itemID)
@@ -85,8 +95,8 @@ public class TimeStampedMap<K,T> {
 	
 	/**
 	 * Save an item with a given id.
-	 * @param ItemID
-	 * @param data
+	 * @param ItemID the id of the item to put
+	 * @param data the data to put
 	 */
 	public void putData(K ItemID, T data)
 	{
@@ -95,7 +105,7 @@ public class TimeStampedMap<K,T> {
 	
 	/**
 	 * Maanually clean an element from the Mapping.
-	 * @param ItemID
+	 * @param ItemID the id of the item to remove
 	 */
 	public void cleanElement(K ItemID)
 	{

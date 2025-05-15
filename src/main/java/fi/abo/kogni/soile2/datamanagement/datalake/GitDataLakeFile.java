@@ -18,6 +18,13 @@ public class GitDataLakeFile {
 	String originalFileName;
 	String elementID;
 	
+	/**
+	 * Default constructor
+	 * @param repoID the ID of the repo this file is in
+	 * @param TargetName the name of the target file
+	 * @param OriginalFileName the original file name
+	 * @param mimeFormat the mime format / format of the file
+	 */
 	public GitDataLakeFile(String repoID, String TargetName, String OriginalFileName, String mimeFormat)
 	{
 		this.targetName = TargetName;
@@ -29,7 +36,7 @@ public class GitDataLakeFile {
 	
 	/**
 	 * Get the DatalakeFile that this TaskResourceFile is associated with (i.e. an actual File Object, while this object only holds some data).
-	 * @return
+	 * @return The Corresponding {@link DataLakeFile} object
 	 */
 	public DataLakeFile getDataLakeFile()
 	{

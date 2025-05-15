@@ -24,8 +24,8 @@ public interface MessageResponseHandler {
 	
 	/**
 	 * Create a new handler indicate the success status code.
-	 * @param successReturnCode
-	 * @return
+	 * @param successReturnCode the return code upon success
+	 * @return A {@link MessageResponseHandler} that uses the default response code
 	 */
 	public static MessageResponseHandler createDefaultHandler(int successReturnCode)
 	{

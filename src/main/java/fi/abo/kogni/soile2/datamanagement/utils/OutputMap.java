@@ -7,6 +7,10 @@ import org.apache.logging.log4j.Logger;
 
 import io.vertx.core.json.JsonObject;
 
+/**
+ * A JsonObject that also works as a map for output values (Doubles)
+ * @author Thomas Pfau
+ */
 public class OutputMap extends JsonObject{
 	static final Logger LOGGER = LogManager.getLogger(OutputMap.class);
 
@@ -32,6 +36,10 @@ public class OutputMap extends JsonObject{
 		numberMap.remove(key);
 		return super.remove(key);
 	}
+	/**
+	 * Get the map of numbers stored in this Json Object
+	 * @return the part of the Json Object that contains numbers.
+	 */
 	
 	public HashMap<String,Double> getOutputMap()	
 	{

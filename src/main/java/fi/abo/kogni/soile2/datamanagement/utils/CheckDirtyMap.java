@@ -22,6 +22,11 @@ public class CheckDirtyMap<K,T> {
 	private ConcurrentHashMap<K, TimeStampedData<T>> elementMap = new ConcurrentHashMap<K, TimeStampedData<T>>();
 	DirtyDataRetriever<K,T> retriever;
 	long ttl;
+	/**
+	 * DEfautl constructor for a Map
+	 * @param retriever the retriever to use
+	 * @param TTL the Time to live (how long is data considered to be fine
+	 */
 	public CheckDirtyMap(DirtyDataRetriever<K,T> retriever, long TTL) {
 		this.retriever = retriever;
 		ttl = TTL;
@@ -40,10 +45,9 @@ public class CheckDirtyMap<K,T> {
 	}
 	
 	/**
-	 * Get an item with a specific key. The Map tries to retrieve it if it can't be found. 
-	 * If it can't be found the handler has to handle a failedFuture with a {@link NoSuchElementException} error 
-	 * @param itemID
-	 * @return the item to be looked for. or null, if it doesn't exist.
+	 * Handle an item with the given key by the given result handler 
+	 * @param itemID the ID of the item
+	 * @param resultHandler the handler that handles the retrieved data
 	 */
 	public void getData(K itemID, Handler<AsyncResult<T>> resultHandler)
 	{
@@ -53,7 +57,7 @@ public class CheckDirtyMap<K,T> {
 	/**
 	 * Get an item with a specific key. The Map tries to retrieve it if it can't be found. 
 	 * If it can't be found the handler has to handle a failedFuture with a {@link NoSuchElementException} error 
-	 * @param itemID
+	 * @param itemID the id of the item to retrieve
 	 * @return the item to be looked for. or null, if it doesn't exist.
 	 */
 	public Future<T> getData(K itemID)
@@ -89,7 +93,7 @@ public class CheckDirtyMap<K,T> {
 	/**
 	 * Get an item with a specific key. This item can be "dirty" i.e. not up to date. Use with care! 
 	 * If it can't be found the handler has to handle a failedFuture with a {@link NoSuchElementException} error 
-	 * @param itemID
+	 * @param itemID the ID of the item to retrieve
 	 * @return the item to be looked for. or null, if it doesn't exist.
 	 */
 	public Future<T> getDirtyData(K itemID)
@@ -129,7 +133,7 @@ public class CheckDirtyMap<K,T> {
 	
 	/**
 	 * Maanually clean an element from the Mapping.
-	 * @param ItemID
+	 * @param ItemID the ID of the item to retrieve
 	 */
 	public void cleanElement(K ItemID)
 	{

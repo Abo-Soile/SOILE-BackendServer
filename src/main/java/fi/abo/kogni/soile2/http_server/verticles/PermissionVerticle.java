@@ -18,10 +18,18 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
 
+/**
+ * Permission handling verticle
+ * @author Thomas Pfau
+ *
+ */
 public class PermissionVerticle extends AbstractVerticle {
 
 	MongoClient client;	
 	private List<MessageConsumer<JsonObject>> consumers;
+	/**
+	 * Default constructor
+	 */
 	public PermissionVerticle() {
 		super();		
 	}

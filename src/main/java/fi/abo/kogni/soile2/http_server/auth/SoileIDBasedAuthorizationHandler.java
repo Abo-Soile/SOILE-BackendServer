@@ -33,11 +33,22 @@ public class SoileIDBasedAuthorizationHandler{
 	String targetCollection;
 	boolean restrictive;
 	
+	/**
+	 * Default non restricitive constructor (allowed what's not forbidden)
+	 * @param targetCollection the target database collection
+	 * @param client the {@link MongoClient} to use
+	 */
 	public SoileIDBasedAuthorizationHandler(String targetCollection, MongoClient client)
 	{
 		this(targetCollection,client,false);		
 	}
 	
+	/**
+	 * Constructor that allows setting restrictive access (forbidden whats not allowed)
+	 * @param targetCollection the target db collection
+	 * @param client the {@link MongoClient} to use for db access
+	 * @param restrictive whether restrictive or not
+	 */
 	public SoileIDBasedAuthorizationHandler(String targetCollection, MongoClient client, boolean restrictive)
 	{
 		this.targetCollection = targetCollection;
@@ -50,7 +61,7 @@ public class SoileIDBasedAuthorizationHandler{
 	 * @param user The user to check
 	 * @param IDs the ids to check
 	 * @param AdminAllowed whether it would be sufficient if the user is an admin.
-	 * @return
+	 * @return whether the user has access to everything or not
 	 */
 	public boolean checkMultipleFullAuthorizations(User user, List<String> IDs, boolean AdminAllowed)
 	{
@@ -80,6 +91,8 @@ public class SoileIDBasedAuthorizationHandler{
 	
 	/**
 	 * Check whether the object with the given ID is private.
+	 * @param id the id to check
+	 * @return whether the given ID is private
 	 */
 	public Future<Boolean> checkIsPrivate(String id)
 	{

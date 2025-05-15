@@ -7,6 +7,8 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.mongodb.internal.async.client.AsyncMongoClient;
+
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
@@ -25,8 +27,15 @@ public class ElementFactory<T extends ElementBase> {
 	
 	Supplier<T> DBObjectSupplier;
 	TargetElementType type;
+	/**
+	 * Logger
+	 */
 	public static final Logger log = LogManager.getLogger(ElementFactory.class);
 
+	/**
+	 * Default constructor
+	 * @param supplier a supplier for the type of this Factory
+	 */
 	public ElementFactory(Supplier<T> supplier)
 	{		
 		DBObjectSupplier = supplier;
@@ -35,10 +44,9 @@ public class ElementFactory<T extends ElementBase> {
 	
 	/**
 	 * Generic generator (as in creates an element and saves it to the 
-	 * @param client
-	 * @param element
-	 * @param type Is Nullable, mainly for tasks codeType.
-	 * @return
+	 * @param client A {@link MongoClient} for dba ccess
+	 * @param name the name of the element to create
+	 * @return a {@link Future} of an instance of the type created by this Factory 
 	 */
 	public Future<T> createElement(MongoClient client, String name) //, String version, String type)
 	{		
@@ -75,27 +83,12 @@ public class ElementFactory<T extends ElementBase> {
 
 		return elementPromise.future();
 	}
-	/**
-	 * Generic generator (as in creates an element and saves it to the 
-	 * @param client
-	 * @param element
-	 * @param type Is Nullable, mainly for tasks codeType.
-	 * @return
-	 */
-	/*public Future<T> createElement(MongoClient client, String name)	
-	{		
-		if(type == TargetElementType.TASK)
-		{
-			return Future.failedFuture("Need a codeType to create a Task");
-		}
-		return createElement(client, name, null);
-	}*/
-	
+
 	/**
 	 * Load a project as specified by the UUID. This UUID is the mongoDB id. if no project could be loaded, the promise fails.
-	 * @param client
-	 * @param UUID
-	 * @return
+	 * @param client {@link MongoClient} for db access
+	 * @param UUID the UUID of the element to load
+	 * @return a {@link Future} of an instance of the type created by this Factory
 	 */
 	public Future<T> loadElement(MongoClient client, String UUID)
 	{

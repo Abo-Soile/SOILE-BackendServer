@@ -21,15 +21,23 @@ import io.vertx.ext.web.FileUpload;
  * Handler for element data interaction between The Database and the Git Repository (i.e. linking the two sides.
  * @author Thomas Pfau
  *
- * @param <T>
+ * @param <T> The class of the {@link Element} handled by this handler
  */
 public class ElementDataHandler<T extends Element>{
 	private static final Logger LOGGER = LogManager.getLogger(ElementDataHandler.class);
 
+	/**
+	 * The Type ID to determine the Type of the Handler objects
+	 */
 	protected String typeID;
 	private DataLakeResourceManager resourceManager;
 	private TimeStampedMap<GitFile, DataLakeFile> gitElements;
 	
+	/**
+	 * Default constructor
+	 * @param manager a {@link DataLakeResourceManager} for datalake access
+	 * @param supplier A Supplier of the type used for this Handler
+	 */
 	public ElementDataHandler(DataLakeResourceManager manager, Supplier<T> supplier)
 	{
 		typeID = supplier.get().getTypeID();
@@ -49,7 +57,7 @@ public class ElementDataHandler<T extends Element>{
 	 * @param taskID the ID of the task (will be translated to the appropriate Git Repository ID) 
 	 * @param taskVersion the version for which to get the given file
 	 * @param filename the name of the file
-	 * @return
+	 * @return A {@link Future} of the requested {@link DataLakeFile}
 	 */
 	public Future<DataLakeFile> handleGetFile(String taskID, String taskVersion, String filename)
 	{		

@@ -12,6 +12,10 @@ import io.vertx.core.json.JsonObject;
 public class DBParticipantFactory implements ParticipantFactory{
 	
 	ParticipantManager manager;
+	/**
+	 * Default constructor
+	 * @param client the Participant Manager for handling and building Participants
+	 */
 	public DBParticipantFactory(ParticipantManager client)
 	{
 		this.manager = client;

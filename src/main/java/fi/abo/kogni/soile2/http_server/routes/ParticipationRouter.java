@@ -39,6 +39,11 @@ import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.validation.RequestParameters;
 import io.vertx.ext.web.validation.ValidationHandler;
 
+/**
+ * Class implementing routes for Participation
+ * @author Thomas Pfau
+ *
+ */
 public class ParticipationRouter extends SoileRouter{
 
 
@@ -55,7 +60,15 @@ public class ParticipationRouter extends SoileRouter{
 
 	static final Logger LOGGER = LogManager.getLogger(StudyRouter.class);
 
-
+	/**
+	 * Default constructor for router
+	 * @param auth The {@link SoileAuthorization} for auth checks
+	 * @param vertx The {@link Vertx} instance for communication
+	 * @param client the {@link MongoClient} for db access
+	 * @param partHandler the {@link ParticipantHandler} for participant access
+	 * @param projHandler the {@link StudyHandler} for study access
+	 * @param fileProvider A {@link IDSpecificFileProvider} for file retrieval
+	 */
 	public ParticipationRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, StudyHandler projHandler, IDSpecificFileProvider fileProvider) {
 		super(auth,client);
 		eb = vertx.eventBus();
@@ -68,6 +81,10 @@ public class ParticipationRouter extends SoileRouter{
 		this.resourceHandler = fileProvider;
 	}
 
+	/**
+	 * Submit results for the {@link Participant} contained in the context
+	 * @param context The {@link RoutingContext} containing the results and the {@link Participant}
+	 */
 	public void submitResults(RoutingContext context)
 	{				
 		String requestedInstanceID = context.pathParam("id");;
@@ -98,7 +115,7 @@ public class ParticipationRouter extends SoileRouter{
 	 * End point for data upload
 	 * TODO: Create cleanup method for orphaned files
 	 * TODO: Try to develop method to avoid upload spamming.
-	 * @param context
+	 * @param context the {@link RoutingContext} this happens in
 	 */
 	public void uploadData(RoutingContext context)
 	{
@@ -146,6 +163,10 @@ public class ParticipationRouter extends SoileRouter{
 		.onFailure(err -> handleError(err, context));
 	}
 
+	/**
+	 * Withdraw the participant in the given Context from the Study
+	 * @param context The {@link RoutingContext} to retrieve the user/participant from
+	 */
 	public void withdrawFromStudy(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -196,7 +217,10 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));
 	}
-
+	/**
+	 * Sign the user/participant from the context up to the study in the context
+	 * @param context the {@link RoutingContext} to extract the user/participant from
+	 */
 	public void signUpForProject(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -277,9 +301,9 @@ public class ParticipationRouter extends SoileRouter{
 
 	/**
 	 * Create a participant based on whether the context has an actual (non-empty) authentication and whether a token was provided. 
-	 * @param study
-	 * @param token
-	 * @param user
+	 * @param study the Study to create a participant in
+	 * @param token the Token (can be empty) indicating the user
+	 * @param user the User (can be <code>null</code>)
 	 * @return
 	 */
 	Future<Participant> createParticipant(Study study, String token, User user)
@@ -370,6 +394,10 @@ public class ParticipationRouter extends SoileRouter{
 		return tokenPromise.future();
 	}
 
+	/**
+	 * Get Information about the Task
+	 * @param context The {@link RoutingContext} indicating the Task
+	 */
 	public void getTaskInfo(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");;
@@ -425,7 +453,10 @@ public class ParticipationRouter extends SoileRouter{
 		.onFailure(err -> handleError(err, context));		
 	}
 
-	//TODO: Test
+	/**
+	 * Get the persistent data for the User in the given Context (Study etc)
+	 * @param context The {@link RoutingContext} indicating which Persistent data to obtain for which user
+	 */
 	public void getPersistentData(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");;
@@ -450,6 +481,10 @@ public class ParticipationRouter extends SoileRouter{
 		.onFailure(err -> handleError(err, context));		
 	}
 
+	/**
+	 * Run a given task (i.e. extract the task, compile it and return the corresponding code
+	 * @param context The {@link RoutingContext} indicating the code to extract
+	 */
 	public void runTask(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");
@@ -494,6 +529,10 @@ public class ParticipationRouter extends SoileRouter{
 	}			
 
 
+	/**
+	 * Get the ID of the current Task the {@link Participant} in this context should be pointed to.
+	 * @param context The {@link RoutingContext} to extract the {@link Participant} from 
+	 */
 	public void getID(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");
@@ -528,7 +567,11 @@ public class ParticipationRouter extends SoileRouter{
 		})
 		.onFailure(err -> handleError(err, context));		
 	}
-
+	
+	/**
+	 * Get the Library specified in the RoutingContext
+	 * @param context The {@link RoutingContext} to extract the target from
+	 */
 	public void getLib(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");
@@ -561,6 +604,10 @@ public class ParticipationRouter extends SoileRouter{
 		.onFailure(err -> handleError(err, context));		
 	}
 
+	/**
+	 * Get the Resource (source) for the given Context request
+	 * @param context The {@link RoutingContext} indicating the location
+	 */
 	public void getResourceForExecution(RoutingContext context)
 	{
 		String requestedInstanceID = context.pathParam("id");
@@ -609,7 +656,7 @@ public class ParticipationRouter extends SoileRouter{
 	 * @param user the authenticated {@link User} from a routing context
 	 * @param project the {@link Study} for which the participant is requested. If there is none yet, one will be created.
 	 * @param failIfExist Fail the retrieval if the participant already exists (to avoid double signup);
-	 * @return
+	 * @return The {@link Participant} associated with the User in the given {@link Study}
 	 */
 	Future<Participant> getParticpantForUser(User user, Study project)
 	{
@@ -646,7 +693,12 @@ public class ParticipationRouter extends SoileRouter{
 
 	}		
 
-
+	/**
+	 * Handle the given RoutingContext with the given Handler and handle arising errors
+	 * Specific to Study routes, i.e. will check Study is available etc pp.
+	 * @param context The {@link RoutingContext} to handle
+	 * @param method The Handler method that should be applied.
+	 */
 	public void handleRequest(RoutingContext context, Handler<RoutingContext> method)
 	{
 		String projectID = context.pathParam("id");
@@ -671,7 +723,11 @@ public class ParticipationRouter extends SoileRouter{
 		});
 	}
 
-
+	/**
+	 * Load the study with the given ID
+	 * @param id the ID of the Study 
+	 * @return A {@link Future} of the requested {@link Study} or a failed future if it doesn't exist, 
+	 */
 	private Future<Study> loadStudy(String id)
 	{
 		Promise<Study> studyPromise = Promise.promise();

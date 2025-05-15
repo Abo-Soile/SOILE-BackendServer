@@ -19,7 +19,7 @@ public class Filter {
 	 * Test if a Given {@link Participant} matches the filter. The filter is a Formula that has variables reflected by the outputs of the participant.
 	 * @param Filter The Formula (needs to be parseable)
 	 * @param user The {@link Participant} to check the filter for
-	 * @return
+	 * @return whether the user matches or not
 	 */
 	public static boolean userMatchesFilter(String Filter, Participant user)
 	{
@@ -32,9 +32,9 @@ public class Filter {
 	/**
 	 * Test the filter expression with a given Set of values as JsonObject. 
 	 * Returns success if valid (with the variables) or the message of the error that was thrown.
-	 * @param FilterString
-	 * @param Values
-	 * @return
+	 * @param FilterString the String to test
+	 * @param Values example values.
+	 * @return whether the expression is valid
 	 */
 	public static String isFilterExpressionValid(String FilterString , JsonObject Values)
 	{
@@ -59,6 +59,10 @@ public class Filter {
 		return "Success";
 	}
 	
+	/**
+	 * Get the Specifications for a Filter 
+	 * @return the {@link FieldSpecifications} for a filter
+	 */
 	public static FieldSpecifications getFieldSpecs()
 	{
 		return new FieldSpecifications().put(new FieldSpecification("instanceID", String.class, String::new, false))

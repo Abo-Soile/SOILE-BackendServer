@@ -13,8 +13,8 @@ public class GitElement {
 		private String repoVersion;
 		/**
 		 * Create from the repository ID and repository version.
-		 * @param repoID
-		 * @param repoVersion
+		 * @param repoID the ID of the repository to use
+		 * @param repoVersion the version of the element in the repo 
 		 */
 		public GitElement(String repoID, String repoVersion) {
 			super();			
@@ -24,7 +24,7 @@ public class GitElement {
 		
 		/**
 		 * Extract info from Json
-		 * @param json
+		 * @param json the Json representing the element
 		 */
 		public GitElement(JsonObject json) {
 			this.repoID = json.getString("repoID");
@@ -32,14 +32,14 @@ public class GitElement {
 		}
 		/**
 		 * Get the Repository ID of the represented Repository (for use with a {@link gitProviderVerticle})
-		 * @return
+		 * @return the rpository id
 		 */
 		public String getRepoID() {
 			return repoID;
 		}
 		/**
 		 * Get the Repository version this Element represents
-		 * @return
+		 * @return the version of the repo element
 		 */
 		public String getRepoVersion() {
 			return repoVersion;

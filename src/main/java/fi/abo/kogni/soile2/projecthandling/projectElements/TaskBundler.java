@@ -35,7 +35,11 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-
+/**
+ * A Class that facilitates creating a zip bundle for a given task.
+ * @author Thomas Pfau
+ *
+ */
 public class TaskBundler {
 	private static final Logger LOGGER = LogManager.getLogger(TaskBundler.class);
 
@@ -43,11 +47,27 @@ public class TaskBundler {
 	EventBus eb;
 	Vertx vertx;
 	ElementManager<Task> taskManager;
+	/**
+	 * SOURCE File name
+	 */
 	public static String SOURCEFILE_NAME = "source.code";
+	/**
+	 * Configuration file name
+	 */
 	public static String CONFIGFILE_NAME = "soile.cfg";
+	/**
+	 * Resource folder name
+	 */
 	public static String RESOURCEFOLDER_NAME = "resources";
 	
 		
+	/**
+	 * Default constructor
+	 * @param dlrmgr Manager for access to the data lake
+	 * @param eb {@link EventBus} for communication 
+	 * @param vertx {@link Vertx} instance for communicaton
+	 * @param taskManager TaskManager to access task data
+	 */
 	public TaskBundler(DataLakeResourceManager dlrmgr, EventBus eb, Vertx vertx, ElementManager<Task> taskManager) {
 		super();
 		this.dlrmgr = dlrmgr;
@@ -153,7 +173,7 @@ public class TaskBundler {
 	 * Create Code and config files and retrieve the {@link FileDescriptor}s   
 	 * @param taskUUID - the given task
 	 * @param version the version of the task
-	 * @return
+	 * @return a {@link Future} of a List of {@link FileDescriptor}s
 	 */
 	public Future<List<FileDescriptor>> buildTaskFileList(String taskUUID, String version)
 	{
@@ -189,6 +209,7 @@ public class TaskBundler {
 	/**
 	 * Create A Task using a given TaskName and the given File pointing to a Zip File containig the task information
 	 * @param TaskZipFile  The File containing the zipped task
+	 * @param Tag The tag of the task to retrieve
 	 * @param taskName The name of the task (can be null)
 	 * @return A {@link Future} that is successful if the task was created.
 	 */

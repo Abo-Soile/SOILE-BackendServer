@@ -14,11 +14,7 @@ public class ParticipantFileResults {
 
 	
 	/**
-	 * Generate a new Fileresult for a given task. 
-	 * @param originalFileName the original ID of the file as supplied by the project generation
-	 * @param projectID The project ID in which this is a result 
-	 * @param fileFormat the type of the file, essentially the file extension
-	 * @param taskID the id of the task this file belongs to.
+	 * Generate a new Fileresult for a given task.  
 	 * @param participantID the id of the participant this file belongs to.
 	 */
 	public ParticipantFileResults(String participantID) {
@@ -37,7 +33,7 @@ public class ParticipantFileResults {
 	
 	/**
 	 * Get the folder of the participant.
-	 * @return
+	 * @return The folder containing the data for this participant 
 	 */
 	public String getParticipantFolder()
 	{

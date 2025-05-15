@@ -9,6 +9,10 @@ public class CompilationException extends Exception{
 
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Default constructor
+	 * @param reason reason for the exception
+	 */
 	public CompilationException(String reason)
 	{
 		super(reason);

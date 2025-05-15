@@ -8,8 +8,8 @@ import io.vertx.core.Handler;
  * A Dataretriever retrieves elements of type T for keys of type K
  * @author Thomas Pfau
  *
- * @param <K>
- * @param <T>
+ * @param <K> The class of the key values of this retriever
+ * @param <T> The class of the target values of this retriever
  */
 public interface DataRetriever<K,T> {
 	
@@ -22,8 +22,8 @@ public interface DataRetriever<K,T> {
 
 	/**
 	 * Same as getElement(K key) but the handler will be given the resulting future to handle; 
-	 * @param key 
-	 * @param handler 
+	 * @param key the of the element to get
+	 * @param handler the result handler
 	 */
 
 	void getElement(K key, Handler<AsyncResult<T>> handler);	

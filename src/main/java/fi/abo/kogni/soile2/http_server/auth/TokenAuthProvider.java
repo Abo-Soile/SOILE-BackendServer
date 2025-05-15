@@ -27,6 +27,11 @@ public class TokenAuthProvider {
 
 	ParticipantHandler partHandler;
 	MongoClient client;
+	/**
+	 * Default constructor
+	 * @param partHandler the Partiicpant handler (to indicate the user)
+	 * @param client the MongoClient for db communication
+	 */
 	public TokenAuthProvider(ParticipantHandler partHandler, MongoClient client)
 	{
 		this.partHandler = partHandler;
@@ -38,7 +43,7 @@ public class TokenAuthProvider {
 	 * If both match (i.e. the token is associated with a valid participant for the study, then the 
 	 * Provider creates a user which does NOT have a username but only a token.
 	 * TODO: Need to ensure that this is compatible with all relevant endpoints (i.e. the endpoints for project execution)  
-	 * @param context
+	 * @param context the {@link RoutingContext} to authenticate
 	 * @return A Future of the user to be added to the context.
 	 */
 	public Future<User> authenticate(RoutingContext context )

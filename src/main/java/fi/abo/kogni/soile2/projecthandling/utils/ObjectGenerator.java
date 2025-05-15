@@ -20,15 +20,18 @@ import fi.abo.kogni.soile2.http_server.requestHandling.SOILEUpload;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIExperiment;
 import fi.abo.kogni.soile2.projecthandling.apielements.APIProject;
 import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
+import fi.abo.kogni.soile2.projecthandling.projectElements.Element;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Experiment;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.ElementToDBStudyFactory;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.impl.MimeMapping;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
@@ -42,19 +45,42 @@ public class ObjectGenerator {
 
 	private static final Logger LOGGER = LogManager.getLogger(ObjectGenerator.class);
 
-
+	
+	/**
+	 * Build a API Task 
+	 * @param manager The {@link ElementManager} to use
+	 * @param elementID the ID of the element
+	 * @return a {@link Future} of A {@link APITask}
+	 */
 	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID)
 	{
 		return buildAPITask(manager, elementID, null);
 	}
-
+	
+	/**
+	 * Build an APIexperiment
+	 * @param experimentManager the {@link ElementManager} for Experiments
+	 * @param taskManager the {@link ElementManager} for Tasks
+	 * @param client the {@link MongoClient} for db access
+	 * @param experimentName the name of the experiment
+	 * @return A {@link Future} of an {@link APIExperiment}
+	 */
 	public static Future<APIExperiment> buildAPIExperiment(ElementManager<Experiment> experimentManager,ElementManager<Task> taskManager,MongoClient client, String experimentName)
 	{
 		return buildAPIExperiment(experimentManager, taskManager, client, experimentName, null);
 	}
 
 	
-	@SuppressWarnings("rawtypes")
+	/**
+	 * Same as buildAPIExperiment but also allowing to set a path to the data of the element
+	 * @param experimentManager the {@link ElementManager} for Experiments
+	 * @param taskManager the {@link ElementManager} for Tasks
+	 * @param client the {@link MongoClient} for db access
+	 * @param experimentName the name of the experiment
+	 * @param datapath the data path
+	 * @return A {@link Future} of an {@link APIExperiment}
+	 */
+	@SuppressWarnings("rawtypes")	
 	public static Future<APIExperiment> buildAPIExperiment(ElementManager<Experiment> experimentManager,ElementManager<Task> taskManager,MongoClient client, String experimentName, String datapath)
 	{
 		Promise<APIExperiment> experimentPromise = Promise.promise();
@@ -166,6 +192,15 @@ public class ObjectGenerator {
 		return experimentPromise.future();
 	}
 
+	/**
+	 * A  utility to generate API Projects
+	 * @param projectManager the {@link ElementManager} for {@link Project}s
+	 * @param expManager the {@link ElementManager} for Experiments
+	 * @param taskManager the {@link ElementManager} for Tasks
+	 * @param client the {@link MongoClient} for db access 
+	 * @param projectName the name of the project
+	 * @return A Future of a {@link APIProject}
+	 */
 	public static Future<APIProject> buildAPIProject(ElementManager<Project> projectManager, 
 			 ElementManager<Experiment> expManager,
 			 ElementManager<Task> taskManager, 
@@ -176,6 +211,16 @@ public class ObjectGenerator {
 	}
 
 	
+	/**
+	 * Same as buildAPIProject but with the option to set a datapath
+	 * @param projectManager the {@link ElementManager} for {@link Project}s
+	 * @param expManager the {@link ElementManager} for Experiments
+	 * @param taskManager the {@link ElementManager} for Tasks
+	 * @param client the {@link MongoClient} for db access
+ 	 * @param projectName the name of the project
+	 * @param datapath the data path
+	 * @return A Future of a {@link APIProject}
+	 */
 	@SuppressWarnings("rawtypes")
 	public static Future<APIProject> buildAPIProject(ElementManager<Project> projectManager, 
 													 ElementManager<Experiment> expManager,
@@ -291,11 +336,26 @@ public class ObjectGenerator {
 		return projectPromise.future();
 	}
 	
+	/**
+	 * Create a Project
+	 * @param client {@link MongoClient} for db access
+	 * @param vertx {@link Vertx} instance for communication
+	 * @param projectName name of the project
+	 * @return A {@link Future} of a {@link JsonObject} representing the Project
+	 */
 	public static Future<JsonObject> createProject(MongoClient client, Vertx vertx, String projectName)
 	{
 		return createProject(client, vertx, projectName, null);
 	}
 	
+	/**
+	 * Same as createProject but allows setting a datapath
+	 * @param client {@link MongoClient} for db access
+	 * @param vertx {@link Vertx} instance for communication
+	 * @param projectName name of the project
+	 * @param datapath the datapath to use 
+	 * @return  A {@link Future} of a {@link JsonObject} representing the Project
+	 */
 	public static Future<JsonObject> createProject(MongoClient client, Vertx vertx, String projectName, String datapath)
 	{
 		ElementManager<Project> projectManager = new ElementManager<>(Project::new, APIProject::new, client, vertx); 
@@ -304,7 +364,10 @@ public class ObjectGenerator {
 		 return buildAPIProject(projectManager, expManager, taskManager, client, projectName, datapath).map(res -> { return new JsonObject().put("UUID", res.getUUID()).put("version", res.getVersion());});
 	}
 	
-	
+	/**
+	 * Update the Element targets of the given experiments (i.e. the elements in it)
+	 * @param experiment the experiment JSON to update
+	 */
 	private static void updateExperimentElementTargets(JsonObject experiment)
 	{
 		String experimentInstanceID = experiment.getString("instanceID");
@@ -330,7 +393,11 @@ public class ObjectGenerator {
 			}
 		}
 	}
-	
+	/**
+	 * Update the filter targets 
+	 * @param filter the filter to update
+	 * @param sourceID the source id to set as target.
+	 */
 	private static void updateFilterTargets(JsonObject filter, String sourceID)
 	{
 		if(filter.getString("defaultOption").equals("end"))
@@ -348,6 +415,13 @@ public class ObjectGenerator {
 		}
 	}
 	
+	/**
+	 * Build a PI Task
+	 * @param manager the {@link ElementManager} for tasks
+	 * @param elementID the ID of the element
+	 * @param datapath the datapath
+	 * @return a {@link Future} of an {@link APITask}
+	 */
 	@SuppressWarnings("rawtypes")
 	public static Future<APITask> buildAPITask(ElementManager<Task> manager, String elementID, String datapath)
 	{

@@ -35,11 +35,16 @@ public class ParticipantHandler {
 
 
 
-
-	public ParticipantHandler(MongoClient client, StudyHandler project, Vertx vertx) {
+	/**
+	 * Default constructor
+	 * @param client a {@link MongoClient} for db communication
+	 * @param studyHandler the {@link StudyHandler} for study access 
+	 * @param vertx The {@link Vertx} instance for communication
+	 */
+	public ParticipantHandler(MongoClient client, StudyHandler studyHandler, Vertx vertx) {
 		super();		
 		this.client = client;
-		this.studyHandler = project;
+		this.studyHandler = studyHandler;
 		this.manager = new ParticipantManager(client);
 		this.vertx = vertx;
 		activeparticipants = new CheckDirtyMap<String, Participant>(manager, 2*3600); //Keep for two hours
@@ -50,7 +55,7 @@ public class ParticipantHandler {
 	/**
 	 * Create a normal Participant in the given Study. 
 	 * @param study the {@link Study} to create a participant in
-	 * @return
+	 * @return the Created {@link Participant}
 	 */
 	public Future<Participant> create(Study study)
 	{
@@ -60,8 +65,8 @@ public class ParticipantHandler {
 	
 	/**
 	 * Create a normal Participant in the Study represented by the given ID. 
-	 * @param study
-	 * @return
+	 * @param studyID the ID of the {@link Study} to create a participant for.
+	 * @return the Created {@link Participant}
 	 */
 	public Future<Participant> create(String studyID)
 	{
@@ -71,7 +76,9 @@ public class ParticipantHandler {
 	/**
 	 * Create a participant in the database
 	 * @param p the {@link Study} for which to create a participant
-	 * 
+	 * @param signuptoken the token used for signup
+	 * @param TokenParticipant whether this will be a Token participant
+	 * @return a {@link Future} of the {@link Participant} that was created
 	 */
 	public Future<Participant> createParticipant(Study p, String signuptoken, boolean TokenParticipant)
 	{
@@ -102,7 +109,7 @@ public class ParticipantHandler {
 	 * Retrieve a participant from the database (or memory) and return the participant
 	 * based on the participants uID.
 	 * @param id the uid of the participant
-	 * @param handler the handler that requested the participant.
+	 * @return A {@link Future} of the requested {@link Participant} 
 	 */
 	public Future<Participant> getParticipant(String id)
 	{
@@ -136,7 +143,9 @@ public class ParticipantHandler {
 
 	/**
 	 * Delete a participant and all data associated with the participant from the project.
-	 * @param id
+	 * @param id the id of the participant that is to be deleted
+	 * @param participantHasToBeInStudy whether the participant has to be in a study
+	 * @return A {@link Future} indicating whether the operation was successful
 	 */
 	public Future<Void> deleteParticipant(String id, boolean participantHasToBeInStudy)
 	{
@@ -220,9 +229,9 @@ public class ParticipantHandler {
 	}
 
 	/**
-	 * Get a {@link JsonArray} of {@link JsonObject} elements that contain the 
-	 * @param project
-	 * @return
+	 * Retrieve the status of all participants in the given study (the db extract of all participants)
+	 * @param project the study to get the status in
+	 * @return A Future of the db extract {@link JsonArray} of {@link JsonObject}s
 	 */
 	public Future<JsonArray> getParticipantStatusForProject(Study project)
 	{
@@ -231,8 +240,10 @@ public class ParticipantHandler {
 
 	/**
 	 * Get a {@link JsonArray} of {@link JsonObject} elements that contain the 
-	 * @param studyHandler
-	 * @return
+	 * @param participantIDs A List of partiicpant ids
+	 * @param taskID the task id for which to get the info
+	 * @param projectID the Study id
+	 * @return A {@link Future} of a List of Participant data.
 	 */
 	public Future<List<JsonObject>> getTaskDataforParticipants(JsonArray participantIDs, String taskID, String projectID)
 	{
@@ -241,8 +252,9 @@ public class ParticipantHandler {
 
 	/**
 	 * Get a {@link List} of {@link JsonObject} elements that contain the results along with some additional information for each participant. 
-	 * @param project
-	 * @return
+	 * @param project the study for which to get data
+	 * @param particpantIDs the IDs of the participants for which to get data
+	 * @return A {@link Future} of a List of Participant data.
 	 */
 	public Future<List<JsonObject>> getParticipantData(Study project, JsonArray particpantIDs)
 	{

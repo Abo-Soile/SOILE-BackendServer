@@ -7,9 +7,19 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * A BAsic randomizer
+ * @author Thomas Pfau
+ *
+ */
 public class BasicRandomizer extends Randomizer {
 
 	boolean assignGroupOnce = false;
+	/**
+	 * Basic Randomizer that just does a general randmization
+	 * @param data Randomizer specification
+	 * @param source source Study
+	 */
 	public BasicRandomizer(JsonObject data, Study source) {
 		super(data,source);
 		this.setSettings(this.data.getJsonArray("settings"));

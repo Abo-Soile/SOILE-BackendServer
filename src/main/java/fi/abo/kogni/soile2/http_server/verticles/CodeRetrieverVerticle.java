@@ -28,9 +28,21 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 
 	static final Logger LOGGER = LogManager.getLogger(CodeRetrieverVerticle.class);
 
+	/**
+	 * PsychoPy indicator
+	 */
 	public final static String PSYCHOPY = "psychopy";
+	/**
+	 * Elang indicator
+	 */
 	public final static String ELANG = "elang";
+	/**
+	 * Qmarkup indicator 
+	 */
 	public final static String QMARKUP = "qmarkup";
+	/**
+	 * Javascript indicator
+	 */
 	public final static String JAVASCRIPT = "javascript";
 	private CodeProvider elangProvider;
 	private CodeProvider qmarkupProvider;
@@ -50,7 +62,7 @@ public class CodeRetrieverVerticle extends AbstractVerticle {
 	
 	/**
 	 * Clean up data. 
-	 * @param cleanUpRequest
+	 * @param cleanUpRequest the request message (just a signal)
 	 */
 	public void cleanUp(Message<Object> cleanUpRequest)
 	{

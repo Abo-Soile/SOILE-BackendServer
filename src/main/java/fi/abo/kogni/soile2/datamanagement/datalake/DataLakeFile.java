@@ -14,13 +14,26 @@ import io.vertx.core.json.JsonObject;
 public class DataLakeFile extends File implements FileDescriptor {
 	
 	private static final long serialVersionUID = 1L;
+	/**
+	 * The original file name
+	 */
 	private String originalFileName;
+	/**
+	 * the mime format (file format)
+	 */
 	private String mimeFormat;
+	/**
+	 * The path in the datalake
+	 */
 	private String pathInLake;
+	/**
+	 * the data lake path on the os
+	 */
 	private String dataLake;
 	/**
 	 * Basic constructor given a real filename, the original Filename and the format of the file contents.
-	 * @param path the actual location of the file
+	 * @param dataLakePath the actual location of the file
+	 * @param pathInLake the path within the lake
 	 * @param originalFileName the Name this file originally had (as the path likely points to a random file name)
 	 * @param mimeFormat the format of the file contents.
 	 */
@@ -34,7 +47,7 @@ public class DataLakeFile extends File implements FileDescriptor {
 	
 	/**
 	 * Constructor retrieving the necessary information from a {@link JsonObject}
-	 * @param source
+	 * @param source description of the Source as a JsonObject
 	 */
 	public DataLakeFile(JsonObject source) {
 		super(source.getString("dataLake") + File.separator + source.getString("pathInLake"));
@@ -55,7 +68,7 @@ public class DataLakeFile extends File implements FileDescriptor {
 
 	/**
 	 * Set the original File name, i.e. the place this file is expected to be at.
-	 * @return the name for the file
+	 * @param filename the original filename to set
 	 */
 	public void setOriginalFileName(String filename)
 	{
@@ -64,7 +77,7 @@ public class DataLakeFile extends File implements FileDescriptor {
 	
 	/**
 	 * Get the file name within the datalake
-	 * @return
+	 * @return the name of the file in the datalake
 	 */
 	 
 	public String getFileNameInLake()
@@ -92,7 +105,7 @@ public class DataLakeFile extends File implements FileDescriptor {
 	
 	/**
 	 * Convert into Json Object for communication;
-	 * @return
+	 * @return a {@link JsonObject} representing this file
 	 */
 	public JsonObject toJson()
 	{

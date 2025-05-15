@@ -22,21 +22,66 @@ import io.vertx.ext.auth.mongo.MongoAuthorizationOptions;
  */
 public class SoileConfigLoader {
 	
+	/**
+	 * Session config
+	 */
 	public static final String SESSION_CFG = "session";
+	/**
+	 * Communication config
+	 */
 	public static final String COMMUNICATION_CFG = "communication";
-	public static final String USER_DB_FIELDS = "db_user_fields";	
+	/**
+	 * User database fields
+	 */
+	public static final String USER_DB_FIELDS = "db_user_fields";
+	/**
+	 * Database config
+	 */
 	public static final String DB_CFG = "db";
+	/**
+	 * Usermanager config
+	 */
 	public static final String USERMGR_CFG = "UManagement";
+	/**
+	 * Experiment config
+	 */
 	public static final String EXPERIMENT_CFG = "experiments";
+	/**
+	 * Command prefix field
+	 */
 	public static final String COMMAND_PREFIX_FIELD = "commandPrefix";
+	/**
+	 * Commands
+	 */
 	public static final String COMMANDS = "commands";
+	/**
+	 * HTTP Server cofniguration
+	 */
 	public static final String HTTP_SERVER_CFG = "http_server";
+	/**
+	 * Task Configuration
+	 */
 	public static final String TASK_CFG = "tasks";
+	/**
+	 * Verticle Configuration
+	 */
 	public static final String VERTICLE_CFG = "verticles";
+	/**
+	 * Mongo Configuration
+	 */
 	public static final String MONGO_CFG = "mongo";
 
+	/**
+	 * Owner
+	 */
 	public static final String Owner = "Owner";
+	/**
+	 * Participant
+	 */
 	public static final String Participant = "Participant";
+	/**
+	 * Collaborator
+	 */
 	public static final String Collaborator = "Collaborator";	
 	
 	private static JsonObject dbCfg;
@@ -109,7 +154,7 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get the complete configuration
-	 * @return
+	 * @return the full config json
 	 */
 	public static JsonObject config()
 	{
@@ -117,7 +162,7 @@ public class SoileConfigLoader {
 	}
 	/**
 	 * Get a property from the Session config.
-	 * @param property - the property to obtain.
+	 * @param property the property to obtain.
 	 * @return the property
 	 */
 	public static String getSessionProperty(String property)
@@ -127,7 +172,7 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get a long property from the Session config.
-	 * @param property - the property to obtain.
+	 * @param property the property to obtain.
 	 * @return the property
 	 */
 	public static long getSessionLongProperty(String property)
@@ -137,7 +182,7 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get a property from the Server config.
-	 * @param property - the property to obtain.
+	 * @param property the property to obtain.
 	 * @return the property
 	 */
 	public static String getServerProperty(String property)
@@ -147,7 +192,8 @@ public class SoileConfigLoader {
 
 	/**
 	 * Get a boolean property from the Server config.
-	 * @param property - the property to obtain.
+	 * @param property the property to obtain.
+	 * @param defaultValue the default value to return if there is no value for the property
 	 * @return the property
 	 */
 	public static Boolean getServerBooleanProperty(String property, Boolean defaultValue)
@@ -158,7 +204,7 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get a property from the Server config.
-	 * @param property - the property to obtain.
+	 * @param property the property to obtain.
 	 * @return the property
 	 */
 	public static int getServerIntProperty(String property)
@@ -230,7 +276,7 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get a property from the database config.
-	 * @param property - the property to obtain.
+	 * @param property the property to obtain.
 	 * @return the property
 	 */
 	public static String getdbProperty(String property)
@@ -240,7 +286,7 @@ public class SoileConfigLoader {
 
 	/**
 	 * Get a property from the mongo config.
-	 * @param property - the property to obtain.
+	 * @param property the property to obtain.
 	 * @return the property
 	 */
 	public static String getMongoProperty(String property)
@@ -250,7 +296,7 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get a property from the User config.
-	 * @param property - the property to obtain.
+	 * @param property the property to obtain.
 	 * @return the property
 	 */
 	public static String getUserProperty(String property)
@@ -262,7 +308,7 @@ public class SoileConfigLoader {
 	 * Check, whether the language and version are possible.
 	 * @param language the language (e.g. qmarkup, elang or psychopy
 	 * @param version the version (1.0 for elang or qmarkup, and e.g. 2022.2.5 for psychopy)
-	 * @return
+	 * @return whether the given language and version combination is valid
 	 */
 
 	public static boolean isValidTaskType(String language, String version)
@@ -273,8 +319,7 @@ public class SoileConfigLoader {
 	/**
 	 * Get the mime type for a specific task language
 	 * @param language the language (e.g. qmarkup, elang or psychopy or javascript)
-	 * @param version the version (1.0 for elang or qmarkup, and e.g. 2022.2.5 for psychopy)
-	 * @return
+	 * @return the mime type for the given language
 	 */
 
 	public static String getMimeTypeForTaskLanugage(String language)
@@ -300,7 +345,7 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get a property from the Verticle config.
-	 * @param property - the property to obtain.
+	 * @param property the property to obtain.
 	 * @return the property
 	 */
 	public static String getVerticleProperty(String property)
@@ -310,7 +355,7 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get a property from the Communication config.
-	 * @param property - the property to obtain.
+	 * @param property the property to obtain.
 	 * @return the property
 	 */
 	public static String getCommunicationField(String property)
@@ -320,8 +365,8 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get a Result from the Communication config.
-	 * @param property - the property to obtain.
-	 * @return the property
+	 * @param result the result to obtain
+	 * @return the result object requested
 	 */
 	public static String getCommunicationResult(String result)
 	{
@@ -330,7 +375,7 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get a property from the Experiment config.
-	 * @param property - the property to obtain.
+	 * @param property the property to obtain.
 	 * @return the property
 	 */
 	public static String getExperimentProperty(String property)
@@ -370,7 +415,7 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get the command representing the string for the given target config
-	 * @param config the config that contains commands (and a command prefix)
+	 * @param target the config that contains commands (and a command prefix)
 	 * @param command the command from the config to use.
 	 * @return The command string
 	 */
@@ -382,7 +427,6 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get the Collection name from the config for a specific user type.
-	 * @param config the config that contains the usercollections data
 	 * @param collection the collection name to fetch
 	 * @return The collection name
 	 */
@@ -393,6 +437,10 @@ public class SoileConfigLoader {
 	
 	
 	// TODO: Move these to SioleAuthorization!
+	/**
+	 * Get the {@link MongoAuthenticationOptions} for Authentication
+	 * @return the options
+	 */
 	public static MongoAuthenticationOptions getMongoAuthNOptions()
 	{
 		MongoAuthenticationOptions res = new MongoAuthenticationOptions();
@@ -404,6 +452,10 @@ public class SoileConfigLoader {
 		return res;
 	}
 	
+	/**
+	 * Get the {@link MongoAuthenticationOptions} for Authorization
+	 * @return the options
+	 */
 	public static MongoAuthorizationOptions getMongoAuthZOptions()
 	{
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
@@ -414,6 +466,10 @@ public class SoileConfigLoader {
 		return res;
 	}
 	
+	/**
+	 * Get the {@link MongoAuthenticationOptions} for Task Authorization
+	 * @return the options
+	 */
 	public static MongoAuthorizationOptions getMongoTaskAuthorizationOptions()
 	{
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
@@ -423,7 +479,10 @@ public class SoileConfigLoader {
 		res.setUsernameField(getUserdbField("usernameField"));				
 		return res;
 	}
-	
+	/**
+	 * Get the {@link MongoAuthenticationOptions} for Experiment Authorization
+	 * @return the options
+	 */
 	public static MongoAuthorizationOptions getMongoExperimentAuthorizationOptions()
 	{
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
@@ -433,7 +492,10 @@ public class SoileConfigLoader {
 		res.setUsernameField(getUserdbField("usernameField"));				
 		return res;
 	}
-	
+	/**
+	 * Get the {@link MongoAuthenticationOptions} for Project Authorization
+	 * @return the options
+	 */
 	public static MongoAuthorizationOptions getMongoProjectAuthorizationOptions()
 	{
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
@@ -444,6 +506,10 @@ public class SoileConfigLoader {
 		return res;
 	}
 	
+	/**
+	 * Get the {@link MongoAuthenticationOptions} for Study Authorization
+	 * @return the options
+	 */
 	public static MongoAuthorizationOptions getMongoStudyAuthorizationOptions()
 	{
 		MongoAuthorizationOptions res = new MongoAuthorizationOptions();
@@ -456,6 +522,8 @@ public class SoileConfigLoader {
 	
 	/**
 	 * Get the database associated with a given element type
+	 * @param type the type of element to get the db for
+	 * @return the collection name string
 	 */
 	public static String getDataBaseforElement(TargetElementType type)
 	{

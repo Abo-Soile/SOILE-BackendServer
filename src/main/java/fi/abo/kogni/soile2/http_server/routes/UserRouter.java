@@ -41,12 +41,22 @@ public class UserRouter extends SoileRouter {
 	private static Logger LOGGER = LogManager.getLogger(UserRouter.class.getName()); 
 
 
+	/**
+	 * Default constructor
+	 * @param auth The {@link SoileAuthorization} for Auth checks
+	 * @param vertx The {@link Vertx} instance for communication
+	 * @param client The {@link MongoClient} for db access 
+	 */
 	public UserRouter(SoileAuthorization auth, Vertx vertx, MongoClient client)
 	{
 		super(auth,client);
 		this.eb = vertx.eventBus();
 	}
 
+	/**
+	 * List all users (accessible for Admins and Researchers, the latter only get the names)
+	 * @param context The {@link RoutingContext} containing the user to check access
+	 */
 	public void listUsers(RoutingContext context)
 	{
 		// Admins get almost full info. 
@@ -73,7 +83,7 @@ public class UserRouter extends SoileRouter {
 	
 	/**
 	 * Register a user according to the API command
-	 * @param context
+	 * @param context The {@link RoutingContext} to extract the USer info from
 	 */
 	public void registerUser(RoutingContext context)
 	{
@@ -85,7 +95,7 @@ public class UserRouter extends SoileRouter {
 	/**
 	 * Route for user deletion. 
 	 * TODO: If deleteFiles is false/unassigned report a unique id that can be used to reassociate data and allow deletion of the data.  
-	 * @param context
+	 * @param context the {@link RoutingContext} to extract the user from
 	 */
 	public void removeUser(RoutingContext context)
 	{		
@@ -122,7 +132,7 @@ public class UserRouter extends SoileRouter {
 	
 	/**
 	 * This allows setting the user information (except the password)
-	 * @param context
+	 * @param context The {@link RoutingContext} to extract the user for which to set the given info
 	 */
 	public void setUserInfo(RoutingContext context)
 	{
@@ -159,7 +169,7 @@ public class UserRouter extends SoileRouter {
 	
 	/**
 	 * This allows setting the user information (except the password)
-	 * @param context
+	 * @param context The {@link RoutingContext} to get the user for which to set the password
 	 */
 	public void setPassword(RoutingContext context)
 	{
@@ -179,7 +189,7 @@ public class UserRouter extends SoileRouter {
 	
 	/**
 	 * Set the Role of a specified user (only Admins are allowed to do this)
-	 * @param context
+	 * @param context The current {@link RoutingContext} (contains User and data to use)
 	 */
 	public void setRole(RoutingContext context)
 	{
@@ -199,7 +209,7 @@ public class UserRouter extends SoileRouter {
 	
 	/**
 	 * Set the permissions of a specified user.
-	 * @param context
+	 * @param context The current {@link RoutingContext} (contains User and data to use)
 	 */
 	public void permissionChange(RoutingContext context)
 	{
@@ -230,7 +240,7 @@ public class UserRouter extends SoileRouter {
 	
 	/**
 	 * Set the permissions of a specified user.
-	 * @param context
+	 * @param context The current {@link RoutingContext} (contains User and data to use)
 	 */
 	public void permissionOrRoleRequest(RoutingContext context)
 	{
@@ -248,7 +258,7 @@ public class UserRouter extends SoileRouter {
 	
 	/**
 	 * Get the use userinfo
-	 * @param context
+	 * @param context The current {@link RoutingContext} (contains User and data to use)
 	 */
 	public void getUserInfo(RoutingContext context)
 	{
@@ -264,7 +274,10 @@ public class UserRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));
 	}
-	
+	/**
+	 * Get the Active projects for the user in the context
+	 * @param context The current {@link RoutingContext} (contains User and data to use)
+	 */
 	public void getUserActiveProjects(RoutingContext context)
 	{
 		User currentUser = context.user();
@@ -317,14 +330,23 @@ public class UserRouter extends SoileRouter {
 			
 		}
 	}
-	
+	/**
+	 * Create a new user
+	 * @param context The current {@link RoutingContext} (contains User and data to use)
+	 */
 	public void createUser(RoutingContext context)
 	{
 		registerUser(context);
 	}
 
 	
-	
+	/**
+	 * Handle a response from the User Manager. Does standard error handling etc.
+	 * @param routingContext The current {@link RoutingContext} (contains User and data to use)
+	 * @param command The command sent to the UserManager
+	 * @param commandContent the Content of the command sent
+	 * @param messageHandler the Response handler to use
+	 */
 	void handleUserManagerCommand(RoutingContext routingContext, String command, JsonObject commandContent, MessageResponseHandler messageHandler)
 	{		
 		LOGGER.debug("Command: " + command + " Request: \n " + commandContent.encodePrettily());		
@@ -357,6 +379,17 @@ public class UserRouter extends SoileRouter {
 
 	}
 
+	/**
+	 * Convenience function to check Access for a user to given resources
+	 * @param user The user to check
+	 * @param id the target ID
+	 * @param requiredRole the Required roles for access
+	 * @param requiredPermission the required permission for the access
+	 * @param adminAllowed whether admin access is allowed
+	 * @param authProvider the {@link MongoAuthorization} to extract authorization 
+	 * @param IDAccessHandler the Access handler 
+	 * @return A {@link Future} that is successfull if the user has access and fails if not.
+	 */
 	protected Future<Void> checkAccess(User user, String id, Roles requiredRole, PermissionType requiredPermission,
 			boolean adminAllowed, MongoAuthorization authProvider, SoileIDBasedAuthorizationHandler IDAccessHandler)
 	{
@@ -389,12 +422,26 @@ public class UserRouter extends SoileRouter {
 	}
 
 
+	/**
+	 * Simplified wrapper for the more general checkAccess function
+	 * @param user the User to check
+	 * @param requiredRole the Role required
+	 * @param authProvider the {@link MongoAuthorization} for auth checks
+	 * @return A {@link Future} that is successfull if the user has access and fails if not.
+	 */
 	protected Future<Void> checkAccess(User user, Roles requiredRole, MongoAuthorization authProvider)
 	{
 		return checkAccess(user,null,requiredRole,null,true,authProvider,null);
 	}
 
-	// Checks whether this is either the user itself, or an admin calling this command.
+	/**
+	 * Convenience function that checks whether this is either the user itself, or an admin calling this command.
+	 * Used when user modifications are done (which is nly allowed by the user or an admin
+	 * @param user The current user
+	 * @param modifiedUser the username of the modified user
+	 * @param authProvider the {@link MongoAuthorization} for auth
+	 * @return A {@link Future} that is successfull if the user has access and fails if not.
+	 */
 	protected Future<Void> checkSameUserOrAdmin(User user, String modifiedUser, MongoAuthorization authProvider)
 	{		
 		Promise<Void> accessPromise = Promise.promise();
@@ -423,7 +470,7 @@ public class UserRouter extends SoileRouter {
 	 * @param permissions the permissions required
 	 * @param authProvider the auth provider that provides the authorizations to the user
 	 * @param IDAccessHandler the Access handler that can build the authorizations.
-	 * @return a succeeded future if authorizated or a failed future if not. 
+	 * @return a succeeded {@link Future} if authorizated or a failed future if not. 
 	 */
 	protected Future<Void> checkUserHasAllPermissions(User user, JsonArray permissions, MongoAuthorization authProvider, SoileIDBasedAuthorizationHandler IDAccessHandler )
 	{

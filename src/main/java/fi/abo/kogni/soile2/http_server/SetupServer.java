@@ -23,11 +23,21 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 
+/**
+ * Verticle for Server setup
+ * @author Thomas Pfau
+ *
+ */
 public class SetupServer extends SoileServerVerticle {
 
 	static final Logger LOGGER = LogManager.getLogger(SetupServer.class);
 	private String dataFolder;			
 	private String adminUser;
+	
+	/**
+	 * Constructor given a datafolder
+	 * @param dataFolder the folder name
+	 */
 	public SetupServer(String dataFolder) {
 		super();
 		this.dataFolder = dataFolder;
@@ -230,6 +240,10 @@ public class SetupServer extends SoileServerVerticle {
 		return successPromise.future();
 	}
 
+	/**
+	 * Main executable
+	 * @param args input arguments
+	 */
 	public static void main(String[] args)
 	{
 		Vertx instance = Vertx.vertx();

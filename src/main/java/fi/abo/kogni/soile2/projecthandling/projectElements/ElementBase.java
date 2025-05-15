@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
@@ -62,15 +63,41 @@ import io.vertx.ext.mongo.MongoClient;
  */
 public abstract class ElementBase implements Element {
 
+	/**
+	 * The underlying element data
+	 */
 	protected JsonObject data; 	
+	/**
+	 * the current version
+	 */
 	protected String currentVersion;
+	/**
+	 * The Version map (version {@literal <}-> date)
+	 */
 	protected HashMap<String, Date> versions;
+	/**
+	 * The tag map (tags {@literal <}-> versions)
+	 */
 	protected HashMap<String,String> tags;
+	/**
+	 * The database base collection for this element
+	 */
 	protected String baseCollection;
+	/**
+	 * The database collection to use for this element
+	 */
 	protected String collectionToUse;
+	/**
+	 * Dependencies of this object 
+	 */
 	protected JsonObject dependencies;
 	static final Logger LOGGER = LogManager.getLogger(ElementBase.class);
-
+	
+	/**
+	 * Default constructor
+	 * @param data the data representing this element
+	 * @param collectionToUse the database collection associated with this element
+	 */
 	public ElementBase(JsonObject data, String collectionToUse)
 	{	
 		// by default, an object is visible. 		
@@ -92,23 +119,13 @@ public abstract class ElementBase implements Element {
 	{
 		data.put("_id", UUID);
 	}
-		
-	/**
-	 * The Elements, this element depends on, separated by type.
-	 * i.e. { tasks : [ id1, id2,...], experiments: [ exp1,exp2,...]} 
-	 * @return 
-	 */
+			
 	@Override
 	public JsonObject getDependencies()
 	{
 		return this.dependencies;
 	}
 
-	/**
-	 * Add elements, this element depends on, separated by type.
-	 * i.e. { tasks : [ id1, id2,...], experiments: [ exp1,exp2,...]} 
-	 * @param dependencies this element depends on.
-	 */
 	@Override
 	public void addDependencies(JsonObject dependencies)
 	{
@@ -128,23 +145,11 @@ public abstract class ElementBase implements Element {
 			this.dependencies.put(field, new JsonArray(new LinkedList<Object>(currentdeps)));			
 		}
 	}
-	/**
-	 * Set dependencies
-	 * @param dependencies this element depends on.
-	 */
 	@Override
 	public void setDependencies(JsonObject dependencies)
 	{
 		this.dependencies = dependencies;
 	}
-	/**
-	 * Get the versions as a JsonArray of JsonObjects with:
-	 * {
-	 * 	version: abcdefabcdef12456
-	 * 	timestamp: 123456688
-	 * }
-	 * @return the versions array.
-	 */
 	@Override
 	public JsonArray getVersions() {
 		JsonArray versionArray = new JsonArray();
@@ -231,20 +236,13 @@ public abstract class ElementBase implements Element {
 	}
 	
 	
-	/**
-	 * Get the version stored for a tag.
-	 * @param tag the tag to retrieve the version hash for
-	 * @return the version hash
-	 */
+	
 	@Override
 	public String getVersionForTag(String tag)
 	{
 		return tags.get(tag);
 	}
-	/**
-	 * Add a version to this project. Note that this does not keep the associated git in Sync, this needs to be achieved elsewhere. 
-	 * @param version
-	 */
+	
 	@Override
 	public void addVersion(String version)
 	{
@@ -255,10 +253,7 @@ public abstract class ElementBase implements Element {
 		}
 		currentVersion = version;
 	}	
-	/**
-	 * Set the version to be used for this project
-	 * @param current the version to be used as currentVersion
-	 */
+
 	@Override
 	public void setCurrentVersion(String current)
 	{
@@ -272,31 +267,17 @@ public abstract class ElementBase implements Element {
 		return currentVersion;
 	}
 	
-	/**
-	 * Add a tag to a version for better retrievability.
-	 * @param tag
-	 * @param version
-	 */
 	@Override
 	public void addTag(String tag, String version)
 	{
 		tags.put(tag, version);
 	}
-	/**
-	 * Get the Versions available for this project.
-	 * @return
-	 */
 	@Override
 	public List<String> getVersionsStrings()
 	{
 		return List.copyOf(versions.keySet());
 	}
 	
-	/**
-	 * Get the date for a specific version.
-	 * @param version
-	 * @return
-	 */
 	@Override
 	public Date getVersionDate(String version)
 	{
@@ -337,7 +318,7 @@ public abstract class ElementBase implements Element {
 	}
 	/**
 	 * Get the Json object including the UUID as UUID field
-	 * @return
+	 * @return a {@link JsonObject} reprentation of the Object
 	 */
 	public JsonObject toJson()
 	{
@@ -345,9 +326,9 @@ public abstract class ElementBase implements Element {
 	}
 	
 	/**
-	 * 
-	 * @param provideUUID
-	 * @return
+	 * Get the Json object including the UUID as UUID field
+	 * @param provideUUID whether to provide the db uuid 
+	 * @return a {@link JsonObject} representation of the object
 	 */
 	public JsonObject toJson(boolean provideUUID)
 	{
@@ -372,7 +353,7 @@ public abstract class ElementBase implements Element {
 	
 	/**
 	 * Save the current element, this will return the UUID of the project and 
-	 * 
+	 * @param client A {@link MongoClient} for db access
 	 * @return a Future of the UUID of the saved element.
 	 */
 	public Future<String> save(MongoClient client)

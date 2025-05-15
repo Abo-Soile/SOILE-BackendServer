@@ -17,6 +17,10 @@ public class JSCodeProvider implements CodeProvider {
 
 	EventBus eb;
 	TimeStampedMap<GitFile, String> codeMap;
+	/**
+	 * Default Constructor
+	 * @param eb The {@link EventBus} for communication
+	 */
 	public JSCodeProvider(EventBus eb)
 	{
 		codeMap = new TimeStampedMap<>(this::getCodeFromGit, 3600*2);

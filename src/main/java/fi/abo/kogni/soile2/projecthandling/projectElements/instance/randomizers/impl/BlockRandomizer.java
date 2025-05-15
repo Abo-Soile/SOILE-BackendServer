@@ -9,12 +9,22 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * A Randomizer that makes sure, that Assignment happens in blocks.
+ * @author Thomas Pfau
+ *
+ */
 public class BlockRandomizer extends Randomizer {
 
 
 	String instanceID;	
 	String blockSpecification;
 	HashMap<String,String> optionMap;
+	/**
+	 * Default constructor
+	 * @param data specification data
+	 * @param source the study the randomizer is in
+	 */
 	public BlockRandomizer(JsonObject data, Study source) {
 		super(data, source);
 		setSettings(this.data.getJsonArray("settings"));

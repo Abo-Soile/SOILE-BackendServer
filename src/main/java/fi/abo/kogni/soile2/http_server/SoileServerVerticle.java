@@ -70,8 +70,8 @@ public class SoileServerVerticle extends AbstractVerticle {
 	
 	/**
 	 * Helper function to undeploy this verticle. Will undeploy all verticles created by this verticle, if they are still deployed
-	 * @param stopPromise
-	 * @throws Exception
+	 * @param stopPromise the promise to complete when stopped successfully
+	 * @throws Exception thrown exceptions
 	 */
 	public void undeploy(Promise<Void> stopPromise) throws Exception {
 		LOGGER.debug("Stopping Server Verticle");

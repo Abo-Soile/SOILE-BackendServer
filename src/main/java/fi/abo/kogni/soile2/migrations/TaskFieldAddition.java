@@ -26,13 +26,17 @@ public class TaskFieldAddition {
 	static final Logger LOGGER = LogManager.getLogger(TaskFieldAddition.class);
 
 	MongoClient client;
+	/**
+	 * Default constructor
+	 * @param client the {@link MongoClient} for db access
+	 */
 	public TaskFieldAddition(MongoClient client)
 	{
 		this.client = client;
 	}
 	/**
 	 * Add all fields
-	 * @return
+	 * @return A {@link Future} thats successfull if this migration worked
 	 */
 	public Future<Void> run()
 	{

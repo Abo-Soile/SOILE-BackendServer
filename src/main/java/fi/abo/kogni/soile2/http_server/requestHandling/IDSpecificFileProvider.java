@@ -20,13 +20,21 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.impl.Utils;
-
+/**
+ * A File Provider that uses IDs for retrieval
+ * @author Thomas Pfau
+ *
+ */
 public class IDSpecificFileProvider {
 
 	private static final Logger LOGGER = LogManager.getLogger(IDSpecificFileProvider.class);
 	DataLakeResourceManager mgr;
 	SizedCache<GitFile, FileWithProps> cache = new SizedCache<GitFile, FileWithProps>(1000);
 
+	/**
+	 * Default constructor
+	 * @param mgr the {@link DataLakeResourceManager} to use for retrieval
+	 */
 	public IDSpecificFileProvider(DataLakeResourceManager mgr)
 	{
 		this.mgr = mgr;
@@ -57,7 +65,7 @@ public class IDSpecificFileProvider {
 	/**
 	 * Send the data associated with the given GitFile as response to the contexts requests (if available)
 	 * @param context the context to respond to 
-	 * @param requestTarget
+	 * @param requestTarget the file that's the target of the request
 	 */
 	public void returnResource(RoutingContext context, GitFile requestTarget)
 	{

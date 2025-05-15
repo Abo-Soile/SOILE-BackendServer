@@ -9,24 +9,59 @@ import io.vertx.core.json.JsonObject;
  */
 public class SoileCommUtils {
 
+	/**
+	 * Success value
+	 */
 	public static String SUCCESS = "Success";
+	/**
+	 * Result field
+	 */
 	public static String RESULTFIELD = "Result";
+	/**
+	 * Data Field
+	 */
 	public static String DATAFIELD = "DATA";
+	/**
+	 * Error Value
+	 */
 	public static String FAILED = "Error";
+	/**
+	 * Reason field (for errors)
+	 */
 	public static String REASONFIELD = "Reason";
+	/**
+	 * Field ID
+	 */
 	public static String FIELDID = "Fields";
+	/**
+	 * Result ID
+	 */
 	public static String RESULTID = "Results";
 
+	/**
+	 * Create an Error Object
+	 * @param reason the reason for the error
+	 * @return the JsonObjectrepresenting the error  
+	 */
 	public static JsonObject errorObject(String reason)
 	{
 		return new JsonObject().put(RESULTFIELD, FAILED).put(REASONFIELD, reason);	
 	}
 	
+	/**
+	 * Create a success Object
+	 * @return the JsonObject representing success  
+	 */
 	public static JsonObject successObject()
 	{
 		return new JsonObject().put(RESULTFIELD, SUCCESS);	
 	}
 		
+	/**
+	 * Check a result object for success
+	 * @param result the object to check
+	 * @return whether the object is a success object  
+	 */
 	public static boolean isResultSuccessFull(JsonObject result)
 	{
 		return result.getString(RESULTFIELD) != null && result.getString(RESULTFIELD).equals(SUCCESS);
@@ -35,7 +70,7 @@ public class SoileCommUtils {
 	/**
 	 * Helper function to retrieve Communication Fields.
 	 * @param fieldName the name of the field in the communication config to retrieve
-	 * @return
+	 * @return The field name
 	 */
 	public static String getCommunicationField(String fieldName)
 	{

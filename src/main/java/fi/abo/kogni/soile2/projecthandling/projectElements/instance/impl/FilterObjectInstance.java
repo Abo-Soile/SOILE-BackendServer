@@ -22,6 +22,11 @@ public class FilterObjectInstance extends ElementInstanceBase {
 	List<String> options = new LinkedList<>();
 	HashMap<String,String> optionsNext = new HashMap<String,String>();
 	String defaultOption; 
+	/**
+	 * Defautl constructor
+	 * @param data the Json Data for this Filter
+	 * @param source The study this filter is in
+	 */
 	public FilterObjectInstance(JsonObject data, Study source) {
 		super(data, source);
 		parseOptions(data.getJsonArray("options"));
@@ -53,6 +58,10 @@ public class FilterObjectInstance extends ElementInstanceBase {
 		return getNextIfThereIsOne(user, defaultOption);		
 	}
 
+	/**
+	 * Field Specifications for a Filter Instance
+	 * @return The {@link FieldSpecifications}
+	 */
 	public static FieldSpecifications getFieldSpecs()
 	{
 		return new FieldSpecifications().put(new FieldSpecification("instanceID", String.class, String::new, false))																																								

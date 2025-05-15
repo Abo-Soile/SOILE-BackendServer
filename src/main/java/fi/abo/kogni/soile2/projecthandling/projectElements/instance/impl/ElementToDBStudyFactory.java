@@ -15,8 +15,9 @@ public class ElementToDBStudyFactory extends DBStudyFactory {
 
 	/**
 	 * Default constructor
-	 * @param client
-	 * @param projectInstanceDB
+	 * @param manager {@link ElementManager} for {@link Project} access
+	 * @param client {@link MongoClient} for db access
+	 * @param eb {@link EventBus} for communication
 	 */
 	public ElementToDBStudyFactory(ElementManager<Project> manager, MongoClient client, EventBus eb) {
 		super(manager, client, eb);

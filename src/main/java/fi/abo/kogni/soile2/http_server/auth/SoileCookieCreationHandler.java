@@ -17,11 +17,20 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 
+/**
+ * Cookie creation handler that builds cookies for SOILE
+ * @author Thomas Pfau
+ *
+ */
 public class SoileCookieCreationHandler {
 	
 	private final SecureRandom random = new SecureRandom();
 	static final Logger LOGGER = LogManager.getLogger(SoileCookieCreationHandler.class);
 	private EventBus eb;
+	/**
+	 * Default constructor
+	 * @param bus {@link EventBus} for communication
+	 */
 	public SoileCookieCreationHandler(EventBus bus) {
 		eb = bus;
 	}
@@ -29,9 +38,9 @@ public class SoileCookieCreationHandler {
 	
 	/**
 	 * Update a cookie for the given 
-	 * @param ctx
-	 * @param currentuser
-	 * @return
+	 * @param ctx current {@link RoutingContext}
+	 * @param currentuser current {@link User}
+	 * @return A {@link Future} that is successful if the cookie was updated successfully
 	 */
 	public Future<Void> updateCookie(RoutingContext ctx, User currentuser)
 	{		
@@ -81,6 +90,11 @@ public class SoileCookieCreationHandler {
 				}
 		return finishedCookie.future();
 	}
+	/**
+	 * Invalidate the cookie in this session
+	 * @param ctx The {@link RoutingContext} to invalidate the cookie in.
+	 * @return A {@link Future} that's successful if the cookie was invalidated.
+	 */
 	public Future<Void> invalidateSessionCookie(RoutingContext ctx)
 	{
 		Cookie sessionCookie = ctx.request().getCookie(SoileConfigLoader.getSessionProperty("sessionCookieID"));

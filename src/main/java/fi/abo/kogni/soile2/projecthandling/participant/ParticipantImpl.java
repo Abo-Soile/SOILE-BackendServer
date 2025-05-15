@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.datamanagement.utils.DatedDataMap;
 import fi.abo.kogni.soile2.datamanagement.utils.OutputMap;
 import fi.abo.kogni.soile2.datamanagement.utils.TimeStampedData;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -36,28 +37,52 @@ public abstract class ParticipantImpl implements Participant{
 	 * This is the _id field from the spec.
 	 */
 	protected String UUID;
-	//protected JsonArray finished;
+	/**
+	 * The position of this participant in its study
+	 */
 	protected String position;
-	//		protected JsonObject outputData;
+	/**
+	 * The order of the steps of this participant
+	 */
 	protected JsonArray steps;
+	/**
+	 * A List of active experiments (i.e. a hierarchy)
+	 */
 	protected JsonArray activeExperiments;
+	/**
+	 * Map of finished tasks in active experiments
+	 */
 	HashMap<String,List<String>> finishedExperimentTasks;
+	/**
+	 * the current step number
+	 */
 	protected int currentStep;
+	/**
+	 * Whether this participant is finished with its {@link Study}
+	 */
 	protected boolean finished;
+	/**
+	 * The project/study id this participant is in
+	 */
 	protected String project;
+	/**
+	 * A JsonObject that indicates which random groups where assigned to this participant by Randomizers
+	 */
 	protected JsonObject assignedRandomGroups; 
 	/**
 	 * This map is a way to get output data faster than relying on outputData
 	 */	
 	protected DatedDataMap<String,Double> outputMap;
+	/**
+	 * the Map of persistent data that can be used in tasks for this {@link Participant}
+	 */
 	protected JsonObject persistentMap;
 	static final Logger LOGGER = LogManager.getLogger(ParticipantImpl.class);
 	private static DateFormat dateFormatter = new SimpleDateFormat("MM/dd/yyyy - HH:SS");
 
 	/**
 	 * A Participant is strictly associated with one project, thus we can construct it from the participant json and the project information. 	 
-	 * @param data the data for the participant
-	 * @param p the Project it is associated with.
+	 * @param data the data for the participant 
 	 */
 	public ParticipantImpl(JsonObject data)
 	{
@@ -73,7 +98,10 @@ public abstract class ParticipantImpl implements Participant{
 	{
 		return project;
 	}
-	
+	/**
+	 * Set up a participant based on JsonData
+	 * @param participantInfo the data of the participant as a json
+	 */
 	protected void setupParticipant(JsonObject participantInfo)
 	{		
 		LOGGER.debug(participantInfo.encodePrettily());
@@ -128,34 +156,17 @@ public abstract class ParticipantImpl implements Participant{
 	}					
 
 
-	/**
-	 * Get the map of Outputs to provide to a Math-parser. This is generated once per user on request and only updated afterwards.
-	 * @return a Map of all t<TaskUUID>.<output> -> value mappings. 
-	 */
 	@Override
 	public Map<String,Double> getOutputs()
 	{		
 		return outputMap.getNewestData();
 	}
-	/**
-	 * Add the output to this participant, we try not to recalculate this....
-	 * @param taskID The taskID for the output
-	 * @param outputName the name of the output in the task
-	 * @param value the value of the output
-	 */
 	@Override
 	public void addOutput(String taskID, String outputName, Number value)
 	{
 		addOutput(taskID,outputName,value,new Date());
 	}
 
-	/**
-	 * Add the output to this participant, we try not to recalculate this....
-	 * @param taskID The taskID for the output
-	 * @param outputName the name of the output in the task
-	 * @param value the value of the output
-	 * @param outputDate the timestamp for this output.
-	 */
 	@Override
 	public void addOutput(String taskID, String outputName, Number value, Date outputDate)
 	{
@@ -182,11 +193,6 @@ public abstract class ParticipantImpl implements Participant{
 	}		
 
 	
-	/**
-	 * Add a piece of persistent data 
-	 * @param outputName the name of the output in the task
-	 * @param value the value of the output
-	 */
 	@Override
 	public void addPersistentData(String outputName, Object value)
 	{
@@ -198,10 +204,6 @@ public abstract class ParticipantImpl implements Participant{
 
 	}
 	
-	/**
-	 * Set persistant data 
-	 * @param persistentData The output data in the format as specified for TaskData.outputData
-	 */
 	@Override
 	public Future<Void> setPersistentData(JsonArray persistentData)
 	{		
@@ -221,42 +223,25 @@ public abstract class ParticipantImpl implements Participant{
 		// TODO Auto-generated method stub
 		return persistentMap == null ? new JsonObject() : persistentMap;
 	}
-	
-	/**
-	 * Get the position of this participant within its project
-	 * @return
-	 */
+		
 	@Override
 	public String getStudyPosition()
 	{
 		return position;
 	}
-
-	/**
-	 * Get all tasks done for a given experiment
-	 * @return
-	 */
+	
 	@Override
 	public List<String> getFinishedExpTasks(String experimentID)
 	{		
 		return finishedExperimentTasks.get(experimentID);
 	}
-
-	/**
-	 * Get all tasks done for a given experiment
-	 * @return
-	 */
+	
 	@Override
 	public void addFinishedExpTask(String experimentID, String TaskID)
 	{		
 		finishedExperimentTasks.get(experimentID).add(TaskID);
 	}
 
-	/**
-	 * Add an experiment that is currently active (i.e. the participant is currently in this experiment).
-	 * This is used to indicate to the experiment, whether we are currently in it, or whether we got a callback and should leave. 
-	 * @param expeirmentID
-	 */
 	@Override
 	public void addActiveExperiment(String experimentID)
 	{
@@ -264,10 +249,6 @@ public abstract class ParticipantImpl implements Participant{
 		finishedExperimentTasks.put(experimentID, new LinkedList<String>());
 	}
 
-	/**
-	 * Check, whether an experimen is currently active 
-	 * @param expeirmentID
-	 */
 	@Override
 	public boolean isActiveExperiment(String experimentID)
 	{
@@ -275,10 +256,6 @@ public abstract class ParticipantImpl implements Participant{
 	}
 
 
-	/**
-	 * Remove an experiment from the currently active experiments. 
-	 * @param expeirmentID
-	 */
 	@Override
 	public void endActiveExperiment(String experimentID)
 	{
@@ -286,19 +263,9 @@ public abstract class ParticipantImpl implements Participant{
 		finishedExperimentTasks.remove(experimentID);
 	}
 
-	/**
-	 * Add the result to this participant
-	 * @param taskID The taskID for the result
-	 * @param result the Result Json ({ task : id , dbData : resultID, fileData:  [ {fileformat : format, filename : name, targetid : datalakeID}]}) 
-	 */
 	@Override
 	public abstract Future<Void> addResult(String taskID, JsonObject result);
 
-	/**
-	 * Set outputs for the specified task 
-	 * @param taskID he task for which to store data
-	 * @param taskOutputData The output data in the format as specified for TaskData.outputData
-	 */
 	@Override
 	public Future<Void> setOutputDataForTask(String taskID, JsonArray taskOutputData)
 	{		
@@ -313,10 +280,6 @@ public abstract class ParticipantImpl implements Participant{
 		return Future.succeededFuture();
 	}
 
-	/**
-	 * Save after finishing a task.
-	 * @param typeID The just completed task
-	 */
 	@Override
 	public Future<Void> finishCurrentTask()
 	{					
@@ -375,10 +338,6 @@ public abstract class ParticipantImpl implements Participant{
 		return this.UUID;
 	}	
 
-	/**
-	 * Get a Json representation of this Participant that adheres to the OPEANPI Participant schema
-	 * @return a json with the Participant schema
-	 */
 	@Override
 	public Future<JsonObject> toJson()
 	{		

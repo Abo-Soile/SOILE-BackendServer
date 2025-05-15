@@ -22,20 +22,24 @@ public interface Element extends AccessElement {
 	 */
 	String getUUID();
 
+	/**
+	 * Set the UUID of the element
+	 * @param UUID the new UUID
+	 */
 	void setUUID(String UUID);
 
 	
 	/**
 	 * The Elements, this element depends on, separated by type.
 	 * i.e. { tasks : [ id1, id2,...], experiments: [ exp1,exp2,...]} 
-	 * @return 
+	 * @return the dependencies as a {@link JsonObject} as described above
 	 */
 	JsonObject getDependencies();
 
 	/**
 	 * Set the dependencies of this object
 	 * i.e. { tasks : [ id1, id2,...], experiments: [ exp1,exp2,...]} 
-	 * @return 
+	 * @param dependencies the dependencies to set (as speced above)
 	 */
 	void setDependencies(JsonObject dependencies);
 	
@@ -54,13 +58,13 @@ public interface Element extends AccessElement {
 	 * 		timestamp: 1234567
 	 * 	}
 	 * ]
-	 * @return
+	 * @return the versions as a json array of {@link JsonObject} as described above
 	 */
 	JsonArray getVersions();
 
 	/**
 	 * Set the Versions for this Element
-	 * @param versions A JsonArray of the form indicated in {@link getVersions);
+	 * @param versions A JsonArray of the form indicated in {@link #getVersions()};
 	 */
 	void setVersions(JsonArray versions);	
 	
@@ -72,25 +76,25 @@ public interface Element extends AccessElement {
 	 * 		timestamp: "12345abcdf"
 	 * 	}
 	 * ]
-	 * @return
+	 * @return the tags in the above mentioned format 
 	 */
 	JsonArray getTags();
 
 	/**
 	 * Set the Versions for this Element
-	 * @param versions A JsonArray of the form indicated in {@link getTags);
+	 * @param tags A JsonArray of the form indicated in {@link #getTags()};
 	 */
 	void setTags(JsonArray tags);
 	
 	/**
 	 * The name of this element
-	 * @return
+	 * @return the name of the element
 	 */
 	String getName();
 
 	/**
 	 * Set the name of the element 
-	 * @param name
+	 * @param name the new name of the element
 	 */
 	void setName(String name);
 
@@ -101,7 +105,7 @@ public interface Element extends AccessElement {
 	Boolean getPrivate();
 	/**
 	 * Set the private property of this object.
-	 * @param _private
+	 * @param _private the new private value
 	 */
 	void setPrivate(Boolean _private);
 
@@ -113,7 +117,7 @@ public interface Element extends AccessElement {
 	Boolean getVisible();
 	/**
 	 * Set the visible property of this object.
-	 * @param _private
+	 * @param visible the new visible value
 	 */
 	void setVisible(Boolean visible);
 	
@@ -127,15 +131,15 @@ public interface Element extends AccessElement {
 
 	/**
 	 * Convert the represented json object to a string, restricting to the specific fields.
-	 * @param fields
-	 * @return
+	 * @param fields the fields to restrict to
+	 * @return the requested string representation of the object
 	 */
 	String toString(List<String> fields);
 	
 	/**
 	 * Save this element into its database. Returns a future with the ID.
-	 * @param client
-	 * @return
+	 * @param client the Mongoclient to use for saving
+	 * @return A {@link Future} of the ID of the stored element
 	 */
 	public Future<String> save(MongoClient client);
 	
@@ -149,7 +153,7 @@ public interface Element extends AccessElement {
 	
 	/**
 	 * Add a version to this project. Note that this does not keep the associated git in Sync, this needs to be achieved elsewhere. 
-	 * @param version
+	 * @param version the version to add
 	 */	
 	public void addVersion(String version);
 	
@@ -160,31 +164,31 @@ public interface Element extends AccessElement {
 	public void setCurrentVersion(String current);
 	/**
 	 * Get the version to be used for this element
-	 * @param current the version to be used as currentVersion
+	 * @return the current version 
 	 */	
 	public String getCurrentVersion();
 	/**
 	 * Add a tag to a version for better retrievability.
-	 * @param tag
-	 * @param version
+	 * @param tag the tag to add
+	 * @param version the version for the tag
 	 */
 	public void addTag(String tag, String version);
 	/**
-	 * Get the Vrsions available for this project.
-	 * @return
+	 * Get the Versions available for this project.
+	 * @return a List of version strings
 	 */
 	public List<String> getVersionsStrings();
 	
 	/**
 	 * Get the date for a specific version.
-	 * @param version
-	 * @return
+	 * @param version the version for which to retrieve a date
+	 * @return the Date of the version
 	 */
 	public Date getVersionDate(String version);	
 	
 	/**
 	 * Get the Type identifier, to be used for git retrieval.
-	 * @return
+	 * @return the Type (Experiment, Task, Project) of the element
 	 */
 	public String getTypeID();		
 

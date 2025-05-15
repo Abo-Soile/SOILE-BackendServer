@@ -19,6 +19,11 @@ public class JWTTokenCreator{
 	Vertx vertx;	
 	SoileAuthenticationBuilder handler;
 	
+	/**
+	 * Default constructor
+	 * @param handler handler for token generation
+	 * @param vertx Vertx instance to use
+	 */
 	public JWTTokenCreator(SoileAuthenticationBuilder handler, Vertx vertx)
 	{
 		this.vertx = vertx;

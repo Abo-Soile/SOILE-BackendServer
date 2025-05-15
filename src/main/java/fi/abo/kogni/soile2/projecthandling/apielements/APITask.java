@@ -29,6 +29,9 @@ import io.vertx.core.json.JsonObject;
  *
  */
 public class APITask extends APIElementBase<Task> {
+	/**
+	 * Logger for this class
+	 */
 	private static final Logger LOGGER = LogManager.getLogger(APITask.class);
 
 	private String[] gitFields = new String[] {"name", "codeType"};
@@ -36,11 +39,17 @@ public class APITask extends APIElementBase<Task> {
 	
 	
 	
-	
+	/**
+	 * Default empty constructor
+	 */
 	public APITask() {
 		this(new JsonObject());
 	}
 	
+	/**
+	 * Default constructor from Json Data
+	 * @param data the data describing the Task
+	 */
 	public APITask(JsonObject data) {
 		super(data);
 		loadGitJson(data);
@@ -49,7 +58,7 @@ public class APITask extends APIElementBase<Task> {
 	 * Get the type of the code (i.e. what language the code is in, to be able to 
 	 * determine how it is going to be interpreted.
 	 * This includes the Code type version (if that makes a difference).
-	 * @return
+	 * @return a JsonObject describing the code type (contaiing codeType and Version)
 	 */
 	public JsonObject getCodeType() {
 		return data.getJsonObject("codeType", new JsonObject());
@@ -57,7 +66,8 @@ public class APITask extends APIElementBase<Task> {
 	
 	/**
 	 * Set the type of the code (i.e. what language the code is in, to be able to 
-	 * determine how it is going to be interpreted. 
+	 * determine how it is going to be interpreted.
+	 * @param codeType The JsonObject containing codeType(language) and codeVersion (language version)  
 	 */
 	public void setCodetype(JsonObject codeType) {
 		data.put("codeType", codeType);
@@ -66,14 +76,14 @@ public class APITask extends APIElementBase<Task> {
 	/**
 	 * Get the code type version (i.e. the version of the language the code is in.
 	 * Might make a difference for some code 
-	 * @return
+	 * @return the code version as a string e.g. 2.1.3
 	 */
 	public String getCodeVersion() {
 		return getCodeType().getString("version","");
 	}
 	/**
 	 * Set the code type version
-	 * @param codeVersion
+	 * @param codeVersion the version of the language used for the code
 	 */
 	public void setCodeVersion(String codeVersion) {		
 		JsonObject codeType = data.getJsonObject("codeType");
@@ -88,7 +98,7 @@ public class APITask extends APIElementBase<Task> {
 	}
 	/**
 	 * Get the language the code was written in.
-	 * @return
+	 * @return the language the code was written in
 	 */
 	public String getCodeLanguage() {
 		return getCodeType().getString("language", "");
@@ -96,7 +106,7 @@ public class APITask extends APIElementBase<Task> {
 	
 	/**
 	 * Set the language the code is written in.
-	 * @param language
+	 * @param language the language the code is written in
 	 */
 	public void setCodeLanguage(String language) {
 		JsonObject codeType = data.getJsonObject("codeType");
@@ -111,14 +121,14 @@ public class APITask extends APIElementBase<Task> {
 	}
 	/**
 	 * Get the code of the Task
-	 * @return
+	 * @return the code of the Task
 	 */
 	public String getCode() {
 		return data.getString("code","");
 	}
 	/**
 	 * Set the code of the task
-	 * @param code
+	 * @param code the code of the task
 	 */
 	public void setCode(String code) {
 		data.put("code", code);

@@ -7,6 +7,10 @@ package fi.abo.kogni.soile2.projecthandling.exceptions;
  */
 public class ShortCutExistsException extends Exception {
 	
+	/**
+	 * Default constructor
+	 * @param shortcut the shortcut that already exists
+	 */
 	public ShortCutExistsException(String shortcut)
 	{
 		super("The provided shortcut: " + shortcut + "already exists");

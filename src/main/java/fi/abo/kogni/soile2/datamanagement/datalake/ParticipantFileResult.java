@@ -15,8 +15,17 @@ import java.nio.file.Path;
  */
 public class ParticipantFileResult extends ParticipantFileResults{
 
+	/**
+	 * Name of the result File
+	 */
 	public String resultFileName;
+	/**
+	 * format of the result file
+	 */
 	public String fileFormat;
+	/**
+	 * name of the stored file
+	 */
 	public String storageFileName;
 	private int step;
 	private String taskID;
@@ -25,6 +34,15 @@ public class ParticipantFileResult extends ParticipantFileResults{
 	 * Generate a new Fileresult for a given task. 
 	 * @param originalFileName the original ID of the file as supplied by the project generation
 	 * @param projectID The project ID in which this is a result 
+	 * @param fileFormat the type of the file, essentially the file extension
+	 * @param taskID the id of the task this file belongs to.
+	 * @param participantID the id of the participant this file belongs to.
+	 */
+	/**
+	 * Generate a new Fileresult for a given task. 
+	 * @param storageFilename File name of the file in storage
+	 * @param originalFileName the original ID of the file as supplied by the project generation 
+	 * @param step the step the file belongs to 
 	 * @param fileFormat the type of the file, essentially the file extension
 	 * @param taskID the id of the task this file belongs to.
 	 * @param participantID the id of the participant this file belongs to.
@@ -89,7 +107,7 @@ public class ParticipantFileResult extends ParticipantFileResults{
 
 	/**
 	 * Set the name of the local file (i.e. the actual file stored in he datalake.
-	 * @param filename
+	 * @param filename the local file name
 	 */
 	public void setLocalFileName(String filename)
 	{
@@ -106,6 +124,10 @@ public class ParticipantFileResult extends ParticipantFileResults{
 		return Path.of(getRelativeFolderPath(),storageFileName).toString();
 	}
 	
+	/**
+	 * Default toString method
+	 * @return String representation( i.e. file path)
+	 */
 	public String toString()
 	{
 		return getFilePath();

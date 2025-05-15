@@ -18,9 +18,19 @@ import io.vertx.core.json.JsonObject;
  */
 public abstract class GitDataRetriever<T> implements DataRetriever<GitFile, T> {
 	
+	/**
+	 * The {@link EventBus} for communication
+	 */
 	protected EventBus eb;	
+	/**
+	 * Whether this retriever retrieves JSON or plain data
+	 */
 	protected boolean retrieveJson;
+	/**
+	 * Whether this retriever handles resources
+	 */
 	protected boolean handleResources;
+	
 	/**
 	 * Construct a {@link DataRetriever} that expects {@link String}s in the createElement function and handles non-resource files 
 	 * @param eb Eventbus to communicate with the {@link GitManagerVerticle}

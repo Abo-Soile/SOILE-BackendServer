@@ -38,8 +38,18 @@ import io.vertx.ext.web.sstore.impl.SessionInternal;
  */
 public class SoileSessionHandler implements SessionHandler {
 
+  
+  /**
+	* SESSION Holder key 
+    */
   public static final String SESSION_USER_HOLDER_KEY = "__vertx.userHolder";
+  /**
+	* SESSION flushed key 
+  */
   public static final String SESSION_FLUSHED_KEY = "__vertx.session-flushed";
+  /**
+   * Session store user key
+   */
   public static final String SESSION_STOREUSER_KEY = "__vertx.session-storeuser";
 
   private static final Logger LOG = LoggerFactory.getLogger(SoileSessionHandler.class);
@@ -58,7 +68,10 @@ public class SoileSessionHandler implements SessionHandler {
 
   private boolean cookieless;
   private CookieSameSite cookieSameSite;
-
+  /**
+   * DEfault constructor using a session store
+   * @param sessionStore The {@link SessionStore} to use
+   */
   public SoileSessionHandler(SessionStore sessionStore) {
     this.sessionStore = sessionStore;
   }

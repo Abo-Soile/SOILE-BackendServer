@@ -7,6 +7,9 @@ package fi.abo.kogni.soile2.projecthandling.exceptions;
  */
 public class FileContentInvalidException extends Exception {
 	
+	/**
+	 * Default constructor
+	 */
 	public FileContentInvalidException()
 	{
 		super("Could not retrieve code and configuration from task bundle");

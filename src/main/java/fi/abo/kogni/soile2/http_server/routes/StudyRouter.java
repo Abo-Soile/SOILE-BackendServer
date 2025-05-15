@@ -19,6 +19,7 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
+import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
@@ -55,6 +56,14 @@ public class StudyRouter extends SoileRouter {
 
 	static final Logger LOGGER = LogManager.getLogger(StudyRouter.class);	
 
+	/**
+	 * Default constructor
+	 * @param auth The {@link SoileAuthorization} for auth checks
+	 * @param vertx The {@link Vertx} instance for communication
+	 * @param client the {@link MongoClient} for db access
+	 * @param partHandler the {@link ParticipantHandler} for simplified participant checks
+	 * @param projHandler the {@link StudyHandler} for simplified study checks
+	 */
 	public StudyRouter(SoileAuthorization auth, Vertx vertx, MongoClient client, ParticipantHandler partHandler, StudyHandler projHandler) {
 		super(auth,client);
 		eb = vertx.eventBus();
@@ -66,6 +75,10 @@ public class StudyRouter extends SoileRouter {
 		projectAccessHandler = new AccessHandler(projectAuth, projectIDAccessHandler, roleHandler);
 	}
 
+	/**
+	 * Create a Study from a Project 
+	 * @param context The {@link RoutingContext} indicating the Project to build a study for
+	 */
 	public void startProject(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -103,6 +116,10 @@ public class StudyRouter extends SoileRouter {
 		});		
 	}
 
+	/**
+	 * Get the list of available Studyies for the context (contaiing the user info)
+	 * @param context The {@link RoutingContext} indicating the user.
+	 */
 	public void getStudyList(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -163,7 +180,10 @@ public class StudyRouter extends SoileRouter {
 			.onFailure(err -> handleError(err, context));
 		}
 	}
-	
+	/**
+	 * Get the running projects visible to the user in the context
+	 * @param context The {@link RoutingContext} containing the user.
+	 */
 	public void getRunningProjectList(RoutingContext context)
 	{						
 		authorizationRertiever.getGeneralPermissions(context.user(),TargetElementType.STUDY)
@@ -203,6 +223,10 @@ public class StudyRouter extends SoileRouter {
 	}
 
 
+	/**
+	 * Stop a Study (deactivate it)
+	 * @param context The Context indicating the Study (and user)
+	 */
 	public void stopProject(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -223,6 +247,10 @@ public class StudyRouter extends SoileRouter {
 		.onFailure(err -> handleError(err, context));			
 	}
 
+	/**
+	 * Start a study (make it active and useable)
+	 * @param context The Context indicating the {@link Study}
+	 */
 	public void startStudy(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -242,7 +270,11 @@ public class StudyRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
-
+	/**
+	 * Delete a Study entirely.
+	 * TODO: Rename this (problem this is part of the API description)
+	 * @param context The {@link RoutingContext} indicating the Study
+	 */
 	public void deleteProject(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -276,6 +308,10 @@ public class StudyRouter extends SoileRouter {
 		.onFailure(err -> handleError(err, context));			
 	}
 
+	/**
+	 * Reset the Study given in the context (clean up all currently saved data)
+	 * @param context The {@link RoutingContext} indicating the study
+	 */
 	public void resetStudy(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -310,7 +346,10 @@ public class StudyRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
-	
+	/**
+	 * List downloadable data for the Study in the context
+	 * @param context The {@link RoutingContext} indicating the Study
+	 */
 	public void listDownloadData(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -338,7 +377,10 @@ public class StudyRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));		
 	}
-	
+	/**
+	 * Update the data of the Study (only possible when study is not active.
+	 * @param context The {@link RoutingContext} indicating the Study (and the update)
+	 */
 	public void updateStudy(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -358,7 +400,10 @@ public class StudyRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
-	
+	/**
+	 * Get the properties of the Study indicated in the given {@link RoutingContext}
+	 * @param context The {@link RoutingContext} containing the study id.
+	 */
 	public void getStudyProperties(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -407,7 +452,10 @@ public class StudyRouter extends SoileRouter {
 		});			
 	}
 	
-	
+	/**
+	 * Get the Study Results
+	 * @param context The {@link RoutingContext} indicating the Study to get the results for.
+	 */
 	public void getProjectResults(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -451,7 +499,10 @@ public class StudyRouter extends SoileRouter {
 		})
 		.onFailure(err -> handleError(err, context));			
 	}
-
+	/**
+	 * Check whether a specified download is read
+	 * @param context The {@link RoutingContext} indicating the download to check
+	 */
 	public void downloadTest(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -474,6 +525,10 @@ public class StudyRouter extends SoileRouter {
 		.onFailure(err -> handleError(err, context));			
 	}	
 
+	/**
+	 * Download the Results specfied in the {@link RoutingContext}
+	 * @param context The {@link RoutingContext} specifying which download to retrieve
+	 */
 	public void downloadResults(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -531,6 +586,10 @@ public class StudyRouter extends SoileRouter {
 		.onFailure(err -> handleError(err, context));			
 	}
 	
+	/**
+	 * Get Information about the tokens set in a study
+	 * @param context The {@link RoutingContext} indicating the {@link Study} for which to obtain data
+	 */
 	public void getTokenInformation(RoutingContext context)
 	{
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -555,6 +614,10 @@ public class StudyRouter extends SoileRouter {
 		.onFailure(err -> handleError(err, context));		
 	}
 
+	/**
+	 * Create Tokens for a {@link Study}
+	 * @param context The {@link RoutingContext} indicating which Study to generate tokens for
+	 */
 	public void createTokens(RoutingContext context)
 	{				
 		RequestParameters params = context.get(ValidationHandler.REQUEST_CONTEXT_KEY);
@@ -601,8 +664,8 @@ public class StudyRouter extends SoileRouter {
 	
 	
 	/**
-	 * Set the permissions of a specified user.
-	 * @param context
+	 * Get the collaborators for the given Study using the Context to extract the study from.
+	 * @param context the {@link RoutingContext} to extract information from 
 	 */
 	public void getCollaboratorsForStudy(RoutingContext context)
 	{

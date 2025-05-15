@@ -7,6 +7,10 @@ package fi.abo.kogni.soile2.http_server.userManagement.exceptions;
  */
 public class DuplicateUserEntryInDBException extends Exception{
 
+	/**
+	 * Defautl constructor
+	 * @param username the username that is present in duplicate
+	 */
 	public DuplicateUserEntryInDBException(String username) {
 		super("User " + username + " is present multiple times in the database" );
 	}

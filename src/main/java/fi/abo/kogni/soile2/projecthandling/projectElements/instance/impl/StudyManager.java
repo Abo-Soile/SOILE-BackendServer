@@ -41,6 +41,11 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	private String instanceCollection;
 	private TimeStampedMap<String, String> projectPathes;
 	private HashMap<String,Long> studyTimes;
+	/**
+	 * Default constructor
+	 * @param client {@link MongoClient} for db access
+	 * @param vertx {@link Vertx} instance for communication 
+	 */
 	public StudyManager(MongoClient client, Vertx vertx)
 	{						
 		this(client,
@@ -49,6 +54,12 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 				);				
 	}		
 		
+	/**
+	 * Constructor with redefined {@link ElementToDBStudyFactory} and {@link DBStudyFactory} 
+	 * @param client {@link MongoClient} for communication
+	 * @param createFactory Factory that can handle Element to DB requests
+	 * @param dbFactory Factory that can handle DB extraction
+	 */
 	public StudyManager(MongoClient client, StudyFactory createFactory, StudyFactory dbFactory)
 	{
 		this.client = client;
@@ -59,6 +70,9 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 		studyTimes = new HashMap<>();
 	}
 
+	/**
+	 * General cleanup function
+	 */
 	public void cleanUp()
 	{
 		projectPathes.cleanUp();
@@ -131,6 +145,8 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	 * 3. "private" field wrt access for this 
 	 * 4. "name" a name field.
 	 * 5. "shortcut" (optional), that can be used as a shortcut to the project.
+	 * @param projectInformation a JsonObject with the above mentioned entries
+	 * @return A {@link Future} of the started {@link Study}
 	 */
 	public Future<Study> startProject(JsonObject projectInformation )
 	{						
@@ -140,6 +156,8 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	
 	/**
 	 * Default schema of a Participant.
+	 * @param projectVersion the version of the project 
+	 * @param projectID the ID of the project
 	 * @return an empty participant information {@link JsonObject}
 	 */
 	public static JsonObject getDefaultProjectInfo(String projectVersion, String projectID)
@@ -153,8 +171,7 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	
 	/**
 	 * Update the data relevant for the manager.
-	 * @param proj
-	 * @return
+	 * @param study The study to update
 	 */
 	public void updateStudy(Study study)
 	{
@@ -168,7 +185,9 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	/**
 	 * Get a list of UUID of project instances and their privacy status based on the permissions provided (those are essentially _ids)
 	 * @param projectInstanceIDs A JsonArray with strings for each permission/projectID
-	 * @return
+	 * @param idsOnly whether only use the ids or also return "public ones"
+	 * @param activeOnly whether only to get active ones
+	 * @return A Future of a JsonArray of Study Jsons from the DB. 
 	 */
 	public Future<JsonArray> getProjectInstanceStatus(JsonArray projectInstanceIDs, Boolean idsOnly, Boolean activeOnly)
 	{
@@ -196,7 +215,9 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	
 	/**
 	 * Get he list of studies available on this server
-	 * @return
+	 * @param Query the query to run on for the study database
+	 * @param Fields which fields to return
+	 * @return A Future of a JsonArray of Study Jsons from the DB with the specified fields.
 	 */
 	public Future<JsonArray> getStudyData(JsonObject Query, JsonObject Fields)
 	{				
@@ -222,13 +243,18 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	
 	/**
 	 * Get Studies (names and UUIDs)
-	 * @return
+	 * @return A {@link JsonArray} of all Studies
 	 */
 	public Future<JsonArray> getStudies()
 	{
 		return getStudyData(new JsonObject(), new JsonObject().put("_id",1).put("name",1));
 	}
 	
+	/**
+	 * Get the project ID for a given path
+	 * @param pathID the pathID
+	 * @return the ID for the given path 
+	 */
 	public Future<String> getProjectIDForPathID(String pathID)
 	{
 		return projectPathes.getData(pathID);
@@ -262,6 +288,11 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 		return idPromise.future();
 	}
 
+	/**
+	 * Activate a study
+	 * @param study the study to activate
+	 * @return A {@link Future} indicating successfull start
+	 */
 	public Future<Void> activate(Study study) {
 		// activate the instance,		
 		study.activate();
@@ -273,7 +304,11 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 		return study.save(false).mapEmpty();		
 	}
 
-	
+	/**
+	 * Deactivate a study
+	 * @param study the Study to deactivate
+	 * @return A {@link Future} indicating successful deactivation
+	 */
 	public Future<Void> deactivate(Study study) {
 		// activate the instance,		
 		study.deactivate();
@@ -287,9 +322,9 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	
 	/**
 	 * Update a study. This should always reset information. 
-	 * @param study
-	 * @param newData
-	 * @return
+	 * @param study the study to update
+	 * @param newData the new data for the study
+	 * @return  A {@link Future} indicating successful update
 	 */
 	public Future<Void> updateStudy(Study study, JsonObject newData)
 	{

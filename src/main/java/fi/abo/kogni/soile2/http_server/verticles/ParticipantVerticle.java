@@ -30,6 +30,11 @@ public class ParticipantVerticle extends AbstractVerticle {
 	static final Logger LOGGER = LogManager.getLogger(ParticipantVerticle.class);
 	private List<MessageConsumer> consumers;
 	
+	/**
+	 * Default cosntructor
+	 * @param partHandler A {@link ParticipantHandler} for participant access
+	 * @param projHandler A {@link StudyHandler} for study access
+	 */
 	public ParticipantVerticle(ParticipantHandler partHandler, StudyHandler projHandler)
 	{
 		this.partHandler = partHandler;
@@ -60,7 +65,7 @@ public class ParticipantVerticle extends AbstractVerticle {
 	}
 	/**
 	 * Delete a participant and all associated files/data.
-	 * @param message
+	 * @param message the MEssage containing the list of users and which to reply to
 	 */
 	public void deleteParticipants(Message<JsonArray> message)
 	{

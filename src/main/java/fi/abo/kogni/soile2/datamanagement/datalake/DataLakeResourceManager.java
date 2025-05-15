@@ -35,6 +35,10 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 
 	private String dataLakeDirectory;
 	private Vertx vertx;
+	/**
+	 * Default construtor getting the vertx instance
+	 * @param vertx The vertx instance for communications
+	 */
 	public DataLakeResourceManager(Vertx vertx)
 	{
 		super(vertx.eventBus(),true, true);
@@ -48,7 +52,7 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 	 * file referenced by the provided {@link SOILEUpload}, so the {@link SOILEUpload} will not be valid afterwards.
 	 * @param targetGitFile the {@link GitFile} the new data should be written to. Indicating the location in the resources
 	 * @param is the {@link InputStream} that contains the data to be associated with the targetGitFile
-	 * @return
+	 * @return A {@link Future} of the new version written
 	 */
 	public Future<String> writeStreamToGit(GitFile targetGitFile, InputStream is)	
 	{		
@@ -86,7 +90,7 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 	 * file referenced by the provided {@link SOILEUpload}, so the {@link SOILEUpload} will not be valid afterwards.
 	 * @param targetGitFile the {@link GitFile} the new data should be written to. Indicating the location in the resources
 	 * @param fileUpload the {@link FileUpload} that contains the data to be associated with the targetGitFile
-	 * @return
+	 * @return a {@link Future} of the version written
 	 */
 	public Future<String> writeUploadToGit(GitFile targetGitFile, SOILEUpload fileUpload)	
 	{		
@@ -123,7 +127,7 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 	/**
 	 * Delete a file from a version in git
 	 * @param targetGitFile the {@link GitFile} the new data should be written to. Indicating the location in the resources
-	 * @return
+	 * @return a {@link Future} of the version written
 	 */
 	public Future<String> deleteGitFile(GitFile targetGitFile)	
 	{		
@@ -214,7 +218,7 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 	/**
 	 * Write the data from an {@link OutputStream} to the datalake, creating a new file 
 	 * @param targetGitFile the target {@link GitFile} the upload data will be associated with 
-	 * @param os the {@link OutputStream} containing the data for the actual file.
+	 * @param is the {@link InputStream} containing the data for the actual file.
 	 * @return a {@link Future} of the {@link GitDataLakeFile} that contains all information about the datalake file created. 
 	 */
 	public Future<GitDataLakeFile> writeStreamToDataLake(GitFile targetGitFile, InputStream is)
@@ -257,7 +261,7 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 	/**
 	 * Delete a file in the datalake associated with the given git file.
 	 * Be careful the file will be deleted, so make sure it's not associated with something else.
-	 * @param toDelete
+	 * @param toDelete The file to delete
 	 * @return A Future of the operation succeeding.
 	 */
 	public Future<Void> deleteFile(GitDataLakeFile toDelete)
@@ -281,7 +285,7 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 	 * Get the {@link File} specified by the taskID and the filename in the resource datalake.
 	 * @param taskID - the task for which to retrieve the file
 	 * @param dataLakeFileName the name of the datalake file.
-	 * @return
+	 * @return the Actual File object corresponding to the dataLakeFilename in the given task
 	 */
 	public File getTaskDataLakeFile(String taskID, String dataLakeFileName)
 	{	

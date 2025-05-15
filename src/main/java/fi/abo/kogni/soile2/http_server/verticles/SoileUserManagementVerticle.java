@@ -40,13 +40,13 @@ import io.vertx.ext.web.handler.HttpException;
  * the {UserManagement_prefix} and a command suffix.
  * The messages need to contain JsonObjects of the following structure:
  * { 
- *   <usernameField> : "username",
- *   <passwordField> : "password",
- *   <userEmailField> : "email", # optional
- *   <userFullNameField> : "fullname", # optional
- *   <userRolesField> : [ "role1" , "role2" ] # optional
- *   <userPermissionsField> : [ "permission1" , "permission2" ] # optional
- *   <userTypeField> : "type"
+ *   {@literal <}usernameField> : "username",
+ *   {@literal <}passwordField> : "password",
+ *   {@literal <}userEmailField> : "email", # optional
+ *   {@literal <}userFullNameField> : "fullname", # optional
+ *   {@literal <}userRolesField> : [ "role1" , "role2" ] # optional
+ *   {@literal <}userPermissionsField> : [ "permission1" , "permission2" ] # optional
+ *   {@literal <}userTypeField> : "type"
  *   } 
  * Passwords need to be transferred using the systems hashing algorithm
  * @author thomas
@@ -130,8 +130,8 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	/**
 	 * Add a session to a user
 	 * {
-	 *  <usernameField> : username,
-	 *  <sessionID> : sessionID,
+	 *  {@literal <}usernameField> : username,
+	 *  {@literal <}sessionID> : sessionID,
 	 *  }
 	 *  If the session was successfully added    
 	 *  {
@@ -176,8 +176,8 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	/**
 	 * Remove a session from a user
 	 * {
-	 *  <usernameField> : username,
-	 *  <sessionID> : sessionID,
+	 *  {@literal <}usernameField> : username,
+	 *  {@literal <}sessionID> : sessionID,
 	 *  }
 	 *  If the session was successfully added    
 	 *  {
@@ -219,18 +219,18 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	/**
 	 * Test whether a given session is still valid for a given user.
 	 * {
-	 *  <usernameField> : username,
-	 *  <sessionID> : sessionID,
+	 *  {@literal <}usernameField> : username,
+	 *  {@literal <}sessionID> : sessionID,
 	 *  }
 	 *  I the session is valid the result will be a json with   
 	 *  {
 	 *  "Result" : "Success",
-	 *  <sessionIsValid> : true 
+	 *  {@literal <}sessionIsValid> : true 
 	 *  }
 	 *  If the session is not valid, the result will be:
 	 *  {
 	 *  "Result" : "Success",
-	 *  <sessionIsValid> : False 
+	 *  {@literal <}sessionIsValid> : False 
 	 *  }
 	 *  and if there was an Error, the result will be:
 	 *  {
@@ -280,8 +280,8 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	/**
 	 * Add a user with given email address
 	 * {
-	 *  <usernameField> : username,
-	 *  <userEmailField> : emailAddress,
+	 *  {@literal <}usernameField> : username,
+	 *  {@literal <}userEmailField> : emailAddress,
 	 *  }
 	 *  If the user was added successfully    
 	 *  {
@@ -347,11 +347,11 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	/**
 	 * Add a User to the database. he message body must be a jsonObject with at least the following fields:
 	 * {
-	 *  <usernameField> : username,
-	 *  <userTypeField> : userType,
-	 *  <userPasswordField> : userPassword,
-	 *  <userFullNameField> : Full Name (optional)
-	 *  <userEmailField> : Full Name (optional)
+	 *  {@literal <}usernameField> : username,
+	 *  {@literal <}userTypeField> : userType,
+	 *  {@literal <}userPasswordField> : userPassword,
+	 *  {@literal <}userFullNameField> : Full Name (optional)
+	 *  {@literal <}userEmailField> : Full Name (optional)
 	 *  }
 	 * @param msg
 	 */
@@ -444,9 +444,9 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	/**
 	 * Change the permissions of a user. The command needs to have the following structure:
 	 * {
-	 * 		"<usernameField>" : "UserName",	 * 		
+	 * 		"{@literal <}usernameField>" : "UserName",	 * 		
 	 * 		oneOf:
-	 * 		 - command : "<addCommand>"/"<setCommand>"/"<removeCommand>"
+	 * 		 - command : "{@literal <}addCommand>"/"{@literal <}setCommand>"/"{@literal <}removeCommand>"
 	 * 		   permissionsProperties
 	 * 			{
 	 * 			 elementType: "task"/"experiment"/"project"/"study"
