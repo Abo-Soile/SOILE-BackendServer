@@ -1,15 +1,8 @@
 package fi.abo.kogni.soile2.http_server;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.MongoTest;
-import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;

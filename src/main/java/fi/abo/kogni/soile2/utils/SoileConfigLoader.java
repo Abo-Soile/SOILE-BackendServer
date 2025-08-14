@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2.utils;
 
-import java.util.Set;
-
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;

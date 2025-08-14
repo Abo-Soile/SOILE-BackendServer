@@ -238,7 +238,8 @@ public class DataLakeResourceManager extends GitDataRetriever<DataLakeFile> {
 								outputStream.write(data);
 								data = is.read();
 							}
-						}	                    
+						}	
+						outputStream.close();
 					}
 					catch(IOException e)
 					{

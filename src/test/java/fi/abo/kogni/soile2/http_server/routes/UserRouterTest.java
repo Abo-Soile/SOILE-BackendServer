@@ -1,15 +1,14 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
-import org.antlr.runtime.TokenSource;
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.UserVerticleTest;
-import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
-import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
+import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
+import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.json.JsonArray;

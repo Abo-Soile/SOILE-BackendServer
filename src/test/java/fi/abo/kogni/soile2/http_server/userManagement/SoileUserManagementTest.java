@@ -7,7 +7,6 @@ import org.junit.runner.RunWith;
 
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
-import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;

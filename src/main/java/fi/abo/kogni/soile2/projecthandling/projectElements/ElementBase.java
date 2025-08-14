@@ -14,7 +14,6 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;

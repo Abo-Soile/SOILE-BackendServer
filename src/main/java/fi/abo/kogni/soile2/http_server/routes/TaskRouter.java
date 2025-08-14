@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import javax.swing.text.AbstractDocument.Content;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,7 +19,6 @@ import fi.abo.kogni.soile2.projecthandling.apielements.APITask;
 import fi.abo.kogni.soile2.projecthandling.projectElements.TaskBundler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
-import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpHeaders;

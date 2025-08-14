@@ -7,8 +7,6 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.mongodb.internal.async.client.AsyncMongoClient;
-
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ElementNameExistException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;

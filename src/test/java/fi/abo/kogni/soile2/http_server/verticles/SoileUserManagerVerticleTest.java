@@ -10,7 +10,6 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
-import fi.abo.kogni.soile2.http_server.authentication.utils.AccessElement;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileHashing;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;

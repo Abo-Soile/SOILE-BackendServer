@@ -2,7 +2,6 @@ package fi.abo.kogni.soile2.projecthandling.projectElements;
 
 
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.function.Supplier;
 
 import org.apache.logging.log4j.LogManager;

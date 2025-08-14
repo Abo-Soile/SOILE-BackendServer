@@ -6,7 +6,6 @@ import org.junit.Test;
 
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantDataLakeManager;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResult;
-import fi.abo.kogni.soile2.datamanagement.utils.OutputMap;
 import fi.abo.kogni.soile2.http_server.SoileVerticleTest;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;

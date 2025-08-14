@@ -16,7 +16,6 @@ import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Project;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
-import io.netty.util.concurrent.SucceededFuture;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -151,7 +150,7 @@ public class ElementManagerTest extends GitTest{
 									boolean elementFound = false;
 									for(int i = 0; i < taskLists.size(); ++i)
 									{
-										if(taskLists.getJsonObject(i).getBinary("UUID").equals(ctask.getUUID()))
+										if(taskLists.getJsonObject(i).getString("UUID").equals(ctask.getUUID()))
 										{
 											elementFound = true;
 										}

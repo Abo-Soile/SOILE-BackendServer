@@ -16,7 +16,6 @@ import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.datamanagement.git.GitFile;
 import fi.abo.kogni.soile2.datamanagement.git.ObjectManager;
 import fi.abo.kogni.soile2.http_server.requestHandling.SOILEUpload;
-import fi.abo.kogni.soile2.projecthandling.utils.SimpleFileUpload;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;

@@ -1,7 +1,5 @@
 package fi.abo.kogni.soile2.http_server.auth;
 
-import java.lang.annotation.Target;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

@@ -1,6 +1,5 @@
 package fi.abo.kogni.soile2.datamanagement.git;
 
-import java.awt.Event;
 import java.io.File;
 
 import org.apache.logging.log4j.LogManager;
@@ -13,7 +12,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.ReplyException;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 

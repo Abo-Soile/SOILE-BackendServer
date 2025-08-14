@@ -8,8 +8,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -23,7 +21,6 @@ import de.flapdoodle.embed.process.io.ProcessOutput;
 import de.flapdoodle.embed.process.runtime.Network;
 import de.flapdoodle.reverse.TransitionWalker.ReachedState;
 import de.flapdoodle.reverse.transitions.Start;
-import fi.abo.kogni.soile2.http_server.SoileServerVerticle;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;

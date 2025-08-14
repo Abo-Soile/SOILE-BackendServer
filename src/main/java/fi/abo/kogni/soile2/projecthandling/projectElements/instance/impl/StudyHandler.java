@@ -11,7 +11,6 @@ import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResult;
 import fi.abo.kogni.soile2.datamanagement.utils.CheckDirtyMap;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
-import fi.abo.kogni.soile2.projecthandling.participant.impl.DBParticipant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;

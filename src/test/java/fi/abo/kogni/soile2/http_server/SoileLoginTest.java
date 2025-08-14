@@ -1,11 +1,8 @@
 package fi.abo.kogni.soile2.http_server;
 
-import static org.junit.Assert.fail;
-
 import org.junit.Test;
 
 import fi.abo.kogni.soile2.http_server.utils.DebugCookieStore;
-import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.vertx.core.MultiMap;

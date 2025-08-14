@@ -6,7 +6,6 @@ import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientSession;
 
 public class SignupTest extends SoileWebTest {

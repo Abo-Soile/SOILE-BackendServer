@@ -9,7 +9,6 @@ import fi.abo.kogni.soile2.http_server.requestHandling.SOILEUpload;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.Task;
 import fi.abo.kogni.soile2.projecthandling.utils.ObjectGenerator;
-import fi.abo.kogni.soile2.projecthandling.utils.SimpleFileUpload;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import io.vertx.core.http.impl.MimeMapping;
 import io.vertx.core.json.JsonArray;

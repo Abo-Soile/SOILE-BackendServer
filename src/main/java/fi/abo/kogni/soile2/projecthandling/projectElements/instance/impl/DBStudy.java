@@ -444,7 +444,7 @@ public class DBStudy extends Study{
 	@Override
 	protected Future<Void> checkChangeAllowed(JsonObject updateData) {
 		
-		Promise canChangePromise = Promise.promise();
+		Promise<Void> canChangePromise = Promise.promise();
 		String newShortCut = updateData.getString("shortcut","");
 		String newName = updateData.getString("name",this.name);
 		if((newShortCut.equals(this.shortcut) || newShortCut.equals("")) && newName.equals(this.name))
