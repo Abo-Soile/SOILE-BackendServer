@@ -18,6 +18,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
 import io.vertx.ext.web.handler.AuthenticationHandler;
 import io.vertx.ext.web.handler.HttpException;
+import io.vertx.ext.web.impl.UserContextInternal;
 
 /**
  * Form Login handler
@@ -116,7 +117,7 @@ public class SoileFormLoginHandler implements AuthenticationHandler{
 				if (username == null || password == null) {
 					handler.handle(Future.failedFuture(BAD_REQUEST));
 				} else {
-					authProvider.authenticate(new UsernamePasswordCredentials(username, password), authn -> {
+					authProvider.authenticate(new UsernamePasswordCredentials(username, password)).andThen(authn -> {
 						if (authn.failed()) {
 							handler.handle(Future.failedFuture(new HttpException(401, authn.cause())));
 						} else {
@@ -220,7 +221,7 @@ public class SoileFormLoginHandler implements AuthenticationHandler{
 			if (authN.succeeded()) {
 				User authenticated = authN.result();
 				LOGGER.debug("User added to to context");
-				ctx.setUser(authenticated);
+				((UserContextInternal)ctx.userContext()).setUser(authenticated);
 				Session session = ctx.session();
 				if (session != null) {
 					// the user has upgraded from unauthenticated to authenticated
