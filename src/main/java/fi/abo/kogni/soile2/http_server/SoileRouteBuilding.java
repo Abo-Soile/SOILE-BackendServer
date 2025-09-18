@@ -193,10 +193,12 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	{
 		LOGGER.debug(config().getString("api"));
 		Future<OpenAPIContract> contract = OpenAPIContract.from(vertx, config().getString("api"));		
-		return contract.compose(openapi -> Future.succeededFuture(
-				new RouterBuilderImpl(vertx,openapi, 
+		return contract.compose(openapi -> {
+			
+			return Future.succeededFuture(new RouterBuilderImpl(vertx,openapi, 
 						(routingContext, operation) -> RequestUtils.extract(routingContext.request(), operation))
-				));
+				);
+		});
 	}
 
 	/**

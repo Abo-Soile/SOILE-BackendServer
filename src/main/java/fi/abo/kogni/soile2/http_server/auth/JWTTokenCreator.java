@@ -8,6 +8,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.HttpException;
+import io.vertx.ext.web.handler.JWTAuthHandler;
+import io.vertx.ext.web.handler.impl.JWTAuthHandlerImpl;
 
 /**
  * A Simple Token generator for JWT.
@@ -15,7 +17,7 @@ import io.vertx.ext.web.handler.HttpException;
  *
  */
 public class JWTTokenCreator{
-
+	JWTAuthHandlerImpl
 	Vertx vertx;	
 	SoileAuthenticationBuilder handler;
 	
