@@ -22,3 +22,9 @@ resultLake/**/*
 
 ### Vertx Deployment
 vertx-start-process.id
+
+## Javadoc
+javadoc/**/*
+
+## Ignore the config
+src/soile_resources/soile_config.json
