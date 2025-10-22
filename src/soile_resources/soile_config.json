@@ -31,7 +31,8 @@
 		"projectCollection": "projects",
 		"taskCollection": "tasks",	
 		"experimentCollection" : "experiments",
-		"downloadCollection" : "downloads"
+		"downloadCollection" : "downloads",
+		"tokenCollection" : "tokens"
 	},
 	"mongo": {
 		"host": "127.0.0.1",

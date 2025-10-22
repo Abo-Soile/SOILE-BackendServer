@@ -184,7 +184,12 @@
 			<artifactId>commons-io</artifactId>
 			<version>2.14.0</version>
 		</dependency>
-
+		<!-- system mail dependencies -->
+		<dependency>
+		  <groupId>com.sun.mail</groupId>
+		  <artifactId>jakarta.mail</artifactId>
+		  <version>2.0.1</version>
+		</dependency>
 <!-- Testing dependencies -->
 		<dependency>
 			<groupId>io.vertx</groupId>
