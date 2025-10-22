@@ -1,6 +1,5 @@
 package fi.abo.kogni.soile2.http_server;
 
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -11,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeResourceManager;
 import fi.abo.kogni.soile2.elang.verticle.ExperimentLanguageVerticle;
 import fi.abo.kogni.soile2.http_server.auth.JWTTokenCreator;
+import fi.abo.kogni.soile2.http_server.auth.PasswordReset;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthentication;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthenticationBuilder;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization;
@@ -63,12 +63,14 @@ import io.vertx.ext.web.handler.JWTAuthHandler;
 import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.sstore.LocalSessionStore;
+
 /**
- * Verticle that handles Route Building for the Soile Backend Platform 
+ * Verticle that handles Route Building for the Soile Backend Platform
+ * 
  * @author Thomas Pfau
  *
  */
-public class SoileRouteBuilding extends AbstractVerticle{
+public class SoileRouteBuilding extends AbstractVerticle {
 
 	private static final Logger LOGGER = LogManager.getLogger(SoileRouteBuilding.class);
 
@@ -83,17 +85,16 @@ public class SoileRouteBuilding extends AbstractVerticle{
 	private TaskRouter taskRouter;
 	private ParticipationRouter partRouter;
 	private IDSpecificFileProvider fileProvider;
-	DeploymentOptions soileOpts;	
+	DeploymentOptions soileOpts;
 	AuthenticationHandler anyAuth;
 	AuthenticationHandler userAuth;
 	@SuppressWarnings("rawtypes")
 	private List<MessageConsumer> consumers;
 
-	
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
 		consumers = new LinkedList<>();
-		cookieHandler = new SoileCookieCreationHandler(vertx.eventBus());	
+		cookieHandler = new SoileCookieCreationHandler(vertx.eventBus());
 		this.client = MongoClient.createShared(vertx, SoileConfigLoader.getMongoCfg(), "ROUTER_MONGO");
 		resourceManager = new DataLakeResourceManager(vertx);
 		soileAuthorization = new SoileAuthorization(client);
@@ -102,227 +103,222 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		fileProvider = new IDSpecificFileProvider(resourceManager);
 		LOGGER.debug("Starting Routerbuilder");
 		deployVerticles()
-		.compose(this::createRouter)		
-		.compose(this::setupAuth)
-		.compose(this::setupLogin)
-		.compose(this::addHandlers)
-		.compose(this::setupTaskAPI)
-		.compose(this::setupExperimentAPI)
-		.compose(this::setupProjectAPI)
-		.compose(this::setupStudyAPI)
-		.compose(this::setupParticipationAPI)
-		.compose(this::setupUserAPI)					 
-		.onSuccess( routerBuilder ->
-		{
-			// add Debug, Logger and Session Handlers.						
-			soileRouter = routerBuilder.createRouter();						
-			//as unfortunate as this is, we need to build a few routes manually, as they cannot be matched properly at the moment
-			setUpSpecialRoutes(soileRouter);			
-			// now, add the cleanup callBack for the different Routers, which will cache data.
-			consumers.add(vertx.eventBus().consumer("soile.tempData.Cleanup", this::cleanUP));
-			soileRouter.errorHandler(401, ErrorHandler.create(vertx));
-			soileRouter.errorHandler(403, ErrorHandler.create(vertx));
-			startPromise.complete();
-		})
-		.onFailure(fail ->
-		{
-			LOGGER.error("Failed Starting router with error:", fail);			
-			startPromise.fail(fail);
-		});
-
+				.compose(this::createRouter)
+				.compose(this::setupAuth)
+				.compose(this::setupLogin)
+				.compose(this::addHandlers)
+				.compose(this::setupTaskAPI)
+				.compose(this::setupExperimentAPI)
+				.compose(this::setupProjectAPI)
+				.compose(this::setupStudyAPI)
+				.compose(this::setupParticipationAPI)
+				.compose(this::setupUserAPI)
+				.onSuccess(routerBuilder -> {
+					// add Debug, Logger and Session Handlers.
+					soileRouter = routerBuilder.createRouter();
+					// as unfortunate as this is, we need to build a few routes manually, as they
+					// cannot be matched properly at the moment
+					setUpSpecialRoutes(soileRouter);
+					// now, add the cleanup callBack for the different Routers, which will cache
+					// data.
+					consumers.add(vertx.eventBus().consumer("soile.tempData.Cleanup", this::cleanUP));
+					soileRouter.errorHandler(401, ErrorHandler.create(vertx));
+					soileRouter.errorHandler(403, ErrorHandler.create(vertx));
+					startPromise.complete();
+				})
+				.onFailure(fail -> {
+					LOGGER.error("Failed Starting router with error:", fail);
+					startPromise.fail(fail);
+				});
 
 	}
-	
+
 	@Override
 	@SuppressWarnings("rawtypes")
-	public void stop(Promise<Void> stopPromise)
-	{
+	public void stop(Promise<Void> stopPromise) {
 		soileRouter.clear();
 		List<Future> undeploymentFutures = new LinkedList<Future>();
-		for(MessageConsumer consumer : consumers)
-		{
+		for (MessageConsumer consumer : consumers) {
 			undeploymentFutures.add(consumer.unregister());
-		}			
-		
-		CompositeFuture.all(undeploymentFutures).mapEmpty().
-		onSuccess(v -> stopPromise.complete())
-		.onFailure(err -> {
-			LOGGER.error("Couldn't undeploy all child verticles");
-			stopPromise.complete();
-		});		
+		}
+
+		CompositeFuture.all(undeploymentFutures).mapEmpty().onSuccess(v -> stopPromise.complete())
+				.onFailure(err -> {
+					LOGGER.error("Couldn't undeploy all child verticles");
+					stopPromise.complete();
+				});
 	}
-	
+
 	/**
 	 * Deploy the required verticles.
+	 * 
 	 * @return
 	 */
 	@SuppressWarnings("rawtypes")
-	private Future<Void> deployVerticles()
-	{
+	private Future<Void> deployVerticles() {
 		List<Future> deploymentFutures = new LinkedList<Future>();
-		vertx.deployVerticle(new ExperimentLanguageVerticle(SoileConfigLoader.getVerticleProperty("elangAddress")), soileOpts);
-		vertx.deployVerticle(new QuestionnaireRenderVerticle(SoileConfigLoader.getVerticleProperty("questionnaireAddress")), soileOpts);
+		vertx.deployVerticle(new ExperimentLanguageVerticle(SoileConfigLoader.getVerticleProperty("elangAddress")),
+				soileOpts);
+		vertx.deployVerticle(
+				new QuestionnaireRenderVerticle(SoileConfigLoader.getVerticleProperty("questionnaireAddress")),
+				soileOpts);
 		vertx.deployVerticle(new CodeRetrieverVerticle(), soileOpts);
-		vertx.deployVerticle(new ParticipantVerticle(partHandler,projHandler), soileOpts);
+		vertx.deployVerticle(new ParticipantVerticle(partHandler, projHandler), soileOpts);
 		vertx.deployVerticle(new TaskInformationverticle(), soileOpts);
-		vertx.deployVerticle(new DataBundleGeneratorVerticle(client,projHandler,partHandler), soileOpts);
+		vertx.deployVerticle(new DataBundleGeneratorVerticle(client, projHandler, partHandler), soileOpts);
 		return CompositeFuture.all(deploymentFutures).mapEmpty();
 
-	}	
-	
+	}
+
 	/**
 	 * Set the Deployment options for the verticles required for routing.
+	 * 
 	 * @param opts the {@link DeploymentOptions}
 	 */
-	public void setDeploymentOptions(DeploymentOptions opts)
-	{
+	public void setDeploymentOptions(DeploymentOptions opts) {
 		this.soileOpts = opts;
 	}
-	
+
 	/**
 	 * Create the router from the API file defined in the config.
+	 * 
 	 * @param unused an unused Void input for composition.
 	 * @return A Future of the {@link RouterBuilder} created
 	 */
-	private Future<RouterBuilder> createRouter(Void unused)
-	{
+	private Future<RouterBuilder> createRouter(Void unused) {
 		LOGGER.debug(config().getString("api"));
 		return RouterBuilder.create(vertx, config().getString("api"));
 	}
 
 	/**
 	 * Get the router
+	 * 
 	 * @return the {@link Router}
 	 */
-	public Router getRouter()
-	{
+	public Router getRouter() {
 		return this.soileRouter;
 	}
-	
+
 	/**
 	 * Clean up old cached data.
-	 * @param cleanupRequest A message (could be void) 
+	 * 
+	 * @param cleanupRequest A message (could be void)
 	 */
-	public void cleanUP(Message<Object> cleanupRequest)
-	{
+	public void cleanUP(Message<Object> cleanupRequest) {
 		partHandler.cleanup();
 		projHandler.cleanup();
 		taskRouter.cleanup();
 	}
+
 	/**
 	 * Set up auth handling
+	 * 
 	 * @param builder the Routerbuilder to be used.
 	 * @return the routerbuilder in a future for composite use
 	 */
-	Future<RouterBuilder> setupAuth(RouterBuilder builder)
-	{	
+	Future<RouterBuilder> setupAuth(RouterBuilder builder) {
 		handler = new SoileAuthenticationBuilder();
-		
-		AuthenticationHandler JWTAuth =  JWTAuthHandler.create(handler.getJWTAuthProvider(vertx));
-		AuthenticationHandler tokenAuth =  handler.getTokenAuthProvider(partHandler, client);
-		AuthenticationHandler cookieAuth =  handler.getCookieAuthProvider(vertx, client, cookieHandler);
-		
-		builder.securityHandler("cookieAuth",cookieAuth)
-			   .securityHandler("JWTAuth", JWTAuth)
-			   .securityHandler("tokenAuth", tokenAuth);
+
+		AuthenticationHandler JWTAuth = JWTAuthHandler.create(handler.getJWTAuthProvider(vertx));
+		AuthenticationHandler tokenAuth = handler.getTokenAuthProvider(partHandler, client);
+		AuthenticationHandler cookieAuth = handler.getCookieAuthProvider(vertx, client, cookieHandler);
+
+		builder.securityHandler("cookieAuth", cookieAuth)
+				.securityHandler("JWTAuth", JWTAuth)
+				.securityHandler("tokenAuth", tokenAuth);
 		anyAuth = ChainAuthHandler.any().add(JWTAuth).add(cookieAuth).add(tokenAuth);
 		userAuth = ChainAuthHandler.any().add(JWTAuth).add(cookieAuth);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
-	
-	Future<RouterBuilder> addHandlers(RouterBuilder builder)
-	{
-		if(LOGGER.getLevel() == Level.DEBUG)
-		{	// we add the router if debugging
+
+	Future<RouterBuilder> addHandlers(RouterBuilder builder) {
+		if (LOGGER.getLevel() == Level.DEBUG) { // we add the router if debugging
 			builder.rootHandler(LoggerHandler.create());
 		}
 		builder.rootHandler(new SoileSessionHandler(LocalSessionStore.create(vertx)));
-		//TODO: Make flexible and set up for all front-end components
-		CorsHandler cors = CorsHandler.create()											
+		// TODO: Make flexible and set up for all front-end components
+		CorsHandler cors = CorsHandler.create()
 				.allowedMethod(HttpMethod.POST)
 				.allowedMethod(HttpMethod.GET)
 				.allowedMethod(HttpMethod.OPTIONS)
 				.allowCredentials(true)
-			    .allowedHeader("Access-Control-Allow-Headers")
-			    .allowedHeader("Authorization")
-			    .allowedHeader("Access-Control-Allow-Method")
-			    .allowedHeader("Access-Control-Allow-Origin")
-			    .allowedHeader("Access-Control-Allow-Credentials")
-			    .allowedHeader("Content-Type");
-		JsonArray corsHosts = SoileConfigLoader.getConfig(SoileConfigLoader.HTTP_SERVER_CFG).getJsonArray("corsURLS", new JsonArray());
-		for(int i = 0; i < corsHosts.size(); ++i)
-		{
+				.allowedHeader("Access-Control-Allow-Headers")
+				.allowedHeader("Authorization")
+				.allowedHeader("Access-Control-Allow-Method")
+				.allowedHeader("Access-Control-Allow-Origin")
+				.allowedHeader("Access-Control-Allow-Credentials")
+				.allowedHeader("Content-Type");
+		JsonArray corsHosts = SoileConfigLoader.getConfig(SoileConfigLoader.HTTP_SERVER_CFG).getJsonArray("corsURLS",
+				new JsonArray());
+		for (int i = 0; i < corsHosts.size(); ++i) {
 			cors.addOrigin(corsHosts.getString(i));
 		}
-		builder.rootHandler(cors);												
+		builder.rootHandler(cors);
 		builder.rootHandler(BodyHandler.create());
-		builder.rootHandler(new DebugRouter());		
+		builder.rootHandler(new DebugRouter());
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
-	
-	Future<RouterBuilder> setupLogin(RouterBuilder builder)
-	{
-		
-		SoileFormLoginHandler formLoginHandler = new SoileFormLoginHandler(new SoileAuthentication(client), "username", "password",new JWTTokenCreator(handler,vertx), cookieHandler);		
+
+	Future<RouterBuilder> setupLogin(RouterBuilder builder) {
+
+		SoileFormLoginHandler formLoginHandler = new SoileFormLoginHandler(new SoileAuthentication(client), "username",
+				"password", new JWTTokenCreator(handler, vertx), cookieHandler);
+		PasswordReset pwReset = new PasswordReset(client, new JWTTokenCreator(handler, vertx), vertx, cookieHandler);
 		builder.operation("loginUser").handler(formLoginHandler::handle);
+		builder.operation("oneTimeAuth").handler(pwReset::handle);
+		builder.operation("resetPassword").handler(pwReset::request_reset);
 		builder.operation("testAuth").handler(this::testAuth);
 		builder.operation("logout").handler(this::logout);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
-	
-	
-	private void logout(RoutingContext ctx)
-	{
+
+	private void logout(RoutingContext ctx) {
 		User currentUser = ctx.user();
-		if(currentUser != null)
-		{
+		if (currentUser != null) {
 			ctx.session().destroy();
 			cookieHandler.invalidateSessionCookie(ctx)
-			.onSuccess(loggedOut -> {
-				ctx.response().setStatusCode(200)
-				.end();				
-			})
-			.onFailure(err -> SoileRouter.handleError(err, ctx));
-		}						
+					.onSuccess(loggedOut -> {
+						ctx.response().setStatusCode(200)
+								.end();
+					})
+					.onFailure(err -> SoileRouter.handleError(err, ctx));
+		}
 	}
-	
 
 	/**
 	 * Test auth route
+	 * 
 	 * @param ctx the routing context
 	 */
-	public void testAuth(RoutingContext ctx)
-	{
+	public void testAuth(RoutingContext ctx) {
 		LOGGER.debug("AuthTest got a request");
-		if(ctx.user() != null)
-		{
+		if (ctx.user() != null) {
 			LOGGER.debug(ctx.user());
 			LOGGER.debug(ctx.user().principal().encodePrettily());
 			LOGGER.debug(ctx.user().attributes().encodePrettily());
 			LOGGER.debug(ctx.user().authorizations().toString());
 			ctx.request().response()
-			.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-			.end(new JsonObject().put("authenticated", true)
-								 .put("user", ctx.user().principal().getString("username"))
-								 .put("roles", ctx.user().principal().getValue(SoileConfigLoader.getSessionProperty("userRoles")))
-								 .encodePrettily());
-		}
-		else
-		{
+					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+					.end(new JsonObject().put("authenticated", true)
+							.put("user", ctx.user().principal().getString("username"))
+							.put("roles",
+									ctx.user().principal().getValue(SoileConfigLoader.getSessionProperty("userRoles")))
+							.encodePrettily());
+		} else {
 			ctx.request().response()
-			.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-			.end(new JsonObject().put("authenticated", false).put("user", null).encodePrettily());
+					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+					.end(new JsonObject().put("authenticated", false).put("user", null).encodePrettily());
 		}
-	}	
-	
+	}
+
 	/**
 	 * Everything that needs to be done for the Task API
+	 * 
 	 * @param builder
 	 * @return
 	 */
-	private Future<RouterBuilder> setupTaskAPI(RouterBuilder builder)
-	{
-		taskRouter = new TaskRouter( client, fileProvider, vertx, soileAuthorization);
+	private Future<RouterBuilder> setupTaskAPI(RouterBuilder builder) {
+		taskRouter = new TaskRouter(client, fileProvider, vertx, soileAuthorization);
 		builder.operation("getTaskList").handler(taskRouter::getElementList);
 		builder.operation("getVersionsForTask").handler(taskRouter::getVersionList);
 		builder.operation("createTask").handler(taskRouter::create);
@@ -337,18 +333,20 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("removeTagsForTask").handler(taskRouter::removeTagsFromElement);
 		builder.operation("addTagToTaskVersion").handler(taskRouter::addTagToVersion);
 		builder.operation("deleteTask").handler(taskRouter::deleteElement);
-		builder.operation("getCodeOptions").handler(taskRouter::getCodeOptions);		
+		builder.operation("getCodeOptions").handler(taskRouter::getCodeOptions);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
-	
+
 	/**
 	 * Everything that needs to be done for the Experiment API
+	 * 
 	 * @param builder
 	 * @return
 	 */
-	private Future<RouterBuilder> setupExperimentAPI(RouterBuilder builder)
-	{
-		ElementRouter<Experiment> router = new ElementRouter<Experiment>(new ElementManager<Experiment>(Experiment::new, APIExperiment::new, client, vertx), soileAuthorization, vertx.eventBus(), client );
+	private Future<RouterBuilder> setupExperimentAPI(RouterBuilder builder) {
+		ElementRouter<Experiment> router = new ElementRouter<Experiment>(
+				new ElementManager<Experiment>(Experiment::new, APIExperiment::new, client, vertx), soileAuthorization,
+				vertx.eventBus(), client);
 		builder.operation("getExperimentList").handler(router::getElementList);
 		builder.operation("getVersionsForExperiment").handler(router::getVersionList);
 		builder.operation("createExperiment").handler(router::create);
@@ -363,12 +361,14 @@ public class SoileRouteBuilding extends AbstractVerticle{
 
 	/**
 	 * Everything that needs to be done for the Project API
+	 * 
 	 * @param builder
 	 * @return
 	 */
-	private Future<RouterBuilder> setupProjectAPI(RouterBuilder builder)
-	{
-		ProjectRouter router = new ProjectRouter(new ElementManager<Project>(Project::new, APIProject::new, client, vertx), soileAuthorization, vertx.eventBus(), client );
+	private Future<RouterBuilder> setupProjectAPI(RouterBuilder builder) {
+		ProjectRouter router = new ProjectRouter(
+				new ElementManager<Project>(Project::new, APIProject::new, client, vertx), soileAuthorization,
+				vertx.eventBus(), client);
 		builder.operation("getProjectList").handler(router::getElementList);
 		builder.operation("getVersionsForProject").handler(router::getVersionList);
 		builder.operation("createProject").handler(router::create);
@@ -381,23 +381,23 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("addTagToProjectVersion").handler(router::addTagToVersion);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
-		
+
 	/**
 	 * Everything that needs to be done for the project execution API
 	 * The Project execution API will NOT use shortcuts!
+	 * 
 	 * @param builder
 	 * @return
 	 */
-	private Future<RouterBuilder> setupStudyAPI(RouterBuilder builder)
-	{
+	private Future<RouterBuilder> setupStudyAPI(RouterBuilder builder) {
 		StudyRouter router = new StudyRouter(soileAuthorization, vertx, client, partHandler, projHandler);
 		builder.operation("listDownloadData").handler(router::listDownloadData);
 		builder.operation("startStudy").handler(router::startProject);
 		builder.operation("getRunningStudies").handler(router::getRunningProjectList);
-		builder.operation("stopStudy").handler(router::stopProject);		
+		builder.operation("stopStudy").handler(router::stopProject);
 		builder.operation("restartStudy").handler(router::startStudy);
 		builder.operation("deleteStudy").handler(router::deleteProject);
-		builder.operation("getStudyResults").handler(router::getProjectResults);		
+		builder.operation("getStudyResults").handler(router::getProjectResults);
 		builder.operation("downloadResults").handler(router::downloadResults);
 		builder.operation("downloadTest").handler(router::downloadTest);
 		builder.operation("createTokens").handler(router::createTokens);
@@ -405,36 +405,53 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("updateStudy").handler(router::updateStudy);
 		builder.operation("getStudyProperties").handler(router::getStudyProperties);
 		builder.operation("getTokenInformation").handler(router::getTokenInformation);
-		builder.operation("getCollaboratorsForStudy").handler(router::getCollaboratorsForStudy);		
-		builder.operation("getStudyList").handler(router::getStudyList);		
+		builder.operation("getCollaboratorsForStudy").handler(router::getCollaboratorsForStudy);
+		builder.operation("getStudyList").handler(router::getStudyList);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
-	
+
 	/**
 	 * Everything that needs to be done for the project execution API
+	 * 
 	 * @param builder
 	 * @return
 	 */
-	private Future<RouterBuilder> setupParticipationAPI(RouterBuilder builder)
-	{	
+	private Future<RouterBuilder> setupParticipationAPI(RouterBuilder builder) {
 		partRouter = new ParticipationRouter(soileAuthorization, vertx, client, partHandler, projHandler, fileProvider);
-		builder.operation("submitResults").handler(context -> {partRouter.handleRequest(context,partRouter::submitResults);});
-		builder.operation("getTaskInfo").handler(context -> {partRouter.handleRequest(context,partRouter::getTaskInfo);});
-		builder.operation("runTask").handler(context -> {partRouter.handleRequest(context,partRouter::runTask);});
-		builder.operation("getID").handler(context -> {partRouter.handleRequest(context,partRouter::getID);});
-		builder.operation("signUpForProject").handler(context -> {partRouter.handleRequest(context,partRouter::signUpForProject);});
-		builder.operation("withdrawFromStudy").handler(context -> {partRouter.handleRequest(context,partRouter::withdrawFromStudy);});
-		builder.operation("uploadData").handler(context -> {partRouter.handleRequest(context,partRouter::uploadData);});
-		builder.operation("getPersistentData").handler(context -> {partRouter.handleRequest(context,partRouter::getPersistentData);});		
+		builder.operation("submitResults").handler(context -> {
+			partRouter.handleRequest(context, partRouter::submitResults);
+		});
+		builder.operation("getTaskInfo").handler(context -> {
+			partRouter.handleRequest(context, partRouter::getTaskInfo);
+		});
+		builder.operation("runTask").handler(context -> {
+			partRouter.handleRequest(context, partRouter::runTask);
+		});
+		builder.operation("getID").handler(context -> {
+			partRouter.handleRequest(context, partRouter::getID);
+		});
+		builder.operation("signUpForProject").handler(context -> {
+			partRouter.handleRequest(context, partRouter::signUpForProject);
+		});
+		builder.operation("withdrawFromStudy").handler(context -> {
+			partRouter.handleRequest(context, partRouter::withdrawFromStudy);
+		});
+		builder.operation("uploadData").handler(context -> {
+			partRouter.handleRequest(context, partRouter::uploadData);
+		});
+		builder.operation("getPersistentData").handler(context -> {
+			partRouter.handleRequest(context, partRouter::getPersistentData);
+		});
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
+
 	/**
 	 * Everything that needs to be done for the User API
+	 * 
 	 * @param builder
 	 * @return
 	 */
-	private Future<RouterBuilder> setupUserAPI(RouterBuilder builder)
-	{
+	private Future<RouterBuilder> setupUserAPI(RouterBuilder builder) {
 		UserRouter router = new UserRouter(soileAuthorization, vertx, client);
 		builder.operation("registerUser").handler(router::registerUser);
 		builder.operation("listUsers").handler(router::listUsers);
@@ -449,27 +466,37 @@ public class SoileRouteBuilding extends AbstractVerticle{
 		builder.operation("getUserActiveProjects").handler(router::getUserActiveProjects);
 		return Future.<RouterBuilder>succeededFuture(builder);
 	}
+
 	/**
-	 * These are a few special routes which unfortunately cannot be 
-	 * mapped directly from OPenAPI, as they require that all sub-pathes be properly matched. 
+	 * These are a few special routes which unfortunately cannot be
+	 * mapped directly from OPenAPI, as they require that all sub-pathes be properly
+	 * matched.
+	 * 
 	 * @param router
 	 */
-	private void setUpSpecialRoutes(Router router)
-	{
-		// Order is important here! the /lib/* needs 
-		// to match before /* because /* matches any /*/lib route as well and libs need to be loaded from the lib dir.
-		// This actually means we need to reject any resource upload that starts with /lib!
-		router.route(HttpMethod.GET, "/run/:id/:taskID/lib/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getLib);});
-		router.route(HttpMethod.GET, "/run/:id/:taskID/*").handler(anyAuth).handler(context -> {partRouter.handleRequest(context,partRouter::getResourceForExecution);});
-		router.route(HttpMethod.GET, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::getResource);		
-		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::putResource);
-		router.route(HttpMethod.GET, "/task/:id/:version/execute").handler(userAuth).handler(taskRouter::getCompiledTask);
+	private void setUpSpecialRoutes(Router router) {
+		// Order is important here! the /lib/* needs
+		// to match before /* because /* matches any /*/lib route as well and libs need
+		// to be loaded from the lib dir.
+		// This actually means we need to reject any resource upload that starts with
+		// /lib!
+		router.route(HttpMethod.GET, "/run/:id/:taskID/lib/*").handler(anyAuth).handler(context -> {
+			partRouter.handleRequest(context, partRouter::getLib);
+		});
+		router.route(HttpMethod.GET, "/run/:id/:taskID/*").handler(anyAuth).handler(context -> {
+			partRouter.handleRequest(context, partRouter::getResourceForExecution);
+		});
+		router.route(HttpMethod.GET, "/task/:id/:version/resource/*").handler(userAuth)
+				.handler(taskRouter::getResource);
+		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth)
+				.handler(taskRouter::putResource);
+		router.route(HttpMethod.GET, "/task/:id/:version/execute").handler(userAuth)
+				.handler(taskRouter::getCompiledTask);
 		router.route(HttpMethod.GET, "/task/:id/:version/execute/lib/*").handler(userAuth).handler(taskRouter::getLib);
-		router.route(HttpMethod.GET, "/task/:id/:version/execute/*").handler(userAuth).handler(taskRouter::getResourceForExecution);
-		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth).handler(taskRouter::putResource);
+		router.route(HttpMethod.GET, "/task/:id/:version/execute/*").handler(userAuth)
+				.handler(taskRouter::getResourceForExecution);
+		router.route(HttpMethod.POST, "/task/:id/:version/resource/*").handler(userAuth)
+				.handler(taskRouter::putResource);
 	}
-	
-	
-	
-	
+
 }
