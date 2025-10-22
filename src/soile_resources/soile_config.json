@@ -1,244 +1,179 @@
 {
-	"api" : "api.yml",
+	"api": "api.yml",
 	"http_server": {
-		"port": 8082,
-		"host": "localhost",				
+		"port": 8081,
+		"domain": "localhost",
 		"directory": "./static_files",
-		"template_folder":"templates/",
-		"debug":true,
-		"externalport":8080,
-		"externalURI": false,
-		"domain" : "localhost",
-		"serverSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m",
-		"sessionStoreSecret" : "UaOKMOxeBGP5rYtmAkWlnWrm875Jusnq4m/fn6fx8uKJcKILHuS1ecZzBaS9cSX2thq60P/VwcsY",		
-		"jwtStoreSecret" : "storeserect",
-		"jwtKeySecret" : "keysecret",
-		"gitVerticleAddress" : "githandler",
-		"soileGitFolder" : "/tmp/soile/git",
-		"soileGitDataLakeFolder" : "/tmp/soile/gitLake",
-		"soileResultDirectory" : "/tmp/soile/resultLake",
-		"taskLibraryFolder" : "/tmp/soile/libFolder",
-		"sslStoreFile" : "soile-keystore.p12",		
-		"sslSecret" : "secret",
-		"useSSL" : true,
-		"corsURLS" : []
+		"template_folder": "templates/",
+		"debug": true,
+		"sessionStoreSecret": "SuperSecureSecret",
+		"jwtStoreSecret": "storeserect",
+		"gitVerticleAddress": "githandler",
+		"soileGitFolder": "git",
+		"soileGitDataLakeFolder": "gitLake",
+		"soileResultDirectory": "resultLake",
+		"taskLibraryFolder": "libFolder",
+		"sslStoreFile": "soile-keystore.p12",
+		"sslSecret": "secret",
+		"useSSL": true,
+		"corsURLS": [
+			"http://localhost:5173",
+			"https://localhost:5173"
+		]
 	},
-
-	"db": {
-		"userCollection" : "users",		
-		"participantCollection" : "participants",
-		"studyCollection" : "projectInstances",
-		"projectCollection": "projects",
-		"taskCollection": "tasks",	
-		"experimentCollection" : "experiments",
-		"downloadCollection" : "downloads",
-		"tokenCollection" : "tokens"
+	"tasks": {
+		"availableVersions": {
+			"qmarkup": {
+				"versions": [
+					"1.0"
+				],
+				"mimeType": "application/json"
+			},
+			"elang": {
+				"versions": [
+					"1.0"
+				],
+				"mimeType": "application/javascript"
+			},
+			"psychopy": {
+				"versions": [
+					"2022.2.5"
+				],
+				"mimeType": "application/javascript"
+			},
+			"javascript": {
+				"versions": [
+					"ES6",
+					"ECMAScript 2020"
+				],
+				"mimeType": "application/javascript"
+			}
+		}
+	},
+	"verticles": {
+		"elangAddress": "soile.experimentlang.compile",
+		"code-gen-template": "templates/elang.stg",
+		"questionaireTemplates": "templates/questionnaire_embedded.stg",
+		"questionnaireAddress": "soile.questionnaire.compile",
+		"compilationAddress": "soile.codeRetrieval.compile",
+		"gitCompilationAddress": "soile.codeRetrieval.gitCompile",
+		"getTaskInformationAddress": "soile.task.information",
+		"getTaskGitAddress": "soile.task.gitAddress"
+	},
+	"session": {
+		"userTypeField": "userType",
+		"passwordField": "password",
+		"maxTime": 2592000000,
+		"sessionID": "sessionID",
+		"sessionCookieID": "soileSessionCookie",
+		"userCookieID": "soileUserCookie",
+		"sessionIsValid": "sessionIsValid",
+		"returnURLParam": "returnURL",
+		"loginURL": "/services/auth",
+		"cookiePath": "/",
+		"validSessionCookies": "validSessionCookies",
+		"userOwnes": "ownerOf",
+		"userCollaborates": "collaboratorOf",
+		"userParticipates": "participantOf",
+		"userRoles": "role"
+	},
+	"communication": {
+		"Fields": {
+			"sessionID": "sessionID",
+			"experimentID": "experimentID",
+			"roleChanged": "roleChanged",
+			"ownerField": "owners",
+			"collaboratorField": "collaborators",
+			"participantField": "participants"
+		}
+	},
+	"UManagement": {
+		"commandPrefix": "umanager.",
+		"participantType": "participant",
+		"researcherType": "user",
+		"hashingAlgorithm": "pbkdf2",
+		"serverSalt": "MySuperSecretSalt",
+		"commands": {
+			"activateUser": "activateUser",
+			"addUserWithEmail": "addUserwithEmail",
+			"addSession": "addUserSession",
+			"addUser": "adduser",
+			"checkUserSessionValid": "isSessionValid",
+			"getAccessRequest": "getAccessOfUser",
+			"getParticipantForUserInStudy": "getParticipantForUserInStudy",
+			"getParticipantsForUser": "getParticipantsForUser",
+			"getUserInfo": "getUserInfo",
+			"getUserData": "getUserData",
+			"invalidateUserSession": "invalidateSession",
+			"listUsers": "listUsers",
+			"makeUserParticipantInStudy": "addParticipantToUser",
+			"permissionOrRoleChange": "permissionOrRoleChange",
+			"removeSession": "removeSession",
+			"removeUser": "removeUser",
+			"setUserInfo": "setUserInfo",
+			"setPassword": "setPassword",
+			"setUserFullNameAndEmail": "setNameAndEmail"
+		}
+	},
+	"experiments": {
+		"projectFileName": "project.json",
+		"experimentFileName": "experiment.json",
+		"taskFileName": "task.json",
+		"sourceCodeFileName": "source.code",
+		"nameField": "experimentName",
+		"IDField": "experimentID",
+		"commandPrefix": "experiment.",
+		"privateField": "isPrivate",
+		"logonRequireField": "logonRequired",
+		"commands": {
+			"getFilePermissions": "requestFilePermission",
+			"getDataPermissions": "requestDataPermission",
+			"getResultPermissions": "requestResultPermission",
+			"changeOwner": "setOwner",
+			"changeParticipants": "setParticipants",
+			"changeCollaborators": "setCollaborators",
+			"changePrivate": "setPrivate",
+			"getAllAccess": "getAll",
+			"getOwner": "getOwner",
+			"getParticipants": "getParticipants",
+			"getCollaborators": "getCollaborators",
+			"getPrivate": "getPrivate",
+			"getAllPrivate": "getPrivateExperiments"
+		}
 	},
 	"mongo": {
 		"host": "127.0.0.1",
-		"port": 27023,
+		"port": 27022,
 		"db_name": "soile",
-		"username" : "admin",
-		"password" : "admin" 
+		"username": "admin",
+		"password": "admin"
 	},
-	"verticles": {
-		"elangAddress" : "soile.experimentlang.compile",
-		"code-gen-template": "templates/elang.stg",
-		"questionaireTemplates" : "templates/questionnaire_embedded.stg",
-		"questionnaireAddress": "soile.questionnaire.compile",
-		"compilationAddress" : "soile.codeRetrieval.compile",
-		"gitCompilationAddress" : "soile.codeRetrieval.gitCompile",
-		"getTaskInformationAddress" : "soile.task.information",
-		"getTaskGitAddress" : "soile.task.gitAddress"
-		
+	"db": {
+		"userCollection": "users",
+		"participantCollection": "participants",
+		"studyCollection": "projectInstances",
+		"projectCollection": "projects",
+		"taskCollection": "tasks",
+		"experimentCollection": "experiments",
+		"downloadCollection": "downloads",
+		"tokenCollection": "tokens"
 	},
-	
 	"db_user_fields": {
-		"experimentPermissionsField" : "experimentPermissions",
-		"projectPermissionsField" : "projectPermissions",
-		"studyPermissionsField" : "instancePermissions",
-		"userPermissionsField" : "permissions",
-		"taskPermissionsField" : "taskpermissions",
-		"usernameField" : "username",
-		"userEmailField" : "email",
-		"userFullNameField" : "fullname",
-		"ownerField" : "ownedExperiments",
-		"collaboratorField" : "collaboratedExperiments",
-		"participantField" : "participantIn",
-		"userRolesField" : "role",	
-		"usernameCredentialField" : "username",
-		"passwordField" : "password",
-		"passwordCredentialField" : "password",
- 		"storedSessions" : "storedSessions"
- 			
-	},			
-	
-	"session" : {
-		"userTypeField" : "userType",
-		"passwordField" : "password",
-		"maxTime" : 2592000000,
-		"sessionID" : "sessionID",
-		"sessionCookieID" : "soileSessionCookie",
-		"userCookieID" : "soileUserCookie",
-		"sessionIsValid" : "sessionIsValid",
-		"returnURLParam" : "returnURL",
-		"loginURL" : "/services/auth",
-		"cookiePath" : "/",
-		"validSessionCookies" : "validSessionCookies",
-		"userOwnes" : "ownerOf",
-		"userCollaborates" : "collaboratorOf",
-		"userParticipates" : "participantOf",
-		"userRoles" : "role" 
-	},
-
-	"communication" : {		
-		"Fields" : {
-			"sessionID" : "sessionID",
-			"experimentID" : "experimentID",			
-			"roleChanged" : "roleChanged",	
-			"ownerField" : "owners",
-			"collaboratorField" : "collaborators",
-			"participantField" : "participants"
-					 						
-			}		
-	},	
-
-	"UManagement" : {
-		"commandPrefix" : "umanager.",	
-		"participantType" : "participant",
-		"researcherType" : "user",
-		"hashingAlgorithm" : "pbkdf2",
-		"serverSalt" : "MySuperSecretSalt",		
-		"commands" : {		
-			"activateUser" : "activateUser",
-			"addUserWithEmail" : "addUserwithEmail",
-			"addSession" : "addUserSession",
-			"addUser" : "adduser",						
-			"checkUserSessionValid" : "isSessionValid",
-			"getAccessRequest" : "getAccessOfUser",			
-			"getParticipantForUserInStudy" : "getParticipantForUserInStudy",
-			"getParticipantsForUser" : "getParticipantsForUser",
-			"getUserInfo" : "getUserInfo",
-			"getUserData" : "getUserData",			
-			"invalidateUserSession" : "invalidateSession",						
-			"listUsers" : "listUsers",
-			"makeUserParticipantInStudy" : "addParticipantToUser",
-			"permissionOrRoleChange" : "permissionOrRoleChange",						
-			"removeSession" : "removeSession",
-			"removeUser" : "removeUser",
-			"setUserInfo" : "setUserInfo",
-			"setPassword" : "setPassword",
-			"setUserFullNameAndEmail" :"setNameAndEmail",
-			"getCollaboratorsforStudy": "getStudyCollaborators"
-			}
-	},
-
-	"experiments": {
-		"projectFileName" : "project.json",
-		"experimentFileName" : "experiment.json",
-		"taskFileName" : "task.json",
-		"sourceCodeFileName" : "source.code",		
-	    "nameField" : "experimentName",
-		"IDField" : "experimentID",
-		"commandPrefix" : "experiment.",
-		"privateField" : "isPrivate",
-		"logonRequireField" : "logonRequired",						
-		"commands" : {
-			"getFilePermissions" : "requestFilePermission",
-			"getDataPermissions" : "requestDataPermission",
-			"getResultPermissions" : "requestResultPermission",
-			"changeOwner" : "setOwner",
-			"changeParticipants" : "setParticipants",
-			"changeCollaborators" : "setCollaborators",
-			"changePrivate" : "setPrivate",
-			"getAllAccess" : "getAll",
-			"getOwner" : "getOwner",
-			"getParticipants" : "getParticipants",
-			"getCollaborators" : "getCollaborators",
-			"getPrivate" : "getPrivate",
-			"getAllPrivate" : "getPrivateExperiments"
-		}
-	},
-		
-	"tasks":{		
-		"availableVersions" : {
-								 "qmarkup" : { "versions" : ["1.0"], "mimeType" : "application/json" },
-								 "elang" : { "versions" : ["1.0"], "mimeType" : "application/javascript" },
-								 "psychopy" : { "versions" : ["2022.2.5"], "mimeType" : "application/javascript"},
-								 "javascript": {"versions" : ["ES6", "ECMAScript 2020"], "mimeType" : "application/javascript"}
-								 }
-	},
-	
-	"deploy": [
-		{
-			"module": "fi.abo.kogni.soile~experiment-lang~1.0",
-			"config": "experiment_language",
-			"instances": 1
-		},
-		{
-			"module": "fi.abo.kogni.soile~questionnaire-render~1.0",
-			"config": "questionnaire_markup",
-			"instances": 1
-		}
-	],
-	"old_deploy":
-	[
-			{
-			"module": "fi.abo.kogni.soile~http-server~1.1",
-			"config": "http_server",
-			"instances": 1
-		},
-		{
-			"module": "fi.abo.kogni.soile~vertx-mod-template-engines~1.0",
-			"config": "dustjs",
-			"instances": 1
-		},
-		{
-			"module": "io.vertx~mod-mongo-persistor~2.1.0",
-			"config": "mongo",
-			"instances": 1
-		},
-		{
-			"module": "io.vertx~mod-mailer~2.0.0-final",
-			"config": "mailer",
-			"instances": 1
-		}
-	],
-	
-	"shared": {
-		"directories": {
-			"/": "/home/danno/SoileIDEA/soile2/prod",
-			"questionnaires": "./generated/questionnaire"
-		},
-			"addresses": {
-			"experiment_language": "soile.experiment.lang",
-			"questionnaire_render": "soile.workbench.questionnaire.render"
-		}
-	},
-	
-	"experiment_language": {
-		"code-gen-template": "./templates/elang.stg"
-	},
-	
-	"questionnaire_markup": {
-		"templates": "./templates/questionnaire_embedded.stg"
-		},
-
-	"dustjs":{
-		"engine":"dustjs-linkedin",
-		"version": "2.0.3"
-	},
-	"mailer": {
-		"address": "soile.my_mailer",
-		"host": "smtp.sendgrid.net",
-		"port": 465,
-		"auth": true,
-		"ssl": true,
-		"username": "soile",
-		"password": "soilesendgridpassword"
-	},
-	"accessPatterns": {
-		
-	}	
-	
+		"experimentPermissionsField": "experimentPermissions",
+		"projectPermissionsField": "projectPermissions",
+		"studyPermissionsField": "instancePermissions",
+		"userPermissionsField": "permissions",
+		"taskPermissionsField": "taskpermissions",
+		"usernameField": "username",
+		"userEmailField": "email",
+		"userFullNameField": "fullname",
+		"ownerField": "ownedExperiments",
+		"collaboratorField": "collaboratedExperiments",
+		"participantField": "participantIn",
+		"userRolesField": "role",
+		"usernameCredentialField": "username",
+		"passwordField": "password",
+		"passwordCredentialField": "password",
+		"storedSessions": "storedSessions"
+	}
 }
