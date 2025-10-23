@@ -255,7 +255,7 @@ public class PasswordReset extends SoileAuthHandler {
 				LOGGER.debug("Mailing to: " + mailAddress);
 				Session session = Session.getInstance(props);
 				Message message = new MimeMessage(session);
-				message.setFrom(new InternetAddress(from));
+				message.setFrom(new InternetAddress(from, "SOILE Server Password Reset"));
 				message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(mailAddress));
 				message.setSubject(subject);
 				message.setText(content);
