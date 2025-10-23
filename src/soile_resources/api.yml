@@ -73,7 +73,7 @@ paths:
         description: The information necessary to request a password reset
         
   /password/one_time_auth:
-    get:
+    post:
       tags: 
         - login 
         - user

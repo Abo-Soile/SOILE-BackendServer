@@ -61,7 +61,8 @@ public class SoileCookieCreationHandler {
 						{
 							// TODO: handle if this fails
 							finishedCookie.complete();
-						});
+						})
+						.onFailure(err -> finishedCookie.fail(err));
 						user.principal().remove("refreshCookie");
 					}
 					else
@@ -72,7 +73,8 @@ public class SoileCookieCreationHandler {
 							storeSessionCookie(ctx, user).onComplete(res ->
 							{
 								finishedCookie.complete();
-							});
+							})
+							.onFailure(err -> finishedCookie.fail(err));
 							user.principal().remove("storeCookie");
 						}
 						else
