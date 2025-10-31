@@ -239,7 +239,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 
 	public static Future<HttpResponse<Buffer>> GET(WebClient client, String targetURL, JsonObject queryParameters, Object queryBody)
 	{
-		String host = SoileConfigLoader.getServerProperty("host");
+		String host = SoileConfigLoader.getServerProperty("domain");
 		int port = SoileConfigLoader.getServerIntProperty("port");
 		HttpRequest<Buffer> request = client.get(port, host, UriEncoder.encode(targetURL));
 		if(queryParameters != null)
@@ -330,7 +330,7 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 
 	public static Future<HttpResponse<Buffer>> POST(WebClient client, String targetURL, JsonObject queryParameters, Object queryBody)
 	{
-		String host = SoileConfigLoader.getServerProperty("host");
+		String host = SoileConfigLoader.getServerProperty("domain");
 		int port = SoileConfigLoader.getServerIntProperty("port");
 		HttpRequest<Buffer> request = client.post(port, host, targetURL);
 		if(queryParameters != null)

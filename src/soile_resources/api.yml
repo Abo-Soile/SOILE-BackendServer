@@ -52,6 +52,49 @@ paths:
             schema:
               $ref: '#/components/schemas/RegistrationInformation'
         description: The data for the user to be created (at least, username, password and email are required necessary).          
+  /password/request_reset:
+    post:
+      tags: 
+        - login 
+        - user
+      summary: Ask for a password reset link for a user. 
+      operationId: resetPassword
+      description: Ask for a password reset id for a user
+      responses:
+        '200':
+          description: Request received.
+        '400':
+          description: bad input. 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetInformation'
+        description: The information necessary to request a password reset
+        
+  /password/one_time_auth:
+    post:
+      tags: 
+        - login 
+        - user
+      summary: Use a one time token for authentication 
+      operationId: oneTimeAuth
+      description: Authenticates the user with a one-time password
+      parameters:
+        - name: token
+          in: query
+          required: true
+          description: The one time token obtained via a reset password request.
+          schema:
+            type : string
+      responses:
+        '200':
+          description: Authenticated.
+        '400':
+          description: bad input. 
+        '409':
+          description: Token invalid. 
+                
   /test/auth:
     post:
       security:
@@ -3172,7 +3215,13 @@ components:
         password:
           type: string
           example: '****sss***'
-          
+    PasswordResetInformation:
+      type: object
+      properties:
+        emailOrUserName:
+          type: string
+          example: 'me@domain.org'
+          description: A username or password used on the system.
     RestrictedUserInfo:
       allOf:
         - $ref: '#/components/schemas/UserInfo'
