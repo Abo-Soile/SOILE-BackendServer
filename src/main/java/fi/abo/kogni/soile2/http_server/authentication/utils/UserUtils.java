@@ -73,7 +73,7 @@ public class UserUtils {
 	public static void getUserDataFromCollection(MongoClient dbclient, String username, Handler<Future<JsonObject>> resultHandler)
 	{
 		String unameField = SoileConfigLoader.getUserdbField("usernameField");
-		String emailField = SoileConfigLoader.getUserdbField("emailField");
+		String emailField = SoileConfigLoader.getUserdbField("userEmailField");
 		JsonObject query;
 
 		if(username.contains("@"))
@@ -88,10 +88,10 @@ public class UserUtils {
 		dbclient.find(SoileConfigLoader.getdbProperty("userCollection"), query, res -> {
 			if(res.succeeded())
 			{
-				List<JsonObject> dbResultList = res.result(); 
+				List<JsonObject> dbResultList = res.result(); 				
 				if(dbResultList.size() == 1)
 				{	 
-					//successfully found a single entry, pass it back to the handler.
+					//successfully found a single entry, pass it back to the handler.					
 					resultHandler.handle(Future.succeededFuture(dbResultList.get(0)));	    		    		    		    
 				}
 				else if(dbResultList.size() > 1)
@@ -102,6 +102,10 @@ public class UserUtils {
 				{
 					resultHandler.handle(Future.failedFuture(new InvalidLoginException(username)));
 				}   		  
+			}
+			else 
+			{
+				resultHandler.handle(Future.failedFuture(res.cause()));
 			}
 
 		});	     
