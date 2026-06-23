@@ -48,7 +48,7 @@ public class GitCleaner {
 	 */
 	public GitCleaner(MongoClient client, Vertx vertx, ElementManager<Task> taskManager) {
 		// default maxAge is 12 hours
-		this(client,vertx,taskManager, 1000*60*12);
+		this(client,vertx,taskManager, 1000*60*60*12);
 	}
 	/**
 	 * Create a GitCleaner with a specified maxAge. The maxAge indicates how old a version can be to still be
