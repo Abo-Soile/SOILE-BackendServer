@@ -674,21 +674,13 @@ public class StudyRouter extends SoileRouter {
 		
 		studyAccessHandler.checkAccess(context.user(),requestedInstanceID, Roles.Researcher,PermissionType.READ,false)
 		.onSuccess(Void ->	{	
-			vertx.eventBus().request("soile.umanager.getCollaboratorsforStudy", new JsonObject().put("studyID",requestedInstanceID))
-			.onSuccess(res -> {
-				JsonObject result = (JsonObject)res.body();
-				if(result.getString(SoileCommUtils.RESULTFIELD).equals(SoileCommUtils.SUCCESS))
-				{
-					context.response()
-					.setStatusCode(200)
-					.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-					.end(result.getJsonArray(SoileCommUtils.DATAFIELD).encode());
-				}
-				else
-				{
-					handleError(new Exception(result.getString(SoileCommUtils.REASONFIELD)), context);
-				}
-			})
+			studyHandler.getCollaboratorsForStudy(requestedInstanceID)
+			.onSuccess(collaborators -> {
+				context.response()
+				.setStatusCode(200)
+				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+				.end(collaborators.encode());
+			})				
 			.onFailure(err -> handleError(err,context));
 		})
 		.onFailure(err -> handleError(err,context));	

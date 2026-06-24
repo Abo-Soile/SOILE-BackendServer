@@ -25,6 +25,7 @@ import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExis
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.http_server.authentication.utils.UserUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -1014,6 +1015,22 @@ public class SoileUserManager implements MongoUserUtil{
 											.put(SoileConfigLoader.getUserdbField("userFullNameField"), 1)
 											.put("_id", 0);
 		return client.findOne(authnOptions.getCollectionName(), query, fields);
+	}
+
+	/**
+	 * Get the user information for a set of users (username, fullname, email, role, based on the given usernames)
+	 * No guarantees are made wrt the order of the returned JsonArray. 
+	 * @param usernames the usernames of the users to retrieve
+	 * @return A {@link Future} of the {@link List<JsonObject>} containing the data
+	 */
+	public Future<List<JsonObject>> getUserInfo(JsonArray usernames) {
+		JsonObject query = new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), new JsonObject().put("$in",usernames));
+		JsonObject fields = new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), 1)
+											.put(SoileConfigLoader.getUserdbField("userEmailField"), 1)
+											.put(SoileConfigLoader.getUserdbField("userRolesField"), 1)
+											.put(SoileConfigLoader.getUserdbField("userFullNameField"), 1)
+											.put("_id", 0);
+		return client.findWithOptions(authnOptions.getCollectionName(), query,new FindOptions().setFields(fields));
 	}
 
 	/**

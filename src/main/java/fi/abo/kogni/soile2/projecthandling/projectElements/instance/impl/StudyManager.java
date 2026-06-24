@@ -11,6 +11,7 @@ import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.StudyFactory;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -336,4 +337,5 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 		.onFailure(err -> updatePromise.fail(err));
 		return updatePromise.future();
 	}
+
 }

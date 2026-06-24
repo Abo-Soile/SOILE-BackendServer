@@ -11,9 +11,9 @@ import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
+import fi.abo.kogni.soile2.http_server.authentication.utils.UserUtils;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
-import fi.abo.kogni.soile2.http_server.userManagement.UserUtils;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.EmailAlreadyInUseException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidEmailAddress;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidPermissionTypeException;
@@ -101,6 +101,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		consumers.add(vertx.eventBus().consumer("soile.umanager.listUsers", this::listUsers));
 		consumers.add(vertx.eventBus().consumer("soile.umanager.setUserInfo", this::setUserInfo));
 		consumers.add(vertx.eventBus().consumer("soile.umanager.getUserInfo", this::getUserInfo));
+		consumers.add(vertx.eventBus().consumer("soile.umanager.getUserDetailsForMultipleUsers", this::getUserDetailsForMultipleUsers));
 		consumers.add(vertx.eventBus().consumer("soile.umanager.getAccessRequest", this::getUserAccessInfo));
 		consumers.add(vertx.eventBus().consumer("soile.umanager.setPassword", this::setPassword));
 		consumers.add(vertx.eventBus().consumer("soile.umanager.getCollaboratorsforStudy", this::getCollaboratorsForStudy));
@@ -760,6 +761,33 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		.onFailure(err -> handleError(err, msg));						    							
 	}
 
+	/**
+	 * Get Info for multiple users 
+	 * This method does NOT check whether all given usernames exists but will just return all details of users that do. 
+	 * This means, any calling function needs to ensure that it got everything it needs!
+	 * @param msg
+	 */
+	void getUserDetailsForMultipleUsers(Message<JsonObject> msg)
+	{
+		JsonObject command = msg.body();			
+		JsonArray usernames = (JsonArray) command.remove("usernames");
+		userManager.getUserInfo(usernames)
+		.onSuccess(res -> {			
+			// in case, we translate to the actual json Object
+			JsonArray response = new JsonArray();
+			for(JsonObject userDetails : res)
+			{
+				JsonObject user = new JsonObject();
+				user.put("username", userDetails.getString(SoileConfigLoader.getUserdbField("usernameField")))
+				.put("fullname", userDetails.getString(SoileConfigLoader.getUserdbField("userFullNameField")))
+				.put("role", userDetails.getJsonArray(SoileConfigLoader.getUserdbField("userRolesField")).getString(0))
+				.put("email", userDetails.getString(SoileConfigLoader.getUserdbField("userEmailField")));
+				response.add(user);
+			}
+			msg.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, response));
+		})
+		.onFailure(err -> handleError(err, msg));						    							
+	}
 
 
 	/**

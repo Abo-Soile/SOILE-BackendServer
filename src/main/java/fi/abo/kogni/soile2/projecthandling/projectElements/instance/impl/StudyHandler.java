@@ -1,6 +1,9 @@
 package fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl;
 
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -9,16 +12,27 @@ import org.apache.logging.log4j.Logger;
 import fi.abo.kogni.soile2.datamanagement.datalake.DataLakeFile;
 import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResult;
 import fi.abo.kogni.soile2.datamanagement.utils.CheckDirtyMap;
+import fi.abo.kogni.soile2.http_server.authentication.utils.UserData;
+import fi.abo.kogni.soile2.http_server.authentication.utils.UserUtils;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.Participant;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
+import fi.abo.kogni.soile2.utils.MailSender;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
+import jakarta.mail.Message;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 
 /**
  * Handler for Project instances.
@@ -32,14 +46,15 @@ public class StudyHandler {
 	private CheckDirtyMap<String, Study> studies;
 	private String dataLakeFolder;
 	private StudyManager manager;	 
-	
+	private Vertx vertx;
+	private MailSender mailsender;
 	/**
 	 * Default constructor that sets up a Manager with DB connections.
 	 * @param client the mongoclient for connecting to the mongo database
 	 * @param vertx {@link Vertx} instance for communication
 	 */
 	public StudyHandler(MongoClient client, Vertx vertx) {
-		this(client, new StudyManager(client, vertx) );		
+		this(client, new StudyManager(client, vertx), vertx );		
 	}
 
 	/**
@@ -47,11 +62,13 @@ public class StudyHandler {
 	 * @param client the mongoclient for connecting to the mongo database
 	 * @param manager {@link StudyManager} for study retrieval 
 	 */
-	public StudyHandler(MongoClient client, StudyManager manager) {
+	public StudyHandler(MongoClient client, StudyManager manager, Vertx vertx) {
 		super();
 		this.dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
 		this.manager = manager;
 		studies = new CheckDirtyMap<String, Study>(manager, 1000*60*60);
+		this.vertx = vertx;
+		this.mailsender = new MailSender(vertx);
 	}
 
 	/**
@@ -291,6 +308,105 @@ public class StudyHandler {
 	public Future<String> getProjectIDForPath(String pathID)
 	{
 		return manager.getProjectIDForPathID(pathID);
+	}
+	
+	/**
+	 * Get the Researchers with Access to a study along with their Access level  
+	 * @param studyID The ID for which to request researcher access information
+	 * @return A {@link JsonArray} of objects with "user" and "access" fields, where access is one of READ / READ_WRITE / FULL and user is a username  
+	 */
+	public Future<JsonArray> getCollaboratorsForStudy(String studyID)
+	{
+		Promise<JsonArray> promise = Promise.promise();
+		vertx.eventBus().request("soile.umanager.getCollaboratorsforStudy", new JsonObject().put("studyID",studyID))
+		.onSuccess(res -> {
+			JsonObject result = (JsonObject)res.body();
+			if(result.getString(SoileCommUtils.RESULTFIELD).equals(SoileCommUtils.SUCCESS))
+			{
+				promise.complete(result.getJsonArray(SoileCommUtils.DATAFIELD));
+			}
+			else
+			{
+				promise.fail(new Exception(result.getString(SoileCommUtils.REASONFIELD)));
+			}
+		})
+		.onFailure(err -> promise.fail(err));
+		return promise.future();
+	}
+	/**
+	 * Send a message to researchers of the given study with the given Subject and the 
+	 * given content.
+	 */
+	public Future<Void> sendMessageToResearchers(String studyID, String subject, String content, String from_name )
+	{
+		Promise<Void> promise = Promise.promise();
+		getCollaboratorsForStudy(studyID)
+		.onSuccess(collaborators -> {
+			// Now we make two sets of researchers. One with "FULL" access, and one with other access
+			JsonArray owners = new JsonArray();
+			JsonArray access = new JsonArray();
+			for(int i = 0; i < collaborators.size(); i++)
+			{
+				JsonObject user = collaborators.getJsonObject(i);
+				String username = user.getString("user"); 
+				if(user.getString("access") == "FULL")
+				{
+					owners.add(username);
+				}
+				else
+				{
+					access.add(username);
+				}
+			}
+			List<Future> ownerSentFutures = new LinkedList<>();			
+			List<Future> otherSentFutures = new LinkedList<>();
+			List<Future> proceedFutures = new LinkedList<>();
+			Promise<Void> ownerHandledPromise = Promise.promise();
+			Promise<Void> othersHandled = Promise.promise();
+			Promise<Void> oneOwnerSucceded = Promise.promise();
+			proceedFutures.add(ownerHandledPromise.future());
+			proceedFutures.add(othersHandled.future());
+			proceedFutures.add(oneOwnerSucceded.future());			 
+			UserUtils.getUserData(vertx, owners)
+			.onSuccess(ownerData -> {
+				UserUtils.getUserData(vertx, owners)
+				.onSuccess(collaboratorData -> {
+					// now we have all required data. 
+					for(UserData user : collaboratorData)
+					{
+						otherSentFutures.add(mailsender.sendMail(user.getEmail(),content, subject, from_name));
+					}
+					// others are handled
+					CompositeFuture.join(otherSentFutures).onComplete(done -> {
+						othersHandled.complete();	
+					});
+					
+					for(UserData user : ownerData)
+					{
+						ownerSentFutures.add(mailsender.sendMail(user.getEmail(),content, subject, from_name));
+					}
+					// we only complete ownerHandled once ALL owner futures have returned
+					CompositeFuture.join(ownerSentFutures).onComplete(done -> {
+						ownerHandledPromise.complete();	
+					});
+					// now we have set up all ownerFutures.
+					// so we can now check, whether any of them succeeded.					
+					CompositeFuture.any(ownerSentFutures)
+					.onSuccess(done -> {
+						oneOwnerSucceded.complete();
+					});										
+				});							
+			});			
+			// If our proceed futures are all done (all mails sent, at least one owner mail was sent successfully)
+			// we can finish up. 
+			CompositeFuture.all(proceedFutures)
+			.onSuccess(done -> {				
+				promise.complete();
+			})
+			.onFailure(err -> promise.fail(err));
+		})
+		.onFailure(err -> promise.fail(err));
+		return promise.future();
 	}
 	
 }

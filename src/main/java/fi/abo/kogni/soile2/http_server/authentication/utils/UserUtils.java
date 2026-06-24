@@ -1,15 +1,22 @@
 package fi.abo.kogni.soile2.http_server.authentication.utils;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.DuplicateUserEntryInDBException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidLoginException;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.mongo.MongoClient;
@@ -21,7 +28,7 @@ import io.vertx.ext.mongo.MongoClient;
 public class UserUtils {
 
 	static final Logger LOGGER = LogManager.getLogger(UserUtils.class);
-
+	static final Pattern emailPattern = Pattern.compile("[A-Za-z0-9.$#_%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}");
 	/**
 	 * Build a user from the database result adding several properties.
 	 * This fails if multiple or no entry were returned.
@@ -47,8 +54,22 @@ public class UserUtils {
 			throw new InvalidLoginException(username);
 		}
 
+	}	
+	
+	/**
+	 * check if a provided email address is valid
+	 * @param emailAddress the email addess to check
+	 * @return whether its a valid email address
+	 */
+	public static boolean isValidEmail(String emailAddress)
+	{
+		if(emailAddress == null)
+		{
+			return false;
+		}
+		Matcher mat = emailPattern.matcher(emailAddress);
+		return mat.matches();
 	}
-
 	/**
 	 * Build a user from an individual database entry.
 	 * @param userJson the Json representing the data for the user (
@@ -109,5 +130,31 @@ public class UserUtils {
 			}
 
 		});	     
+	}
+	
+	
+	/**
+	 * Get a users details via the event bus.
+	 * Utility function to avoid having to have the message names written everywhere 
+	 *  
+	 * @param vertx the {@link io.vertx.core.Vertx} instance to use to send the events 
+	 * @param username the name of the user
+	 * @param resultHandler the handler that handles the resulting User
+	 */
+	public static Future<List<UserData>> getUserData(Vertx vertx, JsonArray usernames)
+	{
+		Promise<List<UserData>> promise = Promise.promise();
+		vertx.eventBus().request("soile.umanager.getUserDetailsForMultipleUsers", new JsonObject().put("usernames", usernames))
+		.onSuccess(msg -> {
+			JsonObject response = (JsonObject) msg.body();
+			JsonArray userData = response.getJsonArray(SoileCommUtils.DATAFIELD);
+			List<UserData> result = new LinkedList<UserData>();
+			for(int i = 0 ; i < userData.size(); i++)
+			{
+				result.add(new UserData(userData.getJsonObject(i)));
+			}
+			promise.complete(result);
+		});
+		return promise.future();		
 	}
 }

@@ -181,30 +181,43 @@ public class ParticipationRouter extends SoileRouter{
 				// this list needs to be filtered by access
 				LOGGER.debug("Retrieving Participant for project " + study.getID());
 				getParticpantForUser(context.user(), study)
-				.onSuccess(participant -> {				
+				.onSuccess(participant -> {		
 					partHandler.deleteParticipant(participant.getID(), false)
 					.onSuccess(deleted -> {
-						if(!isTokenUser(context.user()))
-						{
-							JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
-									.put("studyID", study.getID())
-									.put("participantID", participant.getID());
-							// we also need to remove the participant from the current user.
-							eb.request("soile.umanager.removeParticipantFromStudy", partData)
-							.onSuccess( success -> {
+						studyHandler.sendMessageToResearchers(
+								requestedInstanceID, 
+								"Participant withdrawl from Study " + study.getName(),
+								"Participant " + participant.getID() + " requested to withdraw from the study. \n "
+								+ "If you already downloaded any data for this participant delete it if your \n"
+								+ "data collection depends on consent. \n\n"
+								+ "This is an automaticallly generated message, please do not reply.",
+								"SOILE Participant Withdrawl")
+						.onComplete(result -> {				
+							if(!result.succeeded())
+							{
+								LOGGER.warn("Participant " + participant.getID() + " wanted to withdraw from study " + study.getID() + " but no researcher could be reached");
+							}
+							if(!isTokenUser(context.user()))
+							{
+								JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
+										.put("studyID", study.getID())
+										.put("participantID", participant.getID());
+								// we also need to remove the participant from the current user.
+								eb.request("soile.umanager.removeParticipantFromStudy", partData)
+								.onSuccess( success -> {
+									context.response()
+									.setStatusCode(200)														
+									.end();
+								})
+								.onFailure(err -> handleError(err, context));
+							}
+							else
+							{
 								context.response()
 								.setStatusCode(200)														
 								.end();
-							})
-							.onFailure(err -> handleError(err, context));
-						}
-						else
-						{
-							context.response()
-							.setStatusCode(200)														
-							.end();
-						}
-
+							}
+						});
 					})
 					.onFailure(err -> handleError(err, context));
 					
