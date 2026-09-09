@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import fi.abo.kogni.soile2.http_server.authentication.utils.UserUtils;
+import fi.abo.kogni.soile2.utils.EmailSender;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -237,43 +238,15 @@ public class PasswordReset extends SoileAuthHandler {
 		}
 	}
 
-	private Future<Void> sendMail(String mailAddress, String token) {
-		Promise<Void> promise = Promise.<Void>promise();
-		this.vertx.executeBlocking(future -> {
-			try {
-				String domain = SoileConfigLoader.getServerProperty("domain");
-				String subject = "SOILE Password Reset";
-				String from = "no-reply@" + domain;
-				String content = "Here is your one time login link for SOILE that you can use for a password reset.\n"
-						+ "https://" + domain + "/password_reset?token=" + token + "\n\n"
-						+ "Yours,\nSOILE Team\n";
-				Properties props = new Properties();
-				props.put("mail.smtp.host", "localhost"); // we always send via the local mail server
-				props.put("mail.smtp.port", 25);
-				props.put("mail.smtp.auth", "false");
-				props.put("mail.smtp.starttls.enable", "false");
-				LOGGER.debug("Mailing to: " + mailAddress);
-				Session session = Session.getInstance(props);
-				Message message = new MimeMessage(session);
-				message.setFrom(new InternetAddress(from, "SOILE Server Password Reset"));
-				message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(mailAddress));
-				message.setSubject(subject);
-				message.setText(content);
-				Transport.send(message);
-				future.complete();
-			} catch (Exception e) {
-				LOGGER.error("Failed to send password reset email", e);
-				future.fail(e);
-			}
-		}, res -> {
-			if (res.succeeded()) {
-				promise.complete();
-			} else {
-				promise.fail(res.cause());
-			}
-		});
-		return promise.future();
-
+	private Future<Void> sendMail(String mailAddress, String token) {		
+		EmailSender sender = new EmailSender(this.vertx);
+		String domain = SoileConfigLoader.getServerProperty("domain");
+		String subject = "SOILE Password Reset";
+		String from = "no-reply@" + domain;
+		String content = "Here is your one time login link for SOILE that you can use for a password reset.\n"
+				+ "https://" + domain + "/password_reset?token=" + token + "\n\n"
+				+ "Yours,\nSOILE Team\n";
+		return sender.sendMail(content,from,subject,mailAddress);		
 	}
 
 	@Override

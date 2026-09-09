@@ -21,6 +21,7 @@ import fi.abo.kogni.soile2.http_server.userManagement.exceptions.InvalidRoleExce
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserAlreadyExistingException;
 import fi.abo.kogni.soile2.http_server.userManagement.exceptions.UserDoesNotExistException;
 import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
+import fi.abo.kogni.soile2.utils.EmailSender;
 import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.CompositeFuture;
@@ -105,6 +106,8 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		consumers.add(vertx.eventBus().consumer("soile.umanager.setPassword", this::setPassword));
 		consumers.add(vertx.eventBus().consumer("soile.umanager.getCollaboratorsforStudy", this::getCollaboratorsForStudy));
 		consumers.add(vertx.eventBus().consumer("soile.umanager.removeParticipantInStudy", this::removeParticipantFromStudy));
+		
+		consumers.add(vertx.eventBus().consumer("soile.umanager.getEmailsForUsers", this::getEmails));
 
 	}
 
@@ -124,7 +127,7 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		})
 		.onFailure(err -> stopPromise.fail(err));			
 	}
-
+		
 	/**
 	 * Add a session to a user
 	 * {
@@ -657,7 +660,9 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 	{		
 		//make sure we actually get the right thing			
 		JsonObject command = msg.body();		
-		userManager.removeParticipantInStudyFromUsers(command.getString("studyID"),command.getString("participantID"))
+		String study = command.getString("studyID");
+		String participant = command.getString("participantID");
+		userManager.removeParticipantInStudyFromUsers(study,participant)		
 		.onSuccess(removed -> {					
 			msg.reply(SoileCommUtils.successObject());					
 		})
@@ -718,6 +723,21 @@ public class SoileUserManagementVerticle extends SoileBaseVerticle {
 		.onFailure(err -> handleError(err, msg));						    							
 	}
 
+	/**
+	 * Get the Email addresses for all users in the message 
+	 * @param msg
+	 */
+	void getEmails(Message<JsonObject> msg)
+	{
+		JsonObject command = msg.body();			
+		JsonArray usernames = (JsonArray) command.remove("users");
+		userManager.getEmails(usernames)
+		.onSuccess(res -> {
+			msg.reply(SoileCommUtils.successObject().put(SoileCommUtils.DATAFIELD, res));
+		})
+		.onFailure(err -> handleError(err, msg));						    							
+	}
+	
 	/**
 	 * Set the password for the user given in the message to the password given in the message 
 	 * @param msg

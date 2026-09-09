@@ -189,9 +189,12 @@ public class ParticipationRouter extends SoileRouter{
 							JsonObject partData = new JsonObject().put("username", context.user().principal().getString("username"))
 									.put("studyID", study.getID())
 									.put("participantID", participant.getID());
-							// we also need to remove the participant from the current user.
+							// we also need to remove the participant from the current user.							
 							eb.request("soile.umanager.removeParticipantFromStudy", partData)
-							.onSuccess( success -> {
+							.compose(success -> {
+								return studyHandler.informResearchersOfWidthdrawl(requestedInstanceID, participant.getID(), study);
+							})
+							.onSuccess( success -> {															
 								context.response()
 								.setStatusCode(200)														
 								.end();

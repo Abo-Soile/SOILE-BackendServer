@@ -28,7 +28,7 @@ import io.vertx.ext.mongo.MongoClient;
 public class StudyHandler {
 
 	static final Logger LOGGER = LogManager.getLogger(StudyHandler.class);
-
+	
 	private CheckDirtyMap<String, Study> studies;
 	private String dataLakeFolder;
 	private StudyManager manager;	 
@@ -39,19 +39,9 @@ public class StudyHandler {
 	 * @param vertx {@link Vertx} instance for communication
 	 */
 	public StudyHandler(MongoClient client, Vertx vertx) {
-		this(client, new StudyManager(client, vertx) );		
-	}
-
-	/**
-	 * Constructor using a pre-defined studymanager
-	 * @param client the mongoclient for connecting to the mongo database
-	 * @param manager {@link StudyManager} for study retrieval 
-	 */
-	public StudyHandler(MongoClient client, StudyManager manager) {
-		super();
 		this.dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
-		this.manager = manager;
-		studies = new CheckDirtyMap<String, Study>(manager, 1000*60*60);
+		this.manager = new StudyManager(client, vertx);
+		studies = new CheckDirtyMap<String, Study>(manager, 1000*60*60);		
 	}
 
 	/**
@@ -293,4 +283,15 @@ public class StudyHandler {
 		return manager.getProjectIDForPathID(pathID);
 	}
 	
+	/**
+	 * Inform researchers about withdrawal of a participant
+	 * 	
+	 * @param participantID the ID of the withdrawing participant
+	 * @param studyID The study the participant is withdrawing from. 
+	 * @return A {@link Future} that succeeded if the mail was successfully sent.
+	 */
+	public Future<Void> informResearchersOfWidthdrawl(String participantID, String studyID, Study study)
+	{
+		return manager.informResearchersOfWidthdrawl(participantID, studyID, study);
+	}
 }
