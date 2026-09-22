@@ -1015,7 +1015,28 @@ public class SoileUserManager implements MongoUserUtil{
 											.put("_id", 0);
 		return client.findOne(authnOptions.getCollectionName(), query, fields);
 	}
-
+	
+	/**
+	 * Get Emails for a list of users 
+	 * @param usernames An array of UserNames for which to retrieve Emails
+	 * @return A {@link Future} of the {@link JsonObject} containing the data
+	 */
+	public Future<JsonArray> getEmails(JsonArray usernames) {
+		JsonObject query = new JsonObject().put("$in", new JsonObject().put(SoileConfigLoader.getUserdbField("usernameField"), usernames));
+		JsonObject fields = new JsonObject().put(SoileConfigLoader.getUserdbField("userEmailField"), 1)											
+											.put("_id", 0);
+		FindOptions options = new FindOptions();
+		options.setFields(fields);
+		return client.findWithOptions(authnOptions.getCollectionName(), query, options).map(results -> {
+			JsonArray emails = new JsonArray();
+			for(JsonObject o : results)
+			{
+				emails.add(o.getString(SoileConfigLoader.getUserdbField("userEmailField")));
+			}
+			return emails;
+		});
+	}
+	
 	/**
 	 * Set the user password 
 	 * @param username the user for which to change the information

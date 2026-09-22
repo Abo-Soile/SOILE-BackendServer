@@ -11,7 +11,10 @@ import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.projectElements.impl.ElementManager;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.StudyFactory;
+import fi.abo.kogni.soile2.utils.EmailSender;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import io.netty.util.concurrent.SucceededFuture;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -32,9 +35,9 @@ import io.vertx.ext.mongo.MongoClient;
  */
 public class StudyManager implements DirtyDataRetriever<String, Study> {
 
-	static final Logger LOGGER = LogManager.getLogger(StudyManager.class);
-	
+	static final Logger LOGGER = LogManager.getLogger(StudyManager.class);	
 	MongoClient client;
+	Vertx vertx;
 	// should go to the constructor.
 	private StudyFactory dbFactory;
 	private StudyFactory createFactory;
@@ -47,28 +50,15 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 	 * @param vertx {@link Vertx} instance for communication 
 	 */
 	public StudyManager(MongoClient client, Vertx vertx)
-	{						
-		this(client,
-				new ElementToDBStudyFactory(ElementManager.getProjectManager(client, vertx),client, vertx.eventBus()),								
-				new DBStudyFactory(ElementManager.getProjectManager(client, vertx),client, vertx.eventBus())				 
-				);				
-	}		
-		
-	/**
-	 * Constructor with redefined {@link ElementToDBStudyFactory} and {@link DBStudyFactory} 
-	 * @param client {@link MongoClient} for communication
-	 * @param createFactory Factory that can handle Element to DB requests
-	 * @param dbFactory Factory that can handle DB extraction
-	 */
-	public StudyManager(MongoClient client, StudyFactory createFactory, StudyFactory dbFactory)
-	{
+	{												
 		this.client = client;
-		this.dbFactory = dbFactory;
-		this.createFactory = createFactory;		
+		this.dbFactory = new DBStudyFactory(ElementManager.getProjectManager(client, vertx),client, vertx.eventBus());
+		this.createFactory = new ElementToDBStudyFactory(ElementManager.getProjectManager(client, vertx),client, vertx.eventBus());		
 		instanceCollection = SoileConfigLoader.getdbProperty("studyCollection");
 		projectPathes = new TimeStampedMap<String, String>(this::getProjectIDForPathIDfromDB, 1000*60*60);
 		studyTimes = new HashMap<>();
-	}
+		this.vertx = vertx;		
+	}			
 
 	/**
 	 * General cleanup function
@@ -336,4 +326,61 @@ public class StudyManager implements DirtyDataRetriever<String, Study> {
 		.onFailure(err -> updatePromise.fail(err));
 		return updatePromise.future();
 	}
+	/**
+	 * Inform researchers about withdrawal of a participant
+	 * 	
+	 * @param participantID the ID of the withdrawing participant
+	 * @param studyID The study the participant is withdrawing from. 
+	 * @return A {@link Future} that succeeded if the mail was successfully sent.
+	 */
+	public Future<Void> informResearchersOfWidthdrawl(String participantID, String studyID, Study study)
+	{
+		Promise<Void> messageSentPromise = Promise.promise();
+		vertx.eventBus().request("soile.umanager.getCollaboratorsforStudy", new JsonObject().put("studyID",studyID))
+		.compose(res -> {
+			JsonObject result = (JsonObject)res.body();
+			if(result.getString(SoileCommUtils.RESULTFIELD).equals(SoileCommUtils.SUCCESS))
+			{
+				JsonArray users = result.getJsonArray(SoileCommUtils.DATAFIELD);
+				JsonArray userIDs = new JsonArray();
+				for(int i = 0; i < users.size(); ++i)
+				{
+					userIDs.add(users.getJsonObject(i).getString("user"));
+				}
+				return vertx.eventBus().request("soile.umanager.getEmailsForUsers", new JsonObject().put("users",userIDs));
+			}
+			else
+			{
+				return Future.failedFuture("Retrieveing Researchers unsuccessfull");
+			}
+		})
+		.compose(res-> {
+			JsonObject result = (JsonObject)res.body();						
+			if(result.getString(SoileCommUtils.RESULTFIELD).equals(SoileCommUtils.SUCCESS))
+			{
+				JsonArray emails = result.getJsonArray(SoileCommUtils.DATAFIELD);
+				EmailSender sender = new EmailSender(vertx);
+				String domain = SoileConfigLoader.getServerProperty("domain");
+				String subject = "SOILE - Participant withdrawl";
+				String from = "no-reply@" + domain;
+				String content = "A Participant in your study: " + study.getName() + " (ID: " + studyID + ") has withdrawn.\n"
+						+ "The participant ID is " + participantID + "\n\n"
+						+ "All data for the participant has been deleted from the system. \n"
+						+ "Take care that any copies of the data for ths participant are handled according to your data \n"
+						+ "management plan for the case of withdrawl "						
+						+ "Yours,\nSOILE Team\n";
+				return sender.sendMail(content, from, subject, emails);
+			}
+			else
+			{
+				return Future.failedFuture("Retrieveing Researchers unsuccessfull");
+			}
+		})		
+		.onSuccess(res -> {
+			messageSentPromise.complete();
+		})
+		.onFailure(err -> messageSentPromise.fail(err));
+		return messageSentPromise.future();
+	}
+		
 }
