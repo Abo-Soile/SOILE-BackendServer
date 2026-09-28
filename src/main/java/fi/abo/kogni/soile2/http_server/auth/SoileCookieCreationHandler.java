@@ -13,6 +13,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.Cookie;
+import io.vertx.core.http.CookieSameSite;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
@@ -92,6 +93,22 @@ public class SoileCookieCreationHandler {
 				}
 		return finishedCookie.future();
 	}
+	public Cookie createCookie(String content)
+	/**
+	 * Create a new session cookie with the given content.
+	 * @param content The content to store in the cookie.
+	 * @return A {@link Cookie} object representing the session cookie.
+	 */
+	{
+		LOGGER.warn("Creating a new session cookie with content: " + content);
+		return Cookie.cookie(SoileConfigLoader.getSessionProperty("sessionCookieID"),content)
+							  .setDomain(SoileConfigLoader.getServerProperty(("domain")))
+							  .setSecure(true)
+							  .setSameSite(CookieSameSite.STRICT)
+							  .setPath(SoileConfigLoader.getSessionProperty("cookiePath"))
+							  .setMaxAge(SoileConfigLoader.getSessionLongProperty("maxTime")/1000); //Maxtime in seconds
+	}
+
 	/**
 	 * Invalidate the cookie in this session
 	 * @param ctx The {@link RoutingContext} to invalidate the cookie in.
@@ -101,11 +118,7 @@ public class SoileCookieCreationHandler {
 	{
 		Cookie sessionCookie = ctx.request().getCookie(SoileConfigLoader.getSessionProperty("sessionCookieID"));
 		// if we have a Session cookie from Soile, delete it.
-		Cookie cookie = Cookie.cookie(SoileConfigLoader.getSessionProperty("sessionCookieID"),"")
-				  .setDomain(SoileConfigLoader.getServerProperty(("domain")))
-				  .setSecure(true)
-				  .setPath(SoileConfigLoader.getSessionProperty("cookiePath"))
-				  .setMaxAge(0);
+		Cookie cookie = this.createCookie("");
 		if(sessionCookie != null)
 		{
 			String token = SoileCookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
@@ -146,12 +159,7 @@ public class SoileCookieCreationHandler {
 		// now build the cookie to store on the remote system. 		
 		String cookiecontent = SoileCookieStrategy.buildCookieContent(cuser.getString("username"),token);
  
-		Cookie cookie = Cookie.cookie(SoileConfigLoader.getSessionProperty("sessionCookieID"),cookiecontent)
-							  .setDomain(SoileConfigLoader.getServerProperty(("domain")))
-							  .setSecure(true)
-							  .setPath(SoileConfigLoader.getSessionProperty("cookiePath"))
-							  .setMaxAge(SoileConfigLoader.getSessionLongProperty("maxTime")/1000); //Maxtime in seconds
-							 													 //TODO: Check whether SameSite needs to be set.
+		Cookie cookie = this.createCookie(cookiecontent);							 							
 		LOGGER.debug("Adding Cookie: " + cookie.getName() + " / " +  cookie.getDomain() + " / " +  cookie.getValue() + " / " +  cookie.isSecure() );
 		ctx.response().addCookie(cookie);
 		return cookieHandled.future();
