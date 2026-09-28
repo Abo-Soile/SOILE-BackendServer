@@ -294,6 +294,9 @@
 	            </executions>
 	            <configuration>
 	                <redeploy>true</redeploy>
+					<jvmArgs>						
+						<jvmArg>-Dlog4j.configurationFile=src/main/resources/log4j2.properties</jvmArg>
+					</jvmArgs>					
 	            </configuration>
 	        </plugin>
 			<plugin>
