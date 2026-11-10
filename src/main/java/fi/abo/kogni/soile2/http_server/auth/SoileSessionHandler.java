@@ -17,13 +17,14 @@ package fi.abo.kogni.soile2.http_server.auth;
  *  Copyright 2023 Modifications to ignore empty users when restoring session - Thomas Pfau 
  */
 
+import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.*;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.CookieSameSite;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.Session;
@@ -52,7 +53,7 @@ public class SoileSessionHandler implements SessionHandler {
    */
   public static final String SESSION_STOREUSER_KEY = "__vertx.session-storeuser";
 
-  private static final Logger LOG = LoggerFactory.getLogger(SoileSessionHandler.class);
+  private static final Logger LOG = LogManager.getLogger(SoileSessionHandler.class);
 
   private final SessionStore sessionStore;
 
@@ -467,7 +468,10 @@ public class SoileSessionHandler implements SessionHandler {
     if (cookie != null) {
       return cookie;
     }
-    cookie = Cookie.cookie(sessionCookieName, session.value());
+    // Secure the cookie and set its properties according to the configuration.
+
+    cookie = Cookie.cookie(sessionCookieName, session.value());    
+    LOG.info("Created cookie");
     setCookieProperties(cookie, false);
     context.response().addCookie(cookie);
     return cookie;

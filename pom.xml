@@ -140,12 +140,11 @@
 			<artifactId>log4j-core</artifactId>
 			<version>2.20.0</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
 		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-jdk14</artifactId>
-			<version>1.7.36</version>
-		</dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j-impl</artifactId>
+			<version>2.20.0</version>
+		</dependency>				
 	
 		<!-- Dependencies for Old Verticles-->
 <!--		<dependency>
@@ -295,6 +294,9 @@
 	            </executions>
 	            <configuration>
 	                <redeploy>true</redeploy>
+					<jvmArgs>						
+						<jvmArg>-Dlog4j.configurationFile=src/main/resources/log4j2.properties</jvmArg>
+					</jvmArgs>					
 	            </configuration>
 	        </plugin>
 			<plugin>

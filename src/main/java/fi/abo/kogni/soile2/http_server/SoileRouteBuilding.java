@@ -46,6 +46,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.http.CookieSameSite;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
@@ -61,6 +62,7 @@ import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.ErrorHandler;
 import io.vertx.ext.web.handler.JWTAuthHandler;
 import io.vertx.ext.web.handler.LoggerHandler;
+import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 
@@ -235,7 +237,10 @@ public class SoileRouteBuilding extends AbstractVerticle {
 		if (LOGGER.getLevel() == Level.DEBUG) { // we add the router if debugging
 			builder.rootHandler(LoggerHandler.create());
 		}
-		builder.rootHandler(new SoileSessionHandler(LocalSessionStore.create(vertx)));
+		SessionHandler sessionHandler = new SoileSessionHandler(LocalSessionStore.create(vertx))		
+							  .setCookieSecureFlag(true)
+							  .setCookieSameSite(CookieSameSite.STRICT);
+		builder.rootHandler(sessionHandler);
 		// TODO: Make flexible and set up for all front-end components
 		CorsHandler cors = CorsHandler.create()
 				.allowedMethod(HttpMethod.POST)
