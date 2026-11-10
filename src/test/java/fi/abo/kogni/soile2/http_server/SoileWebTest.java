@@ -2,6 +2,7 @@ package fi.abo.kogni.soile2.http_server;
 
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,6 +10,7 @@ import org.yaml.snakeyaml.util.UriEncoder;
 
 import fi.aalto.scicomp.zipper.FileDescriptor;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
+import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.Future;
@@ -627,5 +629,43 @@ public abstract class SoileWebTest extends SoileVerticleTest implements UserVert
 		.onFailure(err -> submittedPromise.fail(err));
 
 		return submittedPromise.future();
+	}
+	
+	protected Future<Void> awaitDownloadReady(WebClient client, String projectID, String dlID, Promise<Void> readyPromise)
+	{
+		return awaitDownloadStatus(client, projectID, dlID, readyPromise, DownloadStatus.downloadReady.toString());
+	}
+	
+	protected Future<Void> awaitDownloadStatus(WebClient client, String projectID, String dlID, Promise<Void> readyPromise, String expectedStatus)
+	{		
+		POST(client, "/study/" + projectID + "/download/" + dlID + "/check", null, null).onSuccess(response -> 
+		{
+			JsonObject status = response.bodyAsJsonObject();
+			if(status.getString("status").equals(expectedStatus))
+			{
+				readyPromise.complete();
+				return;
+			}
+			else
+			{
+				if(status.getString("status").equals(DownloadStatus.failed.toString()))
+				{
+					readyPromise.fail(new Exception("Download Failed"));
+				}
+				else
+				{
+					try {
+						// we need to wait a tiny bit... 
+						TimeUnit.MILLISECONDS.sleep(50);
+						awaitDownloadStatus(client,projectID, dlID, readyPromise, expectedStatus);
+					}
+					catch(InterruptedException e)
+					{
+						readyPromise.fail(e);
+					}
+				}
+			}											
+		});
+		return readyPromise.future();
 	}
 }

@@ -20,6 +20,7 @@ import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResults;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.utils.Unzipper;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -338,29 +339,21 @@ public class ParticipationRouterTest extends SoileWebTest{
 						Async dlNotReadyAsync = context.async();
 						POST(generatorSession,"/study/" + instanceID + "/data", null, "" )
 						.onSuccess(response -> {
-							String dlID = response.bodyAsJsonObject().getString("downloadID");
-							GET(generatorSession,"/study/" + instanceID + "/download/" + dlID, null, null)
-							.onSuccess(res -> {
-								// This is ok, the server was just really fast.
-								dlNotReadyAsync.complete();
-							})
-							.onFailure(rejected -> {
-								context.assertEquals(503, ((HttpException)rejected).getStatusCode());
-								dlNotReadyAsync.complete();
-							});					 
+							String dlID = response.bodyAsJsonObject().getString("downloadID");												
 							awaitDownloadReady(generatorSession,instanceID,dlID, Promise.promise())
-							.onSuccess(dlReady -> {
-								GET(generatorSession,"/study/" + instanceID + "/download/" + dlID, null, null)
+							.onSuccess(dlReady -> {								
+								GET(generatorSession,"/study/" + instanceID + "/download/" + dlID, null, null)								
 								.onSuccess(download -> {
+									dlNotReadyAsync.complete();
 									// This is ok, the server was just really fast.
 									String targetFileName = tmpDir + File.separator + "WebTestdownload.tar.gz";
-									vertx.fileSystem().writeFile(targetFileName , download.bodyAsBuffer())
+									vertx.fileSystem().writeFile(targetFileName , download.bodyAsBuffer())									
 									.onSuccess( dlSaved -> 
 									{
 										String targetDir = "/tmp" + File.separator + "WebTestdownload" + File.separator + "out";
 										JsonObject DataJson = null; 
 										try {
-											unzip(targetFileName, targetDir);
+											Unzipper.unzip(targetFileName, targetDir);
 											DataJson = new JsonObject(Files.readString(Path.of(targetDir,"data.json")));
 											JsonArray taskResults = DataJson.getJsonArray("taskResults");
 											JsonObject task1Res = null;
@@ -414,7 +407,7 @@ public class ParticipationRouterTest extends SoileWebTest{
 														.onSuccess(dlfinished -> {
 															JsonObject DataJson2 = null; 
 															try {
-																unzip(targetFileName2, targetDir2);
+																Unzipper.unzip(targetFileName2, targetDir2);
 																DataJson2 = new JsonObject(Files.readString(Path.of(targetDir2,"data.json")));
 																JsonArray taskResultData = DataJson2.getJsonArray("taskResults");
 																for(int i = 0; i < taskResultData.size(); i++)
@@ -880,72 +873,6 @@ public class ParticipationRouterTest extends SoileWebTest{
 	protected Future<JsonObject> getParticipantInfoForToken(String token)
 	{			
 		return mongo_client.findOne(SoileConfigLoader.getCollectionName("participantCollection"), new JsonObject().put("token", token), null);		
-	}
-
-	private Future<Void> awaitDownloadReady(WebClient client, String projectID, String dlID, Promise<Void> readyPromise)
-	{		
-		POST(client, "/study/" + projectID + "/download/" + dlID + "/check", null, null).onSuccess(response -> 
-		{
-			JsonObject status = response.bodyAsJsonObject();
-			if(status.getString("status").equals(DownloadStatus.downloadReady.toString()))
-			{
-				readyPromise.complete();
-				return;
-			}
-			else
-			{
-				if(status.getString("status").equals(DownloadStatus.failed.toString()))
-				{
-					readyPromise.fail(new Exception("Download Failed"));
-				}
-				else
-				{
-					try {
-						// we need to wait a tiny bit... 
-						TimeUnit.MILLISECONDS.sleep(50);
-						awaitDownloadReady(client,projectID, dlID, readyPromise);
-					}
-					catch(InterruptedException e)
-					{
-						readyPromise.fail(e);
-					}
-				}
-			}											
-		});
-		return readyPromise.future();
-	}
-
-	private void unzip(String zipFilePath, String destDir) throws Exception{
-		File dir = new File(destDir);
-		// create output directory if it doesn't exist
-		if(!dir.exists()) dir.mkdirs();
-		FileInputStream fis;
-		//buffer for read and write data to file
-		byte[] buffer = new byte[1024];
-
-		fis = new FileInputStream(zipFilePath);
-		ZipInputStream zis = new ZipInputStream(fis);
-		ZipEntry ze = zis.getNextEntry();
-		while(ze != null){
-			String fileName = ze.getName();
-			File newFile = new File(destDir + File.separator + fileName);
-			//create directories for sub directories in zip
-			new File(newFile.getParent()).mkdirs();
-			FileOutputStream fos = new FileOutputStream(newFile);
-			int len;
-			while ((len = zis.read(buffer)) > 0) {
-				fos.write(buffer, 0, len);
-			}
-			fos.close();
-			//close this ZipEntry
-			zis.closeEntry();
-			ze = zis.getNextEntry();
-		}
-		//close last ZipEntry
-		zis.closeEntry();
-		zis.close();
-		fis.close();
-
-	}
+	}		
 
 }
