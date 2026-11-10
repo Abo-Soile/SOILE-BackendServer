@@ -93,7 +93,17 @@ public class SoileCookieCreationHandler {
 				}
 		return finishedCookie.future();
 	}
-	public Cookie createCookie(String content)
+	
+	public Cookie createCookie(String content) {
+		/**
+		 * Create a new session cookie with the given content.
+		 * @param content The content to store in the cookie.
+		 * @return A {@link Cookie} object representing the session cookie.
+		 */
+		return this.createCookie(content, SoileConfigLoader.getSessionLongProperty("maxTime")/1000);
+	}
+	
+	public Cookie createCookie(String content, long maxAge)
 	/**
 	 * Create a new session cookie with the given content.
 	 * @param content The content to store in the cookie.
@@ -106,7 +116,7 @@ public class SoileCookieCreationHandler {
 							  .setSecure(true)
 							  .setSameSite(CookieSameSite.STRICT)
 							  .setPath(SoileConfigLoader.getSessionProperty("cookiePath"))
-							  .setMaxAge(SoileConfigLoader.getSessionLongProperty("maxTime")/1000); //Maxtime in seconds
+							  .setMaxAge(maxAge); //Maxtime in seconds
 	}
 
 	/**
@@ -118,7 +128,7 @@ public class SoileCookieCreationHandler {
 	{
 		Cookie sessionCookie = ctx.request().getCookie(SoileConfigLoader.getSessionProperty("sessionCookieID"));
 		// if we have a Session cookie from Soile, delete it.
-		Cookie cookie = this.createCookie("");
+		Cookie cookie = this.createCookie("", 0);
 		if(sessionCookie != null)
 		{
 			String token = SoileCookieStrategy.getTokenFromCookieContent(sessionCookie.getValue());
