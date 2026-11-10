@@ -111,7 +111,7 @@ public class SoileAuthentication implements AuthenticationProvider{
 		}
 		else
 		{
-			LOGGER.debug("Could not validate user with the following Credentials:\n " + credentials.encodePrettily());
+			LOGGER.warn("Invalid authentication for :\n " + credentials.encodePrettily());
 			throw new HttpException(401, "Invalid username or invalid password for " + username);
 		}
 	}		

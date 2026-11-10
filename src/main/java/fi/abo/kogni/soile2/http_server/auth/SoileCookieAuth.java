@@ -119,7 +119,7 @@ public class SoileCookieAuth {
 										{
 											// resume if handling failed
 											request.resume();
-											LOGGER.error("We found a valid session but could not create the user due to the following error: " + e.toString() );
+											LOGGER.error("We found a valid session but could not create the user due to the following errorfor user " + username + " : " + e.toString() );
 											userPromise.fail(new HttpException(401));
 										}
 									}
@@ -127,7 +127,7 @@ public class SoileCookieAuth {
 									{
 										// resume if the db Request failed.
 										request.resume();
-										LOGGER.error("We found a valid session but could not create the user due to the following error");
+										LOGGER.error("We found a valid session but could not create the user due to the following error for user " + username );
 										LOGGER.error(dbRes.cause());										
 										userPromise.fail(new HttpException(401));									}
 
@@ -136,20 +136,20 @@ public class SoileCookieAuth {
 							else
 							{
 								//Fail if we could not add the user
-								LOGGER.error("Session no longer valid , : " + res.cause().getMessage() );
+								LOGGER.error("Session no longer valid for user " + username + " : " + res.cause().getMessage()  );
 								userPromise.fail(new HttpException(401));							}
 						}
 						else
 						{
 							//This would fail since it could not be authenticated.
-							LOGGER.error("Session no longer valid , : " + res.cause().getMessage() );
+							LOGGER.error("Session no longer valid for user " + username + " : " + res.cause().getMessage() );
 							userPromise.fail(new HttpException(401));						}
 					});
 
 				}
 				catch(Exception e)
 				{
-					LOGGER.error("Problem processing cookies: " + e.getMessage() );
+					LOGGER.error("Problem processing cookie: " + e.getMessage() + " with value " + sessionCookie.getValue());
 					LOGGER.error(e);
 					userPromise.fail(new HttpException(401));				}
 			}

@@ -62,7 +62,6 @@ public abstract class SoileAuthHandler implements AuthenticationHandler{
 		Boolean remember = rememberValue != null ? rememberValue.equals("1") : false;
 
 		LOGGER.debug(user.principal().encodePrettily());
-		LOGGER.debug(user.principal().encodePrettily());
 		user.principal().put("storeCookie", remember);
 		cookieHandler.updateCookie(ctx, user).onComplete(cookieDone ->
 		{
