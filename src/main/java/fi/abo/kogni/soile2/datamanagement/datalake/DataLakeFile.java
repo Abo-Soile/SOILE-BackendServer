@@ -3,6 +3,9 @@ package fi.abo.kogni.soile2.datamanagement.datalake;
 import java.io.File;
 
 import fi.aalto.scicomp.zipper.FileDescriptor;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
 /**
@@ -114,6 +117,16 @@ public class DataLakeFile extends File implements FileDescriptor {
 				.put("dataLake", this.dataLake)
 				.put("originalFileName", originalFileName)
 				.put("mimeFormat", mimeFormat);
+	}
+	
+	public Future<Void> save_delete(Vertx vertx) {
+		Promise<Void> deletedPromise = Promise.promise();
+		vertx.fileSystem().delete(dataLake+ File.separator + pathInLake)
+		.onSuccess(deleted -> {
+			deletedPromise.complete();
+		})
+		.onFailure(err -> deletedPromise.fail(err));
+		return deletedPromise.future();
 	}
 
 	

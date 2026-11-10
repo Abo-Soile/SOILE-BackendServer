@@ -16,6 +16,7 @@ import fi.abo.kogni.soile2.projecthandling.exceptions.ObjectDoesNotExist;
 import fi.abo.kogni.soile2.projecthandling.participant.ParticipantHandler;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.Study;
 import fi.abo.kogni.soile2.projecthandling.projectElements.instance.impl.StudyHandler;
+import fi.abo.kogni.soile2.utils.SoileCommUtils;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
@@ -40,6 +41,9 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	ParticipantDataLakeManager dlmgr;
 	String dataLakeFolder;
 	String downloadCollection;
+	private int timer;
+	private long timerId;
+	private boolean cleanupRunning = false; 
 	static final Logger LOGGER = LogManager.getLogger(DataBundleGeneratorVerticle.class);
 
 
@@ -50,21 +54,45 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 	 * @param partHandler the {@link ParticipantHandler} for participant access
 	 */
 	public DataBundleGeneratorVerticle(MongoClient client, StudyHandler projHandler, ParticipantHandler partHandler)
+	{	
+		// Default, every hour
+		this(client, projHandler, partHandler, 3600_000);
+	}
+
+	public DataBundleGeneratorVerticle(MongoClient client, StudyHandler projHandler, ParticipantHandler partHandler, int timer)
 	{
 		dataLakeFolder = SoileConfigLoader.getServerProperty("soileResultDirectory");
 		downloadCollection = SoileConfigLoader.getdbProperty("downloadCollection");
 		dlmgr = new ParticipantDataLakeManager(dataLakeFolder, vertx);
+		this.timer = timer;
 		this.client = client;
 		this.projHandler = projHandler;
 		this.partHandler = partHandler;		
 	}
-
 	@Override
 	public void start()
-	{
+	{	
 		vertx.eventBus().consumer("fi.abo.soile.DLStatus", this::getStatus);
 		vertx.eventBus().consumer("fi.abo.soile.DLFiles", this::getDownloadFiles);
-		vertx.eventBus().consumer("fi.abo.soile.DLCreate", this::createDownload);		
+		vertx.eventBus().consumer("fi.abo.soile.DLCreate", this::createDownload);
+		vertx.eventBus().consumer("fi.abo.soile.DLDelete", this::deleteDownload);
+		timerId = vertx.setPeriodic(timer, cleanup -> {
+			LOGGER.info("Running Download Cleanup");
+			if(cleanupRunning)
+			{		
+				return;
+			}					
+			cleanupRunning = true;
+			cleanUpOldDownloads()
+			.onComplete(done -> {
+				if(done.failed()) 
+				{
+					LOGGER.warn("Cleanup failed", done.cause());
+				}
+				cleanupRunning = false;
+			})
+			;
+		});
 	}
 
 	@Override
@@ -75,12 +103,14 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		consumerdeactivateFutures.add(vertx.eventBus().consumer("fi.abo.soile.DLStatus", this::getStatus).unregister());
 		consumerdeactivateFutures.add(vertx.eventBus().consumer("fi.abo.soile.DLFiles", this::getDownloadFiles).unregister());
 		consumerdeactivateFutures.add(vertx.eventBus().consumer("fi.abo.soile.DLCreate", this::createDownload).unregister());
+		consumerdeactivateFutures.add(vertx.eventBus().consumer("fi.abo.soile.DLDelete", this::deleteDownload).unregister());
 		CompositeFuture.all(consumerdeactivateFutures)
 		.onSuccess(success -> {
 			LOGGER.debug("Successfully undeployed DataBundleGenerator with id : " + deploymentID());
 			stopPromise.complete();
 		})
 		.onFailure(err -> stopPromise.fail(err));
+		vertx.cancelTimer(timerId);
 	}
 
 	/**
@@ -201,6 +231,23 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		.onFailure(err -> replyForError(err, message));	
 	}
 
+	/**
+	 * Get the download files for the indicated downloadID. Returns the status of the download along with the files (if there are any) 
+	 * @param message The message containing the download ID.
+	 */
+	public void deleteDownload(Message<JsonObject> message)
+	{
+		String dlID = message.body().getString("downloadID");
+		getDownloadStatus(dlID).onSuccess(status-> {
+			cleanUpDownload(dlID)
+			.onSuccess(deleted -> {
+				message.reply(new JsonObject().put("status","success"));
+			})
+			.onFailure(err -> replyForError(err, message));
+		})
+		.onFailure(err -> replyForError(err, message));	
+	}
+	
 	/**
 	 * Create a download for the given participants.  
 	 * @param participants The participant IDs of the participants for which to retrieve data.
@@ -373,7 +420,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 
 		return collectionStartedPromise.future();
 	}			
-
+		
 	/**
 	 * Collect the files required for the given Participants and also build the Output Json file for that request.
 	 * @param participants the participants for which to obtain the data.
@@ -657,7 +704,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 			if(result == null)
 			{
 				statusPromise.fail(new ObjectDoesNotExist(dlID));				
-			}
+			}					
 			else
 			{
 				LOGGER.debug("Status for dl " + dlID + " is: " + result.getString("status"));
@@ -731,6 +778,34 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		.onFailure(err -> dlPromise.fail(err));
 		return dlPromise.future();
 	}
+	
+	Future<Void> cleanUpDownload(String dlID) {
+		Promise<Void> cleanedUpPromise = Promise.promise();
+
+		client.findOne(downloadCollection, new JsonObject().put("_id",dlID), new JsonObject().put("status",1).put("resultFiles",1).put("jsonDataLocation", 1))
+		.onSuccess(result -> {			
+			if(result == null)
+			{				
+				LOGGER.info("Couldn't find download with ID: "  +  dlID);
+				cleanedUpPromise.fail(new ObjectDoesNotExist(dlID));
+			}
+			else
+			{
+				JsonObject jsonDataFile = result.getJsonObject("jsonDataLocation");										
+				DataLakeFile f = new DataLakeFile(dataLakeFolder, jsonDataFile.getString("filename"), jsonDataFile.getString("nameInZip"), jsonDataFile.getString("mimeType"));					
+				f.save_delete(vertx)
+				.compose( deleted -> {
+					return client.findOneAndDelete(downloadCollection, new JsonObject().put("_id",dlID));
+				})
+				.onSuccess(deleted -> {
+					LOGGER.info("Deleted download with id: "  +  dlID);
+					cleanedUpPromise.complete();
+				});									
+			}
+		})
+		.onFailure(err -> cleanedUpPromise.fail(err));
+		return cleanedUpPromise.future();
+	}
 
 	Future<Void> checkAndFilterFiles(List<JsonObject> fileIndicators, String dlID)
 	{
@@ -770,8 +845,38 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		{
 			return Future.succeededFuture();
 		}
-	}	
-
+	}
+	
+	private Future<Void> cleanUpOldDownloads()
+	{
+		Promise<Void> cleanupPromise = Promise.promise();
+		getOldDownloads().onSuccess(oldDownloads -> {
+			
+			List<Future> cleanupFutures = new LinkedList<Future>();
+			for(JsonObject dl : oldDownloads)
+			{
+				cleanupFutures.add(cleanUpDownload(dl.getString("_id")));
+			}
+			CompositeFuture.all(cleanupFutures)
+			.onSuccess(done -> cleanupPromise.complete())
+			.onFailure(err -> cleanupPromise.fail(err));			
+		})
+		.onFailure(err -> cleanupPromise.fail(err));
+		return cleanupPromise.future();
+	}
+	
+	private Future<List<JsonObject>> getOldDownloads()
+	{
+		return client.find(downloadCollection, 
+					   new JsonObject().put(
+							   "timeStamp", 
+							   new JsonObject().put(
+									   "$lt", 
+									   System.currentTimeMillis() - timer)
+							   )
+					   );				
+	}
+	
 	/**
 	 * Check The given list of file indicators (more precise the "absolutePath" fields of the objects on whether they exist
 	 * @param filesIndicators the "files" to check.
@@ -872,7 +977,7 @@ public class DataBundleGeneratorVerticle extends AbstractVerticle{
 		else if(err instanceof DownloadNotReadyException) 
 		{
 			request.reply(new JsonObject().put("status", DownloadStatus.notReady.toString()));
-		}
+		}		
 		else
 		{
 			request.reply(new JsonObject().put("status", DownloadStatus.problems.toString()).put("message", err.getMessage()));

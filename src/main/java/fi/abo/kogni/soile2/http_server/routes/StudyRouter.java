@@ -223,6 +223,8 @@ public class StudyRouter extends SoileRouter {
 	}
 
 
+	
+	
 	/**
 	 * Stop a Study (deactivate it)
 	 * @param context The Context indicating the Study (and user)
@@ -476,7 +478,7 @@ public class StudyRouter extends SoileRouter {
 				}
 				else
 				{
-					// just add whichever name is there as the request type.
+					// just add whichever name is there as the request type.					
 					requestBody.put("requestType", requestBody.fieldNames().iterator().next());					
 				}
 			}
@@ -486,10 +488,11 @@ public class StudyRouter extends SoileRouter {
 				requestBody = new JsonObject().put("requestType", "all"); 
 			}
 			requestBody.put("projectID", requestedInstanceID);
-
+			final JsonObject dataInfo = requestBody.copy();
 			eb.request("fi.abo.soile.DLCreate", requestBody)
-			.onSuccess(response -> {
+			.onSuccess(response -> {				
 				String dlID = response.body().toString();
+				LOGGER.info("Download for study " + requestedInstanceID + " will be generated with ID : " + dlID + " and data " + dataInfo.encodePrettily());
 				context.response()
 				.setStatusCode(200)
 				.putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
@@ -546,9 +549,10 @@ public class StudyRouter extends SoileRouter {
 				if(responseBody.getString("status").equals(DownloadStatus.downloadReady.toString()))
 				{
 					List<FileDescriptor> dLFiles = new LinkedList<>();
-					for(int i = 0; i < responseBody.getJsonArray("files").size(); i++)
+					JsonArray filelist = responseBody.getJsonArray("files");
+					for(int i = 0; i < filelist.size(); i++)
 					{
-						DataLakeFile temp = new DataLakeFile(responseBody.getJsonArray("files").getJsonObject(i));
+						DataLakeFile temp = new DataLakeFile(filelist.getJsonObject(i));
 						dLFiles.add(temp);
 					}
 					try
@@ -557,9 +561,20 @@ public class StudyRouter extends SoileRouter {
 						// the response is a chunked zip file.
 						context.response().putHeader("content-type", "application/zip")
 						.putHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dlID + ".zip\"")
-						.setChunked(true);						
+						.setChunked(true);
+						
+						LOGGER.info("Download " + dlID + " started by user " + context.user().subject());
 						pump.pipeTo(context.response()).onSuccess(success -> {
-							LOGGER.debug("Download " + dlID + " successfullytransmitted");							
+							LOGGER.info("Download " + dlID + " finished for user " + context.user().subject());
+							eb.request("fi.abo.soile.DLDelete", new JsonObject().put("downloadID",dlID))
+							.onSuccess(deletionResponse -> {
+								JsonObject deletionDone = (JsonObject) deletionResponse.body();								
+								if(!deletionDone.getString("status").equals("success"))
+								{									
+									LOGGER.warn("Couldn't delete entry for " + dlID);
+								}
+
+							});								
 						}).onFailure(err -> {
 							LOGGER.error("Download " + dlID + " failed");
 							LOGGER.error(err);

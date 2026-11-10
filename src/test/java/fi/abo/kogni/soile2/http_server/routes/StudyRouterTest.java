@@ -1,19 +1,26 @@
 package fi.abo.kogni.soile2.http_server.routes;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.Test;
 
+import fi.abo.kogni.soile2.datamanagement.datalake.ParticipantFileResults;
 import fi.abo.kogni.soile2.http_server.SoileWebTest;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.PermissionType;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.Roles;
 import fi.abo.kogni.soile2.http_server.auth.SoileAuthorization.TargetElementType;
 import fi.abo.kogni.soile2.http_server.auth.SoilePermissionProvider;
 import fi.abo.kogni.soile2.http_server.userManagement.SoileUserManager.PermissionChange;
+import fi.abo.kogni.soile2.http_server.verticles.DataBundleGeneratorVerticle.DownloadStatus;
 import fi.abo.kogni.soile2.utils.SoileConfigLoader;
+import fi.abo.kogni.soile2.utils.Unzipper;
 import fi.abo.kogni.soile2.utils.WebObjectCreator;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -80,7 +87,97 @@ public class StudyRouterTest extends SoileWebTest {
 	}
 
 
+	@Test
+	public void dataDownloadOnlyOnceTest(TestContext context)
+	{
+		System.out.println("--------------------  Running test that checks that downloads only once ----------------------");    
 
+		Async creationAsync = context.async();
+		JsonArray OutputData = new JsonArray().add(new JsonObject().put("name", "smoker")
+				.put("value", 0)
+				.put("timestamp", System.currentTimeMillis()));
+		JsonArray fileData = new JsonArray();
+		JsonObject resultData = new JsonObject().put("jsonData",new JsonArray().add(new JsonObject().put("name", "smoker")
+				.put("value", 0)
+				.put("timestamp", System.currentTimeMillis())
+				)
+				.add(new JsonObject().put("name", "smoker2")
+						.put("value", "something")
+						.put("timestamp", System.currentTimeMillis())
+						)
+				)
+				.put("fileData", fileData);
+
+		JsonObject result = new JsonObject().put("outputData", OutputData).put("resultData", resultData);
+		String TestDataFolder = WebObjectCreator.class.getClassLoader().getResource("FileTestData").getPath();
+		String filename = "Image.jpg";
+		File upload = new File(Path.of(TestDataFolder, "ImageData.jpg").toString());
+		createAndStartTestProject(true)
+		.onSuccess(instanceID -> {
+			createTokenAndSignupUser(generatorSession, instanceID)			
+			.onSuccess(authToken -> {
+				Async submitAsync = context.async();
+				WebClientSession tempSession = createSession();										
+				tempSession.addHeader("Authorization", authToken);
+				uploadResult(tempSession, instanceID, upload, filename, "image/jpeg")
+				.onSuccess( uploadID -> {
+					fileData.add(new JsonObject().put("fileformat", "image/jpeg")
+							.put("filename", filename)
+							.put("targetid", uploadID));
+					submitResult(tempSession, result, instanceID)
+					.onSuccess(done -> {
+						Async dlNotReadyAsync = context.async();
+						POST(generatorSession,"/study/" + instanceID + "/data", null, "" )
+						.onSuccess(response -> {
+							String dlID = response.bodyAsJsonObject().getString("downloadID");												
+							awaitDownloadReady(generatorSession,instanceID,dlID, Promise.promise())
+							.onSuccess(dlReady -> {								
+								GET(generatorSession,"/study/" + instanceID + "/download/" + dlID, null, null)								
+								.onSuccess(download -> {
+									Async dlFailedAsync = context.async();
+									awaitDownloadStatus(generatorSession,instanceID,dlID, Promise.promise(),DownloadStatus.notExistent.toString())
+									.onSuccess(deleted -> {
+										dlNotReadyAsync.complete();
+										// This is ok, the server was just really fast.
+										GET(generatorSession,"/study/" + instanceID + "/download/" + dlID, null, null)
+										.onSuccess(download2 ->  { 
+											context.fail("Could download the data again");
+											dlFailedAsync.complete();
+											submitAsync.complete();
+										})
+										.onFailure(err -> {
+											context.assertEquals(err.getClass(), HttpException.class);
+											dlFailedAsync.complete();
+											submitAsync.complete();
+										});
+									})
+									.onFailure(err -> context.fail(err));
+
+								})
+								.onFailure(err -> context.fail(err));
+
+							})
+							.onFailure(err -> context.fail(err));	
+
+						})
+						.onFailure(err -> context.fail(err));
+						Async invalidRequestAsync = context.async();
+						POST(tempSession,"/study/" + instanceID + "/data", null, "" )
+						.onSuccess(fail -> {
+							context.fail("Invalid access should not be possible");
+						})
+						.onFailure(err -> invalidRequestAsync.complete());
+
+					})
+					.onFailure(err -> context.fail(err));
+				})
+				.onFailure(err -> context.fail(err));
+				creationAsync.complete();
+			})
+			.onFailure(err -> context.fail(err));
+		})
+		.onFailure(err -> context.fail(err));
+	}
 
 	/**
 	 * This test tests both starting and getting the list of running projects.
